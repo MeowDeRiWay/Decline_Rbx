@@ -1,4 +1,3 @@
-
 {
   "name": "Decline",
   "tree": {
@@ -18,6 +17,16 @@
         "Client": {
           "$path": "src/client"
         }
+      },
+      "$properties": {
+        "LoadCharacterAppearance": false,
+        "CameraMaxZoomDistance": 75,
+        "CameraMinZoomDistance": 75
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false
       }
     }
   }
