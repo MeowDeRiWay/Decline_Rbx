@@ -4,7 +4,7 @@ local RunService = game:GetService("RunService")
 local ContextActionService = game:GetService("ContextActionService")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local player = Players.LocalPlayer
--- Default Roblox controls handle walking relative to the fixed camera.
+-- Default Roblox controls handle walking relative to the camera.
 ContextActionService:BindActionAtPriority("DeclineNoJump", function()
  return Enum.ContextActionResult.Sink
 end, false, Enum.ContextActionPriority.High.Value + 1, Enum.PlayerActions.CharacterJump)
@@ -24,7 +24,18 @@ RunService:BindToRenderStep("DeclineCamera", Enum.RenderPriority.Camera.Value + 
  if not root or not camera then return end
  camera.CameraType = Enum.CameraType.Scriptable
  camera.FieldOfView = Config.CameraFieldOfView
- local target = root.Position
- camera.CFrame = CFrame.lookAt(target + Vector3.new(0, Config.CameraHeight, Config.CameraBack), target, Vector3.new(0, 0, -1))
+ local forward = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
+ if forward.Magnitude < 0.001 then return end
+ forward = forward.Unit
+ -- Look ahead so the body appears near the bottom of the viewport.
+ -- Optional Config.CameraForward overrides the default forward shift.
+ local height, back = Config.CameraHeight, Config.CameraBack
+ local framing = 0.75 -- Body at about 87.5% of the screen height.
+ local tangent = math.tan(math.rad(Config.CameraFieldOfView / 2))
+ local defaultShift = framing * (height * height + back * back) * tangent / (height + framing * back * tangent)
+ local shift = Config.CameraForward or defaultShift
+ local target = root.Position + forward * shift
+ local position = target + Vector3.yAxis * Config.CameraHeight - forward * Config.CameraBack
+ camera.CFrame = CFrame.lookAt(position, target, forward)
  camera.Focus = CFrame.new(target)
 end)
