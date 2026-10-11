@@ -9,7 +9,7 @@ local sessions = {}
 local changed = Instance.new("BindableEvent")
 Service.Changed = changed.Event
 local function reachable(player, chest)
- if typeof(chest) ~= "Instance" or not chest:IsA("Model") or chest.Name ~= "Chest" or not chest:IsDescendantOf(workspace) or not chest:FindFirstChildWhichIsA("BasePart", true) then return false end
+ if typeof(chest) ~= "Instance" or not chest:IsA("Model") or (chest.Name ~= "Chest" and chest:GetAttribute("IsCorpse") ~= true) or not chest:IsDescendantOf(workspace) or not chest:FindFirstChildWhichIsA("BasePart", true) then return false end
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -29,6 +29,13 @@ end
 local function notify(chest)
  for player, current in pairs(sessions) do if current == chest then changed:Fire(player) end end
 end
+function Service.CreateCorpse(model,items)
+ if contents[model] then return end
+ local storage = Rules.New()
+ for id,count in pairs(items) do if count > 0 then Rules.Add(storage,Items.Items,id,count) end end
+ contents[model] = storage
+ model:SetAttribute("IsCorpse",true)
+end
 function Service.Open(player, chest)
  if not reachable(player, chest) then return false end
  if not contents[chest] then contents[chest] = Rules.New() end
@@ -42,11 +49,12 @@ function Service.Close(player)
 end
 function Service.Snapshot(player)
  local chest = sessions[player]
- return {ChestOpen = chest ~= nil, Chest = chest, ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}
+ return {ChestOpen = chest ~= nil, Chest = chest, ChestReadOnly = chest ~= nil and chest:GetAttribute("IsCorpse") == true, ChestName = chest and (chest:GetAttribute("DisplayName") or chest.Name), ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}
 end
 function Service.Transfer(player, id, requested, intoChest)
  local chest = sessions[player]
  if not reachable(player, chest) then Service.Close(player); return false end
+ if intoChest and chest:GetAttribute("IsCorpse") == true then return false end
  if typeof(id) ~= "string" or not Items.Items[id] then return false end
  local storage = contents[chest]
  if not Inventory.Transfer(player, storage, id, requested, intoChest) then return false end

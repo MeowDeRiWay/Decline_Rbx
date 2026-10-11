@@ -54,7 +54,7 @@ attack.OnServerEvent:Connect(function(player)
   end
  end
  if nearest then
-  local dealt = Damage.Apply(nearest,weapon.Damage,weapon.DamageType)
+  local dealt = Damage.Apply(nearest,weapon.Damage,weapon.DamageType,root.Position)
   if dealt > 0 then Inventory.UseWeapon(player) end
  end
 end)

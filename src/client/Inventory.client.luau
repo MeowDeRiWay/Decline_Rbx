@@ -12,6 +12,7 @@ local snapshot = {Items = {}, Equipment = {}, Weight = 0}
 local dropAmounts = {}
 local selectedItem = nil
 local chestOpen = false
+local chestReadOnly = false
 local gui = Instance.new("ScreenGui")
 gui.Name, gui.ResetOnSpawn, gui.Enabled = "InventoryUI", false, false
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -123,6 +124,7 @@ local function renderItems(frame, items, side)
    tooltip.Visible = true
   end)
   row.MouseLeave:Connect(function() tooltip.Visible = false end)
+  if chestOpen and chestReadOnly and side == "Player" then continue end
   local extraAction = not chestOpen and (definition.Slot or definition.Consume)
   local actions = Instance.new("Frame")
   actions.Name = "ItemActions"
@@ -169,8 +171,8 @@ local function renderItems(frame, items, side)
   minus.Activated:Connect(function() readAmount(); selectAmount(selected - 1) end)
   plus.Activated:Connect(function() readAmount(); selectAmount(selected + 1) end)
   amount.FocusLost:Connect(readAmount)
-  local drop = button(actions, chestOpen and "Transfer" or "Drop", UDim2.fromOffset(6, 36), UDim2.new(0.5, -9, 0, 32))
-  local all = button(actions, chestOpen and "Transfer all" or "Drop all", UDim2.new(0.5, 3, 0, 36), UDim2.new(0.5, -9, 0, 32))
+  local drop = button(actions, chestOpen and (chestReadOnly and "Take" or "Transfer") or "Drop", UDim2.fromOffset(6, 36), UDim2.new(0.5, -9, 0, 32))
+  local all = button(actions, chestOpen and (chestReadOnly and "Take all" or "Transfer all") or "Drop all", UDim2.new(0.5, 3, 0, 36), UDim2.new(0.5, -9, 0, 32))
   drop.Activated:Connect(function() readAmount(); action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, selected) end)
   all.Activated:Connect(function() action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, "All") end)
   if definition.Consume and not chestOpen then
@@ -189,7 +191,7 @@ redraw = function()
  clear(inventory)
  clear(equipment)
  weight.Text = string.format("Weight %.1f kg", snapshot.Weight)
- rightTitle.Text = chestOpen and "Chest" or "Equipment"
+ rightTitle.Text = chestOpen and (snapshot.ChestName or "Chest") or "Equipment"
  renderItems(inventory, snapshot.Items, "Player")
  if chestOpen then
   renderItems(equipment, snapshot.ChestItems or {}, "Chest")
@@ -256,6 +258,7 @@ stateRemote.OnClientEvent:Connect(function(value)
  snapshot = value
  local wasChestOpen = chestOpen
  chestOpen = value.ChestOpen == true
+ chestReadOnly = value.ChestReadOnly == true
  if chestOpen then
   if not wasChestOpen then selectedItem = nil end
   if not gui.Enabled then setOpen(true) else redraw() end

@@ -26,9 +26,14 @@ local function popup(target,amount)
  TweenService:Create(label,info,{TextTransparency=1,TextStrokeTransparency=1}):Play()
  Debris:AddItem(gui,1)
 end
-function Service.Apply(humanoid,amount,damageType)
+function Service.Apply(humanoid,amount,damageType,sourcePosition)
  local target = humanoid.Parent
  if not target or humanoid.Health <= 0 then return 0 end
+ if sourcePosition then
+  local delta = target:GetPivot().Position-sourcePosition
+  delta = Vector3.new(delta.X,0,delta.Z)
+  if delta.Magnitude > .001 then target:SetAttribute("LastHitDirection",delta.Unit) end
+ end
  local before = humanoid.Health
  if target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.
