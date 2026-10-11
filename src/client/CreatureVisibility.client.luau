@@ -15,7 +15,7 @@ local function hideObject(record,object)
  if record.saved[object] then return end
  local key,value = property(object)
  if not key then return end
- record.saved[object] = {key,object[key]}
+ record.saved[object] = {key,key == "LocalTransparencyModifier" and 0 or object[key]}
  object[key] = value
  if object:IsA("ParticleEmitter") or object:IsA("Trail") then object:Clear() end
 end
@@ -25,14 +25,23 @@ local function restore(record)
  end
  table.clear(record.saved)
 end
+local function applyParts(model,record)
+ for part in pairs(record.parts) do
+  if part:IsDescendantOf(model) then
+   -- Authored Transparency is untouched. Visibility owns only the local modifier.
+   part.LocalTransparencyModifier = record.visible and 0 or 1
+  else record.parts[part] = nil end
+ end
+end
 local function setVisible(model,record,visible)
- if record.visible == visible then return end
+ if record.visible == visible then applyParts(model,record); return end
  record.visible = visible
  if visible then restore(record)
  else
   hideObject(record,model)
   for _,object in ipairs(model:GetDescendants()) do hideObject(record,object) end
  end
+ applyParts(model,record)
 end
 local function creatureRoot(model)
  local result = model
@@ -58,9 +67,13 @@ local function register(model)
  for child,old in pairs(tracked) do
   if child:IsDescendantOf(model) then unregister(child,old) end
  end
- local record = {visible=true,saved={}}
+ local record = {visible=true,saved={},parts={}}
+ for _,object in ipairs(model:GetDescendants()) do
+  if object:IsA("BasePart") then record.parts[object] = true end
+ end
  tracked[model] = record
  record.added = model.DescendantAdded:Connect(function(object)
+  if object:IsA("BasePart") then record.parts[object] = true end
   if not record.visible then hideObject(record,object) end
  end)
  -- Hide until the first visibility check, so newly streamed creatures don't flash.
@@ -105,7 +118,12 @@ local function visible(model,root,character)
  return targetHead ~= nil and targetHead:IsA("BasePart") and clear(targetHead)
 end
 local elapsed = Config.VisibilityInterval
-RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Camera.Value+3,function(dt)
+RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Last.Value+1,function(dt)
+ -- Apply every frame after the camera's transparency controller, even if the
+ -- sector/line-of-sight decision has not changed.
+ for model,record in pairs(tracked) do
+  if model ~= player.Character then applyParts(model,record) end
+ end
  elapsed += dt
  if elapsed < Config.VisibilityInterval then return end
  elapsed = 0
@@ -118,6 +136,13 @@ RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Came
    local canSee = model == character or (root ~= nil and visible(model,root,character))
    setVisible(model,record,canSee)
    model:SetAttribute("ClientVisible",canSee == true)
+   local total,renderable = 0,0
+   for part in pairs(record.parts) do
+    total += 1
+    if part.Transparency < 1 and part.LocalTransparencyModifier < 1 then renderable += 1 end
+   end
+   model:SetAttribute("ClientPartCount",total)
+   model:SetAttribute("ClientRenderablePartCount",renderable)
   end
  end
 end)
