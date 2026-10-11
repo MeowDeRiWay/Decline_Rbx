@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Sight = require(ReplicatedStorage.Shared.Sight)
 local Sector = require(ReplicatedStorage.Shared.VisibilityRules)
@@ -40,7 +41,7 @@ local function prepare(model)
  if not positive(model:GetAttribute("ViewAngle")) then model:SetAttribute("ViewAngle",160) end
  for _,part in ipairs(model:GetDescendants()) do
   if part:IsA("BasePart") then
-   part.Anchored=false
+   part.Anchored=true
    part.CanQuery=true
    part.CanCollide=part==root
    if part~=root then
@@ -51,7 +52,10 @@ local function prepare(model)
    end
   end
  end
- root:SetNetworkOwner(nil)
+ -- Move the authored model on the server; no R6/R15 rig is required.
+ humanoid.AutoRotate=false
+ model:SetAttribute("AIState","Idle")
+ model:SetAttribute("TargetName","")
  local dead=false
  local function sync()
   model:SetAttribute("Health",humanoid.Health)
@@ -90,25 +94,66 @@ local function prepare(model)
  end
  humanoid.Died:Connect(die)
  sync()
- task.spawn(function()
-  while model:IsDescendantOf(workspace) and not dead do
-   local nearest,range=nil,model:GetAttribute("SightRange")
+ local nearest
+ local elapsed=0
+ local movement
+ movement=RunService.Heartbeat:Connect(function(dt)
+  if not model:IsDescendantOf(workspace) or dead then movement:Disconnect(); return end
+  elapsed+=dt
+  if elapsed>=.1 then
+   elapsed%=.1
+   nearest=nil
+   local range=model:GetAttribute("SightRange")
    local forward=root.CFrame.LookVector
+   local reason="No player"
    for _,player in ipairs(Players:GetPlayers()) do
     local character=player.Character
     local target=character and character:FindFirstChild("HumanoidRootPart")
     local hp=character and character:FindFirstChildOfClass("Humanoid")
     if target and hp and hp.Health>0 and not character:GetAttribute("Knockout") then
      local delta=target.Position-root.Position
-     if delta.Magnitude<range and Sector.InSector(forward.X,forward.Z,delta.X,delta.Z,model:GetAttribute("ViewAngle")) then
-      local hit=Sight.Cast(head.Position,target.Position-head.Position,model)
-      if not hit or hit.Instance:IsDescendantOf(character) then nearest,range=target,delta.Magnitude end
+     if delta.Magnitude>=range then reason="Out of range"
+     elseif not Sector.InSector(forward.X,forward.Z,delta.X,delta.Z,model:GetAttribute("ViewAngle")) then reason="Outside view"
+     else
+      local targetHead=character:FindFirstChild("Head")
+      local seen=false
+      for _,point in ipairs({targetHead and targetHead.Position or target.Position,target.Position}) do
+       local hit=Sight.Cast(head.Position+Vector3.new(0,.05,0),point-head.Position-Vector3.new(0,.05,0),model)
+       if not hit or hit.Instance:IsDescendantOf(character) then seen=true; break end
+      end
+      if seen then nearest,range=target,delta.Magnitude else reason="Sight blocked" end
      end
     end
    end
-   humanoid:MoveTo(nearest and nearest.Position or root.Position)
-   task.wait(.2)
+   model:SetAttribute("DetectionReason",nearest and "Visible target" or reason)
+   model:SetAttribute("TargetName",nearest and nearest.Parent.Name or "")
+   model:SetAttribute("AIState",nearest and "Chasing" or "Idle")
   end
+  if not nearest or not nearest.Parent then return end
+  local delta=nearest.Position-root.Position
+  delta=Vector3.new(delta.X,0,delta.Z)
+  local stoppingDistance=(root.Size.Z+nearest.Size.Z)/2+.15
+  if delta.Magnitude<=stoppingDistance then return end
+  local direction=delta.Unit
+  local distance=math.min(humanoid.WalkSpeed*math.min(dt,.1),delta.Magnitude-stoppingDistance)
+  if distance<=0 then return end
+  local params=RaycastParams.new()
+  params.FilterType=Enum.RaycastFilterType.Exclude
+  params.FilterDescendantsInstances={model,nearest.Parent}
+  params.RespectCanCollide=true
+  local movementVector=direction*distance
+  local obstruction=workspace:Blockcast(root.CFrame,root.Size*.9,movementVector,params)
+  if obstruction then
+   distance=math.max(0,obstruction.Distance-.02)
+   model:SetAttribute("AIState","Blocked")
+  end
+  local position=root.Position+direction*distance
+  local stepHeight=math.max(root.Size.Y,.2)
+  local ground=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),params)
+  if not ground then model:SetAttribute("AIState","Blocked"); return end
+  position=Vector3.new(position.X,ground.Position.Y+root.Size.Y/2,position.Z)
+  local desiredRoot=CFrame.lookAt(position,position+direction)
+  model:PivotTo(desiredRoot*root.CFrame:Inverse()*model:GetPivot())
  end)
 end
 local function consider(object)
