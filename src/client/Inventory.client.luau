@@ -80,10 +80,16 @@ local function redraw()
  for order, id in ipairs(ids) do
   local definition = ItemConfig.Items[id]
   local caption = string.format("%s ×%d\n%.1f kg%s", definition.Name or id, snapshot.Items[id], (definition.Weight or 0) * snapshot.Items[id], definition.Slot and "  •  Click to equip" or "")
-  local row = button(inventory, caption, UDim2.new(), UDim2.new(1, -8, 0, 70))
-  row.LayoutOrder = order
+  local container = Instance.new("Frame")
+  container.Size = UDim2.new(1, -8, 0, 70)
+  container.BackgroundTransparency = 1
+  container.LayoutOrder = order
+  container.Parent = inventory
+  local row = button(container, caption, UDim2.new(), UDim2.new(1, -66, 1, 0))
   row.AutoButtonColor = definition.Slot ~= nil
   row.Activated:Connect(function() if definition.Slot then action:FireServer("Equip", id) end end)
+  local drop = button(container, "Drop", UDim2.new(1, -60, 0, 0), UDim2.new(0, 60, 1, 0))
+  drop.Activated:Connect(function() action:FireServer("Drop", id) end)
  end
  for order, slot in ipairs(ItemConfig.Slots) do
   local id = snapshot.Equipment[slot]

@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Service = require(script.Parent.Services.InventoryService)
+local WorldItems = require(script.Parent.Services.WorldItemService)
 local folder = Instance.new("Folder")
 folder.Name, folder.Parent = "InventoryRemotes", ReplicatedStorage
 local action = Instance.new("RemoteEvent")
@@ -20,5 +21,7 @@ action.OnServerEvent:Connect(function(player, command, value)
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  if not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return end
  if command == "Equip" then Service.Equip(player, value)
- elseif command == "Unequip" then Service.Unequip(player, value) end
+ elseif command == "Unequip" then Service.Unequip(player, value)
+ elseif command == "Pickup" then WorldItems.Pickup(player, value)
+ elseif command == "Drop" then WorldItems.Drop(player, value) end
 end)
