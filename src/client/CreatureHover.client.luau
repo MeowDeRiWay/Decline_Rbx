@@ -77,7 +77,7 @@ RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Valu
  local anchor = head and head:IsA("BasePart") and head or model:FindFirstChild("HumanoidRootPart",true) or model:FindFirstChildWhichIsA("BasePart",true)
  if not anchor then return end
  gui.Adornee = anchor
- gui.StudsOffsetWorldSpace = Vector3.new(0,anchor.Size.Y/2+.55,0)
+ gui.StudsOffsetWorldSpace = Vector3.new(0,anchor.Size.Y/2+1.1,0)
  local display = model:GetAttribute("DisplayName")
  if typeof(display) ~= "string" or display == "" then display = humanoid.DisplayName ~= "" and humanoid.DisplayName or model.Name end
  name.Text = display

@@ -108,8 +108,16 @@ local function visible(model,root,character)
    local hit = workspace:Raycast(origin,part.Position-origin,params)
    if not hit or hit.Instance:IsDescendantOf(model) then return true end
    local obstacle = hit.Instance
+   local ancestor = obstacle
+   local blocksVision = nil
+   while ancestor and ancestor ~= workspace do
+    local setting = ancestor:GetAttribute("BlocksVision")
+    if typeof(setting) == "boolean" then blocksVision = setting end
+    ancestor = ancestor.Parent
+   end
+   if blocksVision == true then return false end
    -- Invisible triggers and non-solid decoration do not block creature sight.
-   if obstacle:IsA("BasePart") and (obstacle.Transparency >= .95 or not obstacle.CanCollide) and obstacle:GetAttribute("BlocksVision") ~= true then
+   if blocksVision == false or (obstacle:IsA("BasePart") and (obstacle.Transparency >= .95 or not obstacle.CanCollide)) then
     table.insert(excluded,obstacle)
    else return false end
   end
