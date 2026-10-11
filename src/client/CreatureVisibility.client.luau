@@ -34,16 +34,37 @@ local function setVisible(model,record,visible)
   for _,object in ipairs(model:GetDescendants()) do hideObject(record,object) end
  end
 end
+local function creatureRoot(model)
+ local result = model
+ local ancestor = model.Parent
+ while ancestor and ancestor ~= workspace do
+  if ancestor:IsA("Model") and (ancestor.Name == "Mannikin" or ancestor:FindFirstChildOfClass("Humanoid")) then result = ancestor end
+  ancestor = ancestor.Parent
+ end
+ return result
+end
+local function unregister(model,record)
+ restore(record)
+ record.added:Disconnect()
+ tracked[model] = nil
+end
 local function register(model)
- if not model or not model:IsA("Model") or tracked[model] then return end
+ if not model or not model:IsA("Model") then return end
  if model.Name ~= "Mannikin" and not model:FindFirstChildOfClass("Humanoid") then return end
+ model = creatureRoot(model)
+ if tracked[model] then return end
+ -- A Mannikin wrapper and its humanoid rig are ONE creature. Two independent
+ -- hiders would save each other's transparency=1 and never reveal the model.
+ for child,old in pairs(tracked) do
+  if child:IsDescendantOf(model) then unregister(child,old) end
+ end
  local record = {visible=true,saved={}}
  tracked[model] = record
  record.added = model.DescendantAdded:Connect(function(object)
   if not record.visible then hideObject(record,object) end
  end)
  -- Hide until the first visibility check, so newly streamed creatures don't flash.
- if model ~= player.Character then setVisible(model,record,false) end
+ if model ~= player.Character and not (player.Character and model:IsDescendantOf(player.Character)) then setVisible(model,record,false) end
 end
 for _,object in ipairs(workspace:GetDescendants()) do
  if object:IsA("Model") then register(object) end
@@ -53,7 +74,7 @@ workspace.DescendantAdded:Connect(function(object)
  elseif object:IsA("Model") then register(object) end
 end)
 local function visible(model,root,character)
- local target = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Body") or model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart",true)
+ local target = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Body",true) or model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart",true)
  if not target or not target:IsA("BasePart") then return false end
  local offset = target.Position-root.Position
  local forward = root.CFrame.LookVector
@@ -80,7 +101,7 @@ local function visible(model,root,character)
   return false
  end
  if clear(target) then return true end
- local targetHead = model:FindFirstChild("Head")
+ local targetHead = model:FindFirstChild("Head",true)
  return targetHead ~= nil and targetHead:IsA("BasePart") and clear(targetHead)
 end
 local elapsed = Config.VisibilityInterval
@@ -92,11 +113,11 @@ RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Came
  local root = character and character:FindFirstChild("HumanoidRootPart")
  for model,record in pairs(tracked) do
   if not model:IsDescendantOf(workspace) then
-   restore(record)
-   record.added:Disconnect()
-   tracked[model] = nil
+   unregister(model,record)
   else
-   setVisible(model,record,model == character or (root ~= nil and visible(model,root,character)))
+   local canSee = model == character or (root ~= nil and visible(model,root,character))
+   setVisible(model,record,canSee)
+   model:SetAttribute("ClientVisible",canSee == true)
   end
  end
 end)
