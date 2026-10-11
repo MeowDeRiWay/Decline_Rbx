@@ -61,18 +61,24 @@ local function prepare(model)
   model:SetAttribute("Health",humanoid.Health)
   model:SetAttribute("MaxHealth",humanoid.MaxHealth)
  end
- humanoid.HealthChanged:Connect(sync)
- humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(sync)
  local function die()
   if dead then return end
   dead=true
+  model:SetAttribute("AIState","Dead")
+  model:SetAttribute("TargetName","")
   model:SetAttribute("IsDead",true)
   model:SetAttribute("Knockout",false)
   model:SetAttribute("BlocksVision",false)
   for _,part in ipairs(model:GetDescendants()) do
    if part:IsA("BasePart") then part.Anchored=true; part.CanCollide=false end
   end
-  local direction=model:GetAttribute("LastHitDirection") or root.CFrame.LookVector
+  -- Loot and terminal state are set before the fall animation. Rig state events
+  -- and animation failures must not prevent looting or leave the AI running.
+  Chests.CreateCorpse(model,{Potato=math.random(0,10)})
+  local direction=model:GetAttribute("LastHitDirection")
+  if typeof(direction)~="Vector3" then direction=root.CFrame.LookVector end
+  direction=Vector3.new(direction.X,0,direction.Z)
+  direction=direction.Magnitude>.001 and direction.Unit or Vector3.new(0,0,-1)
   local start=model:GetPivot()
   local destination=CFrame.lookAt(start.Position,start.Position+direction)*CFrame.Angles(-math.pi/2,0,0)
   model:PivotTo(destination)
@@ -90,15 +96,22 @@ local function prepare(model)
   local tween=TweenService:Create(value,TweenInfo.new(.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Value=destination})
   tween.Completed:Once(function() connection:Disconnect(); value:Destroy() end)
   tween:Play()
-  Chests.CreateCorpse(model,{Potato=math.random(0,10)})
  end
+ humanoid.HealthChanged:Connect(function()
+  sync()
+  if humanoid.Health<=0 then die() end
+ end)
+ humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(sync)
  humanoid.Died:Connect(die)
  sync()
  local nearest
  local elapsed=0
  local movement
  movement=RunService.Heartbeat:Connect(function(dt)
-  if not model:IsDescendantOf(workspace) or dead then movement:Disconnect(); return end
+  if not model:IsDescendantOf(workspace) then movement:Disconnect(); return end
+  -- Custom anchored rigs may not enter Humanoid's Dead state. HP is authoritative.
+  if humanoid.Health<=0 and not dead then die() end
+  if dead then movement:Disconnect(); return end
   elapsed+=dt
   if elapsed>=.1 then
    elapsed%=.1
