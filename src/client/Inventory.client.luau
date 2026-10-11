@@ -73,6 +73,28 @@ local function clear(frame)
  for _, child in ipairs(frame:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
 end
 local redraw
+local tooltip = text(gui, "", UDim2.new(), UDim2.fromOffset(270, 110))
+tooltip.Name = "ItemTooltip"
+tooltip.BackgroundTransparency = 0.05
+tooltip.BackgroundColor3 = Color3.fromRGB(20, 26, 31)
+tooltip.TextSize = 15
+tooltip.TextXAlignment = Enum.TextXAlignment.Center
+tooltip.ZIndex = 20
+tooltip.Visible = false
+local function effectText(definition)
+ local effects = definition.Consume
+ if not effects then return "No consumable effects" end
+ return string.format("Food %+.0f\nSickness %+.0f", effects.Food or 0, effects.Sick or 0)
+end
+RunService.RenderStepped:Connect(function()
+ if not gui.Enabled then tooltip.Visible = false end
+ if not tooltip.Visible then return end
+ local mouse = UserInputService:GetMouseLocation()
+ local inset = game:GetService("GuiService"):GetGuiInset()
+ local position = mouse - inset
+ local viewport = workspace.CurrentCamera.ViewportSize
+ tooltip.Position = UDim2.fromOffset(math.clamp(position.X + 16,0,math.max(0,viewport.X-270)),math.clamp(position.Y+16,0,math.max(0,viewport.Y-inset.Y-110)))
+end)
 local function renderItems(frame, items, side)
  local cards = {}
  local ids = {}
@@ -92,13 +114,19 @@ local function renderItems(frame, items, side)
   container.LayoutOrder = order
   container.Parent = frame
   local row = button(container, caption, UDim2.fromOffset(6, 6), UDim2.new(1, -12, 0, 56))
+  row.MouseEnter:Connect(function()
+   tooltip.Text = (definition.Name or id) .. "\n" .. effectText(definition) .. string.format("\nWeight %.1f kg", definition.Weight or 0)
+   tooltip.Visible = true
+  end)
+  row.MouseLeave:Connect(function() tooltip.Visible = false end)
+  local extraAction = not chestOpen and (definition.Slot or definition.Consume)
   local actions = Instance.new("Frame")
   actions.Name = "ItemActions"
   actions.Position = UDim2.fromOffset(0, 68)
-  actions.Size = UDim2.new(1, 0, 0, (definition.Slot and not chestOpen) and 110 or 68)
+  actions.Size = UDim2.new(1, 0, 0, extraAction and 110 or 68)
   actions.BackgroundTransparency = 1
   actions.Parent = container
-  local card = {container = container, actions = actions, row = row, expandedHeight = (definition.Slot and not chestOpen) and 184 or 142}
+  local card = {container = container, actions = actions, row = row, expandedHeight = extraAction and 184 or 142}
   cards[key] = card
   local function showActions(entry, expanded)
    entry.actions.Visible = expanded
@@ -141,13 +169,19 @@ local function renderItems(frame, items, side)
   local all = button(actions, chestOpen and "Transfer all" or "Drop all", UDim2.new(0.5, 3, 0, 36), UDim2.new(0.5, -9, 0, 32))
   drop.Activated:Connect(function() readAmount(); action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, selected) end)
   all.Activated:Connect(function() action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, "All") end)
-  if definition.Slot and not chestOpen then
+  if definition.Consume and not chestOpen then
+   local eat = button(actions, "Eat", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
+   eat.Activated:Connect(function() action:FireServer("Eat", id) end)
+  elseif definition.Slot and not chestOpen then
    local equip = button(actions, "Equip", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
    equip.Activated:Connect(function() action:FireServer("Equip", id) end)
   end
  end
 end
 redraw = function()
+ tooltip.Visible = false
+ local selectedId = selectedItem and selectedItem:match("^Player:(.+)$")
+ if selectedId and not snapshot.Items[selectedId] then selectedItem,selectedId = nil,nil end
  clear(inventory)
  clear(equipment)
  weight.Text = string.format("Weight %.1f kg", snapshot.Weight)
@@ -155,6 +189,18 @@ redraw = function()
  renderItems(inventory, snapshot.Items, "Player")
  if chestOpen then
   renderItems(equipment, snapshot.ChestItems or {}, "Chest")
+  return
+ end
+ if selectedId then
+  local definition = ItemConfig.Items[selectedId]
+  rightTitle.Text = "Item details"
+  text(equipment, definition.Name or selectedId, UDim2.new(), UDim2.new(1,-8,0,40)).LayoutOrder = 1
+  local bonus = text(equipment, "Bonuses\n" .. (definition.Consume and string.format("Food %+.0f",definition.Consume.Food or 0) or "None"), UDim2.new(), UDim2.new(1,-8,0,64))
+  bonus.LayoutOrder,bonus.TextColor3 = 2,Color3.fromRGB(110,214,150)
+  local debuff = text(equipment, "Debuffs\n" .. (definition.Consume and string.format("Sickness %+.0f",definition.Consume.Sick or 0) or "None"), UDim2.new(), UDim2.new(1,-8,0,64))
+  debuff.LayoutOrder,debuff.TextColor3 = 3,Color3.fromRGB(232,133,133)
+  local description = text(equipment, "Description\n" .. (definition.Description or "No description available."), UDim2.new(), UDim2.new(1,-8,0,160))
+  description.LayoutOrder,description.TextYAlignment = 4,Enum.TextYAlignment.Top
   return
  end
  for order, slot in ipairs(ItemConfig.Slots) do

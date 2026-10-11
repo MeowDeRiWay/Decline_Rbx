@@ -4,7 +4,11 @@ local ItemConfig = {}
 ItemConfig.PickupDistance = 1
 ItemConfig.Slots = {"Head", "Body", "Hands", "Back", "Additional"}
 ItemConfig.Items = {
- Potato = {Name = "Potato", Weight = 0.2},
+ Potato = {
+  Name = "Potato", Weight = 0.2,
+  Description = "An ordinary raw potato. I recommend cooking it before eating.",
+  Consume = {Food = 5, Sick = 5},
+ },
  -- Example (remove the comment when you have this item):
  -- SmallBackpack = {Name = "Small Backpack", Weight = 1.5, Slot = "Back"},
  -- Metal = {Name = "Metal", Weight = 0.2},
