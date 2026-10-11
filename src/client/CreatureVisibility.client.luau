@@ -59,15 +59,25 @@ local function visible(model,root,character)
  local forward = root.CFrame.LookVector
  if not Rules.InSector(forward.X,forward.Z,offset.X,offset.Z,Config.CreatureViewAngle) then return false end
  local head = character:FindFirstChild("Head")
- local origin = head and head:IsA("BasePart") and head.Position or root.Position
+ local origin = (head and head:IsA("BasePart") and head.Position or root.Position) + Vector3.new(0,.05,0)
  local params = RaycastParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = {character}
  params.IgnoreWater = true
  -- Either the body or head must be visible from the character, not the camera.
  local function clear(part)
-  local hit = workspace:Raycast(origin,part.Position-origin,params)
-  return not hit or hit.Instance:IsDescendantOf(model)
+  local excluded = {character}
+  for _=1,16 do
+   params.FilterDescendantsInstances = excluded
+   local hit = workspace:Raycast(origin,part.Position-origin,params)
+   if not hit or hit.Instance:IsDescendantOf(model) then return true end
+   local obstacle = hit.Instance
+   -- Invisible triggers and non-solid decoration do not block creature sight.
+   if obstacle:IsA("BasePart") and (obstacle.Transparency >= .95 or not obstacle.CanCollide) and obstacle:GetAttribute("BlocksVision") ~= true then
+    table.insert(excluded,obstacle)
+   else return false end
+  end
+  return false
  end
  if clear(target) then return true end
  local targetHead = model:FindFirstChild("Head")

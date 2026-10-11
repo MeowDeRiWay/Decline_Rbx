@@ -8,6 +8,7 @@ GameConfig.CameraFieldOfView = 40
 -- Horizontal creature visibility, centered on the character facing direction.
 GameConfig.CreatureViewAngle = 160
 GameConfig.VisibilityInterval = 0.05
+GameConfig.UnseenShadeTransparency = 0.55
 -- Food/Water costs per second. Working and LoadKg are server-owned attributes.
 GameConfig.NeedsInterval = 0.25
 GameConfig.IdleConsumption = 0.01
