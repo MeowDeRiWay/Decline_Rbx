@@ -1,12 +1,13 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local ItemConfig = require(ReplicatedStorage.Shared:WaitForChild("ItemConfig"))
 local remotes = ReplicatedStorage:WaitForChild("InventoryRemotes")
 local action = remotes:WaitForChild("Action")
 local stateRemote = remotes:WaitForChild("State")
-local controls = require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")):GetControls()
 local snapshot = {Items = {}, Equipment = {}, Weight = 0}
 local gui = Instance.new("ScreenGui")
 gui.Name, gui.ResetOnSpawn, gui.Enabled = "InventoryUI", false, false
@@ -97,8 +98,24 @@ end
 local function setOpen(open)
  gui.Enabled = open
  player:SetAttribute("InventoryOpen", open)
- if open then controls:Disable(); redraw(); action:FireServer("Request")
- else controls:Enable() end
+ if open then
+  ContextActionService:BindActionAtPriority("InventoryBlockMovement", function()
+   return Enum.ContextActionResult.Sink
+  end, false, Enum.ContextActionPriority.High.Value + 2,
+   Enum.PlayerActions.CharacterForward, Enum.PlayerActions.CharacterBackward,
+   Enum.PlayerActions.CharacterLeft, Enum.PlayerActions.CharacterRight,
+   Enum.PlayerActions.CharacterJump)
+  RunService:BindToRenderStep("InventoryStopMovement", Enum.RenderPriority.Camera.Value + 3, function()
+   local character = player.Character
+   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+   if humanoid then humanoid:Move(Vector3.zero, false) end
+  end)
+  redraw()
+  action:FireServer("Request")
+ else
+  ContextActionService:UnbindAction("InventoryBlockMovement")
+  RunService:UnbindFromRenderStep("InventoryStopMovement")
+ end
 end
 close.Activated:Connect(function() setOpen(false) end)
 UserInputService.InputBegan:Connect(function(input, processed)

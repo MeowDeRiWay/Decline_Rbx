@@ -1,0 +1,2 @@
+-- Override Roblox's default limb animations for the two-part custom character.
+-- This model has no Torso or limbs. Its own animations can be added here later.
