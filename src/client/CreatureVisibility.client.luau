@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local Config = require(ReplicatedStorage.Shared.GameConfig)
 local Rules = require(ReplicatedStorage.Shared.VisibilityRules)
+local Sight = require(ReplicatedStorage.Shared.Sight)
 local tracked = {}
 local function property(object)
  if object:IsA("BasePart") then return "LocalTransparencyModifier",1 end
@@ -96,32 +97,9 @@ local function visible(model,root,character)
  if not Rules.InSector(forward.X,forward.Z,offset.X,offset.Z,Config.CreatureViewAngle) then return false end
  local head = character:FindFirstChild("Head")
  local origin = (head and head:IsA("BasePart") and head.Position or root.Position) + Vector3.new(0,.05,0)
- local params = RaycastParams.new()
- params.FilterType = Enum.RaycastFilterType.Exclude
- params.FilterDescendantsInstances = {character}
- params.IgnoreWater = true
- -- Either the body or head must be visible from the character, not the camera.
  local function clear(part)
-  local excluded = {character}
-  for _=1,16 do
-   params.FilterDescendantsInstances = excluded
-   local hit = workspace:Raycast(origin,part.Position-origin,params)
-   if not hit or hit.Instance:IsDescendantOf(model) then return true end
-   local obstacle = hit.Instance
-   local ancestor = obstacle
-   local blocksVision = nil
-   while ancestor and ancestor ~= workspace do
-    local setting = ancestor:GetAttribute("BlocksVision")
-    if typeof(setting) == "boolean" then blocksVision = setting end
-    ancestor = ancestor.Parent
-   end
-   if blocksVision == true then return false end
-   -- Invisible triggers and non-solid decoration do not block creature sight.
-   if blocksVision == false or (obstacle:IsA("BasePart") and (obstacle.Transparency >= .95 or not obstacle.CanCollide)) then
-    table.insert(excluded,obstacle)
-   else return false end
-  end
-  return false
+  local hit = Sight.Cast(origin,part.Position-origin,character)
+  return not hit or hit.Instance:IsDescendantOf(model)
  end
  if clear(target) then return true end
  local targetHead = model:FindFirstChild("Head",true)
