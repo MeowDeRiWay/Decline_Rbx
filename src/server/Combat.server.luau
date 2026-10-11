@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local Damage = require(script.Parent.Services.DamageService)
 local Inventory = require(script.Parent.Services.InventoryService)
 local attack = Instance.new("RemoteEvent")
 attack.Name = "WeaponAttack"
@@ -15,7 +16,7 @@ attack.OnServerEvent:Connect(function(player)
  if not root or not humanoid or humanoid.Health <= 0 or not motor then return end
  local now = os.clock()
  if now < (ready[player] or 0) then return end
- local weapon = Inventory.UseWeapon(player)
+ local weapon = Inventory.GetWeapon(player)
  if not weapon then return end
  local cooldown = 60 / weapon.AttacksPerMinute
  ready[player] = now + cooldown
@@ -52,6 +53,9 @@ attack.OnServerEvent:Connect(function(player)
    end
   end
  end
- if nearest then nearest:TakeDamage(weapon.Damage) end
+ if nearest then
+  local dealt = Damage.Apply(nearest,weapon.Damage,weapon.DamageType)
+  if dealt > 0 then Inventory.UseWeapon(player) end
+ end
 end)
 Players.PlayerRemoving:Connect(function(player) ready[player] = nil end)

@@ -59,6 +59,10 @@ function Service.Transfer(player, storage, id, requested, intoStorage)
  update(player)
  return true
 end
+function Service.GetWeapon(player)
+ local state = states[player]
+ return state and CombatRules.GetWeapon(state,ItemConfig.Items)
+end
 function Service.UseWeapon(player)
  local state = states[player]
  if not state then return nil end
