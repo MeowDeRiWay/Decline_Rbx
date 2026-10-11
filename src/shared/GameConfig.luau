@@ -1,8 +1,6 @@
 local GameConfig = {}
 GameConfig.MaxTowns = 5
 GameConfig.WalkSpeed = 5
-GameConfig.TurnSpeed = 45 -- Body rotation, degrees per second.
-GameConfig.CameraTurnSpeed = 180 -- Independent camera rotation, degrees per second.
 -- Almost overhead, slightly tilted. Distances are in studs.
 GameConfig.CameraHeight = 30
 GameConfig.CameraBack = 5
