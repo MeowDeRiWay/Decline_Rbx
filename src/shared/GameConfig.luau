@@ -5,6 +5,9 @@ GameConfig.WalkSpeed = 5
 GameConfig.CameraHeight = 30
 GameConfig.CameraBack = 5
 GameConfig.CameraFieldOfView = 40
+-- Horizontal creature visibility, centered on the character facing direction.
+GameConfig.CreatureViewAngle = 160
+GameConfig.VisibilityInterval = 0.05
 -- Food/Water costs per second. Working and LoadKg are server-owned attributes.
 GameConfig.NeedsInterval = 0.25
 GameConfig.IdleConsumption = 0.01

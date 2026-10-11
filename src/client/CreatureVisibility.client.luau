@@ -1,0 +1,92 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+local Config = require(ReplicatedStorage.Shared.GameConfig)
+local Rules = require(ReplicatedStorage.Shared.VisibilityRules)
+local tracked = {}
+local function property(object)
+ if object:IsA("BasePart") then return "LocalTransparencyModifier",1 end
+ if object:IsA("Decal") or object:IsA("Texture") then return "Transparency",1 end
+ if object:IsA("BillboardGui") or object:IsA("SurfaceGui") or object:IsA("Highlight") or object:IsA("ParticleEmitter") or object:IsA("Beam") or object:IsA("Trail") or object:IsA("Light") or object:IsA("Smoke") or object:IsA("Fire") or object:IsA("Sparkles") then return "Enabled",false end
+ if object:IsA("Humanoid") then return "DisplayDistanceType",Enum.HumanoidDisplayDistanceType.None end
+end
+local function hideObject(record,object)
+ if record.saved[object] then return end
+ local key,value = property(object)
+ if not key then return end
+ record.saved[object] = {key,object[key]}
+ object[key] = value
+ if object:IsA("ParticleEmitter") or object:IsA("Trail") then object:Clear() end
+end
+local function restore(record)
+ for object,saved in pairs(record.saved) do
+  if object.Parent then object[saved[1]] = saved[2] end
+ end
+ table.clear(record.saved)
+end
+local function setVisible(model,record,visible)
+ if record.visible == visible then return end
+ record.visible = visible
+ if visible then restore(record)
+ else
+  hideObject(record,model)
+  for _,object in ipairs(model:GetDescendants()) do hideObject(record,object) end
+ end
+end
+local function register(model)
+ if not model or not model:IsA("Model") or tracked[model] then return end
+ if model.Name ~= "Mannikin" and not model:FindFirstChildOfClass("Humanoid") then return end
+ local record = {visible=true,saved={}}
+ tracked[model] = record
+ record.added = model.DescendantAdded:Connect(function(object)
+  if not record.visible then hideObject(record,object) end
+ end)
+ -- Hide until the first visibility check, so newly streamed creatures don't flash.
+ if model ~= player.Character then setVisible(model,record,false) end
+end
+for _,object in ipairs(workspace:GetDescendants()) do
+ if object:IsA("Model") then register(object) end
+end
+workspace.DescendantAdded:Connect(function(object)
+ if object:IsA("Humanoid") then register(object.Parent)
+ elseif object:IsA("Model") then register(object) end
+end)
+local function visible(model,root,character)
+ local target = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Body") or model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart",true)
+ if not target or not target:IsA("BasePart") then return false end
+ local offset = target.Position-root.Position
+ local forward = root.CFrame.LookVector
+ if not Rules.InSector(forward.X,forward.Z,offset.X,offset.Z,Config.CreatureViewAngle) then return false end
+ local head = character:FindFirstChild("Head")
+ local origin = head and head:IsA("BasePart") and head.Position or root.Position
+ local params = RaycastParams.new()
+ params.FilterType = Enum.RaycastFilterType.Exclude
+ params.FilterDescendantsInstances = {character}
+ params.IgnoreWater = true
+ -- Either the body or head must be visible from the character, not the camera.
+ local function clear(part)
+  local hit = workspace:Raycast(origin,part.Position-origin,params)
+  return not hit or hit.Instance:IsDescendantOf(model)
+ end
+ if clear(target) then return true end
+ local targetHead = model:FindFirstChild("Head")
+ return targetHead ~= nil and targetHead:IsA("BasePart") and clear(targetHead)
+end
+local elapsed = Config.VisibilityInterval
+RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Camera.Value+3,function(dt)
+ elapsed += dt
+ if elapsed < Config.VisibilityInterval then return end
+ elapsed = 0
+ local character = player.Character
+ local root = character and character:FindFirstChild("HumanoidRootPart")
+ for model,record in pairs(tracked) do
+  if not model:IsDescendantOf(workspace) then
+   restore(record)
+   record.added:Disconnect()
+   tracked[model] = nil
+  else
+   setVisible(model,record,model == character or (root ~= nil and visible(model,root,character)))
+  end
+ end
+end)
