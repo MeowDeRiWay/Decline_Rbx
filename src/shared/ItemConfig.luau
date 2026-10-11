@@ -6,7 +6,8 @@ ItemConfig.Slots = {"Head", "Body", "Hands", "Back", "Additional"}
 ItemConfig.Items = {
  Knife = {
   Name = "Knife", Weight = 0.3, Slot = "Hands",
-  Description = "A simple knife.",
+  Description = "A knife from some store. Its sharp blade is good for slicing meat products.",
+  Weapon = {Damage = 10, AttacksPerMinute = 40, DamageType = "Piercing", MaxUses = 500, CanDamageStructures = false, Range = 1.2, Width = 0.7, Thrust = 0.5},
   -- Optional HeldOffset = CFrame.new(x, y, z) * CFrame.Angles(rx, ry, rz),
   -- An Attachment named HandsGrip inside the character Body overrides this offset.
  },

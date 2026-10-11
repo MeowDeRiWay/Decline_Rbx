@@ -40,14 +40,25 @@ function Visuals.Apply(character, id)
  local parts = {}
  if held:IsA("BasePart") then table.insert(parts,held) end
  for _, part in ipairs(held:GetDescendants()) do if part:IsA("BasePart") then table.insert(parts,part) end end
+ -- Strip template joints so a single movable grip controls the whole knife.
+ for _,joint in ipairs(held:GetDescendants()) do
+  if joint:IsA("JointInstance") or joint:IsA("WeldConstraint") then joint:Destroy() end
+ end
+ local gripPart = held:IsA("Model") and (held.PrimaryPart or parts[1]) or held
  for _, part in ipairs(parts) do
   part.Anchored = false
   part.CanCollide,part.CanTouch,part.CanQuery = false,false,false
   part.Massless = true
-  local weld = Instance.new("WeldConstraint")
-  weld.Name,weld.Part0,weld.Part1 = "HeldWeld",root,part
-  weld.Parent = part
+  if part ~= gripPart then
+   local weld = Instance.new("WeldConstraint")
+   weld.Part0,weld.Part1,weld.Parent = gripPart,part,part
+  end
  end
+ local motor = Instance.new("Motor6D")
+ motor.Name,motor.Part0,motor.Part1 = "WeaponGrip",root,gripPart
+ motor.C0 = root.CFrame:ToObjectSpace(gripPart.CFrame)
+ motor:SetAttribute("RestC0",motor.C0)
+ motor.Parent = held
  held.Parent = character
 end
 return Visuals

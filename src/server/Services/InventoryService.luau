@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ItemConfig = require(ReplicatedStorage.Shared.ItemConfig)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
+local CombatRules = require(ReplicatedStorage.Shared.CombatRules)
 local Visuals = require(script.Parent.EquipmentVisuals)
 local Service = {}
 local states = {}
@@ -13,6 +14,7 @@ local function update(player)
  if player.Character then
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items))
   Visuals.Apply(player.Character, state.Equipment.Hands)
+  player.Character:SetAttribute("WeaponCondition", state.EquipmentCondition.Hands or 0)
  end
  changed:Fire(player)
 end
@@ -21,17 +23,19 @@ function Service.Reset(player)
  update(player)
 end
 function Service.RemovePlayer(player) states[player] = nil end
-function Service.Add(player, id, count)
+function Service.Add(player, id, count, conditions)
  local state = states[player]
- if not state or not Rules.Add(state, ItemConfig.Items, id, count) then return false end
+ if not state or not Rules.Add(state, ItemConfig.Items, id, count, conditions) then return false end
  update(player)
  return true
 end
 function Service.Remove(player, id, count)
  local state = states[player]
- if not state or not Rules.Remove(state, id, count) then return false end
+ if not state then return false end
+ local ok, conditions = Rules.Remove(state, id, count)
+ if not ok then return false end
  update(player)
- return true
+ return true, conditions
 end
 function Service.Equip(player, id)
  if typeof(id) ~= "string" or not ItemConfig.Items[id] or not Visuals.Validate(id) then return false end
@@ -54,6 +58,14 @@ function Service.Transfer(player, storage, id, requested, intoStorage)
  if not Rules.Transfer(source, target, ItemConfig.Items, id, requested) then return false end
  update(player)
  return true
+end
+function Service.UseWeapon(player)
+ local state = states[player]
+ if not state then return nil end
+ local weapon = CombatRules.Use(state,ItemConfig.Items)
+ if not weapon then return nil end
+ update(player)
+ return weapon
 end
 function Service.Snapshot(player)
  local state = states[player]

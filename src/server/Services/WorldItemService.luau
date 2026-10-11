@@ -1,3 +1,4 @@
+local HttpService = game:GetService("HttpService")
 local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ItemConfig = require(ReplicatedStorage.Shared.ItemConfig)
@@ -41,7 +42,14 @@ function Service.Pickup(player, item)
  local hit = workspace:Raycast(root.Position, delta, params)
  if hit and hit.Instance ~= item and not hit.Instance:IsDescendantOf(item) then return false end
  -- No yields between inventory grant and destruction: only one player can win.
- if not Inventory.Add(player, id, count) then return false end
+ local conditions = nil
+ local encoded = item:GetAttribute("Conditions")
+ if encoded then
+  local ok,value = pcall(function() return HttpService:JSONDecode(encoded) end)
+  if not ok then return false end
+  conditions = value
+ end
+ if not Inventory.Add(player, id, count, conditions) then return false end
  item:Destroy()
  return true
 end
@@ -80,7 +88,9 @@ function Service.Drop(player, id, requested)
  item.Name = id
  item:SetAttribute("Item_ID", id)
  item:SetAttribute("Quantity", count)
- if not Inventory.Remove(player, id, count) then item:Destroy(); return false end
+ local ok,conditions = Inventory.Remove(player, id, count)
+ if not ok then item:Destroy(); return false end
+ if conditions then item:SetAttribute("Conditions",HttpService:JSONEncode(conditions)) end
  item.Parent = folder
  -- World drops remain until collected or until this server closes.
  return true

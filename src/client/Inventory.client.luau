@@ -83,6 +83,10 @@ tooltip.ZIndex = 20
 tooltip.Visible = false
 local function effectText(definition)
  local effects = definition.Consume
+ if definition.Weapon then
+  local w = definition.Weapon
+  return string.format("Damage %d · %s\n%d attacks/min · Resource %d hits",w.Damage,w.DamageType,w.AttacksPerMinute,w.MaxUses)
+ end
  if not effects then return "No consumable effects" end
  return string.format("Food %+.0f\nSickness %+.0f", effects.Food or 0, effects.Sick or 0)
 end
@@ -195,9 +199,9 @@ redraw = function()
   local definition = ItemConfig.Items[selectedId]
   rightTitle.Text = "Item details"
   text(equipment, definition.Name or selectedId, UDim2.new(), UDim2.new(1,-8,0,40)).LayoutOrder = 1
-  local bonus = text(equipment, "Bonuses\n" .. (definition.Consume and string.format("Food %+.0f",definition.Consume.Food or 0) or "None"), UDim2.new(), UDim2.new(1,-8,0,64))
+  local bonus = text(equipment, "Bonuses\n" .. (definition.Consume and string.format("Food %+.0f",definition.Consume.Food or 0) or (definition.Weapon and effectText(definition) or "None")), UDim2.new(), UDim2.new(1,-8,0,90))
   bonus.LayoutOrder,bonus.TextColor3 = 2,Color3.fromRGB(110,214,150)
-  local debuff = text(equipment, "Debuffs\n" .. (definition.Consume and string.format("Sickness %+.0f",definition.Consume.Sick or 0) or "None"), UDim2.new(), UDim2.new(1,-8,0,64))
+  local debuff = text(equipment, "Debuffs\n" .. (definition.Consume and string.format("Sickness %+.0f",definition.Consume.Sick or 0) or (definition.Weapon and "Cannot damage structures" or "None")), UDim2.new(), UDim2.new(1,-8,0,64))
   debuff.LayoutOrder,debuff.TextColor3 = 3,Color3.fromRGB(232,133,133)
   local description = text(equipment, "Description\n" .. (definition.Description or "No description available."), UDim2.new(), UDim2.new(1,-8,0,160))
   description.LayoutOrder,description.TextYAlignment = 4,Enum.TextYAlignment.Top
