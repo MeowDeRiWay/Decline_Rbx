@@ -1,0 +1,2 @@
+-- Suppress Roblox's default automatic health regeneration.
+-- Healing will be handled explicitly by the game's medical system.
