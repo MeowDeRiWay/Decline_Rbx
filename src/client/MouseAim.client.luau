@@ -15,8 +15,8 @@ RunService:BindToRenderStep("DeclineMouseAim", Enum.RenderPriority.Camera.Value 
  if humanoid.Health <= 0 or humanoid.Sit or humanoid.PlatformStand or root.Anchored then return end
  if player:GetAttribute("InventoryOpen") then return end
  if UserInputService:GetFocusedTextBox() or GuiService.MenuIsOpen or not UserInputService.MouseEnabled then return end
- local inset = GuiService:GetGuiInset()
- local mouse = UserInputService:GetMouseLocation() - inset
+ -- ViewportPointToRay takes raw mouse coordinates, without subtracting the top bar.
+ local mouse = UserInputService:GetMouseLocation()
  local viewport = camera.ViewportSize
  if mouse.X < 0 or mouse.Y < 0 or mouse.X > viewport.X or mouse.Y > viewport.Y then return end
  local ray = camera:ViewportPointToRay(mouse.X, mouse.Y)

@@ -35,8 +35,8 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  local camera = workspace.CurrentCamera
  if not root or not camera or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
- local inset = GuiService:GetGuiInset()
- local viewportMouse = mouse - inset
+ -- GetMouseLocation already matches ViewportPointToRay coordinates.
+ local viewportMouse = mouse
  if viewportMouse.X < 0 or viewportMouse.Y < 0 or viewportMouse.X > camera.ViewportSize.X or viewportMouse.Y > camera.ViewportSize.Y then return end
  local ray = camera:ViewportPointToRay(viewportMouse.X, viewportMouse.Y)
  local params = RaycastParams.new()
@@ -53,7 +53,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  reachable = (item:GetPivot().Position - root.Position).Magnitude <= Config.PickupDistance
  highlight.Adornee, highlight.Enabled = item, true
  label.Text = (definition.Name or item.Name) .. (reachable and "\n[E] Pick up" or "\nToo far")
- label.Position = UDim2.fromOffset(math.clamp(mouse.X + 16, 0, math.max(0, camera.ViewportSize.X - 200)), math.clamp(mouse.Y + 16, 0, math.max(0, camera.ViewportSize.Y + inset.Y - 44)))
+ label.Position = UDim2.fromOffset(math.clamp(mouse.X + 16, 0, math.max(0, camera.ViewportSize.X - 200)), math.clamp(mouse.Y + 16, 0, math.max(0, camera.ViewportSize.Y - 44)))
  label.Visible = true
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
