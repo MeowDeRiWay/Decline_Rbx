@@ -15,7 +15,7 @@ local function hideObject(record,object)
  if record.saved[object] then return end
  local key,value = property(object)
  if not key then return end
- record.saved[object] = {key,key == "LocalTransparencyModifier" and 0 or object[key]}
+ record.saved[object] = {key,key == "LocalTransparencyModifier" and 0 or (key == "DisplayDistanceType" and Enum.HumanoidDisplayDistanceType.None or object[key])}
  object[key] = value
  if object:IsA("ParticleEmitter") or object:IsA("Trail") then object:Clear() end
 end
@@ -70,10 +70,12 @@ local function register(model)
  local record = {visible=true,saved={},parts={}}
  for _,object in ipairs(model:GetDescendants()) do
   if object:IsA("BasePart") then record.parts[object] = true end
+  if object:IsA("Humanoid") then object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
  end
  tracked[model] = record
  record.added = model.DescendantAdded:Connect(function(object)
   if object:IsA("BasePart") then record.parts[object] = true end
+  if object:IsA("Humanoid") then object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
   if not record.visible then hideObject(record,object) end
  end)
  -- Hide until the first visibility check, so newly streamed creatures don't flash.
