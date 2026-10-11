@@ -1,6 +1,6 @@
 local GameConfig = {}
 GameConfig.MaxTowns = 5
-GameConfig.WalkSpeed = 5
+GameConfig.WalkSpeed = 1
 -- Almost overhead, slightly tilted. Distances are in studs.
 GameConfig.CameraHeight = 30
 GameConfig.CameraBack = 5
