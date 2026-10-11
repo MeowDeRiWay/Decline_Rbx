@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ItemConfig = require(ReplicatedStorage.Shared.ItemConfig)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
+local Visuals = require(script.Parent.EquipmentVisuals)
 local Service = {}
 local states = {}
 local changed = Instance.new("BindableEvent")
@@ -9,7 +10,10 @@ Service.Changed = changed.Event
 local function update(player)
  local state = states[player]
  if not state then return end
- if player.Character then player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items)) end
+ if player.Character then
+  player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items))
+  Visuals.Apply(player.Character, state.Equipment.Hands)
+ end
  changed:Fire(player)
 end
 function Service.Reset(player)
@@ -30,6 +34,7 @@ function Service.Remove(player, id, count)
  return true
 end
 function Service.Equip(player, id)
+ if typeof(id) ~= "string" or not ItemConfig.Items[id] or not Visuals.Validate(id) then return false end
  local state = states[player]
  if not state or not Rules.Equip(state, ItemConfig.Items, ItemConfig.Slots, id) then return false end
  update(player)
