@@ -4,6 +4,9 @@ local RunService = game:GetService("RunService")
 local ContextActionService = game:GetService("ContextActionService")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local player = Players.LocalPlayer
+local AimState = require(script.Parent:WaitForChild("AimState"))
+local cameraYaw = nil
+local cameraRoot = nil
 -- Default Roblox controls handle walking relative to the camera.
 ContextActionService:BindActionAtPriority("DeclineNoJump", function()
  return Enum.ContextActionResult.Sink
@@ -17,16 +20,21 @@ local function added(character)
 end
 player.CharacterAdded:Connect(added)
 if player.Character then task.spawn(added, player.Character) end
-RunService:BindToRenderStep("DeclineCamera", Enum.RenderPriority.Camera.Value + 1, function()
+RunService:BindToRenderStep("DeclineCamera", Enum.RenderPriority.Camera.Value + 1, function(dt)
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
  if not root or not camera then return end
  camera.CameraType = Enum.CameraType.Scriptable
  camera.FieldOfView = Config.CameraFieldOfView
- local forward = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
- if forward.Magnitude < 0.001 then return end
- forward = forward.Unit
+ if cameraRoot ~= root then
+  cameraRoot = root
+  cameraYaw = math.atan2(-root.CFrame.LookVector.X, -root.CFrame.LookVector.Z)
+  AimState.Yaw = cameraYaw
+ end
+ -- Camera follows mouse direction independently of the body's TurnSpeed.
+ cameraYaw = AimState.Step(cameraYaw, AimState.Yaw or cameraYaw, Config.CameraTurnSpeed or 180, dt)
+ local forward = Vector3.new(-math.sin(cameraYaw), 0, -math.cos(cameraYaw))
  -- Look ahead so the body appears near the bottom of the viewport.
  -- Optional Config.CameraForward overrides the default forward shift.
  local height, back = Config.CameraHeight, Config.CameraBack
