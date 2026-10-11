@@ -56,14 +56,11 @@ function Service.Drop(player, id)
  end
  local item = template:Clone()
  if item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart", true) then item:Destroy(); return false end
- local forward = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
- if forward.Magnitude < 0.001 then item:Destroy(); return false end
- local destination = root.Position + forward.Unit * 2
+ -- Drop straight below the character, without a forward throw.
+ local destination = root.Position
  local params = RaycastParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = {character, folder}
- local obstruction = workspace:Raycast(root.Position, destination - root.Position, params)
- if obstruction then item:Destroy(); return false end
  local hit = workspace:Raycast(destination + Vector3.new(0, 2, 0), Vector3.new(0, -12, 0), params)
  if not hit then item:Destroy(); return false end
  local bounds, size
