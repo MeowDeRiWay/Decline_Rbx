@@ -5,6 +5,13 @@ end
 local function quantity(value)
  return typeof(value) == "number" and value == value and value > 0 and value < math.huge and value == math.floor(value)
 end
+function Rules.DropAmount(available, requested)
+ if not quantity(available) then return nil end
+ if requested == "All" then return available end
+ if requested == nil then requested = 1 end
+ if not quantity(requested) or requested > available then return nil end
+ return requested
+end
 function Rules.Add(state, definitions, id, amount)
  if typeof(id) ~= "string" or not definitions[id] or not quantity(amount) then return false end
  state.Items[id] = (state.Items[id] or 0) + amount

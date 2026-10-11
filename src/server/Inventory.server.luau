@@ -12,7 +12,7 @@ Service.Changed:Connect(function(player) state:FireClient(player, Service.Snapsh
 Service.Start()
 local lastAction = {}
 Players.PlayerRemoving:Connect(function(player) lastAction[player] = nil end)
-action.OnServerEvent:Connect(function(player, command, value)
+action.OnServerEvent:Connect(function(player, command, value, amount)
  local now = os.clock()
  if now - (lastAction[player] or -math.huge) < 0.1 then return end
  lastAction[player] = now
@@ -23,5 +23,5 @@ action.OnServerEvent:Connect(function(player, command, value)
  if command == "Equip" then Service.Equip(player, value)
  elseif command == "Unequip" then Service.Unequip(player, value)
  elseif command == "Pickup" then WorldItems.Pickup(player, value)
- elseif command == "Drop" then WorldItems.Drop(player, value) end
+ elseif command == "Drop" then WorldItems.Drop(player, value, amount) end
 end)

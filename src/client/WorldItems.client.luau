@@ -52,7 +52,9 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  hovered = item
  reachable = (item:GetPivot().Position - root.Position).Magnitude <= Config.PickupDistance
  highlight.Adornee, highlight.Enabled = item, true
- label.Text = (definition.Name or item.Name) .. (reachable and "\n[E] Pick up" or "\nToo far")
+ local count = item:GetAttribute("Quantity") or 1
+ local caption = (definition.Name or item.Name) .. (count > 1 and " ×" .. tostring(count) or "")
+ label.Text = caption .. (reachable and "\n[E] Pick up" or "\nToo far")
  label.Position = UDim2.fromOffset(math.clamp(mouse.X + 16, 0, math.max(0, camera.ViewportSize.X - 200)), math.clamp(mouse.Y + 16, 0, math.max(0, camera.ViewportSize.Y - 44)))
  label.Visible = true
 end)

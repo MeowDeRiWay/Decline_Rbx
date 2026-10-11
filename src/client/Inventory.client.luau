@@ -9,6 +9,7 @@ local remotes = ReplicatedStorage:WaitForChild("InventoryRemotes")
 local action = remotes:WaitForChild("Action")
 local stateRemote = remotes:WaitForChild("State")
 local snapshot = {Items = {}, Equipment = {}, Weight = 0}
+local dropAmounts = {}
 local gui = Instance.new("ScreenGui")
 gui.Name, gui.ResetOnSpawn, gui.Enabled = "InventoryUI", false, false
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -80,16 +81,48 @@ local function redraw()
  for order, id in ipairs(ids) do
   local definition = ItemConfig.Items[id]
   local caption = string.format("%s ×%d\n%.1f kg%s", definition.Name or id, snapshot.Items[id], (definition.Weight or 0) * snapshot.Items[id], definition.Slot and "  •  Click to equip" or "")
+  local available = snapshot.Items[id]
+  local selected = math.clamp(dropAmounts[id] or 1, 1, available)
   local container = Instance.new("Frame")
-  container.Size = UDim2.new(1, -8, 0, 70)
-  container.BackgroundTransparency = 1
+  container.Size = UDim2.new(1, -8, 0, 142)
+  container.BackgroundColor3 = Color3.fromRGB(30, 38, 45)
+  container.BorderSizePixel = 0
   container.LayoutOrder = order
   container.Parent = inventory
-  local row = button(container, caption, UDim2.new(), UDim2.new(1, -66, 1, 0))
+  local row = button(container, caption, UDim2.fromOffset(6, 6), UDim2.new(1, -12, 0, 56))
   row.AutoButtonColor = definition.Slot ~= nil
   row.Activated:Connect(function() if definition.Slot then action:FireServer("Equip", id) end end)
-  local drop = button(container, "Drop", UDim2.new(1, -60, 0, 0), UDim2.new(0, 60, 1, 0))
-  drop.Activated:Connect(function() action:FireServer("Drop", id) end)
+  local minus = button(container, "−", UDim2.fromOffset(6, 68), UDim2.fromOffset(32, 28))
+  local plus = button(container, "+", UDim2.new(1, -38, 0, 68), UDim2.fromOffset(32, 28))
+  local amount = Instance.new("TextBox")
+  amount.Name = "DropQuantity"
+  amount.Position = UDim2.fromOffset(44, 68)
+  amount.Size = UDim2.new(1, -88, 0, 28)
+  amount.BackgroundColor3 = Color3.fromRGB(20, 26, 31)
+  amount.BorderSizePixel = 0
+  amount.TextColor3 = Color3.fromRGB(235, 240, 244)
+  amount.Font, amount.TextSize = Enum.Font.GothamMedium, 15
+  amount.ClearTextOnFocus = false
+  amount.PlaceholderText = "Quantity"
+  amount.Text = tostring(selected)
+  amount.Parent = container
+  local function selectAmount(value)
+   selected = math.clamp(math.floor(value), 1, available)
+   dropAmounts[id] = selected
+   amount.Text = tostring(selected)
+  end
+  local function readAmount()
+   local value = tonumber(amount.Text)
+   if not value or value ~= value or math.abs(value) == math.huge then value = selected end
+   selectAmount(value)
+  end
+  minus.Activated:Connect(function() readAmount(); selectAmount(selected - 1) end)
+  plus.Activated:Connect(function() readAmount(); selectAmount(selected + 1) end)
+  amount.FocusLost:Connect(readAmount)
+  local drop = button(container, "Drop", UDim2.fromOffset(6, 104), UDim2.new(0.5, -9, 0, 32))
+  local all = button(container, "Drop all", UDim2.new(0.5, 3, 0, 104), UDim2.new(0.5, -9, 0, 32))
+  drop.Activated:Connect(function() readAmount(); action:FireServer("Drop", id, selected) end)
+  all.Activated:Connect(function() action:FireServer("Drop", id, "All") end)
  end
  for order, slot in ipairs(ItemConfig.Slots) do
   local id = snapshot.Equipment[slot]

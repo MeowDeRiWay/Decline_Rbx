@@ -2,6 +2,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ItemConfig = require(ReplicatedStorage.Shared.ItemConfig)
 local Inventory = require(script.Parent.InventoryService)
+local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local Service = {}
 local folder = workspace:FindFirstChild("WorldItems")
 if not folder then
@@ -44,8 +45,10 @@ function Service.Pickup(player, item)
  item:Destroy()
  return true
 end
-function Service.Drop(player, id)
+function Service.Drop(player, id, requested)
  if typeof(id) ~= "string" or not ItemConfig.Items[id] then return false end
+ local count = Rules.DropAmount(Inventory.Snapshot(player).Items[id], requested)
+ if not count then return false end
  local root, character = aliveRoot(player)
  if not root then return false end
  local templates = ServerStorage:FindFirstChild("Items")
@@ -76,8 +79,8 @@ function Service.Drop(player, id)
  for _, descendant in ipairs(item:GetDescendants()) do if descendant:IsA("BasePart") then anchor(descendant) end end
  item.Name = id
  item:SetAttribute("Item_ID", id)
- item:SetAttribute("Quantity", 1)
- if not Inventory.Remove(player, id, 1) then item:Destroy(); return false end
+ item:SetAttribute("Quantity", count)
+ if not Inventory.Remove(player, id, count) then item:Destroy(); return false end
  item.Parent = folder
  -- World drops remain until collected or until this server closes.
  return true
