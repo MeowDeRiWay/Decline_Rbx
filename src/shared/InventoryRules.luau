@@ -46,4 +46,16 @@ function Rules.Weight(state, definitions)
  for _, id in pairs(state.Equipment) do total += definitions[id].Weight or 0 end
  return total
 end
+function Rules.Transfer(source, target, definitions, id, requested)
+ if typeof(id) ~= "string" or not definitions[id] then return false end
+ local count = Rules.DropAmount(source.Items[id], requested)
+ if not count then return false end
+ -- Both states are server-owned. No yields or partial public updates.
+ if not Rules.Remove(source, id, count) then return false end
+ if not Rules.Add(target, definitions, id, count) then
+  Rules.Add(source, definitions, id, count)
+  return false
+ end
+ return true
+end
 return Rules

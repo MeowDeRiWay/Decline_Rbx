@@ -11,6 +11,7 @@ local stateRemote = remotes:WaitForChild("State")
 local snapshot = {Items = {}, Equipment = {}, Weight = 0}
 local dropAmounts = {}
 local selectedItem = nil
+local chestOpen = false
 local gui = Instance.new("ScreenGui")
 gui.Name, gui.ResetOnSpawn, gui.Enabled = "InventoryUI", false, false
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -47,7 +48,7 @@ local function button(parent, caption, position, size)
  return b
 end
 text(window, "Inventory", UDim2.fromOffset(20, 12), UDim2.new(0.5, -30, 0, 32))
-text(window, "Equipment", UDim2.new(0.5, 12, 0, 12), UDim2.new(0.5, -65, 0, 32))
+local rightTitle = text(window, "Equipment", UDim2.new(0.5, 12, 0, 12), UDim2.new(0.5, -65, 0, 32))
 local close = button(window, "×", UDim2.new(1, -44, 0, 12), UDim2.fromOffset(28, 28))
 local weight = text(window, "Weight 0.0 kg", UDim2.new(0, 20, 1, -44), UDim2.new(0.5, -30, 0, 32))
 text(window, "Q — Close", UDim2.new(0.5, 12, 1, -44), UDim2.new(0.5, -30, 0, 32))
@@ -71,45 +72,43 @@ local equipment = column("Slots", UDim2.new(0.5, 12, 0, 56))
 local function clear(frame)
  for _, child in ipairs(frame:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
 end
-local function redraw()
- if selectedItem and not snapshot.Items[selectedItem] then selectedItem = nil end
+local redraw
+local function renderItems(frame, items, side)
  local cards = {}
- clear(inventory)
- clear(equipment)
- weight.Text = string.format("Weight %.1f kg", snapshot.Weight)
  local ids = {}
- for id in pairs(snapshot.Items) do table.insert(ids, id) end
+ for id in pairs(items) do table.insert(ids, id) end
  table.sort(ids, function(a,b) return (ItemConfig.Items[a].Name or a) < (ItemConfig.Items[b].Name or b) end)
- if #ids == 0 then text(inventory, "Inventory is empty", UDim2.new(), UDim2.new(1, -8, 0, 50)) end
+ if #ids == 0 then text(frame, side == "Chest" and "Chest is empty" or "Inventory is empty", UDim2.new(), UDim2.new(1, -8, 0, 50)) end
  for order, id in ipairs(ids) do
   local definition = ItemConfig.Items[id]
-  local caption = string.format("%s ×%d\n%.1f kg%s", definition.Name or id, snapshot.Items[id], (definition.Weight or 0) * snapshot.Items[id], "")
-  local available = snapshot.Items[id]
-  local selected = math.clamp(dropAmounts[id] or 1, 1, available)
+  local key = side .. ":" .. id
+  local caption = string.format("%s ×%d\n%.1f kg%s", definition.Name or id, items[id], (definition.Weight or 0) * items[id], "")
+  local available = items[id]
+  local selected = math.clamp(dropAmounts[key] or 1, 1, available)
   local container = Instance.new("Frame")
   container.Size = UDim2.new(1, -8, 0, 68)
   container.BackgroundColor3 = Color3.fromRGB(30, 38, 45)
   container.BorderSizePixel = 0
   container.LayoutOrder = order
-  container.Parent = inventory
+  container.Parent = frame
   local row = button(container, caption, UDim2.fromOffset(6, 6), UDim2.new(1, -12, 0, 56))
   local actions = Instance.new("Frame")
   actions.Name = "ItemActions"
   actions.Position = UDim2.fromOffset(0, 68)
-  actions.Size = UDim2.new(1, 0, 0, definition.Slot and 110 or 68)
+  actions.Size = UDim2.new(1, 0, 0, (definition.Slot and not chestOpen) and 110 or 68)
   actions.BackgroundTransparency = 1
   actions.Parent = container
-  local card = {container = container, actions = actions, row = row, expandedHeight = definition.Slot and 184 or 142}
-  cards[id] = card
+  local card = {container = container, actions = actions, row = row, expandedHeight = (definition.Slot and not chestOpen) and 184 or 142}
+  cards[key] = card
   local function showActions(entry, expanded)
    entry.actions.Visible = expanded
    entry.container.Size = UDim2.new(1, -8, 0, expanded and entry.expandedHeight or 68)
    entry.row.BackgroundColor3 = expanded and Color3.fromRGB(57, 78, 87) or Color3.fromRGB(42, 53, 62)
   end
-  showActions(card, selectedItem == id)
+  showActions(card, selectedItem == key)
   row.Activated:Connect(function()
-   if selectedItem == id then selectedItem = nil else selectedItem = id end
-   for itemId, entry in pairs(cards) do showActions(entry, selectedItem == itemId) end
+   if selectedItem == key then selectedItem = nil else selectedItem = key end
+   redraw()
   end)
   local minus = button(actions, "−", UDim2.fromOffset(6, 0), UDim2.fromOffset(32, 28))
   local plus = button(actions, "+", UDim2.new(1, -38, 0, 0), UDim2.fromOffset(32, 28))
@@ -127,7 +126,7 @@ local function redraw()
   amount.Parent = actions
   local function selectAmount(value)
    selected = math.clamp(math.floor(value), 1, available)
-   dropAmounts[id] = selected
+   dropAmounts[key] = selected
    amount.Text = tostring(selected)
   end
   local function readAmount()
@@ -138,14 +137,25 @@ local function redraw()
   minus.Activated:Connect(function() readAmount(); selectAmount(selected - 1) end)
   plus.Activated:Connect(function() readAmount(); selectAmount(selected + 1) end)
   amount.FocusLost:Connect(readAmount)
-  local drop = button(actions, "Drop", UDim2.fromOffset(6, 36), UDim2.new(0.5, -9, 0, 32))
-  local all = button(actions, "Drop all", UDim2.new(0.5, 3, 0, 36), UDim2.new(0.5, -9, 0, 32))
-  drop.Activated:Connect(function() readAmount(); action:FireServer("Drop", id, selected) end)
-  all.Activated:Connect(function() action:FireServer("Drop", id, "All") end)
-  if definition.Slot then
+  local drop = button(actions, chestOpen and "Transfer" or "Drop", UDim2.fromOffset(6, 36), UDim2.new(0.5, -9, 0, 32))
+  local all = button(actions, chestOpen and "Transfer all" or "Drop all", UDim2.new(0.5, 3, 0, 36), UDim2.new(0.5, -9, 0, 32))
+  drop.Activated:Connect(function() readAmount(); action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, selected) end)
+  all.Activated:Connect(function() action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, "All") end)
+  if definition.Slot and not chestOpen then
    local equip = button(actions, "Equip", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
    equip.Activated:Connect(function() action:FireServer("Equip", id) end)
   end
+ end
+end
+redraw = function()
+ clear(inventory)
+ clear(equipment)
+ weight.Text = string.format("Weight %.1f kg", snapshot.Weight)
+ rightTitle.Text = chestOpen and "Chest" or "Equipment"
+ renderItems(inventory, snapshot.Items, "Player")
+ if chestOpen then
+  renderItems(equipment, snapshot.ChestItems or {}, "Chest")
+  return
  end
  for order, slot in ipairs(ItemConfig.Slots) do
   local id = snapshot.Equipment[slot]
@@ -158,7 +168,13 @@ local function redraw()
  end
 end
 local function setOpen(open)
- if not open then selectedItem = nil end
+ if not open then
+  selectedItem = nil
+  if chestOpen then
+   chestOpen = false
+   action:FireServer("CloseChest")
+  end
+ end
  gui.Enabled = open
  player:SetAttribute("InventoryOpen", open)
  if open then
@@ -188,6 +204,13 @@ end)
 player.CharacterAdded:Connect(function() setOpen(false) end)
 stateRemote.OnClientEvent:Connect(function(value)
  snapshot = value
- if gui.Enabled then redraw() end
+ local wasChestOpen = chestOpen
+ chestOpen = value.ChestOpen == true
+ if chestOpen then
+  if not wasChestOpen then selectedItem = nil end
+  if not gui.Enabled then setOpen(true) else redraw() end
+ elseif wasChestOpen then
+  setOpen(false)
+ elseif gui.Enabled then redraw() end
 end)
 action:FireServer("Request")

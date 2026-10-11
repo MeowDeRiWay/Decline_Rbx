@@ -26,9 +26,9 @@ label.BorderSizePixel = 0
 label.TextColor3 = Color3.fromRGB(240, 240, 235)
 label.Font, label.TextSize, label.Visible = Enum.Font.GothamMedium, 15, false
 label.Parent = gui
-local hovered, reachable = nil, false
+local hovered, reachable, chestHovered = nil, false, false
 RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value + 4, function()
- hovered, reachable = nil, false
+ hovered, reachable, chestHovered = nil, false, false
  highlight.Enabled, label.Visible = false, false
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -44,6 +44,25 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  params.FilterDescendantsInstances = {character}
  local hit = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
  if not hit then return end
+ local chest = hit.Instance
+ while chest and chest ~= workspace do
+  if chest:IsA("Model") and chest.Name == "Chest" then break end
+  chest = chest.Parent
+ end
+ if chest and chest ~= workspace then
+  local cf,size = chest:GetBoundingBox()
+  local p,half = cf:PointToObjectSpace(root.Position),size * 0.5
+  local nearest = cf:PointToWorldSpace(Vector3.new(math.clamp(p.X,-half.X,half.X),math.clamp(p.Y,-half.Y,half.Y),math.clamp(p.Z,-half.Z,half.Z)))
+  hovered, chestHovered = chest, true
+  reachable = (nearest-root.Position).Magnitude <= Config.PickupDistance
+  highlight.FillColor = Color3.fromRGB(80,190,110)
+  highlight.OutlineColor = Color3.fromRGB(125,255,160)
+  highlight.Adornee, highlight.Enabled = chest, true
+  label.Text = "Chest" .. (reachable and "\n[E] Open" or "\nToo far")
+  label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-44)))
+  label.Visible = true
+  return
+ end
  local item = hit.Instance
  while item and item.Parent ~= folder do item = item.Parent end
  if not item then return end
@@ -51,6 +70,8 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  if not definition then return end
  hovered = item
  reachable = (item:GetPivot().Position - root.Position).Magnitude <= Config.PickupDistance
+ highlight.FillColor = Color3.fromRGB(220,190,90)
+ highlight.OutlineColor = Color3.fromRGB(255,235,155)
  highlight.Adornee, highlight.Enabled = item, true
  local count = item:GetAttribute("Quantity") or 1
  local caption = (definition.Name or item.Name) .. (count > 1 and " ×" .. tostring(count) or "")
@@ -60,6 +81,6 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
  if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not player:GetAttribute("InventoryOpen") then
-  action:FireServer("Pickup", hovered)
+  action:FireServer(chestHovered and "OpenChest" or "Pickup", hovered)
  end
 end)

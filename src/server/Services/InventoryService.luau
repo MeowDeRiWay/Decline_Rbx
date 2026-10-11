@@ -41,6 +41,15 @@ function Service.Unequip(player, slot)
  update(player)
  return true
 end
+function Service.Transfer(player, storage, id, requested, intoStorage)
+ local own = states[player]
+ if not own then return false end
+ local source, target = own, storage
+ if not intoStorage then source, target = storage, own end
+ if not Rules.Transfer(source, target, ItemConfig.Items, id, requested) then return false end
+ update(player)
+ return true
+end
 function Service.Snapshot(player)
  local state = states[player]
  if not state then return {Items = {}, Equipment = {}, Weight = 0} end
