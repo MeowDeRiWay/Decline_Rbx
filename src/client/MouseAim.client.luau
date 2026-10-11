@@ -1,7 +1,9 @@
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local player = Players.LocalPlayer
 local lastMouse = nil
 local aimPoint = nil
@@ -10,7 +12,7 @@ player.CharacterAdded:Connect(function()
 end)
 
 -- Run after Main.client's camera update. This file does not change the camera.
-RunService:BindToRenderStep("DeclineMouseAim", Enum.RenderPriority.Camera.Value + 2, function()
+RunService:BindToRenderStep("DeclineMouseAim", Enum.RenderPriority.Camera.Value + 2, function(dt)
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -42,5 +44,12 @@ RunService:BindToRenderStep("DeclineMouseAim", Enum.RenderPriority.Camera.Value 
  local direction = Vector3.new(aimPoint.X - root.Position.X, 0, aimPoint.Z - root.Position.Z)
  if direction.Magnitude < 0.1 then return end
  -- Keep the body upright and preserve its position; rotate only around Y.
- root.CFrame = CFrame.lookAt(root.Position, root.Position + direction, Vector3.yAxis)
+ local forward = root.CFrame.LookVector
+ local currentYaw = math.atan2(-forward.X, -forward.Z)
+ local targetYaw = math.atan2(-direction.X, -direction.Z)
+ -- Wrap to [-pi, pi] so crossing 180 degrees takes the shorter turn.
+ local difference = math.atan2(math.sin(targetYaw - currentYaw), math.cos(targetYaw - currentYaw))
+ local maxStep = math.rad(math.max(0, Config.TurnSpeed or 120)) * dt
+ local yaw = currentYaw + math.clamp(difference, -maxStep, maxStep)
+ root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, yaw, 0)
 end)
