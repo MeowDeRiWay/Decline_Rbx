@@ -114,7 +114,7 @@ RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Last
  end
  elapsed += dt
  if elapsed < Config.VisibilityInterval then return end
- elapsed = 0
+ elapsed %= Config.VisibilityInterval
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  for model,record in pairs(tracked) do

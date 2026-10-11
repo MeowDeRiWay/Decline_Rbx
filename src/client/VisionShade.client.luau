@@ -12,8 +12,8 @@ gui.ResetOnSpawn = false
 gui.DisplayOrder = -10
 gui.Parent = player:WaitForChild("PlayerGui")
 local masks = {}
-local elapsed = math.huge
-local rowHeight = 4
+local elapsed = Config.VisibilityInterval
+local rowHeight = Config.VisionShadeRowHeight
 local function mask(index,x,y,width,height)
  local frame = masks[index]
  if not frame then
@@ -56,7 +56,7 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
  if not gui.Enabled then return end
  elapsed += dt
  if elapsed < Config.VisibilityInterval then return end
- elapsed = 0
+ elapsed %= Config.VisibilityInterval
  local width,height = camera.ViewportSize.X,camera.ViewportSize.Y
  local range = 10
  for _,corner in ipairs({Vector2.new(0,0),Vector2.new(width,0),Vector2.new(width,height),Vector2.new(0,height)}) do
@@ -69,7 +69,7 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
  local right = Vector3.new(-forward.Z,0,forward.X)
  local center = camera:WorldToViewportPoint(root.Position)
  local polygon = {Vector2.new(center.X,center.Y)}
- local rays = math.ceil(Config.CreatureViewAngle*2)
+ local rays = math.ceil(Config.CreatureViewAngle*Config.VisionRaysPerDegree)
  for i=0,rays do
   local angle = math.rad(-Config.CreatureViewAngle/2+Config.CreatureViewAngle*i/rays)
   local direction = forward*math.cos(angle)+right*math.sin(angle)
@@ -78,16 +78,27 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
   local projected = camera:WorldToViewportPoint(root.Position+direction*distance)
   table.insert(polygon,Vector2.new(projected.X,projected.Y))
  end
- local used = 0
- for y=0,height-1,rowHeight do
-  local scan = y+math.min(rowHeight,height-y)/2
-  local intersections = {}
-  for i,a in ipairs(polygon) do
-   local b = polygon[i % #polygon+1]
-   if (a.Y <= scan and b.Y > scan) or (b.Y <= scan and a.Y > scan) then
+ -- Rasterize each polygon edge only into the rows it crosses. This avoids
+ -- scanning all 641 edges for every screen row at 60 updates per second.
+ local count = math.ceil(height/rowHeight)
+ local scanlines = table.create(count)
+ for i,a in ipairs(polygon) do
+  local b = polygon[i % #polygon+1]
+  if a.Y ~= b.Y then
+   local low,high = math.min(a.Y,b.Y),math.max(a.Y,b.Y)
+   local first = math.max(0,math.ceil((low-rowHeight/2)/rowHeight))
+   local last = math.min(count-1,math.ceil((high-rowHeight/2)/rowHeight)-1)
+   for row=first,last do
+    local scan = row*rowHeight+rowHeight/2
+    local intersections = scanlines[row+1]
+    if not intersections then intersections = {}; scanlines[row+1] = intersections end
     table.insert(intersections,a.X+(scan-a.Y)*(b.X-a.X)/(b.Y-a.Y))
    end
   end
+ end
+ local used = 0
+ for y=0,height-1,rowHeight do
+  local intersections = scanlines[y/rowHeight+1] or {}
   table.sort(intersections)
   local cursor = 0
   for i=1,#intersections-1,2 do
