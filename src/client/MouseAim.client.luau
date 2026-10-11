@@ -13,6 +13,7 @@ RunService:BindToRenderStep("DeclineMouseAim", Enum.RenderPriority.Camera.Value 
  if not root or not humanoid or not camera then return end
  humanoid.AutoRotate = false
  if humanoid.Health <= 0 or humanoid.Sit or humanoid.PlatformStand or root.Anchored then return end
+ if player:GetAttribute("InventoryOpen") then return end
  if UserInputService:GetFocusedTextBox() or GuiService.MenuIsOpen or not UserInputService.MouseEnabled then return end
  local inset = GuiService:GetGuiInset()
  local mouse = UserInputService:GetMouseLocation() - inset

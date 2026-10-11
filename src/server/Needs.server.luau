@@ -13,9 +13,10 @@ local function attach(player, character)
  local humanoid = character:WaitForChild("Humanoid", 10)
  local root = character:WaitForChild("HumanoidRootPart", 10)
  if not humanoid or not root or player.Character ~= character or player.Parent ~= Players then return end
- for key, value in pairs({Food = 100, Water = 100, Sick = 0, LoadKg = 0, Working = false, Knockout = false}) do
+ for key, value in pairs({Food = 100, Water = 100, Sick = 0, Working = false, Knockout = false}) do
   character:SetAttribute(key, value)
  end
+ if character:GetAttribute("LoadKg") == nil then character:SetAttribute("LoadKg", 0) end
  local function healthChanged()
   character:SetAttribute("Health", humanoid.Health)
   character:SetAttribute("MaxHealth", humanoid.MaxHealth)
