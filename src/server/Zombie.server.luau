@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Sight = require(ReplicatedStorage.Shared.Sight)
+local Navigation = require(script.Parent.Services.ZombieNavigation)
 local Crowd = require(ReplicatedStorage.Shared.CrowdRules)
 local IdleRules = require(ReplicatedStorage.Shared.ZombieIdleRules)
 local Sector = require(ReplicatedStorage.Shared.VisibilityRules)
@@ -200,6 +201,16 @@ local function prepare(model)
   model:PivotTo(desiredRoot*root.CFrame:Inverse()*model:GetPivot())
   return false,obstruction ~= nil
  end
+ local navigation=Navigation.New(model,root)
+ local function navigate(destination,speed,dt,stoppingDistance,ignored)
+  local delta=destination-root.Position
+  if Vector3.new(delta.X,0,delta.Z).Magnitude<=stoppingDistance then return true,false end
+  local waypoint=navigation:Waypoint(destination,ignored)
+  if not waypoint then return false,true end
+  local arrived,blocked=moveToward(waypoint,speed,dt,.08,ignored)
+  if blocked then navigation:Blocked() end
+  return false,blocked
+ end
  local idle = IdleRules.New()
  local idlePhase
  local lookStart
@@ -221,7 +232,7 @@ local function prepare(model)
    local desiredRoot = lookStart*CFrame.Angles(0,math.sin(progress*2*math.pi)*math.rad(60),0)
    model:PivotTo(desiredRoot*root.CFrame:Inverse()*model:GetPivot())
   elseif phase == "Wandering" then
-   local arrived,blocked=moveToward(wanderTarget,humanoid.WalkSpeed*.5,dt,.1,nil)
+   local arrived,blocked=navigate(wanderTarget,humanoid.WalkSpeed*.5,dt,.1,nil)
    if arrived or blocked then IdleRules.FinishWalk(idle) end
   end
  end
@@ -275,7 +286,7 @@ local function prepare(model)
    if lastSeenPosition then
     if not searchStart then
      model:SetAttribute("AIState","SearchingLastPosition")
-     local arrived,blocked=moveToward(lastSeenPosition,humanoid.WalkSpeed,dt,.15,nil)
+     local arrived,blocked=navigate(lastSeenPosition,humanoid.WalkSpeed,dt,.15,nil)
      searchBlocked=blocked and (searchBlocked or 0)+dt or 0
      if arrived or searchBlocked>=3 then searchStart=root.CFrame; searchElapsed=0 end
     else
@@ -325,7 +336,7 @@ local function prepare(model)
    end
   end
   if delta.Magnitude<=stoppingDistance then return end
-  moveToward(nearest.Position,humanoid.WalkSpeed,dt,stoppingDistance,nearest.Parent)
+  navigate(nearest.Position,humanoid.WalkSpeed,dt,stoppingDistance,nearest.Parent)
  end)
 end
 local function consider(object)
