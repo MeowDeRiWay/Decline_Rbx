@@ -35,6 +35,19 @@ function Service.CreateCorpse(model,items)
  for id,count in pairs(items) do if count > 0 and Items.Items[id] and Items.Items[id].Lootable ~= false then Rules.Add(storage,Items.Items,id,count) end end
  contents[model] = storage
  model:SetAttribute("IsCorpse",true)
+ local diedAt=os.clock()
+ task.spawn(function()
+  while model:IsDescendantOf(workspace) do
+   local age=os.clock()-diedAt
+   if age>=120 or (age>=20 and next(storage.Items)==nil) then
+    for player,current in pairs(sessions) do if current==model then Service.Close(player) end end
+    contents[model]=nil
+    model:Destroy()
+    return
+   end
+   task.wait(.25)
+  end
+ end)
 end
 function Service.Open(player, chest)
  if not reachable(player, chest) then return false end
@@ -58,6 +71,15 @@ function Service.Transfer(player, id, requested, intoChest)
  if typeof(id) ~= "string" or not Items.Items[id] then return false end
  local storage = contents[chest]
  if not Inventory.Transfer(player, storage, id, requested, intoChest) then return false end
+ notify(chest)
+ return true
+end
+function Service.TakeAll(player)
+ local chest=sessions[player]
+ if not reachable(player,chest) then Service.Close(player); return false end
+ if chest:GetAttribute("IsCorpse")~=true then return false end
+ local storage=contents[chest]
+ for id in pairs(table.clone(storage.Items)) do Inventory.Transfer(player,storage,id,"All",false) end
  notify(chest)
  return true
 end

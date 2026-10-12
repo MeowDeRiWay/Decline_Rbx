@@ -73,6 +73,9 @@ local equipment = column("Slots", UDim2.new(0.5, 12, 0, 56))
 local function clear(frame)
  for _, child in ipairs(frame:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
 end
+local takeAll = button(window,"Take all",UDim2.new(.5,12,1,-88),UDim2.new(.5,-32,0,32))
+takeAll.Visible=false
+takeAll.Activated:Connect(function() action:FireServer("TakeAll") end)
 local redraw
 local tooltip = text(gui, "", UDim2.new(), UDim2.fromOffset(270, 110))
 tooltip.Name = "ItemTooltip"
@@ -191,6 +194,8 @@ redraw = function()
  clear(inventory)
  clear(equipment)
  weight.Text = string.format("Weight %.1f kg", snapshot.Weight)
+ takeAll.Visible = chestOpen and chestReadOnly
+ equipment.Size = UDim2.new(.5,-32,1,takeAll.Visible and -148 or -108)
  rightTitle.Text = chestOpen and (snapshot.ChestName or "Chest") or "Equipment"
  renderItems(inventory, snapshot.Items, "Player")
  if chestOpen then

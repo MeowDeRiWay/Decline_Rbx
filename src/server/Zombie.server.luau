@@ -98,8 +98,22 @@ local function prepare(model)
   local radius=math.abs(box.RightVector.Y)*size.X/2+math.abs(box.UpVector.Y)*size.Y/2+math.abs(box.LookVector.Y)*size.Z/2
   local params=RaycastParams.new()
   params.FilterType=Enum.RaycastFilterType.Exclude
-  params.FilterDescendantsInstances={model}
+  local excluded={model}
+  for _,player in ipairs(Players:GetPlayers()) do if player.Character then table.insert(excluded,player.Character) end end
+  local creatures=workspace:FindFirstChild("Creatures")
+  if creatures then table.insert(excluded,creatures) end
+  params.FilterDescendantsInstances=excluded
+  params.RespectCanCollide=true
   local floor=workspace:Raycast(start.Position+Vector3.new(0,2,0),Vector3.new(0,-100,0),params)
+  local reference=model:FindFirstChild("ZombieHome")
+  local home=reference and reference:IsA("ObjectValue") and reference.Value
+  if home and home:IsDescendantOf(workspace) then
+   local homeParams=RaycastParams.new()
+   homeParams.FilterType=Enum.RaycastFilterType.Include
+   homeParams.FilterDescendantsInstances={home}
+   local homeFloor=workspace:Raycast(start.Position+Vector3.new(0,2,0),Vector3.new(0,-100,0),homeParams)
+   if homeFloor and (not floor or homeFloor.Position.Y>floor.Position.Y) then floor=homeFloor end
+  end
   if floor then destination += Vector3.new(0,floor.Position.Y-(box.Position.Y-radius)+.02,0) end
   model:PivotTo(start)
   local value=Instance.new("CFrameValue")

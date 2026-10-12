@@ -39,6 +39,7 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  elseif command == "Drop" then WorldItems.Drop(player, value, amount)
  elseif command == "Eat" then Consumables.Eat(player, value)
  elseif command == "OpenChest" then Chests.Open(player, value)
+ elseif command == "TakeAll" then Chests.TakeAll(player)
  elseif command == "TransferIn" then Chests.Transfer(player, value, amount, true)
  elseif command == "TransferOut" then Chests.Transfer(player, value, amount, false) end
 end)
