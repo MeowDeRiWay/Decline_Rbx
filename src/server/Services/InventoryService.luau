@@ -22,6 +22,15 @@ function Service.Reset(player)
  states[player] = Rules.New()
  update(player)
 end
+function Service.ExtractAll(player)
+ local state=states[player] or Rules.New()
+ for _,slot in ipairs(ItemConfig.Slots) do
+  if state.Equipment[slot] then Rules.Unequip(state,ItemConfig.Items,ItemConfig.Slots,slot) end
+ end
+ states[player]=Rules.New()
+ update(player)
+ return state
+end
 function Service.RemovePlayer(player) states[player] = nil end
 function Service.Add(player, id, count, conditions)
  local state = states[player]

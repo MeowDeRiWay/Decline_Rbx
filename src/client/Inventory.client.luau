@@ -256,6 +256,7 @@ end
 close.Activated:Connect(function() setOpen(false) end)
 UserInputService.InputBegan:Connect(function(input, processed)
  if processed or UserInputService:GetFocusedTextBox() then return end
+ if player.Character and player.Character:GetAttribute("Knockout") then return end
  if input.KeyCode == Enum.KeyCode.Q then setOpen(not gui.Enabled) end
 end)
 player.CharacterAdded:Connect(function() setOpen(false) end)
@@ -272,3 +273,7 @@ stateRemote.OnClientEvent:Connect(function(value)
  elseif gui.Enabled then redraw() end
 end)
 action:FireServer("Request")
+
+RunService.RenderStepped:Connect(function()
+ if gui.Enabled and player.Character and player.Character:GetAttribute("Knockout") then setOpen(false) end
+end)

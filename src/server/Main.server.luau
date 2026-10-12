@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local StarterPlayer = game:GetService("StarterPlayer")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Life = require(script.Parent.Services.PlayerLifeService)
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 Players.CharacterAutoLoads = false
 StarterPlayer.LoadCharacterAppearance = false
@@ -15,6 +16,8 @@ local function prepare(character)
  root.Name = "HumanoidRootPart"
  character.PrimaryPart = root
  humanoid.RequiresNeck = false
+ humanoid.BreakJointsOnDeath = false
+ humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead,false)
  humanoid.HipHeight = 0
  humanoid.WalkSpeed = Config.WalkSpeed
  humanoid.AutoRotate = true
@@ -50,10 +53,11 @@ local function added(player)
  player.CharacterAdded:Connect(function(character)
   prepare(character)
   local humanoid = character:FindFirstChildOfClass("Humanoid")
+  humanoid.HealthChanged:Connect(function(health)
+   if health<=0 and not character:GetAttribute("IsDead") then Life.Knockout(player,character) end
+  end)
   humanoid.Died:Connect(function()
-   task.delay(Players.RespawnTime, function()
-    if player.Parent == Players and player.Character == character then player:LoadCharacterAsync() end
-   end)
+   Life.Finish(player,character)
   end)
  end)
  if player.Parent == Players then player:LoadCharacterAsync() end

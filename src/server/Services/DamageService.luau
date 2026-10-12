@@ -1,3 +1,5 @@
+local Players = game:GetService("Players")
+local Life = require(script.Parent.PlayerLifeService)
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local Service = {}
@@ -35,7 +37,11 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition)
   if delta.Magnitude > .001 then target:SetAttribute("LastHitDirection",delta.Unit) end
  end
  local before = humanoid.Health
- if target.Name == "Mannikin" then
+ local player=Players:GetPlayerFromCharacter(target)
+ if player then
+  if target:FindFirstChildOfClass("ForceField") then amount=0
+  else amount=Life.Damage(player,humanoid,amount) end
+ elseif target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.
   if not target:FindFirstChildOfClass("ForceField") then
    local remaining = math.max(0,before-amount)

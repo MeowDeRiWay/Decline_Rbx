@@ -23,7 +23,7 @@ RunService.Heartbeat:Connect(function()
   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
   if not humanoid then continue end
   local running = wantsRun and humanoid.Health > 0 and not humanoid.Sit and not humanoid.PlatformStand and not character:GetAttribute("Knockout")
-  local speed = Config.WalkSpeed + (running and Config.RunSpeedBonus or 0)
+  local speed = character:GetAttribute("Knockout") and 0 or (Config.WalkSpeed + (running and Config.RunSpeedBonus or 0))
   if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
   if character:GetAttribute("Running") ~= running then character:SetAttribute("Running",running) end
  end

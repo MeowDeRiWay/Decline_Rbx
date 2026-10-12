@@ -29,6 +29,11 @@ end
 local function notify(chest)
  for player, current in pairs(sessions) do if current == chest then changed:Fire(player) end end
 end
+function Service.CreatePlayerCorpse(model,storage)
+ contents[model]=storage
+ model:SetAttribute("IsCorpse",true)
+ model:SetAttribute("CorpseType","Player")
+end
 function Service.CreateCorpse(model,items)
  if contents[model] then return end
  local storage = Rules.New()

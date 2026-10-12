@@ -33,7 +33,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
- if not root or not camera or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if not root or not camera or character:GetAttribute("Knockout") or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  -- GetMouseLocation already matches ViewportPointToRay coordinates.
  local viewportMouse = mouse

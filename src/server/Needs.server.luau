@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
+local Life = require(script.Parent.Services.PlayerLifeService)
 local Rules = require(ReplicatedStorage.Shared:WaitForChild("NeedsRules"))
 local active = {}
 local function numberAttribute(character, name, fallback)
@@ -63,6 +64,6 @@ RunService.Heartbeat:Connect(function(dt)
   character:SetAttribute("Sick", sick)
   character:SetAttribute("LoadKg", weight)
   -- Direct health subtraction ensures survival damage is not blocked by spawn ForceField.
-  if damage > 0 then humanoid.Health = math.max(0, humanoid.Health - damage) end
+  if damage > 0 then Life.Damage(player,humanoid,damage) end
  end
 end)
