@@ -19,6 +19,6 @@ return {
    {Ingredient = "WoodenPlate", Output = "MashedPotatoesWithSausage_1"},
    {Ingredient = "Plate", Output = "MashedPotatoesWithSausage_2"},
   },
-  OutputCount = 1, MaxBatch = 5, Duration = 60, RequiresPresence = true,
+  OutputCount = 1, MaxBatch = 1, Duration = 20, RequiresPresence = true,
  },
 }
