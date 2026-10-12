@@ -9,7 +9,7 @@ return {
   Name = "Slice sausage", Station = "CuttingBoard",
   Description = "Slice a sausage into five pieces using a knife.",
   Ingredients = {Sausage = 1}, Output = "SausageSlice", OutputCount = 5,
-  Tool = "Knife", MaxBatch = 5, Duration = 10, RequiresPresence = true,
+  Tool = "Knife", MaxBatch = 1, Duration = 10, RequiresPresence = true,
  },
  MashedPotatoesWithSausage = {
   Name = "Mashed Potatoes with Sausage", Station = "CuttingBoard",
