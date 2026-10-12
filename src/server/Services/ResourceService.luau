@@ -129,16 +129,20 @@ local function generate(zone,state)
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = excluded
  params.RespectCanCollide = true
- local points = {}
+ local points,footprints = {},{}
  for model,node in pairs(nodes) do
-  if node.Kind == state.Kind and model:IsDescendantOf(workspace) then table.insert(points,model:GetPivot().Position) end
+  if model:IsDescendantOf(workspace) then
+   local box,size=model:GetBoundingBox()
+   table.insert(footprints,Rules.Footprint(box,size))
+   if node.Kind == state.Kind then table.insert(points,box.Position) end
+  end
  end
  local wanted = random:NextInteger(definition.MinCount,definition.MaxCount)
  local made = 0
  -- Bounded attempts: a small region may not physically fit the random count.
  for _=1,wanted*80 do
   if made >= wanted then break end
-  local surface,point = sample(parts,definition.EdgeMargin)
+  local surface,point = sample(parts,0)
   if not point then break end
   local source = templates[random:NextInteger(1,#templates)]
   local sourceBox,size = source:GetBoundingBox()
@@ -150,16 +154,13 @@ local function generate(zone,state)
   local orientationBox = rotation*relativeBox
   -- Account for a pivot that is not at the bottom of the model.
   local halfHeight = math.abs(orientationBox.RightVector.Y)*size.X/2 + math.abs(orientationBox.UpVector.Y)*size.Y/2 + math.abs(orientationBox.LookVector.Y)*size.Z/2
-  local position = ground.Position+Vector3.new(0,halfHeight-orientationBox.Position.Y+.02,0)
-  if not Rules.Spaced(points,position.X,position.Z,definition.Spacing) then continue end
+  local position = ground.Position+Vector3.new(-orientationBox.Position.X,halfHeight-orientationBox.Position.Y+.02,-orientationBox.Position.Z)
   local target = CFrame.new(position)*rotation
   local targetBox = target*relativeBox
-  local fits = true
-  for _,corner in ipairs({Vector3.new(-1,-1,-1),Vector3.new(1,-1,-1),Vector3.new(-1,-1,1),Vector3.new(1,-1,1),Vector3.new(-1,1,-1),Vector3.new(1,1,-1),Vector3.new(-1,1,1),Vector3.new(1,1,1)}) do
-   local edge = targetBox:PointToWorldSpace(Vector3.new(corner.X*size.X/2,corner.Y*size.Y/2,corner.Z*size.Z/2))
-   if not Area.Contains(surface,edge,-definition.EdgeMargin) then fits = false; break end
-  end
-  if not fits then continue end
+  if not Area.Contains(surface,targetBox.Position) then continue end
+  if not Rules.Spaced(points,targetBox.Position.X,targetBox.Position.Z,definition.Spacing) then continue end
+  local footprint=Rules.Footprint(targetBox,size)
+  if not Rules.Clearance(footprints,footprint,definition.EdgeGap) then continue end
   local clone = source:Clone()
   clone:PivotTo(target)
   clone.Parent = folder
@@ -169,7 +170,8 @@ local function generate(zone,state)
    if node.Zone then zones[node.Zone].Nodes[clone] = nil end
    node.Zone = zone
    state.Nodes[clone] = true
-   table.insert(points,position)
+   table.insert(points,targetBox.Position)
+   table.insert(footprints,footprint)
    made += 1
   else clone:Destroy() end
  end

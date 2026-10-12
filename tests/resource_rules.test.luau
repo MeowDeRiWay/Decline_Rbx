@@ -22,7 +22,7 @@ assert(Rules.Spaced({{X=0,Z=0}},1,0,1))
 assert(not Rules.Spaced({{X=0,Z=0}},.7,.7,1))
 for _,resource in pairs(Config) do
  assert(resource.MinCount == 1 and resource.MaxCount == 20)
- assert(resource.EdgeMargin == 3)
+ assert(resource.EdgeGap == 3)
  assert(resource.RespawnMin == 30 and resource.RespawnMax == 300)
  for id,range in pairs(resource.Loot) do
   assert(Items[id] and range.Min >= 1 and range.Max >= range.Min)
