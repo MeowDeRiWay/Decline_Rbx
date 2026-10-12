@@ -222,8 +222,16 @@ local function renderRecipes()
   description.TextWrapped=true
   local ingredients={}
   for item,count in pairs(recipe.Ingredients) do table.insert(ingredients,string.format("%d %s (%d owned)",count,ItemConfig.Items[item].Name,snapshot.Items[item] or 0)) end
+  if recipe.Variants then
+   local names,total={},0
+   for _,variant in ipairs(recipe.Variants) do
+    table.insert(names,ItemConfig.Items[variant.Ingredient].Name)
+    total+=snapshot.Items[variant.Ingredient] or 0
+   end
+   table.insert(ingredients,"1 "..table.concat(names," or ").." ("..total.." owned)")
+  end
   table.sort(ingredients)
-  local ingredientsText=text(card,table.concat(ingredients,"\n")..string.format("\n→ %d %s",recipe.OutputCount or 1,ItemConfig.Items[recipe.Output].Name),UDim2.fromOffset(10,90),UDim2.new(1,-20,0,74))
+  local ingredientsText=text(card,table.concat(ingredients,"\n")..string.format("\n→ %d %s",recipe.OutputCount or 1,(recipe.Output and ItemConfig.Items[recipe.Output].Name or "Meal matching the plate")),UDim2.fromOffset(10,90),UDim2.new(1,-20,0,74))
   ingredientsText.TextSize=14; ingredientsText.TextWrapped=true
   local tool=recipe.Tool and (speed and string.format("Knife required · Speed ×%g",speed) or "Knife required · Missing usable knife") or "No tool required"
   text(card,string.format("Batch: 1–%d · Time: %g seconds\n%s",recipe.MaxBatch,recipe.Duration/(speed or 1),tool),UDim2.fromOffset(10,167),UDim2.new(1,-20,0,44)).TextSize=14
@@ -257,12 +265,13 @@ local function renderRecipes()
   cook.TextTransparency,all.TextTransparency=enabled and 0 or .5,enabled and 0 or .5
   cook.Activated:Connect(function() if enabled then action:FireServer("Cook",id,quantity()) end end)
   all.Activated:Connect(function() if enabled then action:FireServer("Cook",id,"All") end end)
-  local ready=(snapshot.CookingReady or {})[recipe.Output] or 0
+  local ready=0
+  for _,output in ipairs(CraftRules.Outputs(recipe)) do ready+=(snapshot.CookingReady or {})[output] or 0 end
   craftStatuses[id]=text(card,busy and "Station is busy" or string.format("Ready: %d · Available batches: %d",ready,available),UDim2.fromOffset(10,289),UDim2.new(1,-20,0,25))
   local collect=button(card,"Collect",UDim2.fromOffset(10,322),UDim2.new(.5,-15,0,27))
   local collectAll=button(card,"Collect all",UDim2.new(.5,5,0,322),UDim2.new(.5,-15,0,27))
-  collect.Activated:Connect(function() if ready>0 then action:FireServer("CollectCooked",recipe.Output,math.min(quantity(),ready)) end end)
-  collectAll.Activated:Connect(function() if ready>0 then action:FireServer("CollectCooked",recipe.Output,"All") end end)
+  collect.Activated:Connect(function() if ready>0 then action:FireServer("CollectRecipe",id,math.min(quantity(),ready)) end end)
+  collectAll.Activated:Connect(function() if ready>0 then action:FireServer("CollectRecipe",id,"All") end end)
  end
 end
 local function foodDetails(definition,bonus)

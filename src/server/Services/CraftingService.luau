@@ -60,14 +60,16 @@ function Service.Cook(player,id,requested)
  local available=Rules.Available(own.Items,recipe)
  local count=Rules.Batch(available,requested,recipe.MaxBatch)
  if not count then return false end
+ local plan=Rules.Plan(own.Items,recipe,count)
+ if not plan then return false end
  local duration=recipe.Duration/speed
  local job={Recipe=id,Count=count,EndsAt=workspace:GetServerTimeNow()+duration}
  state.Job=job
- if not Inventory.ConsumeIngredients(player,recipe,count) then state.Job=nil; return false end
+ if not Inventory.ConsumeIngredients(player,{Ingredients=plan.Ingredients},1) then state.Job=nil; return false end
  notify(stove)
  task.delay(duration,function()
   if not stove:IsDescendantOf(workspace) or state.Job~=job then return end
-  state.Ready[recipe.Output]=(state.Ready[recipe.Output] or 0)+count*(recipe.OutputCount or 1)
+  for output,amount in pairs(plan.Outputs) do state.Ready[output]=(state.Ready[output] or 0)+amount end
   state.Job=nil
   notify(stove)
  end)
@@ -84,6 +86,23 @@ function Service.Collect(player,id,requested)
  if state.Ready[id]==0 then state.Ready[id]=nil end
  if not Inventory.Add(player,id,count) then state.Ready[id]=(state.Ready[id] or 0)+count; return false end
  notify(stove)
+ return true
+end
+function Service.CollectRecipe(player,id,requested)
+ local stove=sessions[player]
+ if not reachable(player,stove) then Service.Close(player); return false end
+ local recipe=typeof(id)=="string" and Recipes[id]
+ if not recipe or recipe.Station~=stove.Name then return false end
+ local outputs=Rules.Outputs(recipe)
+ local total=0
+ for _,output in ipairs(outputs) do total+=states[stove].Ready[output] or 0 end
+ local remaining=Amounts.DropAmount(total,requested)
+ if not remaining then return false end
+ for _,output in ipairs(outputs) do
+  local amount=math.min(remaining,states[stove].Ready[output] or 0)
+  if amount>0 and not Service.Collect(player,output,amount) then return false end
+  remaining-=amount
+ end
  return true
 end
 function Service.ValidateSessions()
