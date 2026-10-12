@@ -70,7 +70,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  local item = hit.Instance
  while item and item.Parent ~= folder do item = item.Parent end
  if not item then return end
- local definition = Config.Items[item:GetAttribute("Item_ID")]
+ local definition = Config.Items[item:GetAttribute("Item_ID") or item.Name]
  if not definition then return end
  hovered = item
  reachable = (item:GetPivot().Position - root.Position).Magnitude <= Config.PickupDistance

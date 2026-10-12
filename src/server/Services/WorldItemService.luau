@@ -10,15 +10,44 @@ if not folder then
  folder = Instance.new("Folder")
  folder.Name, folder.Parent = "WorldItems", workspace
 end
+local function queryable(object)
+ if object:IsA("BasePart") then object.CanQuery=true end
+ for _,part in ipairs(object:GetDescendants()) do if part:IsA("BasePart") then part.CanQuery=true end end
+end
 local function register(item)
  if not item:IsA("Model") and not item:IsA("BasePart") then return end
- local id = item:GetAttribute("Item_ID") or item.Name
+ local id=item:GetAttribute("Item_ID") or item.Name
  if not ItemConfig.Items[id] then return end
- item:SetAttribute("Item_ID", id)
- if item:GetAttribute("Quantity") == nil then item:SetAttribute("Quantity", 1) end
+ item:SetAttribute("Item_ID",id)
+ if item:GetAttribute("Quantity")==nil then item:SetAttribute("Quantity",1) end
+ queryable(item)
 end
-for _, item in ipairs(folder:GetChildren()) do register(item) end
+local function consider(object)
+ if object:IsA("Model") and (object.Name=="Chest" or object.Name=="Stove" or object.Name=="CuttingBoard") then queryable(object) end
+ if object.Parent==folder then register(object); return end
+ if not object:IsA("Model") and not object:IsA("BasePart") then return end
+ -- Pick-up items placed directly on the map (or in organizational folders)
+ -- are normalized into WorldItems. Never pull parts out of props or creatures.
+ local ancestor=object.Parent
+ while ancestor and ancestor~=workspace do
+  if ancestor==folder then
+   if object:IsA("BasePart") then object.CanQuery=true end
+   return
+  end
+  if ancestor:IsA("Model") then
+   if ancestor.Name=="Chest" or ancestor.Name=="Stove" or ancestor.Name=="CuttingBoard" or (ancestor.Parent==folder and ItemConfig.Items[ancestor:GetAttribute("Item_ID") or ancestor.Name]) then queryable(object) end
+   return
+  end
+  ancestor=ancestor.Parent
+ end
+ if ancestor~=workspace then return end
+ local id=object:GetAttribute("Item_ID") or object.Name
+ if ItemConfig.Items[id] then object.Parent=folder; register(object) end
+end
+for _,item in ipairs(folder:GetChildren()) do register(item) end
 folder.ChildAdded:Connect(register)
+for _,object in ipairs(workspace:GetDescendants()) do consider(object) end
+workspace.DescendantAdded:Connect(consider)
 local function aliveRoot(player)
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
