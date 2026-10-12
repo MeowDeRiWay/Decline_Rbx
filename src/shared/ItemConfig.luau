@@ -12,7 +12,25 @@ ItemConfig.Items = {
  Axe = {
   Name = "Axe", Weight = 1.5, Slot = "Hands", HarvestTool = "Axe",
   Description = "An axe for chopping trees into logs.",
-  Weapon = {Damage = 20, AttacksPerMinute = 10, DamageType = "Slashing", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
+  Weapon = {Damage = 20, AttacksPerMinute = 25, DamageType = "Slashing", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
+ },
+ Showel = {
+  Name = "Shovel", Weight = 2, Slot = "Hands", HarvestTool = "Shovel",
+  Description = "A shovel for collecting scrap and rags from scrap piles.",
+  Weapon = {Damage = 20, AttacksPerMinute = 25, DamageType = "Blunt", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
+ },
+ TreeLog = {
+  Name = "Tree Log", Weight = 10,
+  Description = "A heavy wooden log cut from a tree.",
+  ResourceMaterial = "Wood",
+ },
+ Scrap = {
+  Name = "Scrap", Weight = 0.5,
+  Description = "Salvaged scrap metal.",
+ },
+ Rags = {
+  Name = "Rags", Weight = 0.05,
+  Description = "Pieces of old fabric salvaged from scrap piles.",
  },
  Knife = {
   Name = "Knife", Weight = 0.3, Slot = "Hands", CraftTool = "Knife", CraftSpeed = 1,
@@ -82,3 +100,4 @@ ItemConfig.Items = {
  -- Metal = {Name = "Metal", Weight = 0.2},
 }
 return ItemConfig
+
