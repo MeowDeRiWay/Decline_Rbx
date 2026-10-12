@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Inventory = require(script.Parent.InventoryService)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
+local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Service = {}
 local contents = setmetatable({}, {__mode = "k"})
 local sessions = {}
@@ -14,10 +15,7 @@ local function reachable(player, chest)
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  local root = character and character:FindFirstChild("HumanoidRootPart")
  if not root or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return false end
- local cf, size = chest:GetBoundingBox()
- local localPoint = cf:PointToObjectSpace(root.Position)
- local half = size * 0.5
- local nearest = cf:PointToWorldSpace(Vector3.new(math.clamp(localPoint.X,-half.X,half.X),math.clamp(localPoint.Y,-half.Y,half.Y),math.clamp(localPoint.Z,-half.Z,half.Z)))
+ local nearest = Interaction.NearestPoint(chest,root.Position)
  local delta = nearest - root.Position
  if delta.Magnitude > Items.PickupDistance then return false end
  local params = RaycastParams.new()

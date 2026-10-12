@@ -20,12 +20,12 @@ ItemConfig.Items = {
   Weapon = {Damage = 20, AttacksPerMinute = 25, DamageType = "Blunt", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
  },
  TreeLog = {
-  Name = "Tree Log", Weight = 10,
+  Name = "Tree Log", Weight = 2,
   Description = "A heavy wooden log cut from a tree.",
   ResourceMaterial = "Wood",
  },
  Scrap = {
-  Name = "Scrap", Weight = 0.5,
+  Name = "Scrap", Weight = 0.2,
   Description = "Salvaged scrap metal.",
  },
  Rags = {

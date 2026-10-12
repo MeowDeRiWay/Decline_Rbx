@@ -5,6 +5,7 @@ local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 local player = Players.LocalPlayer
 local Config = require(ReplicatedStorage.Shared:WaitForChild("ItemConfig"))
+local Interaction = require(ReplicatedStorage.Shared:WaitForChild("Interaction"))
 local folder = workspace:WaitForChild("WorldItems")
 local action = ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("Action")
 local highlight = Instance.new("Highlight")
@@ -53,9 +54,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  end
  if chest and chest ~= workspace then
   if chest:GetAttribute("IsCorpse") and chest:GetAttribute("ClientVisible") ~= true then return end
-  local cf,size = chest:GetBoundingBox()
-  local p,half = cf:PointToObjectSpace(root.Position),size * 0.5
-  local nearest = cf:PointToWorldSpace(Vector3.new(math.clamp(p.X,-half.X,half.X),math.clamp(p.Y,-half.Y,half.Y),math.clamp(p.Z,-half.Z,half.Z)))
+  local nearest = Interaction.NearestPoint(chest,root.Position)
   hovered, chestHovered = chest, true
   stoveHovered=chest.Name=="Stove" or chest.Name=="CuttingBoard"
   reachable = (nearest-root.Position).Magnitude <= Config.PickupDistance
@@ -73,7 +72,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  local definition = Config.Items[item:GetAttribute("Item_ID") or item.Name]
  if not definition then return end
  hovered = item
- reachable = (item:GetPivot().Position - root.Position).Magnitude <= Config.PickupDistance
+ reachable = Interaction.Distance(item,root.Position) <= Config.PickupDistance
  highlight.FillColor = Color3.fromRGB(220,190,90)
  highlight.OutlineColor = Color3.fromRGB(255,235,155)
  highlight.Adornee, highlight.Enabled = item, true

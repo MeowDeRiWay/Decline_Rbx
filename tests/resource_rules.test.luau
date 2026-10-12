@@ -22,19 +22,20 @@ assert(Rules.Spaced({{X=0,Z=0}},1,0,1))
 assert(not Rules.Spaced({{X=0,Z=0}},.7,.7,1))
 for _,resource in pairs(Config) do
  assert(resource.MinCount == 1 and resource.MaxCount == 20)
+ assert(resource.EdgeMargin == 3)
  assert(resource.RespawnMin == 30 and resource.RespawnMax == 300)
  for id,range in pairs(resource.Loot) do
   assert(Items[id] and range.Min >= 1 and range.Max >= range.Min)
  end
 end
-assert(Items.TreeLog.Weight == 10 and Items.Scrap.Weight == .5 and Items.Rags.Weight == .05)
+assert(Items.TreeLog.Weight == 2 and Items.Scrap.Weight == .2 and Items.Rags.Weight == .05)
 local state = Inventory.New()
 assert(Inventory.Add(state,Items,"Axe",1,{5}))
 assert(Inventory.Equip(state,Items,{"Hands"},"Axe"))
 for hit=1,5 do assert(Combat.Use(state,Items)); assert(state.EquipmentCondition.Hands==5-hit) end
 assert(Combat.Use(state,Items)==nil,"Broken tools cannot hit")
 assert(Inventory.Add(state,Items,"TreeLog",4))
-assert(Inventory.Weight(state,Items) == 41.5)
+assert(Inventory.Weight(state,Items) == 9.5)
 local occupancy = {}
 assert(Rules.Occupancy(occupancy,false,0,180),"Initial empty home may spawn")
 assert(not Rules.Occupancy(occupancy,true,1,180))

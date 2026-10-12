@@ -4,7 +4,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ItemConfig = require(ReplicatedStorage.Shared.ItemConfig)
 local Inventory = require(script.Parent.InventoryService)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
+local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Service = {}
+local fallbackItems = {TreeLog = true, Scrap = true, Rags = true}
+local warned = {}
 local folder = workspace:FindFirstChild("WorldItems")
 if not folder then
  folder = Instance.new("Folder")
@@ -62,7 +65,7 @@ function Service.Pickup(player, item)
  if typeof(id) ~= "string" or not ItemConfig.Items[id] or typeof(count) ~= "number" or count < 1 or count >= math.huge or count ~= math.floor(count) then return false end
  local root, character = aliveRoot(player)
  if not root then return false end
- local position = item:GetPivot().Position
+ local position = Interaction.NearestPoint(item,root.Position)
  local delta = position - root.Position
  if delta.Magnitude > ItemConfig.PickupDistance then return false end
  local params = RaycastParams.new()
@@ -82,20 +85,75 @@ function Service.Pickup(player, item)
  item:Destroy()
  return true
 end
+local function makeItem(id)
+ local templates = ServerStorage:FindFirstChild("Items")
+ local source = templates and templates:FindFirstChild(id)
+ if source and (source:IsA("Model") or source:IsA("BasePart")) then
+  local item = source:Clone()
+  if item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart",true) then item:Destroy()
+  else return item end
+ end
+ -- Resource loot must remain recoverable even before its art is supplied.
+ if not fallbackItems[id] then return nil end
+ if not warned[id] then warn("[Decline] Using a temporary loot block; add ServerStorage/Items/"..id); warned[id] = true end
+ local item = Instance.new("Part")
+ item.Name = id
+ item.Size = id == "TreeLog" and Vector3.new(1,.2,.2) or Vector3.new(.3,.1,.3)
+ item.Material = id == "TreeLog" and Enum.Material.Wood or (id == "Scrap" and Enum.Material.Metal or Enum.Material.Fabric)
+ item.Color = id == "TreeLog" and Color3.fromRGB(120,85,50) or (id == "Scrap" and Color3.fromRGB(110,110,110) or Color3.fromRGB(150,135,105))
+ return item
+end
+local function place(item,position,count,id)
+ local bounds,size
+ if item:IsA("Model") then bounds,size = item:GetBoundingBox() else bounds,size = item.CFrame,item.Size end
+ local pivot = item:GetPivot()
+ local bottom = bounds.Position.Y-size.Y/2
+ item:PivotTo(CFrame.new(position+Vector3.new(0,pivot.Position.Y-bottom+.05,0))*pivot.Rotation)
+ local function anchor(part) part.Anchored,part.CanQuery = true,true end
+ if item:IsA("BasePart") then anchor(item) end
+ for _,part in ipairs(item:GetDescendants()) do if part:IsA("BasePart") then anchor(part) end end
+ item.Name = id
+ item:SetAttribute("Item_ID",id)
+ item:SetAttribute("Quantity",count)
+end
+function Service.SpawnLoot(loot,position,ignored)
+ local ids,prepared = {},{}
+ for id,count in pairs(loot) do
+  if not ItemConfig.Items[id] or not Rules.DropAmount(count,"All") then return false end
+  table.insert(ids,id)
+ end
+ table.sort(ids)
+ for index,id in ipairs(ids) do
+  local item = makeItem(id)
+  if not item then
+   for _,entry in ipairs(prepared) do entry:Destroy() end
+   return false
+  end
+  local offset = Vector3.new((index-(#ids+1)/2)*.4,0,0)
+  local destination = position+offset
+  local params = RaycastParams.new()
+  params.FilterType = Enum.RaycastFilterType.Exclude
+  params.FilterDescendantsInstances = {folder,table.unpack(ignored or {})}
+  params.RespectCanCollide = true
+  local hit = workspace:Raycast(destination+Vector3.new(0,2,0),Vector3.new(0,-16,0),params)
+  place(item,hit and hit.Position or destination,loot[id],id)
+  table.insert(prepared,item)
+ end
+ -- All entries are prepared before becoming public; no inventory grant occurs.
+ for _,item in ipairs(prepared) do item.Parent = folder end
+ return true
+end
 function Service.Drop(player, id, requested)
  if typeof(id) ~= "string" or not ItemConfig.Items[id] then return false end
  local count = Rules.DropAmount(Inventory.Snapshot(player).Items[id], requested)
  if not count then return false end
  local root, character = aliveRoot(player)
  if not root then return false end
- local templates = ServerStorage:FindFirstChild("Items")
- local template = templates and templates:FindFirstChild(id)
- if not template or (not template:IsA("Model") and not template:IsA("BasePart")) then
+ local item = makeItem(id)
+ if not item then
   warn("[Decline] Missing world item template: ServerStorage/Items/" .. id)
   return false
  end
- local item = template:Clone()
- if item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart", true) then item:Destroy(); return false end
  -- Drop straight below the character, without a forward throw.
  local destination = root.Position
  local params = RaycastParams.new()
@@ -103,20 +161,7 @@ function Service.Drop(player, id, requested)
  params.FilterDescendantsInstances = {character, folder}
  local hit = workspace:Raycast(destination + Vector3.new(0, 2, 0), Vector3.new(0, -12, 0), params)
  if not hit then item:Destroy(); return false end
- local bounds, size
- if item:IsA("Model") then bounds, size = item:GetBoundingBox() else bounds, size = item.CFrame, item.Size end
- local pivot = item:GetPivot()
- local bottom = bounds.Position.Y - size.Y / 2
- local position = hit.Position + Vector3.new(0, pivot.Position.Y - bottom + 0.05, 0)
- item:PivotTo(CFrame.new(position) * pivot.Rotation)
- local function anchor(part)
-  part.Anchored, part.CanQuery = true, true
- end
- if item:IsA("BasePart") then anchor(item) end
- for _, descendant in ipairs(item:GetDescendants()) do if descendant:IsA("BasePart") then anchor(descendant) end end
- item.Name = id
- item:SetAttribute("Item_ID", id)
- item:SetAttribute("Quantity", count)
+ place(item,hit.Position,count,id)
  local ok,conditions = Inventory.Remove(player, id, count)
  if not ok then item:Destroy(); return false end
  if conditions then item:SetAttribute("Conditions",HttpService:JSONEncode(conditions)) end

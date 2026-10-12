@@ -4,6 +4,7 @@ local Config = require(ReplicatedStorage.Shared.ResourceConfig)
 local Rules = require(ReplicatedStorage.Shared.ResourceRules)
 local Area = require(script.Parent.AreaService)
 local Inventory = require(script.Parent.InventoryService)
+local WorldItems = require(script.Parent.WorldItemService)
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
 local Service = {}
 local random = Random.new()
@@ -87,15 +88,17 @@ local function sources(kind)
  end
  return result
 end
-local function sample(parts)
+local function sample(parts,margin)
  local total = 0
- for _,part in ipairs(parts) do total += part.Size.X*part.Size.Z end
+ for _,part in ipairs(parts) do total += math.max(0,part.Size.X-2*margin)*math.max(0,part.Size.Z-2*margin) end
  if total <= 0 then return nil end
  local pick = random:NextNumber(0,total)
  for _,part in ipairs(parts) do
-  pick -= part.Size.X*part.Size.Z
-  if pick <= 0 then
-   local point = part.CFrame:PointToWorldSpace(Vector3.new(random:NextNumber(-part.Size.X/2,part.Size.X/2),part.Size.Y/2,random:NextNumber(-part.Size.Z/2,part.Size.Z/2)))
+  local width,depth = math.max(0,part.Size.X-2*margin),math.max(0,part.Size.Z-2*margin)
+  local area = width*depth
+  pick -= area
+  if area > 0 and pick <= 0 then
+   local point = part.CFrame:PointToWorldSpace(Vector3.new(random:NextNumber(-width/2,width/2),part.Size.Y/2,random:NextNumber(-depth/2,depth/2)))
    return part,point
   end
  end
@@ -135,7 +138,7 @@ local function generate(zone,state)
  -- Bounded attempts: a small region may not physically fit the random count.
  for _=1,wanted*80 do
   if made >= wanted then break end
-  local surface,point = sample(parts)
+  local surface,point = sample(parts,definition.EdgeMargin)
   if not point then break end
   local source = templates[random:NextInteger(1,#templates)]
   local sourceBox,size = source:GetBoundingBox()
@@ -152,9 +155,9 @@ local function generate(zone,state)
   local target = CFrame.new(position)*rotation
   local targetBox = target*relativeBox
   local fits = true
-  for _,corner in ipairs({Vector3.new(-1,0,-1),Vector3.new(1,0,-1),Vector3.new(-1,0,1),Vector3.new(1,0,1)}) do
-   local edge = targetBox:PointToWorldSpace(Vector3.new(corner.X*size.X/2,0,corner.Z*size.Z/2))
-   if not Area.Contains(surface,edge) then fits = false; break end
+  for _,corner in ipairs({Vector3.new(-1,-1,-1),Vector3.new(1,-1,-1),Vector3.new(-1,-1,1),Vector3.new(1,-1,1),Vector3.new(-1,1,-1),Vector3.new(1,1,-1),Vector3.new(-1,1,1),Vector3.new(1,1,1)}) do
+   local edge = targetBox:PointToWorldSpace(Vector3.new(corner.X*size.X/2,corner.Y*size.Y/2,corner.Z*size.Z/2))
+   if not Area.Contains(surface,edge,-definition.EdgeMargin) then fits = false; break end
   end
   if not fits then continue end
   local clone = source:Clone()
@@ -192,9 +195,17 @@ function Service.Hit(player,model,weapon)
  if not Inventory.UseWeapon(player) then return false end
  local resource = Config[node.Kind]
  if not Rules.CanDamage(resource,definition) then return true end
+ local previousHealth = node.Health
  node.Health = Rules.Damage(node.Health,weapon.Damage)
  model:SetAttribute("Health",node.Health)
  if node.Health == 0 then
+  local loot = {}
+  for id,amount in pairs(resource.Loot) do loot[id] = random:NextInteger(amount.Min,amount.Max) end
+  if not WorldItems.SpawnLoot(loot,bottom(model),{model,character}) then
+   node.Health = previousHealth
+   model:SetAttribute("Health",node.Health)
+   return true
+  end
   -- Invalidate before granting loot so a second strike cannot harvest twice.
   nodes[model] = nil
   if node.Zone and zones[node.Zone] then
@@ -202,7 +213,6 @@ function Service.Hit(player,model,weapon)
    state.Nodes[model] = nil
    if not next(state.Nodes) then state.NextAt = os.clock()+random:NextInteger(resource.RespawnMin,resource.RespawnMax) end
   end
-  for loot,amount in pairs(resource.Loot) do Inventory.Add(player,loot,random:NextInteger(amount.Min,amount.Max)) end
   model:Destroy()
  end
  return true

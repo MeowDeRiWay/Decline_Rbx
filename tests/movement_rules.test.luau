@@ -1,0 +1,11 @@
+local Rules = require("../src/shared/MovementRules")
+local Config = require("../src/shared/GameConfig")
+for _,weight in ipairs({0,10,20}) do assert(Rules.LoadMultiplier(weight,Config)==1) end
+assert(math.abs(Rules.LoadMultiplier(20.2,Config)-.99)<.000001)
+assert(math.abs(Rules.LoadMultiplier(21,Config)-.95)<.000001)
+assert(Rules.LoadMultiplier(25,Config)==.75)
+assert(Rules.LoadMultiplier(30,Config)==.5)
+assert(Rules.LoadMultiplier(40,Config)==0 and Rules.LoadMultiplier(100,Config)==0)
+assert(Rules.LoadMultiplier(nil,Config)==1 and Rules.LoadMultiplier(0/0,Config)==1)
+assert(Rules.LoadMultiplier(math.huge,Config)==1)
+print("PASS: carrying threshold, proportional fractional penalty, walking/running multiplier and non-negative speed")

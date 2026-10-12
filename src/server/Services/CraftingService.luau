@@ -5,6 +5,7 @@ local Items=require(ReplicatedStorage.Shared.ItemConfig)
 local Recipes=require(ReplicatedStorage.Shared.CraftConfig)
 local Rules=require(ReplicatedStorage.Shared.CraftRules)
 local Amounts=require(ReplicatedStorage.Shared.InventoryRules)
+local Interaction=require(ReplicatedStorage.Shared.Interaction)
 local Service={}
 local states=setmetatable({},{__mode="k"})
 local sessions={}
@@ -16,9 +17,7 @@ local function reachable(player,stove)
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")
  if not root or not hp or hp.Health<=0 or character:GetAttribute("Knockout") then return false end
- local cf,size=stove:GetBoundingBox()
- local p,half=cf:PointToObjectSpace(root.Position),size/2
- local near=cf:PointToWorldSpace(Vector3.new(math.clamp(p.X,-half.X,half.X),math.clamp(p.Y,-half.Y,half.Y),math.clamp(p.Z,-half.Z,half.Z)))
+ local near=Interaction.NearestPoint(stove,root.Position)
  local delta=near-root.Position
  if delta.Magnitude>Items.PickupDistance then return false end
  local params=RaycastParams.new()

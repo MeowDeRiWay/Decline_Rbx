@@ -53,7 +53,7 @@ RunService.Heartbeat:Connect(function(dt)
   local moving = Vector3.new(velocity.X, 0, velocity.Z).Magnitude > 0.1
   local rate = Config.IdleConsumption
   if moving then
-   rate = humanoid.WalkSpeed > Config.WalkSpeed + 0.1 and Config.RunConsumption or Config.WalkConsumption
+   rate = character:GetAttribute("Running") == true and Config.RunConsumption or Config.WalkConsumption
   end
   if character:GetAttribute("Working") == true then rate += Config.WorkConsumption end
   local weight = math.max(0, numberAttribute(character, "LoadKg", 0))

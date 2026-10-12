@@ -2,6 +2,8 @@ local GameConfig = {}
 GameConfig.MaxTowns = 5
 GameConfig.WalkSpeed = 1
 GameConfig.RunSpeedBonus = 2
+GameConfig.CarryLimitKg = 20
+GameConfig.OverloadPenaltyPerKg = 0.05
 -- Almost overhead, slightly tilted. Distances are in studs.
 GameConfig.CameraHeight = 30
 GameConfig.CameraBack = 5
