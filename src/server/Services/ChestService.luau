@@ -81,6 +81,7 @@ function Service.TakeAll(player)
  local storage=contents[chest]
  for id in pairs(table.clone(storage.Items)) do Inventory.Transfer(player,storage,id,"All",false) end
  notify(chest)
+ if next(storage.Items)==nil then Service.Close(player) end
  return true
 end
 function Service.ValidateSessions()
