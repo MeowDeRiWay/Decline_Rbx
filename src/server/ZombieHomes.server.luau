@@ -33,7 +33,7 @@ local function spawn(home)
  local floorParams = RaycastParams.new()
  floorParams.FilterType = Enum.RaycastFilterType.Include
  floorParams.FilterDescendantsInstances = {home}
- floorParams.RespectCanCollide = true
+ floorParams.RespectCanCollide = false
  local overlap = OverlapParams.new()
  overlap.FilterType = Enum.RaycastFilterType.Exclude
  overlap.FilterDescendantsInstances = {source}
@@ -75,6 +75,10 @@ local function spawn(home)
 end
 local function watch(home)
  if not home:IsA("Model") or active[home] then return end
+ -- Home surfaces are queryable markers; physical collision is not required.
+ for _,part in ipairs(home:GetDescendants()) do
+  if part:IsA("BasePart") then part.CanQuery=true end
+ end
  local token = {}
  active[home] = token
  task.spawn(function()

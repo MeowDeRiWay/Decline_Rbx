@@ -136,6 +136,18 @@ local function prepare(model)
   local position=root.Position+direction*distance
   local stepHeight=math.max(root.Size.Y,.2)
   local ground=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),params)
+  -- The home floor may be non-collidable. It still supports our server-driven
+  -- zombie movement; otherwise the first step would drop it to the terrain below.
+  local homeReference=model:FindFirstChild("ZombieHome")
+  local home=homeReference and homeReference:IsA("ObjectValue") and homeReference.Value
+  if home and home:IsDescendantOf(workspace) then
+   local homeParams=RaycastParams.new()
+   homeParams.FilterType=Enum.RaycastFilterType.Include
+   homeParams.FilterDescendantsInstances={home}
+   homeParams.RespectCanCollide=false
+   local homeGround=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),homeParams)
+   if homeGround and homeGround.Normal.Y>=.95 and (not ground or homeGround.Position.Y>ground.Position.Y) then ground=homeGround end
+  end
   if not ground then model:SetAttribute("AIState","Blocked"); return true end
   position=Vector3.new(position.X,ground.Position.Y+root.Size.Y/2,position.Z)
   local turned=root.CFrame:Lerp(CFrame.lookAt(root.Position,root.Position+direction),math.clamp(dt*3,0,1))
