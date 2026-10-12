@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Damage = require(script.Parent.Services.DamageService)
 local Inventory = require(script.Parent.Services.InventoryService)
 local attack = Instance.new("RemoteEvent")
@@ -20,9 +20,9 @@ attack.OnServerEvent:Connect(function(player)
  if not weapon then return end
  local cooldown = 60 / weapon.AttacksPerMinute
  ready[player] = now + cooldown
- local base = motor:GetAttribute("RestC0")
- motor.C0 = CFrame.new(0,0,-weapon.Thrust) * base
- TweenService:Create(motor,TweenInfo.new(cooldown,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{C0=base}):Play()
+ Motion.Play(motor,weapon)
+ task.delay(Motion.HitDelay(weapon),function()
+ if player.Character ~= character or humanoid.Health <= 0 or motor.Parent ~= held or held.Parent ~= character then return end
  local params = OverlapParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = {character}
@@ -57,5 +57,6 @@ attack.OnServerEvent:Connect(function(player)
   local dealt = Damage.Apply(nearest,weapon.Damage,weapon.DamageType,root.Position)
   if dealt > 0 then Inventory.UseWeapon(player) end
  end
+ end)
 end)
 Players.PlayerRemoving:Connect(function(player) ready[player] = nil end)

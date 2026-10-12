@@ -4,6 +4,11 @@ local ItemConfig = {}
 ItemConfig.PickupDistance = 1
 ItemConfig.Slots = {"Head", "Body", "Hands", "Back", "Additional"}
 ItemConfig.Items = {
+ ZombieHand = {
+  Name = "Zombie Hand", Weight = 0, Slot = "Hands", Lootable = false,
+  Description = "A zombie's right hand.",
+  Weapon = {Damage = 5, AttacksPerMinute = 10, DamageType = "Blunt", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
+ },
  Knife = {
   Name = "Knife", Weight = 0.3, Slot = "Hands",
   Description = "A knife from some store. Its sharp blade is good for slicing meat products.",

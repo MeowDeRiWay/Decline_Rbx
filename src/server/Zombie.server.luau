@@ -4,6 +4,10 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Sight = require(ReplicatedStorage.Shared.Sight)
 local Sector = require(ReplicatedStorage.Shared.VisibilityRules)
+local Items = require(ReplicatedStorage.Shared.ItemConfig).Items
+local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
+local Visuals = require(script.Parent.Services.EquipmentVisuals)
+local Damage = require(script.Parent.Services.DamageService)
 local Chests = require(script.Parent.Services.ChestService)
 local registered = setmetatable({},{__mode="k"})
 local function positive(value)
@@ -56,6 +60,10 @@ local function prepare(model)
  humanoid.AutoRotate=false
  model:SetAttribute("AIState","Idle")
  model:SetAttribute("TargetName","")
+ local weapon = Items.ZombieHand.Weapon
+ model:SetAttribute("WeaponCondition",weapon.MaxUses)
+ Visuals.Apply(model,"ZombieHand")
+ local ready = 0
  local dead=false
  local function sync()
   model:SetAttribute("Health",humanoid.Health)
@@ -64,6 +72,9 @@ local function prepare(model)
  local function die()
   if dead then return end
   dead=true
+  local held = model:FindFirstChild("HeldItem")
+  local motor = held and held:FindFirstChild("WeaponGrip")
+  if motor then Motion.Cancel(motor) end
   model:SetAttribute("AIState","Dead")
   model:SetAttribute("TargetName","")
   model:SetAttribute("IsDead",true)
@@ -146,6 +157,32 @@ local function prepare(model)
   local delta=nearest.Position-root.Position
   delta=Vector3.new(delta.X,0,delta.Z)
   local stoppingDistance=(root.Size.Z+nearest.Size.Z)/2+.15
+  local attackDistance = root.Size.Z/2+nearest.Size.Z/2+weapon.Range
+  if delta.Magnitude<=attackDistance and os.clock()>=ready and (model:GetAttribute("WeaponCondition") or 0)>0 then
+   if not model:FindFirstChild("HeldItem") then Visuals.Apply(model,"ZombieHand") end
+   local held=model:FindFirstChild("HeldItem")
+   local motor=held and held:FindFirstChild("WeaponGrip")
+   if motor then
+    ready=os.clock()+60/weapon.AttacksPerMinute
+    model:SetAttribute("AIState","Attacking")
+    local victimRoot=nearest
+    Motion.Play(motor,weapon)
+    task.delay(Motion.HitDelay(weapon),function()
+     if dead or humanoid.Health<=0 or not model.Parent or not victimRoot.Parent then return end
+     local victim=victimRoot.Parent:FindFirstChildOfClass("Humanoid")
+     if not victim or victim.Health<=0 then return end
+     local offset=victimRoot.Position-root.Position
+     if offset.Magnitude>attackDistance then return end
+     local facing=root.CFrame.LookVector
+     if not Sector.InSector(facing.X,facing.Z,offset.X,offset.Z,160) then return end
+     local hit=Sight.Cast(head.Position,victimRoot.Position-head.Position,model)
+     if hit and not hit.Instance:IsDescendantOf(victimRoot.Parent) then return end
+     if Damage.Apply(victim,weapon.Damage,weapon.DamageType,root.Position)>0 then
+      model:SetAttribute("WeaponCondition",math.max(0,(model:GetAttribute("WeaponCondition") or 0)-1))
+     end
+    end)
+   end
+  end
   if delta.Magnitude<=stoppingDistance then return end
   local direction=delta.Unit
   local distance=math.min(humanoid.WalkSpeed*math.min(dt,.1),delta.Magnitude-stoppingDistance)

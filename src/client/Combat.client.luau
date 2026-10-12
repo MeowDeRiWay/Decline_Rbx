@@ -2,7 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Input = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
-local TweenService = game:GetService("TweenService")
+local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local player = Players.LocalPlayer
 local items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local remote = ReplicatedStorage:WaitForChild("WeaponAttack")
@@ -19,9 +19,5 @@ Input.InputBegan:Connect(function(input,processed)
  local cooldown = 60/weapon.AttacksPerMinute
  ready = os.clock()+cooldown
  remote:FireServer()
- local base = motor:GetAttribute("RestC0")
- if base then
-  motor.C0 = CFrame.new(0,0,-weapon.Thrust)*base
-  TweenService:Create(motor,TweenInfo.new(cooldown,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{C0=base}):Play()
- end
+ Motion.Play(motor,weapon)
 end)

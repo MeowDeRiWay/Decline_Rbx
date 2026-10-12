@@ -32,7 +32,7 @@ end
 function Service.CreateCorpse(model,items)
  if contents[model] then return end
  local storage = Rules.New()
- for id,count in pairs(items) do if count > 0 then Rules.Add(storage,Items.Items,id,count) end end
+ for id,count in pairs(items) do if count > 0 and Items.Items[id] and Items.Items[id].Lootable ~= false then Rules.Add(storage,Items.Items,id,count) end end
  contents[model] = storage
  model:SetAttribute("IsCorpse",true)
 end
