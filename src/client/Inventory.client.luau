@@ -90,6 +90,15 @@ tooltip.TextSize = 15
 tooltip.TextXAlignment = Enum.TextXAlignment.Center
 tooltip.ZIndex = 20
 tooltip.Visible = false
+local function returnText(definition)
+ local names={}
+ for id,count in pairs(definition.ReturnItems or {}) do
+  local name=ItemConfig.Items[id] and ItemConfig.Items[id].Name or id
+  table.insert(names,count>1 and (name.." ×"..count) or name)
+ end
+ table.sort(names)
+ return #names>0 and ("Returns "..table.concat(names,", ")) or ""
+end
 local function effectText(definition)
  local effects = definition.Consume
  if definition.Weapon then
@@ -97,7 +106,7 @@ local function effectText(definition)
   return string.format("Damage %d · %s\n%d attacks/min · Resource %d hits",w.Damage,w.DamageType,w.AttacksPerMinute,w.MaxUses) .. (definition.CraftTool and string.format("\nCraft speed ×%g",definition.CraftSpeed or 1) or "")
  end
  if not effects then return "Crafting material" end
- return string.format("Food %+.0f\nWater %+.0f\nSickness %+.0f", effects.Food or 0, effects.Water or 0, effects.Sick or 0) .. (definition.ReturnItems and "\nReturns Wooden Plate" or "")
+ return string.format("Food %+.0f\nWater %+.0f\nSickness %+.0f", effects.Food or 0, effects.Water or 0, effects.Sick or 0) .. (definition.ReturnItems and ("\n"..returnText(definition)) or "")
 end
 RunService.RenderStepped:Connect(function()
  if not gui.Enabled then tooltip.Visible = false end
@@ -264,7 +273,7 @@ local function foodDetails(definition,bonus)
   local isBonus=entry[1]=="Sickness" and entry[2]<0 or entry[1]~="Sickness" and entry[2]>0
   if entry[2]~=0 and isBonus==bonus then table.insert(lines,string.format("%s %+.0f",entry[1],entry[2])) end
  end
- if bonus and definition.ReturnItems then table.insert(lines,"Returns Wooden Plate") end
+ if bonus and definition.ReturnItems then table.insert(lines,returnText(definition)) end
  return #lines>0 and table.concat(lines,"\n") or "None"
 end
 redraw = function()

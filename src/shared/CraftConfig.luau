@@ -11,10 +11,16 @@ return {
   Ingredients = {Sausage = 1}, Output = "SausageSlice", OutputCount = 5,
   Tool = "Knife", MaxBatch = 5, Duration = 30,
  },
- MashedPotatoesWithSausage = {
-  Name = "Mashed Potatoes with Sausage", Station = "Stove",
+ MashedPotatoesWithSausage_1 = {
+  Name = "Mashed Potatoes with Sausage (Wooden Plate)", Station = "Stove",
   Description = "Prepare mashed potatoes with sausage on a wooden plate.",
   Ingredients = {BoiledPotato = 1, SausageSlice = 1, WoodenPlate = 1},
-  Output = "MashedPotatoesWithSausage", OutputCount = 1, MaxBatch = 5, Duration = 60,
+  Output = "MashedPotatoesWithSausage_1", OutputCount = 1, MaxBatch = 5, Duration = 60,
+ },
+ MashedPotatoesWithSausage_2 = {
+  Name = "Mashed Potatoes with Sausage (Plate)", Station = "Stove",
+  Description = "Prepare mashed potatoes with sausage on an ordinary plate.",
+  Ingredients = {BoiledPotato = 1, SausageSlice = 1, Plate = 1},
+  Output = "MashedPotatoesWithSausage_2", OutputCount = 1, MaxBatch = 5, Duration = 60,
  },
 }

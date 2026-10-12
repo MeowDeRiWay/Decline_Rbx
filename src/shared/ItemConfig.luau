@@ -16,6 +16,10 @@ ItemConfig.Items = {
   -- Optional HeldOffset = CFrame.new(x, y, z) * CFrame.Angles(rx, ry, rz),
   -- An Attachment named HandsGrip inside the character Body overrides this offset.
  },
+ Plate = {
+  Name = "Plate", Weight = 0.2,
+  Description = "An ordinary plate for serving meals.",
+ },
  WoodenPlate = {
   Name = "Wooden Plate", Weight = 0.1,
   Description = "A wooden plate for serving meals.",
@@ -30,11 +34,17 @@ ItemConfig.Items = {
   Description = "One of five slices from a sausage.",
   Consume = {Food = 1, Water = -1, Sick = 0},
  },
- MashedPotatoesWithSausage = {
-  Name = "Mashed Potatoes with Sausage", Weight = 0.4,
+ MashedPotatoesWithSausage_1 = {
+  Name = "Mashed Potatoes with Sausage (Wooden Plate)", Weight = 0.4,
   Description = "Mashed potatoes with sausage, served on a wooden plate.",
   Consume = {Food = 6, Water = -1, Sick = 0},
   ReturnItems = {WoodenPlate = 1},
+ },
+ MashedPotatoesWithSausage_2 = {
+  Name = "Mashed Potatoes with Sausage (Plate)", Weight = 0.5,
+  Description = "Mashed potatoes with sausage, served on an ordinary plate.",
+  Consume = {Food = 6, Water = -1, Sick = 0},
+  ReturnItems = {Plate = 1},
  },
  BoiledPotato = {
   Name = "Boiled Potato", Weight = 0.2,
