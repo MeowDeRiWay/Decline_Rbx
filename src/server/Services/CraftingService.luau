@@ -30,23 +30,44 @@ end
 local function notify(stove)
  for player,current in pairs(sessions) do if current==stove then changed:Fire(player) end end
 end
+local function unlock(job)
+ if not job.RequiresPresence then return end
+ local character=job.Character
+ if character and character.Parent then
+  character:SetAttribute("CraftingLocked",false)
+  local hp=character:FindFirstChildOfClass("Humanoid")
+  if job.Root and job.Root.Parent and hp and hp.Health>0 and not character:GetAttribute("Knockout") then job.Root.Anchored=job.WasAnchored end
+ end
+end
+local function cancel(stove,job)
+ local state=states[stove]
+ if not state or state.Job~=job then return end
+ state.Job=nil
+ unlock(job)
+ for id,count in pairs(job.Ingredients) do Inventory.Add(job.Player,id,count) end
+ notify(stove)
+end
 function Service.Open(player,stove)
  if not reachable(player,stove) then return false end
+ if sessions[player] and sessions[player]~=stove then Service.Close(player) end
  states[stove]=states[stove] or {Ready={}}
  sessions[player]=stove
  changed:Fire(player)
  return true
 end
 function Service.Close(player)
- if not sessions[player] then return end
+ local stove=sessions[player]
+ if not stove then return end
  sessions[player]=nil
+ local job=states[stove] and states[stove].Job
+ if job and job.RequiresPresence and job.Player==player then cancel(stove,job) end
  changed:Fire(player)
 end
 function Service.Snapshot(player)
  local stove=sessions[player]
  local state=stove and states[stove]
  local job=state and state.Job
- return {CookingOpen=stove~=nil,CookingStation=stove and stove.Name,CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,CookingCount=job and job.Count or 0}
+ return {CookingOpen=stove~=nil,CookingStation=stove and stove.Name,CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,CookingRequiresPresence=job and job.RequiresPresence or false,CookingCount=job and job.Count or 0}
 end
 function Service.Cook(player,id,requested)
  local stove=sessions[player]
@@ -63,12 +84,20 @@ function Service.Cook(player,id,requested)
  local plan=Rules.Plan(own.Items,recipe,count)
  if not plan then return false end
  local duration=recipe.Duration/speed
- local job={Recipe=id,Count=count,EndsAt=workspace:GetServerTimeNow()+duration}
+ local character=player.Character
+ local root=character:FindFirstChild("HumanoidRootPart")
+ local job={Recipe=id,Count=count,EndsAt=workspace:GetServerTimeNow()+duration,Player=player,Character=character,Root=root,WasAnchored=root.Anchored,RequiresPresence=recipe.RequiresPresence==true,Ingredients=plan.Ingredients}
  state.Job=job
  if not Inventory.ConsumeIngredients(player,{Ingredients=plan.Ingredients},1) then state.Job=nil; return false end
+ if job.RequiresPresence then
+  character:SetAttribute("CraftingLocked",true)
+  root.Anchored=true
+ end
  notify(stove)
  task.delay(duration,function()
   if not stove:IsDescendantOf(workspace) or state.Job~=job then return end
+  if job.RequiresPresence and (sessions[player]~=stove or player.Character~=character or not reachable(player,stove)) then cancel(stove,job); return end
+  unlock(job)
   for output,amount in pairs(plan.Outputs) do state.Ready[output]=(state.Ready[output] or 0)+amount end
   state.Job=nil
   notify(stove)
@@ -108,5 +137,5 @@ end
 function Service.ValidateSessions()
  for player,stove in pairs(sessions) do if not reachable(player,stove) then Service.Close(player) end end
 end
-Players.PlayerRemoving:Connect(function(player) sessions[player]=nil end)
+Players.PlayerRemoving:Connect(function(player) Service.Close(player) end)
 return Service
