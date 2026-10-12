@@ -122,7 +122,7 @@ local function prepare(model)
   if delta.Magnitude<=stoppingDistance then return true end
   local direction=delta.Unit
   local distance=math.min(speed*math.min(dt,.1),delta.Magnitude-stoppingDistance)
-  if distance<=0 then return false end
+  if distance<=0 then return true end
   local params=RaycastParams.new()
   params.FilterType=Enum.RaycastFilterType.Exclude
   params.FilterDescendantsInstances=ignored and {model,ignored} or {model}
@@ -136,7 +136,7 @@ local function prepare(model)
   local position=root.Position+direction*distance
   local stepHeight=math.max(root.Size.Y,.2)
   local ground=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),params)
-  if not ground then model:SetAttribute("AIState","Blocked"); return false end
+  if not ground then model:SetAttribute("AIState","Blocked"); return true end
   position=Vector3.new(position.X,ground.Position.Y+root.Size.Y/2,position.Z)
   local turned=root.CFrame:Lerp(CFrame.lookAt(root.Position,root.Position+direction),math.clamp(dt*3,0,1))
   local desiredRoot=CFrame.new(position)*turned.Rotation
@@ -155,7 +155,7 @@ local function prepare(model)
    if phase == "Looking" then lookStart = root.CFrame end
    if phase == "Wandering" then
     local direction = CFrame.Angles(0,random:NextNumber(-math.pi,math.pi),0).LookVector
-    wanderTarget = root.Position+direction*random:NextNumber(2,4)
+    wanderTarget = root.Position+direction*random:NextNumber(1,10)
    end
   end
   model:SetAttribute("AIState","Idle"..phase)
