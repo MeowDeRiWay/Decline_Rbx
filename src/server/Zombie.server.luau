@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Sight = require(ReplicatedStorage.Shared.Sight)
+local Crowd = require(ReplicatedStorage.Shared.CrowdRules)
 local IdleRules = require(ReplicatedStorage.Shared.ZombieIdleRules)
 local Sector = require(ReplicatedStorage.Shared.VisibilityRules)
 local Items = require(ReplicatedStorage.Shared.ItemConfig).Items
@@ -146,7 +147,7 @@ local function prepare(model)
   if delta.Magnitude<=stoppingDistance then return true end
   local direction=delta.Unit
   local distance=math.min(speed*math.min(dt,.1),delta.Magnitude-stoppingDistance)
-  if distance<=0 then return true end
+  if distance<=0 then return false,true end
   local params=RaycastParams.new()
   params.FilterType=Enum.RaycastFilterType.Exclude
   params.FilterDescendantsInstances=ignored and {model,ignored} or {model}
@@ -158,8 +159,28 @@ local function prepare(model)
    model:SetAttribute("AIState","Blocked")
   end
   local position=root.Position+direction*distance
+  local groundExcluded={model}
+  for other in pairs(registered) do
+   if other~=model and other:IsDescendantOf(workspace) then
+    table.insert(groundExcluded,other)
+    local otherRoot=other:FindFirstChild("HumanoidRootPart")
+    local hp=other:FindFirstChildOfClass("Humanoid")
+    if otherRoot and hp and hp.Health>0 and math.abs(root.Position.Y-otherRoot.Position.Y)<(root.Size.Y+otherRoot.Size.Y)/2+.2 then
+     local radius=(math.sqrt(root.Size.X^2+root.Size.Z^2)+math.sqrt(otherRoot.Size.X^2+otherRoot.Size.Z^2))/2+.05
+     if not Crowd.CanStep(root.Position.X,root.Position.Z,position.X,position.Z,otherRoot.Position.X,otherRoot.Position.Z,radius) then
+      model:SetAttribute("AIState","CrowdBlocked")
+      return false,true
+     end
+    end
+   end
+  end
+  for _,player in ipairs(Players:GetPlayers()) do if player.Character then table.insert(groundExcluded,player.Character) end end
+  local groundParams=RaycastParams.new()
+  groundParams.FilterType=Enum.RaycastFilterType.Exclude
+  groundParams.FilterDescendantsInstances=groundExcluded
+  groundParams.RespectCanCollide=true
   local stepHeight=math.max(root.Size.Y,.2)
-  local ground=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),params)
+  local ground=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),groundParams)
   -- The home floor may be non-collidable. It still supports our server-driven
   -- zombie movement; otherwise the first step would drop it to the terrain below.
   local homeReference=model:FindFirstChild("ZombieHome")
@@ -172,12 +193,12 @@ local function prepare(model)
    local homeGround=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),homeParams)
    if homeGround and homeGround.Normal.Y>=.95 and (not ground or homeGround.Position.Y>ground.Position.Y) then ground=homeGround end
   end
-  if not ground then model:SetAttribute("AIState","Blocked"); return true end
+  if not ground then model:SetAttribute("AIState","Blocked"); return false,true end
   position=Vector3.new(position.X,ground.Position.Y+root.Size.Y/2,position.Z)
   local turned=root.CFrame:Lerp(CFrame.lookAt(root.Position,root.Position+direction),math.clamp(dt*3,0,1))
   local desiredRoot=CFrame.new(position)*turned.Rotation
   model:PivotTo(desiredRoot*root.CFrame:Inverse()*model:GetPivot())
-  return obstruction ~= nil
+  return false,obstruction ~= nil
  end
  local idle = IdleRules.New()
  local idlePhase
@@ -200,10 +221,13 @@ local function prepare(model)
    local desiredRoot = lookStart*CFrame.Angles(0,math.sin(progress*2*math.pi)*math.rad(60),0)
    model:PivotTo(desiredRoot*root.CFrame:Inverse()*model:GetPivot())
   elseif phase == "Wandering" then
-   if moveToward(wanderTarget,humanoid.WalkSpeed*.5,dt,.1,nil) then IdleRules.FinishWalk(idle) end
+   local arrived,blocked=moveToward(wanderTarget,humanoid.WalkSpeed*.5,dt,.1,nil)
+   if arrived or blocked then IdleRules.FinishWalk(idle) end
   end
  end
  local nearest
+ local lastSeenPosition,lastSeenCharacter
+ local searchStart,searchElapsed,searchBlocked
  local elapsed=0
  local movement
  movement=RunService.Heartbeat:Connect(function(dt)
@@ -237,11 +261,37 @@ local function prepare(model)
      end
     end
    end
+   if nearest then
+    lastSeenPosition,lastSeenCharacter=nearest.Position,nearest.Parent
+    searchStart,searchElapsed,searchBlocked=nil,0,0
+   end
    model:SetAttribute("DetectionReason",nearest and "Visible target" or reason)
    model:SetAttribute("TargetName",nearest and nearest.Parent.Name or "")
    if nearest then model:SetAttribute("AIState","Chasing") end
   end
-  if not nearest or not nearest.Parent then idleStep(dt); return end
+  if not nearest or not nearest.Parent then
+   local targetHumanoid=lastSeenCharacter and lastSeenCharacter:FindFirstChildOfClass("Humanoid")
+   if not targetHumanoid or targetHumanoid.Health<=0 or lastSeenCharacter:GetAttribute("Knockout") then lastSeenPosition=nil end
+   if lastSeenPosition then
+    if not searchStart then
+     model:SetAttribute("AIState","SearchingLastPosition")
+     local arrived,blocked=moveToward(lastSeenPosition,humanoid.WalkSpeed,dt,.15,nil)
+     searchBlocked=blocked and (searchBlocked or 0)+dt or 0
+     if arrived or searchBlocked>=3 then searchStart=root.CFrame; searchElapsed=0 end
+    else
+     model:SetAttribute("AIState","SearchingLook")
+     searchElapsed+=dt
+     local progress=math.min(searchElapsed/8,1)
+     local desired=searchStart*CFrame.Angles(0,math.sin(progress*2*math.pi)*math.rad(60),0)
+     model:PivotTo(desired*root.CFrame:Inverse()*model:GetPivot())
+     if progress>=1 then
+      lastSeenPosition,lastSeenCharacter,searchStart=nil,nil,nil
+      idle=IdleRules.New(); idlePhase=nil
+     end
+    end
+   else idleStep(dt) end
+   return
+  end
   -- Detection interrupts all idle actions; after losing sight start a fresh rest.
   idle = IdleRules.New()
   idlePhase = nil
@@ -261,7 +311,7 @@ local function prepare(model)
     task.delay(Motion.HitDelay(weapon),function()
      if dead or humanoid.Health<=0 or not model.Parent or not victimRoot.Parent then return end
      local victim=victimRoot.Parent:FindFirstChildOfClass("Humanoid")
-     if not victim or victim.Health<=0 then return end
+     if not victim or victim.Health<=0 or victimRoot.Parent:GetAttribute("Knockout") then return end
      local offset=victimRoot.Position-root.Position
      if offset.Magnitude>attackDistance then return end
      local facing=root.CFrame.LookVector

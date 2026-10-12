@@ -121,7 +121,7 @@ RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Last
   if not model:IsDescendantOf(workspace) then
    unregister(model,record)
   else
-   local canSee = model == character or (root ~= nil and visible(model,root,character))
+   local canSee = model == character or (root ~= nil and not character:GetAttribute("Knockout") and visible(model,root,character))
    setVisible(model,record,canSee)
    model:SetAttribute("ClientVisible",canSee == true)
    local total,renderable = 0,0

@@ -58,6 +58,13 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
  if elapsed < Config.VisibilityInterval then return end
  elapsed %= Config.VisibilityInterval
  local width,height = camera.ViewportSize.X,camera.ViewportSize.Y
+ if character:GetAttribute("Knockout") then
+  mask(1,0,0,width,height)
+  masks[1].BackgroundTransparency=0
+  for i=2,#masks do masks[i].Visible=false end
+  return
+ end
+ if masks[1] then masks[1].BackgroundTransparency=Config.UnseenShadeTransparency end
  local range = 10
  for _,corner in ipairs({Vector2.new(0,0),Vector2.new(width,0),Vector2.new(width,height),Vector2.new(0,height)}) do
   local point = planePoint(camera,corner.X,corner.Y,root.Position.Y)
