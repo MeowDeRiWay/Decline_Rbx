@@ -13,6 +13,10 @@ local dropAmounts = {}
 local selectedItem = nil
 local chestOpen = false
 local chestReadOnly = false
+local cookingOpen=false
+local Recipes=require(ReplicatedStorage.Shared.CraftConfig)
+local craftAmounts={}
+local craftStatus
 local gui = Instance.new("ScreenGui")
 gui.Name, gui.ResetOnSpawn, gui.Enabled = "InventoryUI", false, false
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -187,6 +191,59 @@ local function renderItems(frame, items, side)
   end
  end
 end
+local function renderRecipes()
+ craftStatus=nil
+ local ids={}
+ for id,recipe in pairs(Recipes) do if recipe.Station=="Stove" then table.insert(ids,id) end end
+ table.sort(ids)
+ for order,id in ipairs(ids) do
+  local recipe=Recipes[id]
+  local card=Instance.new("Frame")
+  card.Size=UDim2.new(1,-8,0,270)
+  card.BackgroundColor3=Color3.fromRGB(30,38,45)
+  card.BorderSizePixel=0
+  card.LayoutOrder=order
+  card.Parent=equipment
+  text(card,recipe.Name,UDim2.fromOffset(10,6),UDim2.new(1,-20,0,28))
+  local description=text(card,recipe.Description,UDim2.fromOffset(10,38),UDim2.new(1,-20,0,50))
+  description.TextWrapped=true
+  text(card,string.format("1 Potato → 1 Boiled Potato\nBatch: 1–%d · Time: %d seconds",recipe.MaxBatch,recipe.Duration),UDim2.fromOffset(10,90),UDim2.new(1,-20,0,44))
+  local amount=Instance.new("TextBox")
+  amount.Size=UDim2.new(.4,-12,0,30)
+  amount.Position=UDim2.new(.3,6,0,139)
+  amount.BackgroundColor3=Color3.fromRGB(22,28,33)
+  amount.TextColor3=Color3.fromRGB(235,240,244)
+  amount.Font=Enum.Font.Gotham
+  amount.TextSize=16
+  amount.ClearTextOnFocus=false
+  amount.Text=tostring(craftAmounts[id] or 1)
+  amount.Parent=card
+  local function quantity()
+   local value=tonumber(amount.Text) or craftAmounts[id] or 1
+   if value~=value or math.abs(value)==math.huge then value=1 end
+   value=math.clamp(math.floor(value),1,recipe.MaxBatch)
+   craftAmounts[id]=value
+   amount.Text=tostring(value)
+   return value
+  end
+  button(card,"−",UDim2.fromOffset(10,139),UDim2.new(.3,-12,0,30)).Activated:Connect(function() amount.Text=tostring(quantity()-1); quantity() end)
+  button(card,"+",UDim2.new(.7,6,0,139),UDim2.new(.3,-16,0,30)).Activated:Connect(function() amount.Text=tostring(quantity()+1); quantity() end)
+  amount.FocusLost:Connect(quantity)
+  local cook=button(card,"Cook",UDim2.fromOffset(10,177),UDim2.new(.5,-15,0,32))
+  local all=button(card,"Cook all (max 5)",UDim2.new(.5,5,0,177),UDim2.new(.5,-15,0,32))
+  local busy=(snapshot.CookingEndsAt or 0)>0
+  cook.Active,all.Active=not busy,not busy
+  cook.AutoButtonColor,all.AutoButtonColor=not busy,not busy
+  cook.Activated:Connect(function() if not busy then action:FireServer("Cook",id,quantity()) end end)
+  all.Activated:Connect(function() if not busy then action:FireServer("Cook",id,"All") end end)
+  local ready=(snapshot.CookingReady or {})[recipe.Output] or 0
+  craftStatus=text(card,busy and "Cooking..." or string.format("Ready: %d · Raw potatoes: %d",ready,snapshot.Items[recipe.Input] or 0),UDim2.fromOffset(10,211),UDim2.new(1,-20,0,23))
+  local collect=button(card,"Collect",UDim2.fromOffset(10,237),UDim2.new(.5,-15,0,27))
+  local collectAll=button(card,"Collect all",UDim2.new(.5,5,0,237),UDim2.new(.5,-15,0,27))
+  collect.Activated:Connect(function() if ready>0 then action:FireServer("CollectCooked",recipe.Output,math.min(quantity(),ready)) end end)
+  collectAll.Activated:Connect(function() if ready>0 then action:FireServer("CollectCooked",recipe.Output,"All") end end)
+ end
+end
 redraw = function()
  tooltip.Visible = false
  local selectedId = selectedItem and selectedItem:match("^Player:(.+)$")
@@ -194,10 +251,11 @@ redraw = function()
  clear(inventory)
  clear(equipment)
  weight.Text = string.format("Weight %.1f kg", snapshot.Weight)
- takeAll.Visible = chestOpen and chestReadOnly
+ takeAll.Visible = chestOpen and chestReadOnly and not cookingOpen
  equipment.Size = UDim2.new(.5,-32,1,takeAll.Visible and -148 or -108)
- rightTitle.Text = chestOpen and (snapshot.ChestName or "Chest") or "Equipment"
+ rightTitle.Text = cookingOpen and "Recipes" or chestOpen and (snapshot.ChestName or "Chest") or "Equipment"
  renderItems(inventory, snapshot.Items, "Player")
+ if cookingOpen then renderRecipes(); return end
  if chestOpen then
   renderItems(equipment, snapshot.ChestItems or {}, "Chest")
   return
@@ -229,6 +287,7 @@ local function setOpen(open)
   selectedItem = nil
   if chestOpen then
    chestOpen = false
+   cookingOpen=false
    action:FireServer("CloseChest")
   end
  end
@@ -263,8 +322,9 @@ player.CharacterAdded:Connect(function() setOpen(false) end)
 stateRemote.OnClientEvent:Connect(function(value)
  snapshot = value
  local wasChestOpen = chestOpen
- chestOpen = value.ChestOpen == true
- chestReadOnly = value.ChestReadOnly == true
+ cookingOpen=value.CookingOpen==true
+ chestOpen = value.ChestOpen == true or cookingOpen
+ chestReadOnly = value.ChestReadOnly == true or cookingOpen
  if chestOpen then
   if not wasChestOpen then selectedItem = nil end
   if not gui.Enabled then setOpen(true) else redraw() end
@@ -276,4 +336,11 @@ action:FireServer("Request")
 
 RunService.RenderStepped:Connect(function()
  if gui.Enabled and player.Character and player.Character:GetAttribute("Knockout") then setOpen(false) end
+end)
+
+RunService.RenderStepped:Connect(function()
+ if cookingOpen and craftStatus and craftStatus.Parent and (snapshot.CookingEndsAt or 0)>0 then
+  local remaining=math.max(0,math.ceil(snapshot.CookingEndsAt-workspace:GetServerTimeNow()))
+  craftStatus.Text=string.format("Cooking %d · %02d:%02d remaining",snapshot.CookingCount or 0,math.floor(remaining/60),remaining%60)
+ end
 end)

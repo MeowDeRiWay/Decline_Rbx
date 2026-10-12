@@ -16,10 +16,15 @@ ItemConfig.Items = {
   -- Optional HeldOffset = CFrame.new(x, y, z) * CFrame.Angles(rx, ry, rz),
   -- An Attachment named HandsGrip inside the character Body overrides this offset.
  },
+ BoiledPotato = {
+  Name = "Boiled Potato", Weight = 0.2,
+  Description = "A tasty boiled potato. Maybe I could make something else with it?",
+  Consume = {Food = 5, Sick = 0},
+ },
  Potato = {
   Name = "Potato", Weight = 0.2,
   Description = "An ordinary raw potato. I recommend cooking it before eating.",
-  Consume = {Food = 5, Sick = 5},
+  Consume = {Food = 1, Sick = 5},
  },
  -- Example (remove the comment when you have this item):
  -- SmallBackpack = {Name = "Small Backpack", Weight = 1.5, Slot = "Back"},
