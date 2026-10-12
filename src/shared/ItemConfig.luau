@@ -16,6 +16,22 @@ ItemConfig.Items = {
   -- Optional HeldOffset = CFrame.new(x, y, z) * CFrame.Angles(rx, ry, rz),
   -- An Attachment named HandsGrip inside the character Body overrides this offset.
  },
+ EmptyBottle = {
+  Name = "Empty Bottle", Weight = 0.1,
+  Description = "An empty half-litre bottle.",
+ },
+ DirtyWater = {
+  Name = "Dirty Water", Weight = 0.6, ConsumeAction = "Drink",
+  Description = "A bottle of dirty water. Quenches thirst but increases sickness.",
+  Consume = {Water = 30, Sick = 20},
+  ReturnItems = {EmptyBottle = 1},
+ },
+ CleanWater = {
+  Name = "Clean Water", Weight = 0.6, ConsumeAction = "Drink",
+  Description = "A bottle of clean water. Can be drunk or used to boil potatoes.",
+  Consume = {Water = 50},
+  ReturnItems = {EmptyBottle = 1},
+ },
  Plate = {
   Name = "Plate", Weight = 0.2,
   Description = "An ordinary plate for serving meals.",
