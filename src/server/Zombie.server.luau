@@ -92,10 +92,20 @@ local function prepare(model)
   direction=Vector3.new(direction.X,0,direction.Z)
   direction=direction.Magnitude>.001 and direction.Unit or Vector3.new(0,0,-1)
   local start=model:GetPivot()
-  local destination=CFrame.lookAt(start.Position,start.Position+direction)*CFrame.Angles(-math.pi/2,0,0)
+  local standingPosition=root.Position
+  local fallRoot=CFrame.lookAt(standingPosition,standingPosition+direction)*CFrame.Angles(-math.pi/2,0,0)
+  local destination=fallRoot*root.CFrame:Inverse()*start
   model:PivotTo(destination)
-  local box,size=model:GetBoundingBox()
-  local radius=math.abs(box.RightVector.Y)*size.X/2+math.abs(box.UpVector.Y)*size.Y/2+math.abs(box.LookVector.Y)*size.Z/2
+  -- Ground the actual body, not the equipped hand or a custom model pivot.
+  local bottom=math.huge
+  for _,part in ipairs(model:GetDescendants()) do
+   if part:IsA("BasePart") and part.Transparency<1 and not (held and part:IsDescendantOf(held)) then
+    local cf,size=part.CFrame,part.Size
+    local radius=math.abs(cf.RightVector.Y)*size.X/2+math.abs(cf.UpVector.Y)*size.Y/2+math.abs(cf.LookVector.Y)*size.Z/2
+    bottom=math.min(bottom,cf.Position.Y-radius)
+   end
+  end
+  if bottom==math.huge then bottom=root.Position.Y-root.Size.Z/2 end
   local params=RaycastParams.new()
   params.FilterType=Enum.RaycastFilterType.Exclude
   local excluded={model}
@@ -104,17 +114,17 @@ local function prepare(model)
   if creatures then table.insert(excluded,creatures) end
   params.FilterDescendantsInstances=excluded
   params.RespectCanCollide=true
-  local floor=workspace:Raycast(start.Position+Vector3.new(0,2,0),Vector3.new(0,-100,0),params)
+  local floor=workspace:Raycast(standingPosition+Vector3.new(0,2,0),Vector3.new(0,-100,0),params)
   local reference=model:FindFirstChild("ZombieHome")
   local home=reference and reference:IsA("ObjectValue") and reference.Value
   if home and home:IsDescendantOf(workspace) then
    local homeParams=RaycastParams.new()
    homeParams.FilterType=Enum.RaycastFilterType.Include
    homeParams.FilterDescendantsInstances={home}
-   local homeFloor=workspace:Raycast(start.Position+Vector3.new(0,2,0),Vector3.new(0,-100,0),homeParams)
+   local homeFloor=workspace:Raycast(standingPosition+Vector3.new(0,2,0),Vector3.new(0,-100,0),homeParams)
    if homeFloor and (not floor or homeFloor.Position.Y>floor.Position.Y) then floor=homeFloor end
   end
-  if floor then destination += Vector3.new(0,floor.Position.Y-(box.Position.Y-radius)+.02,0) end
+  if floor then destination += Vector3.new(0,floor.Position.Y-bottom+.02,0) end
   model:PivotTo(start)
   local value=Instance.new("CFrameValue")
   value.Value=start
