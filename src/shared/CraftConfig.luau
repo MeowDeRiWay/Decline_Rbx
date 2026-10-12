@@ -2,8 +2,8 @@
 return {
  BoilPotatoes = {
   Name = "Boil potatoes", Station = "Stove",
-  Description = "Boil potatoes into a nutritious meal.",
-  Ingredients = {Potato = 1}, Output = "BoiledPotato", OutputCount = 1, MaxBatch = 5, Duration = 60,
+  Description = "Boil potatoes using one bottle of clean water per potato.",
+  Ingredients = {Potato = 1, CleanWater = 1}, Output = "BoiledPotato", OutputCount = 1, MaxBatch = 5, Duration = 60,
  },
  SliceSausage = {
   Name = "Slice sausage", Station = "CuttingBoard",

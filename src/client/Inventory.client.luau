@@ -193,7 +193,7 @@ local function renderItems(frame, items, side)
   drop.Activated:Connect(function() readAmount(); action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, selected) end)
   all.Activated:Connect(function() action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, "All") end)
   if definition.Consume and not chestOpen then
-   local eat = button(actions, "Eat", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
+   local eat = button(actions, definition.ConsumeAction or "Eat", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
    eat.Activated:Connect(function() action:FireServer("Eat", id) end)
   elseif definition.Slot and not chestOpen then
    local equip = button(actions, "Equip", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
