@@ -11,7 +11,7 @@ local sessions={}
 local changed=Instance.new("BindableEvent")
 Service.Changed=changed.Event
 local function reachable(player,stove)
- if typeof(stove)~="Instance" or not stove:IsA("Model") or stove.Name~="Stove" or not stove:IsDescendantOf(workspace) or not stove:FindFirstChildWhichIsA("BasePart",true) then return false end
+ if typeof(stove)~="Instance" or not stove:IsA("Model") or (stove.Name~="Stove" and stove.Name~="CuttingBoard") or not stove:IsDescendantOf(workspace) or not stove:FindFirstChildWhichIsA("BasePart",true) then return false end
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")
@@ -46,24 +46,28 @@ function Service.Snapshot(player)
  local stove=sessions[player]
  local state=stove and states[stove]
  local job=state and state.Job
- return {CookingOpen=stove~=nil,CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,CookingCount=job and job.Count or 0}
+ return {CookingOpen=stove~=nil,CookingStation=stove and stove.Name,CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,CookingCount=job and job.Count or 0}
 end
 function Service.Cook(player,id,requested)
  local stove=sessions[player]
  if not reachable(player,stove) then Service.Close(player); return false end
  local recipe=typeof(id)=="string" and Recipes[id]
  local state=states[stove]
- if not recipe or recipe.Station~="Stove" or state.Job then return false end
- local available=Inventory.Snapshot(player).Items[recipe.Input] or 0
+ if not recipe or recipe.Station~=stove.Name or state.Job then return false end
+ local own=Inventory.Snapshot(player)
+ local speed=Rules.Speed(own.CraftTools or {},recipe)
+ if not speed or speed<=0 then return false end
+ local available=Rules.Available(own.Items,recipe)
  local count=Rules.Batch(available,requested,recipe.MaxBatch)
  if not count then return false end
- local job={Recipe=id,Count=count,EndsAt=workspace:GetServerTimeNow()+recipe.Duration}
+ local duration=recipe.Duration/speed
+ local job={Recipe=id,Count=count,EndsAt=workspace:GetServerTimeNow()+duration}
  state.Job=job
- if not Inventory.Remove(player,recipe.Input,count) then state.Job=nil; return false end
+ if not Inventory.ConsumeIngredients(player,recipe,count) then state.Job=nil; return false end
  notify(stove)
- task.delay(recipe.Duration,function()
+ task.delay(duration,function()
   if not stove:IsDescendantOf(workspace) or state.Job~=job then return end
-  state.Ready[recipe.Output]=(state.Ready[recipe.Output] or 0)+count
+  state.Ready[recipe.Output]=(state.Ready[recipe.Output] or 0)+count*(recipe.OutputCount or 1)
   state.Job=nil
   notify(stove)
  end)

@@ -15,8 +15,9 @@ local chestOpen = false
 local chestReadOnly = false
 local cookingOpen=false
 local Recipes=require(ReplicatedStorage.Shared.CraftConfig)
+local CraftRules=require(ReplicatedStorage.Shared.CraftRules)
 local craftAmounts={}
-local craftStatus
+local craftStatuses={}
 local gui = Instance.new("ScreenGui")
 gui.Name, gui.ResetOnSpawn, gui.Enabled = "InventoryUI", false, false
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -93,10 +94,10 @@ local function effectText(definition)
  local effects = definition.Consume
  if definition.Weapon then
   local w = definition.Weapon
-  return string.format("Damage %d · %s\n%d attacks/min · Resource %d hits",w.Damage,w.DamageType,w.AttacksPerMinute,w.MaxUses)
+  return string.format("Damage %d · %s\n%d attacks/min · Resource %d hits",w.Damage,w.DamageType,w.AttacksPerMinute,w.MaxUses) .. (definition.CraftTool and string.format("\nCraft speed ×%g",definition.CraftSpeed or 1) or "")
  end
- if not effects then return "No consumable effects" end
- return string.format("Food %+.0f\nSickness %+.0f", effects.Food or 0, effects.Sick or 0)
+ if not effects then return "Crafting material" end
+ return string.format("Food %+.0f\nWater %+.0f\nSickness %+.0f", effects.Food or 0, effects.Water or 0, effects.Sick or 0) .. (definition.ReturnItems and "\nReturns Wooden Plate" or "")
 end
 RunService.RenderStepped:Connect(function()
  if not gui.Enabled then tooltip.Visible = false end
@@ -192,25 +193,34 @@ local function renderItems(frame, items, side)
  end
 end
 local function renderRecipes()
- craftStatus=nil
+ table.clear(craftStatuses)
  local ids={}
- for id,recipe in pairs(Recipes) do if recipe.Station=="Stove" then table.insert(ids,id) end end
+ for id,recipe in pairs(Recipes) do if recipe.Station==snapshot.CookingStation then table.insert(ids,id) end end
  table.sort(ids)
  for order,id in ipairs(ids) do
   local recipe=Recipes[id]
+  local available=CraftRules.Available(snapshot.Items,recipe)
+  local speed=CraftRules.Speed(snapshot.CraftTools or {},recipe)
   local card=Instance.new("Frame")
-  card.Size=UDim2.new(1,-8,0,270)
+  card.Size=UDim2.new(1,-8,0,356)
   card.BackgroundColor3=Color3.fromRGB(30,38,45)
   card.BorderSizePixel=0
   card.LayoutOrder=order
   card.Parent=equipment
-  text(card,recipe.Name,UDim2.fromOffset(10,6),UDim2.new(1,-20,0,28))
-  local description=text(card,recipe.Description,UDim2.fromOffset(10,38),UDim2.new(1,-20,0,50))
+  local title=text(card,recipe.Name,UDim2.fromOffset(10,6),UDim2.new(1,-20,0,34))
+  title.TextWrapped=true; title.TextSize=16
+  local description=text(card,recipe.Description,UDim2.fromOffset(10,42),UDim2.new(1,-20,0,46))
   description.TextWrapped=true
-  text(card,string.format("1 Potato → 1 Boiled Potato\nBatch: 1–%d · Time: %d seconds",recipe.MaxBatch,recipe.Duration),UDim2.fromOffset(10,90),UDim2.new(1,-20,0,44))
+  local ingredients={}
+  for item,count in pairs(recipe.Ingredients) do table.insert(ingredients,string.format("%d %s (%d owned)",count,ItemConfig.Items[item].Name,snapshot.Items[item] or 0)) end
+  table.sort(ingredients)
+  local ingredientsText=text(card,table.concat(ingredients,"\n")..string.format("\n→ %d %s",recipe.OutputCount or 1,ItemConfig.Items[recipe.Output].Name),UDim2.fromOffset(10,90),UDim2.new(1,-20,0,74))
+  ingredientsText.TextSize=14; ingredientsText.TextWrapped=true
+  local tool=recipe.Tool and (speed and string.format("Knife required · Speed ×%g",speed) or "Knife required · Missing usable knife") or "No tool required"
+  text(card,string.format("Batch: 1–%d · Time: %g seconds\n%s",recipe.MaxBatch,recipe.Duration/(speed or 1),tool),UDim2.fromOffset(10,167),UDim2.new(1,-20,0,44)).TextSize=14
   local amount=Instance.new("TextBox")
   amount.Size=UDim2.new(.4,-12,0,30)
-  amount.Position=UDim2.new(.3,6,0,139)
+  amount.Position=UDim2.new(.3,6,0,215)
   amount.BackgroundColor3=Color3.fromRGB(22,28,33)
   amount.TextColor3=Color3.fromRGB(235,240,244)
   amount.Font=Enum.Font.Gotham
@@ -226,23 +236,36 @@ local function renderRecipes()
    amount.Text=tostring(value)
    return value
   end
-  button(card,"−",UDim2.fromOffset(10,139),UDim2.new(.3,-12,0,30)).Activated:Connect(function() amount.Text=tostring(quantity()-1); quantity() end)
-  button(card,"+",UDim2.new(.7,6,0,139),UDim2.new(.3,-16,0,30)).Activated:Connect(function() amount.Text=tostring(quantity()+1); quantity() end)
+  button(card,"−",UDim2.fromOffset(10,215),UDim2.new(.3,-12,0,30)).Activated:Connect(function() amount.Text=tostring(quantity()-1); quantity() end)
+  button(card,"+",UDim2.new(.7,6,0,215),UDim2.new(.3,-16,0,30)).Activated:Connect(function() amount.Text=tostring(quantity()+1); quantity() end)
   amount.FocusLost:Connect(quantity)
-  local cook=button(card,"Cook",UDim2.fromOffset(10,177),UDim2.new(.5,-15,0,32))
-  local all=button(card,"Cook all (max 5)",UDim2.new(.5,5,0,177),UDim2.new(.5,-15,0,32))
+  local cook=button(card,"Craft",UDim2.fromOffset(10,253),UDim2.new(.5,-15,0,32))
+  local all=button(card,string.format("Craft all (max %d)",recipe.MaxBatch),UDim2.new(.5,5,0,253),UDim2.new(.5,-15,0,32))
   local busy=(snapshot.CookingEndsAt or 0)>0
-  cook.Active,all.Active=not busy,not busy
-  cook.AutoButtonColor,all.AutoButtonColor=not busy,not busy
-  cook.Activated:Connect(function() if not busy then action:FireServer("Cook",id,quantity()) end end)
-  all.Activated:Connect(function() if not busy then action:FireServer("Cook",id,"All") end end)
+  local enabled=not busy and available>0 and speed~=nil
+  cook.Active,all.Active=enabled,enabled
+  cook.AutoButtonColor,all.AutoButtonColor=enabled,enabled
+  cook.TextTransparency,all.TextTransparency=enabled and 0 or .5,enabled and 0 or .5
+  cook.Activated:Connect(function() if enabled then action:FireServer("Cook",id,quantity()) end end)
+  all.Activated:Connect(function() if enabled then action:FireServer("Cook",id,"All") end end)
   local ready=(snapshot.CookingReady or {})[recipe.Output] or 0
-  craftStatus=text(card,busy and "Cooking..." or string.format("Ready: %d · Raw potatoes: %d",ready,snapshot.Items[recipe.Input] or 0),UDim2.fromOffset(10,211),UDim2.new(1,-20,0,23))
-  local collect=button(card,"Collect",UDim2.fromOffset(10,237),UDim2.new(.5,-15,0,27))
-  local collectAll=button(card,"Collect all",UDim2.new(.5,5,0,237),UDim2.new(.5,-15,0,27))
+  craftStatuses[id]=text(card,busy and "Station is busy" or string.format("Ready: %d · Available batches: %d",ready,available),UDim2.fromOffset(10,289),UDim2.new(1,-20,0,25))
+  local collect=button(card,"Collect",UDim2.fromOffset(10,322),UDim2.new(.5,-15,0,27))
+  local collectAll=button(card,"Collect all",UDim2.new(.5,5,0,322),UDim2.new(.5,-15,0,27))
   collect.Activated:Connect(function() if ready>0 then action:FireServer("CollectCooked",recipe.Output,math.min(quantity(),ready)) end end)
   collectAll.Activated:Connect(function() if ready>0 then action:FireServer("CollectCooked",recipe.Output,"All") end end)
  end
+end
+local function foodDetails(definition,bonus)
+ local effects=definition.Consume
+ if not effects then return bonus and (definition.Weapon and effectText(definition) or "None") or (definition.Weapon and "Cannot damage structures" or "None") end
+ local lines={}
+ for _,entry in ipairs({{"Food",effects.Food or 0},{"Water",effects.Water or 0},{"Sickness",effects.Sick or 0}}) do
+  local isBonus=entry[1]=="Sickness" and entry[2]<0 or entry[1]~="Sickness" and entry[2]>0
+  if entry[2]~=0 and isBonus==bonus then table.insert(lines,string.format("%s %+.0f",entry[1],entry[2])) end
+ end
+ if bonus and definition.ReturnItems then table.insert(lines,"Returns Wooden Plate") end
+ return #lines>0 and table.concat(lines,"\n") or "None"
 end
 redraw = function()
  tooltip.Visible = false
@@ -264,9 +287,9 @@ redraw = function()
   local definition = ItemConfig.Items[selectedId]
   rightTitle.Text = "Item details"
   text(equipment, definition.Name or selectedId, UDim2.new(), UDim2.new(1,-8,0,40)).LayoutOrder = 1
-  local bonus = text(equipment, "Bonuses\n" .. (definition.Consume and string.format("Food %+.0f",definition.Consume.Food or 0) or (definition.Weapon and effectText(definition) or "None")), UDim2.new(), UDim2.new(1,-8,0,90))
+  local bonus = text(equipment, "Bonuses\n" .. foodDetails(definition,true), UDim2.new(), UDim2.new(1,-8,0,90))
   bonus.LayoutOrder,bonus.TextColor3 = 2,Color3.fromRGB(110,214,150)
-  local debuff = text(equipment, "Debuffs\n" .. (definition.Consume and string.format("Sickness %+.0f",definition.Consume.Sick or 0) or (definition.Weapon and "Cannot damage structures" or "None")), UDim2.new(), UDim2.new(1,-8,0,64))
+  local debuff = text(equipment, "Debuffs\n" .. foodDetails(definition,false), UDim2.new(), UDim2.new(1,-8,0,64))
   debuff.LayoutOrder,debuff.TextColor3 = 3,Color3.fromRGB(232,133,133)
   local description = text(equipment, "Description\n" .. (definition.Description or "No description available."), UDim2.new(), UDim2.new(1,-8,0,160))
   description.LayoutOrder,description.TextYAlignment = 4,Enum.TextYAlignment.Top
@@ -339,6 +362,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 RunService.RenderStepped:Connect(function()
+ local craftStatus=snapshot.CookingRecipe and craftStatuses[snapshot.CookingRecipe]
  if cookingOpen and craftStatus and craftStatus.Parent and (snapshot.CookingEndsAt or 0)>0 then
   local remaining=math.max(0,math.ceil(snapshot.CookingEndsAt-workspace:GetServerTimeNow()))
   craftStatus.Text=string.format("Cooking %d · %02d:%02d remaining",snapshot.CookingCount or 0,math.floor(remaining/60),remaining%60)

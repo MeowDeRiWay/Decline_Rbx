@@ -68,6 +68,32 @@ function Service.Transfer(player, storage, id, requested, intoStorage)
  update(player)
  return true
 end
+function Service.ConsumeIngredients(player,recipe,count)
+ local state=states[player]
+ if not state then return false end
+ for id,needed in pairs(recipe.Ingredients) do
+  if (state.Items[id] or 0)<needed*count then return false end
+ end
+ for id,needed in pairs(recipe.Ingredients) do Rules.Remove(state,id,needed*count) end
+ update(player)
+ return true
+end
+local function craftTools(state)
+ local tools={}
+ local function add(id,condition)
+  local item=ItemConfig.Items[id]
+  if item and item.CraftTool and (not item.Weapon or (condition or 0)>0) then
+   tools[item.CraftTool]=math.max(tools[item.CraftTool] or 0,item.CraftSpeed or 1)
+  end
+ end
+ for slot,id in pairs(state.Equipment) do add(id,state.EquipmentCondition[slot]) end
+ for id in pairs(state.Items) do
+  local item=ItemConfig.Items[id]
+  if item and item.Weapon then for _,condition in ipairs(state.Conditions[id] or {}) do add(id,condition) end
+  else add(id,nil) end
+ end
+ return tools
+end
 function Service.GetWeapon(player)
  local state = states[player]
  return state and CombatRules.GetWeapon(state,ItemConfig.Items)
@@ -82,8 +108,8 @@ function Service.UseWeapon(player)
 end
 function Service.Snapshot(player)
  local state = states[player]
- if not state then return {Items = {}, Equipment = {}, Weight = 0} end
- return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), Weight = Rules.Weight(state, ItemConfig.Items)}
+ if not state then return {Items = {}, Equipment = {}, Weight = 0, CraftTools = {}} end
+ return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), Weight = Rules.Weight(state, ItemConfig.Items), CraftTools = craftTools(state)}
 end
 function Service.Start()
  if Service.Started then return end

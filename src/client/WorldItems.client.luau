@@ -48,7 +48,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  if not hit then return end
  local chest = hit.Instance
  while chest and chest ~= workspace do
-  if chest:IsA("Model") and (chest.Name == "Chest" or chest.Name == "Stove" or chest:GetAttribute("IsCorpse") == true) then break end
+  if chest:IsA("Model") and (chest.Name == "Chest" or (chest.Name == "Stove" or chest.Name == "CuttingBoard") or chest:GetAttribute("IsCorpse") == true) then break end
   chest = chest.Parent
  end
  if chest and chest ~= workspace then
@@ -57,12 +57,12 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
   local p,half = cf:PointToObjectSpace(root.Position),size * 0.5
   local nearest = cf:PointToWorldSpace(Vector3.new(math.clamp(p.X,-half.X,half.X),math.clamp(p.Y,-half.Y,half.Y),math.clamp(p.Z,-half.Z,half.Z)))
   hovered, chestHovered = chest, true
-  stoveHovered=chest.Name=="Stove"
+  stoveHovered=chest.Name=="Stove" or chest.Name=="CuttingBoard"
   reachable = (nearest-root.Position).Magnitude <= Config.PickupDistance
   highlight.FillColor = Color3.fromRGB(80,190,110)
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
-  label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and "Stove" or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
+  label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and (chest.Name=="CuttingBoard" and "Cutting Board" or "Stove") or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
   label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-44)))
   label.Visible = true
   return
