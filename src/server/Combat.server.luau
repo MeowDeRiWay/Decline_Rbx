@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Damage = require(script.Parent.Services.DamageService)
 local Inventory = require(script.Parent.Services.InventoryService)
+local Resources = require(script.Parent.Services.ResourceService)
 local attack = Instance.new("RemoteEvent")
 attack.Name = "WeaponAttack"
 attack.Parent = ReplicatedStorage
@@ -22,40 +23,55 @@ attack.OnServerEvent:Connect(function(player)
  ready[player] = now + cooldown
  Motion.Play(motor,weapon)
  task.delay(Motion.HitDelay(weapon),function()
- if player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or motor.Parent ~= held or held.Parent ~= character then return end
+ if player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or motor.Parent ~= held or held.Parent ~= character or Inventory.GetWeapon(player) ~= weapon then return end
  local params = OverlapParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = {character}
  local parts = workspace:GetPartBoundsInBox(root.CFrame * CFrame.new(0,0,-(root.Size.Z/2 + weapon.Range/2)),Vector3.new(weapon.Width,root.Size.Y+1,weapon.Range),params)
- local seen, nearest, distance = {},nil,math.huge
+ local seen, nearest, distance, resourceTarget = {},nil,math.huge,false
  for _,part in ipairs(parts) do
-  local target = part:FindFirstAncestorOfClass("Model")
-  while target and not target:FindFirstChildOfClass("Humanoid") do target = target.Parent:FindFirstAncestorOfClass("Model") end
+  local resource = Resources.Find(part)
+  local target = resource or part:FindFirstAncestorOfClass("Model")
+  while target and not resource and not target:FindFirstChildOfClass("Humanoid") do
+   target = target.Parent and target.Parent:FindFirstAncestorOfClass("Model")
+  end
   local victim = target and target:FindFirstChildOfClass("Humanoid")
-  if victim and not seen[victim] then
-   seen[victim] = true
+  if resource or (victim and not seen[victim]) then
+   if victim then seen[victim] = true end
    local blocked = false
    local ancestor = target
    while ancestor and ancestor ~= workspace do
     if ancestor.Name == "Chest" or ancestor:GetAttribute("Structure") or ancestor:GetAttribute("Building") then blocked = true end
     ancestor = ancestor.Parent
    end
-   if not blocked and victim.Health > 0 then
-    local targetRoot = victim.RootPart or target:FindFirstChild("HumanoidRootPart") or part
-    local delta = targetRoot.Position-root.Position
+   if not blocked and (resource or victim.Health > 0) then
+    local point
+    if resource then
+     -- Hit the reachable surface of a large tree, not its high model pivot.
+     local localPoint,half = part.CFrame:PointToObjectSpace(root.Position),part.Size/2
+     point = part.CFrame:PointToWorldSpace(Vector3.new(math.clamp(localPoint.X,-half.X,half.X),math.clamp(localPoint.Y,-half.Y,half.Y),math.clamp(localPoint.Z,-half.Z,half.Z)))
+     if (point-root.Position).Magnitude < .001 then point = part.Position end
+    else
+     local targetRoot = victim.RootPart or target:FindFirstChild("HumanoidRootPart") or part
+     point = targetRoot.Position
+    end
+    local delta = point-root.Position
     local rayParams = RaycastParams.new()
     rayParams.FilterType = Enum.RaycastFilterType.Exclude
     rayParams.FilterDescendantsInstances = {character}
     local obstruction = workspace:Raycast(root.Position,delta,rayParams)
     if delta.Magnitude < distance and (not obstruction or obstruction.Instance:IsDescendantOf(target)) then
-     nearest,distance = victim,delta.Magnitude
+     nearest,distance,resourceTarget = resource or victim,delta.Magnitude,resource ~= nil
     end
    end
   end
  end
  if nearest then
-  local dealt = Damage.Apply(nearest,weapon.Damage,weapon.DamageType,root.Position)
-  if dealt > 0 then Inventory.UseWeapon(player) end
+  if resourceTarget then Resources.Hit(player,nearest,weapon)
+  else
+   local dealt = Damage.Apply(nearest,weapon.Damage,weapon.DamageType,root.Position)
+   if dealt > 0 then Inventory.UseWeapon(player) end
+  end
  end
  end)
 end)

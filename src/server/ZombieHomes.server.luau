@@ -1,4 +1,7 @@
 local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Area = require(script.Parent.Services.AreaService)
+local Rules = require(ReplicatedStorage.Shared.ResourceRules)
 local random = Random.new()
 local active = {}
 local warned = setmetatable({},{__mode="k"})
@@ -79,16 +82,24 @@ local function watch(home)
  for _,part in ipairs(home:GetDescendants()) do
   if part:IsA("BasePart") then part.CanQuery=true end
  end
- local token = {}
+ local token = {Occupied = false, AllowedAt = 0}
  active[home] = token
  task.spawn(function()
+  local deadline = os.clock()+random:NextNumber(1,60)
   while home:IsDescendantOf(workspace) and active[home] == token do
    if enabled(home) then
-    local deadline = os.clock()+random:NextNumber(1,60)
-    -- Polling allows disabling a home to cancel a pending spawn.
-    repeat task.wait(.5) until os.clock()>=deadline or not enabled(home)
-    if enabled(home) then spawn(home) end
-   else task.wait(.5) end
+    local now = os.clock()
+    local permitted = Rules.Occupancy(token,Area.Occupied(home),now,180)
+    -- Recheck occupancy throughout the wait, including immediately before spawn.
+    if permitted and now >= deadline then
+     spawn(home)
+     deadline = os.clock()+random:NextNumber(1,60)
+    end
+   else
+    Rules.Occupancy(token,Area.Occupied(home),os.clock(),180)
+    deadline = os.clock()+random:NextNumber(1,60)
+   end
+   task.wait(.25)
   end
   if active[home] == token then active[home]=nil end
  end)
