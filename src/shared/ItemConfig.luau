@@ -9,6 +9,11 @@ ItemConfig.Items = {
   Description = "A zombie's right hand.",
   Weapon = {Damage = 5, AttacksPerMinute = 10, DamageType = "Blunt", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
  },
+ Axe = {
+  Name = "Axe", Weight = 1.5, Slot = "Hands", HarvestTool = "Axe",
+  Description = "An axe for chopping trees into logs.",
+  Weapon = {Damage = 20, AttacksPerMinute = 10, DamageType = "Slashing", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
+ },
  Knife = {
   Name = "Knife", Weight = 0.3, Slot = "Hands", CraftTool = "Knife", CraftSpeed = 1,
   Description = "A knife from some store. Its sharp blade is good for slicing meat products.",
