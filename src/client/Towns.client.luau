@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("TownRemotes")
 local action, state, notice = remotes:WaitForChild("Action"), remotes:WaitForChild("State"), remotes:WaitForChild("Notice")
@@ -218,6 +219,14 @@ highlight.Name = "TownInteractionHover"
 highlight.FillColor, highlight.OutlineColor = Color3.fromRGB(80,190,110), Color3.fromRGB(125,255,160)
 highlight.FillTransparency, highlight.DepthMode = .7, Enum.HighlightDepthMode.Occluded
 highlight.Enabled, highlight.Parent = false, workspace
+local hoverLabel = Instance.new("TextLabel")
+hoverLabel.Name = "TownHoverLabel"
+hoverLabel.Size = UDim2.fromOffset(200,44)
+hoverLabel.BackgroundColor3 = Color3.fromRGB(22,28,33)
+hoverLabel.BackgroundTransparency, hoverLabel.BorderSizePixel = .1, 0
+hoverLabel.TextColor3 = Color3.fromRGB(240,240,235)
+hoverLabel.Font, hoverLabel.TextSize, hoverLabel.Visible = Enum.Font.GothamMedium, 15, false
+hoverLabel.Parent = gui
 RunService.RenderStepped:Connect(function()
  local time = workspace:GetServerTimeNow()
  for index = #queue,1,-1 do if queue[index].EndsAt <= time then table.remove(queue,index) end end
@@ -227,12 +236,13 @@ RunService.RenderStepped:Connect(function()
  if request then
   caption.Text = request.Text .. "\n" .. (request.Answered and "Your vote has been recorded." or (request.Kind == "Vote" and "Y — keep the mayor · N — remove from office" or "Y — approve · N — decline")) .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
  else caption.Text = message end
- hovered, highlight.Enabled = nil, false
- if panel.Visible or player:GetAttribute("InventoryOpen") or UserInputService:GetFocusedTextBox() then return end
+ hovered, highlight.Enabled, hoverLabel.Visible = nil, false, false
+ if panel.Visible or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local character, camera = player.Character, workspace.CurrentCamera
  local root = character and character:FindFirstChild("HumanoidRootPart")
  if not root or not camera or character:GetAttribute("Knockout") then return end
  local mouse = UserInputService:GetMouseLocation()
+ if mouse.X < 0 or mouse.Y < 0 or mouse.X > camera.ViewportSize.X or mouse.Y > camera.ViewportSize.Y then return end
  local ray = camera:ViewportPointToRay(mouse.X,mouse.Y)
  local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude; params.FilterDescendantsInstances = {character}
  local hit = workspace:Raycast(ray.Origin,ray.Direction*1000,params)
@@ -248,6 +258,14 @@ RunService.RenderStepped:Connect(function()
    break
   end
   object = object.Parent
+ end
+ if highlight.Enabled then
+  local label = if object.Name == "Flag" then "Flag" else "Building Menu"
+  hoverLabel.Text = label .. (hovered and "\n[E] Open" or "\nToo far")
+  hoverLabel.Position = UDim2.fromOffset(
+   math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),
+   math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-44)))
+  hoverLabel.Visible = true
  end
 end)
 UserInputService.InputBegan:Connect(function(input,processed)

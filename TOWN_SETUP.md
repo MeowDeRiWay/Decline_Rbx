@@ -80,4 +80,4 @@ Opening Membership, Leadership or Diplomacy hides the other section headings unt
 
 Mayors cannot initiate their own removal vote. Offer resignation starts an anonymous town vote with the same keep/remove choices; the mayor remains in office until the result. Voting ends after 30 seconds or immediately once all remaining eligible members have voted. The notification continues showing the countdown after voting.
 
-Town notifications are on the right side. Flags and BuildingMenu use green cursor highlights; there is no bottom interaction hint. E remains the interaction key.
+Town notifications are on the right side. Flags and BuildingMenu use green cursor highlights plus a tooltip beside the cursor (Flag / Building Menu and [E] Open or Too far), matching Stove interactions. There is no bottom interaction hint. E remains the interaction key.
