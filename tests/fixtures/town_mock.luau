@@ -115,6 +115,10 @@ make("Part","TownSpawn",workspace,{TeamID=20})
 local plot=make("Model","BuildingSpace",workspace,{TownID=1,TeamID=10,OwnerID=0})
 local space=make("Model","Space",plot); make("Part","Floor",space)
 local menu=make("Model","BuildingMenu",plot); make("Part","Sign",menu)
+local flagC=make("Model","Flag",workspace,{TownID=3,Team=1,Town_name="Gamma",LeaderID=0})
+make("Part","Pole",flagC)
+local spawnC=make("Part","TownSpawn",workspace,{TeamID=1})
+spawnC.CFrame=CFrame.new(Vector3.new(33,5,12))
 local folder=make("Folder","Buildings",ServerStorage)
 local kitchen=make("Model","Kitchen_1",folder); make("Part","Floor",kitchen)
 local function player(id)
@@ -124,7 +128,9 @@ local function player(id)
   local hp=make("Humanoid","Humanoid",self.Character); hp.Health=100; hp.MaxHealth=100; hp.HipHeight=0
   local root=make("Part","HumanoidRootPart",self.Character); root.Position=Vector3.zero
   self.CharacterAdded:Fire(self.Character)
+  -- Roblox may place the model after CharacterAdded callbacks run.
+  self.Character:PivotTo(CFrame.new(Vector3.new(-999,0,-999)))
  end
  return p
 end
-local a,b,c=player(101),player(102),player(103)
+local a,b,c,d=player(101),player(102),player(103),player(104)

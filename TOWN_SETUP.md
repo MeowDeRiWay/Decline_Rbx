@@ -67,3 +67,9 @@ Pivot Kitchen_1 суміщається з pivot Space: поставте їх у 
 7. Біля прапора перевірте союз між мерами та голосування, нічию, усунення й 10 хв кулдаун.
 
 Автоматичні перевірки: `luau tests/town_rules.test.luau`, `python tests/run_town_service.py /path/to/luau`, `rojo build`. Серверні сценарії використовують mock Roblox API, а не запуск Studio.
+
+## Update: English interface and spawn order
+
+All built-in game UI and notifications are in English. User-supplied Town_name values retain their original text. Choose a town is a fixed title above the list; Join is inside the selected town details. UIListLayout uses explicit LayoutOrder.
+
+Spawn identifiers are intentionally different attribute names: **Flag.Team** matches **TownSpawn.TeamID** and **BuildingSpace.TeamID**. TownID identifies the town separately. Character positioning runs after LoadCharacterAsync finishes so Roblox cannot overwrite the town position during loading; respawns use the same function.

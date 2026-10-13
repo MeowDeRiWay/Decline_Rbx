@@ -16,7 +16,7 @@ local function tell(player, text)
  if player and player.Parent == Players then notice:FireClient(player, {Text = text}) end
 end
 local function nameOf(id)
- if not Rules.ValidID(id) then return "Посада вакантна" end
+ if not Rules.ValidID(id) then return "Vacant" end
  local online = Players:GetPlayerByUserId(id)
  if online then return online.Name end
  if names[id] then return names[id] end
@@ -57,7 +57,7 @@ local function setLeader(town, id)
  if town.vote then
   town.vote = nil
   town.cooldown = now() + Config.VoteCooldown
-  for _, member in ipairs(members(town)) do tell(member, "Голосування скасовано через зміну мера.") end
+  for _, member in ipairs(members(town)) do tell(member, "The vote was cancelled because the mayor changed.") end
  end
  town.leader = id
  for _, flag in ipairs(town.flags) do flag:SetAttribute("LeaderID", id) end
@@ -67,7 +67,7 @@ local function cancelRequests(town)
   if request.town == town or request.other == town then
    pending[id] = nil
    if request.plot then request.plot.pending = nil end
-   tell(request.player, "Запит скасовано через зміну влади або членства.")
+   tell(request.player, "Request cancelled because leadership or membership changed.")
   end
  end
 end
@@ -141,13 +141,13 @@ function Service.Publish()
 end
 local function requestApproval(player, town, data)
  local leader = Players:GetPlayerByUserId(town.leader)
- if not leader or not mayor(leader, town) then tell(player, "Мер міста зараз не в грі."); return end
+ if not leader or not mayor(leader, town) then tell(player, "The town mayor is currently offline."); return end
  sequence += 1
  data.id, data.player, data.town, data.leader, data.endsAt = sequence, player, town, town.leader, now() + Config.ApprovalDuration
  pending[sequence] = data
  if data.plot then data.plot.pending = sequence end
  notice:FireClient(leader, {ID = sequence, Kind = "Approval", Text = data.text, EndsAt = data.endsAt})
- tell(player, "Запит надіслано меру.")
+ tell(player, "Request sent to the mayor.")
 end
 local function templateFor(kind, level)
  local definition = Config.Buildings[kind]
@@ -174,20 +174,41 @@ local function destroyBuilding(plot)
  syncPlot(plot)
 end
 local function join(player, town)
- if player.Character and not alive(player) then tell(player, "Дочекайтеся відродження."); return end
- if townOf(player) then tell(player, "Спершу покиньте поточну команду через прапор."); return end
+ if player.Character and not alive(player) then tell(player, "Please wait until you respawn."); return end
+ if townOf(player) then tell(player, "Leave your current team at its flag first."); return end
  local hasSpawn = false
  for _, object in ipairs(workspace:GetDescendants()) do
   if object.Name == "TownSpawn" and object:GetAttribute("TeamID") == town.teamID and (object:IsA("BasePart") or object:IsA("Model")) then hasSpawn = true; break end
  end
- if not hasSpawn then tell(player, "Для міста не знайдено TownSpawn з відповідним TeamID."); return end
+ if not hasSpawn then tell(player, "No TownSpawn with TeamID=" .. town.teamID .. " matches Flag.Team=" .. town.teamID .. "."); return end
  player:SetAttribute("TownID", town.id)
  player:SetAttribute("TeamID", town.teamID)
  player.Team, player.Neutral = town.team, false
- if town.leader == 0 then setLeader(town, player.UserId) end
+ local claimedMayor = town.leader == 0
+ if claimedMayor then setLeader(town, player.UserId) end
  sessions[player] = nil
- if player.Character then Service.PlaceCharacter(player, player.Character) else player:LoadCharacterAsync() end
+ if player.Character then Service.PlaceCharacter(player, player.Character)
+ elseif Service.LoadCharacter(player) == false then
+  player.Team, player.Neutral = nil, true
+  player:SetAttribute("TownID", nil); player:SetAttribute("TeamID", nil)
+  if claimedMayor and town.leader == player.UserId then setLeader(town, 0) end
+ end
  Service.Publish()
+end
+-- CharacterAdded fires before Roblox finishes moving a newly loaded character.
+-- Position only after LoadCharacterAsync completes, for both joining and respawning.
+function Service.LoadCharacter(player)
+ if player.Parent ~= Players or player:GetAttribute("CharacterLoading") then return end
+ player:SetAttribute("CharacterLoading", true)
+ local ok, err = pcall(function() player:LoadCharacterAsync() end)
+ player:SetAttribute("CharacterLoading", nil)
+ if not ok then
+  warn("[Decline] Character load failed: " .. tostring(err))
+  tell(player, "Unable to spawn your character. Please try again.")
+  return false
+ end
+ if player.Parent == Players and player.Character then Service.PlaceCharacter(player, player.Character) end
+ return true
 end
 function Service.PlaceCharacter(player, character)
  local town = townOf(player)
@@ -223,19 +244,19 @@ local function finishVote(town)
  local removed = Rules.Removed(keep, remove)
  if removed and town.leader == vote.leader then cancelRequests(town); setLeader(town, 0) end
  for _, player in ipairs(members(town)) do
-  tell(player, string.format("Голосування завершено: залишити — %d, зняти — %d. %s", keep, remove, removed and "Посада мера вакантна." or "Мер залишається."))
+  tell(player, string.format("Vote ended: keep — %d, remove — %d. %s", keep, remove, removed and "The mayor position is now vacant." or "The mayor stays in office."))
  end
 end
 local function startVote(player, town)
- if town.vote or town.cooldown > now() then tell(player, "Голосування ще недоступне."); return end
- if town.leader == 0 then tell(player, "У міста немає мера."); return end
+ if town.vote or town.cooldown > now() then tell(player, "Voting is not available yet."); return end
+ if town.leader == 0 then tell(player, "This town has no mayor."); return end
  sequence += 1
  local vote = {id = sequence, leader = town.leader, endsAt = now() + Config.VoteDuration, eligible = {}, votes = {}}
  town.vote = vote
  for _, member in ipairs(members(town)) do
   vote.eligible[member.UserId] = true
   notice:FireClient(member, {ID = vote.id, Kind = "Vote", Text = member.UserId == town.leader and
-   "Розпочате голосування щодо вашого усунення з посади" or "Розпочато голосування щодо усунення мера", EndsAt = vote.endsAt})
+   "A vote to remove you from office has started." or "A vote to remove the mayor has started.", EndsAt = vote.endsAt})
  end
 end
 local function handle(player, command, value, extra)
@@ -247,7 +268,7 @@ local function handle(player, command, value, extra)
   for _, town in pairs(towns) do
    local vote = town.vote
    if vote and vote.id == value and vote.endsAt > now() and vote.eligible[player.UserId] and townOf(player) == town then
-    if vote.votes[player.UserId] == nil then vote.votes[player.UserId] = extra; tell(player, "Ваш голос зараховано анонімно.") end
+    if vote.votes[player.UserId] == nil then vote.votes[player.UserId] = extra; tell(player, "Your anonymous vote has been recorded.") end
     return
    end
   end
@@ -255,15 +276,15 @@ local function handle(player, command, value, extra)
   if not request or request.endsAt <= now() or request.leader ~= player.UserId or not mayor(player, request.town) then return end
   pending[value] = nil
   if request.plot then request.plot.pending = nil end
-  if not extra then tell(request.player, "Мер відмовив у запиті."); return end
+  if not extra then tell(request.player, "The mayor declined your request."); return end
   if request.kind == "Build" then
    local plot = request.plot
    if not plot.model:IsDescendantOf(workspace) or plotTown(plot) ~= request.town or townOf(request.player) ~= request.town or plot.kind ~= request.previousKind or plot.level ~= request.previousLevel then return end
    if plot.kind and not owns(request.player, plot) then return end
    if build(plot, request.building, request.level) then
     if request.level == 1 then plot.owner = request.player.UserId; syncPlot(plot) end
-    tell(request.player, "Будівництво погоджено. Кухню збудовано.")
-   else tell(request.player, "Не знайдено моделі будівлі в ServerStorage/Buildings.") end
+    tell(request.player, "Construction approved. The building is complete.")
+   else tell(request.player, "Building template not found in ServerStorage/Buildings.") end
   elseif request.kind == "Alliance" and mayor(request.player, request.other) then
    request.town.relations[request.other.id], request.other.relations[request.town.id] = "Ally", "Ally"
   end
@@ -306,9 +327,9 @@ local function handle(player, command, value, extra)
    if extra == "Ally" then
     if relation(town, other) == "Ally" then return end
     for _, request in pairs(pending) do
-     if request.kind == "Alliance" and ((request.town == town and request.other == other) or (request.town == other and request.other == town)) then tell(player, "Запит союзу вже очікує відповіді."); return end
+     if request.kind == "Alliance" and ((request.town == town and request.other == other) or (request.town == other and request.other == town)) then tell(player, "An alliance request is already awaiting a response."); return end
     end
-    requestApproval(player, other, {kind = "Alliance", other = town, text = "Мер міста «" .. town.name .. "» (" .. player.Name .. ") пропонує союз."})
+    requestApproval(player, other, {kind = "Alliance", other = town, text = "The mayor of " .. town.name .. " (" .. player.Name .. ") proposes an alliance."})
    else
     for id, request in pairs(pending) do
      if request.kind == "Alliance" and ((request.town == town and request.other == other) or (request.town == other and request.other == town)) then pending[id] = nil end
@@ -326,11 +347,11 @@ local function handle(player, command, value, extra)
    local definition = typeof(value) == "string" and Config.Buildings[value]
    local level = plot.kind and plot.level + 1 or 1
    if not definition or not definition.Levels[level] or (plot.kind and (plot.kind ~= value or not owns(player, plot))) or plot.pending then return end
-   if not templateFor(value, level) then tell(player, "Додайте модель ServerStorage/Buildings/" .. definition.Levels[level]); return end
+   if not templateFor(value, level) then tell(player, "Add the model ServerStorage/Buildings/" .. definition.Levels[level]); return end
    if mayor(player, town) then
     if build(plot, value, level) and level == 1 then plot.owner = player.UserId; syncPlot(plot) end
    else requestApproval(player, town, {kind = "Build", plot = plot, building = value, level = level,
-    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " хоче " .. (level == 1 and "розпочати будівництво: " or "покращити: ") .. definition.Name .. "."}) end
+    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. "."}) end
   elseif command == "Destroy" and plot.kind and owns(player, plot) then
    if plot.pending then pending[plot.pending] = nil; plot.pending = nil end
    destroyBuilding(plot)
@@ -369,7 +390,7 @@ function Service.Start()
    local collision = false
    for _, other in pairs(towns) do if other.teamID == teamID then collision = true end end
    if collision then warn("[Decline] Town teams must have unique numeric IDs"); continue end
-   local team = Instance.new("Team"); team.Name = tostring(flag:GetAttribute("Town_name") or ("Місто " .. id))
+   local team = Instance.new("Team"); team.Name = tostring(flag:GetAttribute("Town_name") or ("Town " .. id))
    team.TeamColor = BrickColor.new(colors[(id - 1) % #colors + 1]); team.AutoAssignable = false; team:SetAttribute("TeamID", teamID); team.Parent = Teams
    town = {id = id, teamID = teamID, name = team.Name, team = team, flags = {}, leader = Rules.ValidID(flag:GetAttribute("LeaderID")) and flag:GetAttribute("LeaderID") or 0, relations = {}, cooldown = 0}
    towns[id] = town
@@ -397,7 +418,6 @@ function Service.Start()
  end
  local function added(player)
   player.Neutral = true
-  player.CharacterAdded:Connect(function(character) task.defer(Service.PlaceCharacter, player, character) end)
   if player.Character then task.defer(Service.PlaceCharacter, player, player.Character) end
  end
  Players.PlayerAdded:Connect(added)
@@ -420,7 +440,7 @@ function Service.Start()
    task.wait(1)
    for _, town in pairs(towns) do if town.vote and town.vote.endsAt <= now() then finishVote(town) end end
    for id, request in pairs(pending) do
-    if request.endsAt <= now() then pending[id] = nil; if request.plot then request.plot.pending = nil end; tell(request.player, "Час очікування відповіді мера вичерпано.") end
+    if request.endsAt <= now() then pending[id] = nil; if request.plot then request.plot.pending = nil end; tell(request.player, "The request expired without a response from the mayor.") end
    end
    for _, player in ipairs(Players:GetPlayers()) do
     local root = alive(player)

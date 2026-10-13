@@ -15,12 +15,19 @@ panel.AnchorPoint, panel.Position = Vector2.new(.5,.5), UDim2.fromScale(.5,.5)
 panel.Size, panel.BackgroundColor3 = UDim2.fromScale(.8,.78), Color3.fromRGB(24,29,33)
 local constraint = Instance.new("UISizeConstraint"); constraint.MaxSize = Vector2.new(640,640); constraint.Parent = panel
 panel.Parent = gui
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size, title.Position = UDim2.new(1,-24,0,48), UDim2.fromOffset(12,10)
+title.BackgroundTransparency, title.TextColor3 = 1, Color3.fromRGB(239,239,229)
+title.Font, title.TextSize, title.TextXAlignment = Enum.Font.GothamBold, 26, Enum.TextXAlignment.Left
+title.Text, title.Parent = "Choose a town", panel
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size, scroll.Position = UDim2.new(1,-24,1,-24), UDim2.fromOffset(12,12)
+scroll.Size, scroll.Position = UDim2.new(1,-24,1,-82), UDim2.fromOffset(12,70)
 scroll.BackgroundTransparency, scroll.BorderSizePixel, scroll.ScrollBarThickness = 1, 0, 6
 scroll.AutomaticCanvasSize, scroll.CanvasSize = Enum.AutomaticSize.Y, UDim2.new()
 scroll.Parent = panel
-local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0,8); layout.Parent = scroll
+local layout = Instance.new("UIListLayout"); layout.SortOrder = Enum.SortOrder.LayoutOrder; layout.Padding = UDim.new(0,8); layout.Parent = scroll
+local content, order = scroll, 0
 local snapshot, selected, section = {Towns = {}}, nil, nil
 local hidden = false
 local queue, messageUntil, message = {}, 0, ""
@@ -31,7 +38,9 @@ local function text(caption, size)
  label.Size, label.AutomaticSize = UDim2.new(1,-8,0,0), Enum.AutomaticSize.Y
  label.BackgroundTransparency, label.TextColor3 = 1, Color3.fromRGB(239,239,229)
  label.Font, label.TextSize, label.TextWrapped, label.TextXAlignment = Enum.Font.Gotham, size or 16, true, Enum.TextXAlignment.Left
- label.Text, label.Parent = caption, scroll
+ order += 1
+ label.LayoutOrder = order
+ label.Text, label.Parent = caption, content
  return label
 end
 local function button(caption, callback)
@@ -39,7 +48,9 @@ local function button(caption, callback)
  item.Size, item.AutomaticSize = UDim2.new(1,-8,0,38), Enum.AutomaticSize.Y
  item.BackgroundColor3, item.TextColor3 = Color3.fromRGB(48,59,64), Color3.fromRGB(244,244,233)
  item.Font, item.TextSize, item.TextWrapped = Enum.Font.GothamMedium, 16, true
- item.Text, item.Parent = caption, scroll
+ order += 1
+ item.LayoutOrder = order
+ item.Text, item.Parent = caption, content
  item.Activated:Connect(callback)
  return item
 end
@@ -47,7 +58,7 @@ local function townByID(id)
  for _, town in ipairs(snapshot.Towns) do if town.ID == id then return town end end
  return nil
 end
-local relationNames = {Neutral = "Нейтралітет", Ally = "Союз", War = "Війна"}
+local relationNames = {Neutral = "Neutral", Ally = "Alliance", War = "War"}
 local render
 local function toggle(value) section = if section == value then nil else value; confirmation = nil; render() end
 local function confirm(caption, command, value, extra)
@@ -55,106 +66,118 @@ local function confirm(caption, command, value, extra)
 end
 local function detail(town)
  text(town.Name, 24)
- text("Гравців у команді: " .. town.Count .. "\nМер: " .. town.LeaderName)
+ text("Team members: " .. town.Count .. "\nMayor: " .. town.LeaderName)
  for _, relation in ipairs(town.Relations) do text(relation.Name .. " — " .. relationNames[relation.Relation]) end
 end
 render = function()
  local offset = scroll.CanvasPosition
+ content, order = scroll, 0
  for _, child in ipairs(scroll:GetChildren()) do if child ~= layout then child:Destroy() end end
  local session = snapshot.Session
  local choosing = not snapshot.TownID
  panel.Visible = (choosing and not hidden) or session ~= nil
  player:SetAttribute("TownMenuOpen", panel.Visible)
  if not panel.Visible then return end
+ title.Text = if confirmation then "Confirm action" elseif not session then "Choose a town" elseif session.Kind == "Flag" then "Town" else "Construction"
  if confirmation then
   text(confirmation[1], 22)
-  button("Підтвердити", function() local data = confirmation; confirmation = nil; send(data[2],data[3],data[4]); render() end)
-  button("Скасувати", function() confirmation = nil; render() end)
+  button("Confirm", function() local data = confirmation; confirmation = nil; send(data[2],data[3],data[4]); render() end)
+  button("Cancel", function() confirmation = nil; render() end)
   return
  end
  if not session then
-  text("Оберіть місто",24)
-  if #snapshot.Towns == 0 then text("Міста ще не налаштовані. Додайте Flag з TownID і Team.") end
+  if #snapshot.Towns == 0 then text("No towns are available.") end
   for _, town in ipairs(snapshot.Towns) do
    button(town.Name, function() selected = if selected == town.ID then nil else town.ID; render() end)
-   if selected == town.ID then detail(town); button("Доєднатися", function() send("Join",town.ID) end) end
+   if selected == town.ID then
+    local details = Instance.new("Frame")
+    order += 1
+    details.Name, details.LayoutOrder = "TownDetails", order
+    details.Size, details.AutomaticSize = UDim2.new(1,-8,0,0), Enum.AutomaticSize.Y
+    details.BackgroundTransparency, details.Parent = 1, scroll
+    local detailsLayout = Instance.new("UIListLayout")
+    detailsLayout.SortOrder, detailsLayout.Padding, detailsLayout.Parent = Enum.SortOrder.LayoutOrder, UDim.new(0,8), details
+    content = details
+    detail(town)
+    button("Join", function() send("Join",town.ID) end)
+    content = scroll
+   end
   end
-  if player.Character then button("Закрити", function() hidden = true; render() end) end
+  if player.Character then button("Close", function() hidden = true; render() end) end
  elseif session.Kind == "Flag" then
   local town = townByID(session.TownID)
   if not town then return end
   detail(town)
-  button("Членство",function() toggle("Member") end)
+  button("Membership",function() toggle("Member") end)
   if section == "Member" then
-   if snapshot.TownID == town.ID then button("Покинути команду",function() confirm("Покинути команду міста?", "Leave") end)
-   elseif not snapshot.TownID then button("Доєднатися",function() send("JoinFlag") end)
-   else text("Щоб вступити сюди, покиньте свою команду біля її прапора.") end
+   if snapshot.TownID == town.ID then button("Leave team",function() confirm("Leave this town team?", "Leave") end)
+   elseif not snapshot.TownID then button("Join",function() send("JoinFlag") end)
+   else text("Leave your current team at its flag before joining this town.") end
   end
   if snapshot.TownID == town.ID then
-   button("Зміна влади",function() toggle("Power") end)
+   button("Leadership",function() toggle("Power") end)
    if section == "Power" then
-    if town.LeaderID == 0 then button("Стати мером",function() send("ClaimMayor") end)
-    elseif town.VoteEndsAt then text("Триває голосування.")
-    elseif town.CooldownEndsAt > workspace:GetServerTimeNow() then text("До наступного голосування: " .. math.ceil(town.CooldownEndsAt-workspace:GetServerTimeNow()) .. " с")
-    else button("Розпочати голосування",function() confirm("Розпочати анонімне голосування щодо усунення мера?", "Vote") end) end
+    if town.LeaderID == 0 then button("Become mayor",function() send("ClaimMayor") end)
+    elseif town.VoteEndsAt then text("A vote is in progress.")
+    elseif town.CooldownEndsAt > workspace:GetServerTimeNow() then text("Next vote available in: " .. math.ceil(town.CooldownEndsAt-workspace:GetServerTimeNow()) .. " s")
+    else button("Start a vote",function() confirm("Start an anonymous vote to remove the mayor?", "Vote") end) end
    end
    if town.LeaderID == player.UserId then
-    button("Дипломатія",function() toggle("Diplomacy") end)
+    button("Diplomacy",function() toggle("Diplomacy") end)
     if section == "Diplomacy" then
      for _, relation in ipairs(town.Relations) do
       text(relation.Name .. " — " .. relationNames[relation.Relation])
       for _, value in ipairs(Config.Relations) do
-       button(relationNames[value] .. (value == "Ally" and " — запропонувати" or " — встановити"),function() send("Relation",relation.TownID,value) end)
+       button(relationNames[value] .. (value == "Ally" and " — propose" or " — set"),function() send("Relation",relation.TownID,value) end)
       end
      end
     end
-    button("Власність міста",function() toggle("Ownership") end)
-    if section == "Ownership" then button("Привласнити всі будівлі",function() confirm("Привласнити всі збудовані будівлі міста? Співвласники залишаться.","OwnAll") end) end
+    button("Town ownership",function() toggle("Ownership") end)
+    if section == "Ownership" then button("Claim all buildings",function() confirm("Claim all completed town buildings? Co-owners will remain.","OwnAll") end) end
    end
   end
  else
   local plot = session.Plot
   local town = plot and townByID(plot.TownID)
-  text("Будівництво",24)
-  if not town then text("Область не прив’язана до міста.")
-  elseif snapshot.TownID ~= town.ID then text("Будувати можуть лише члени міста «" .. town.Name .. "».")
+  if not town then text("This plot is not assigned to a town.")
+  elseif snapshot.TownID ~= town.ID then text("Only members of " .. town.Name .. " may build here.")
   else
-   text(plot.BuildingID and ("Кухня · рівень " .. plot.Level .. "\nВласник: " .. plot.OwnerName .. "\nСпіввласники (UserID): " .. (plot.CoOwners ~= "" and plot.CoOwners or "немає")) or "Вільна область")
+   text(plot.BuildingID and ("Kitchen · level " .. plot.Level .. "\nOwner: " .. plot.OwnerName .. "\nCo-owners (UserID): " .. (plot.CoOwners ~= "" and plot.CoOwners or "none")) or "Empty plot")
    local isMayor = town.LeaderID == player.UserId
    local co = string.find("," .. plot.CoOwners .. ",", "," .. player.UserId .. ",", 1, true) ~= nil
    local owner = plot.OwnerID == player.UserId or co or isMayor
-   if plot.Pending then text("Очікуємо відповіді мера.")
+   if plot.Pending then text("Waiting for the mayor.")
    elseif not plot.BuildingID or owner then
-    for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Покращити: " or "Збудувати: ") .. option.Name .. " · рівень " .. option.Level,function() send("Build",option.ID) end) end
-    if plot.BuildingID and #plot.Options == 0 then text("Наступний рівень ще не додано.") end
+    for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level,function() send("Build",option.ID) end) end
+    if plot.BuildingID and #plot.Options == 0 then text("No further upgrades are available.") end
    end
    if plot.BuildingID then
     if isMayor then
-     button("Змінити власника",function() toggle("Owner") end)
+     button("Change owner",function() toggle("Owner") end)
      if section == "Owner" then
-      button("Прибрати власника",function() send("Owner",0) end)
+      button("Remove owner",function() send("Owner",0) end)
       for _, member in ipairs(town.Members) do button(member.Name,function() send("Owner",member.ID) end) end
      end
     end
     if owner then
-     button("Співвласники",function() toggle("CoOwner") end)
+     button("Co-owners",function() toggle("CoOwner") end)
      if section == "CoOwner" then
       local owners = require(ReplicatedStorage.Shared.TownRules).ParseOwners(plot.CoOwners)
       for _, member in ipairs(town.Members) do
-       if member.ID ~= plot.OwnerID then button((owners[member.ID] and "Прибрати: " or "Додати: ") .. member.Name,function() send("CoOwner",member.ID,not owners[member.ID]) end) end
+       if member.ID ~= plot.OwnerID then button((owners[member.ID] and "Remove: " or "Add: ") .. member.Name,function() send("CoOwner",member.ID,not owners[member.ID]) end) end
       end
       for id in pairs(owners) do
        local online = false
        for _, member in ipairs(town.Members) do if member.ID == id then online = true end end
-       if not online then button("Прибрати UserID " .. id,function() send("CoOwner",id,false) end) end
+       if not online then button("Remove UserID " .. id,function() send("CoOwner",id,false) end) end
       end
      end
-     button("Зруйнувати будівлю",function() confirm("Зруйнувати будівлю?", "Destroy") end)
+     button("Demolish building",function() confirm("Demolish this building?", "Destroy") end)
     end
    end
   end
  end
- if session then button("Закрити",function() send("Close"); snapshot.Session = nil; confirmation = nil; hidden = true; render() end) end
+ if session then button("Close",function() send("Close"); snapshot.Session = nil; confirmation = nil; hidden = true; render() end) end
  scroll.CanvasPosition = offset
 end
 local notifications = Instance.new("Frame")
@@ -192,7 +215,7 @@ RunService.RenderStepped:Connect(function()
  notifications.Visible = request ~= nil or messageUntil > time
  answers.Visible = request ~= nil
  if request then
-  caption.Text = request.Text .. "\n" .. (request.Kind == "Vote" and "Клавіша Y — залишити мера · Клавіша N — зняти з посади" or "Клавіша Y — погодити · Клавіша N — відмовити") .. "\n" .. math.ceil(request.EndsAt-time) .. " с" .. (#queue>1 and (" · Запитів у черзі: " .. #queue) or "")
+  caption.Text = request.Text .. "\n" .. (request.Kind == "Vote" and "Y — keep the mayor · N — remove from office" or "Y — approve · N — decline") .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
  else caption.Text = message end
  hovered, hint.Visible = nil, false
  if panel.Visible or player:GetAttribute("InventoryOpen") or UserInputService:GetFocusedTextBox() then return end
@@ -215,7 +238,7 @@ RunService.RenderStepped:Connect(function()
   object = object.Parent
  end
  hint.Visible = hovered ~= nil
- hint.Text = "[E] " .. (hovered and hovered.Name == "Flag" and "Місто" or "Будівництво")
+ hint.Text = "[E] " .. (hovered and hovered.Name == "Flag" and "Town" or "Construction")
 end)
 UserInputService.InputBegan:Connect(function(input,processed)
  if processed or UserInputService:GetFocusedTextBox() then return end

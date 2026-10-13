@@ -16,6 +16,14 @@
 Після змін повідомляй, що вони в main, та нагадуй git pull.
 Не вважай автоматичні перевірки доказом власного playtest у Studio.
 
+## Виправлення 13 жовтня після першого тесту користувача
+
+- Усі програмні тексти гри — англійською (імена користувачів і задані Town_name не перекладаються).
+- Choose a town — закріплений заголовок над списком; Join знаходиться всередині розкритого міста. Порядок UI задає LayoutOrder, а не Name.
+- **Flag.Team**, НЕ Flag.TeamID, зіставляється з **TownSpawn.TeamID**. TownID незалежний від командного ID.
+- TownService.LoadCharacter переносить після завершення LoadCharacterAsync, щоб стартове переміщення Roblox не перезаписувало TownSpawn. PlayerLifeService використовує той самий метод при відродженні.
+- Тест відтворює переміщення персонажа після CharacterAdded; окремо перевіряє TownID=3/Flag.Team=1/TownSpawn.TeamID=1 і відродження з 2 HP.
+
 ## Що додано 13 жовтня — міста
 
 Користувач задав Flag/TeamColor, BuildingSpace/BuildingMenu/Space, TownSpawn і повноваження мера. Реалізація: `TownService.luau`, `Towns.server.luau`, `Towns.client.luau`, `TownConfig.luau`, `TownRules.luau`. Точна інструкція та всі початкові правила — **TOWN_SETUP.md**.

@@ -92,7 +92,7 @@ function Service.Finish(player,character)
  -- is the sole corpse and is not destroyed by LoadCharacterAsync.
  for _,part in ipairs(character:GetDescendants()) do if part:IsA("BasePart") then part.Transparency=1; part.CanQuery=false end end
  task.delay(Players.RespawnTime,function()
-  if player.Parent==Players and player.Character==character then player:LoadCharacterAsync() end
+  if player.Parent==Players and player.Character==character then require(script.Parent.TownService).LoadCharacter(player) end
  end)
 end
 function Service.Knockout(player,character)
