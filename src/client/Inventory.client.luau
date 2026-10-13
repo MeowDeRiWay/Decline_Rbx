@@ -365,7 +365,7 @@ local function setOpen(open)
 end
 close.Activated:Connect(function() setOpen(false) end)
 UserInputService.InputBegan:Connect(function(input, processed)
- if processed or UserInputService:GetFocusedTextBox() then return end
+ if processed or UserInputService:GetFocusedTextBox() or player:GetAttribute("TownMenuOpen") then return end
  if player.Character and player.Character:GetAttribute("Knockout") then return end
  if input.KeyCode == Enum.KeyCode.Q then setOpen(not gui.Enabled) end
 end)

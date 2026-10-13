@@ -1,0 +1,238 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local remotes = ReplicatedStorage:WaitForChild("TownRemotes")
+local action, state, notice = remotes:WaitForChild("Action"), remotes:WaitForChild("State"), remotes:WaitForChild("Notice")
+local Config = require(ReplicatedStorage.Shared.TownConfig)
+local Interaction = require(ReplicatedStorage.Shared.Interaction)
+local gui = Instance.new("ScreenGui")
+gui.Name, gui.ResetOnSpawn, gui.DisplayOrder = "TownUI", false, 30
+gui.Parent = player:WaitForChild("PlayerGui")
+local panel = Instance.new("Frame")
+panel.AnchorPoint, panel.Position = Vector2.new(.5,.5), UDim2.fromScale(.5,.5)
+panel.Size, panel.BackgroundColor3 = UDim2.fromScale(.8,.78), Color3.fromRGB(24,29,33)
+local constraint = Instance.new("UISizeConstraint"); constraint.MaxSize = Vector2.new(640,640); constraint.Parent = panel
+panel.Parent = gui
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size, scroll.Position = UDim2.new(1,-24,1,-24), UDim2.fromOffset(12,12)
+scroll.BackgroundTransparency, scroll.BorderSizePixel, scroll.ScrollBarThickness = 1, 0, 6
+scroll.AutomaticCanvasSize, scroll.CanvasSize = Enum.AutomaticSize.Y, UDim2.new()
+scroll.Parent = panel
+local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0,8); layout.Parent = scroll
+local snapshot, selected, section = {Towns = {}}, nil, nil
+local hidden = false
+local queue, messageUntil, message = {}, 0, ""
+local confirmation
+local function send(command, value, extra) action:FireServer(command,value,extra) end
+local function text(caption, size)
+ local label = Instance.new("TextLabel")
+ label.Size, label.AutomaticSize = UDim2.new(1,-8,0,0), Enum.AutomaticSize.Y
+ label.BackgroundTransparency, label.TextColor3 = 1, Color3.fromRGB(239,239,229)
+ label.Font, label.TextSize, label.TextWrapped, label.TextXAlignment = Enum.Font.Gotham, size or 16, true, Enum.TextXAlignment.Left
+ label.Text, label.Parent = caption, scroll
+ return label
+end
+local function button(caption, callback)
+ local item = Instance.new("TextButton")
+ item.Size, item.AutomaticSize = UDim2.new(1,-8,0,38), Enum.AutomaticSize.Y
+ item.BackgroundColor3, item.TextColor3 = Color3.fromRGB(48,59,64), Color3.fromRGB(244,244,233)
+ item.Font, item.TextSize, item.TextWrapped = Enum.Font.GothamMedium, 16, true
+ item.Text, item.Parent = caption, scroll
+ item.Activated:Connect(callback)
+ return item
+end
+local function townByID(id)
+ for _, town in ipairs(snapshot.Towns) do if town.ID == id then return town end end
+ return nil
+end
+local relationNames = {Neutral = "Нейтралітет", Ally = "Союз", War = "Війна"}
+local render
+local function toggle(value) section = if section == value then nil else value; confirmation = nil; render() end
+local function confirm(caption, command, value, extra)
+ confirmation = {caption, command, value, extra}; render()
+end
+local function detail(town)
+ text(town.Name, 24)
+ text("Гравців у команді: " .. town.Count .. "\nМер: " .. town.LeaderName)
+ for _, relation in ipairs(town.Relations) do text(relation.Name .. " — " .. relationNames[relation.Relation]) end
+end
+render = function()
+ local offset = scroll.CanvasPosition
+ for _, child in ipairs(scroll:GetChildren()) do if child ~= layout then child:Destroy() end end
+ local session = snapshot.Session
+ local choosing = not snapshot.TownID
+ panel.Visible = (choosing and not hidden) or session ~= nil
+ player:SetAttribute("TownMenuOpen", panel.Visible)
+ if not panel.Visible then return end
+ if confirmation then
+  text(confirmation[1], 22)
+  button("Підтвердити", function() local data = confirmation; confirmation = nil; send(data[2],data[3],data[4]); render() end)
+  button("Скасувати", function() confirmation = nil; render() end)
+  return
+ end
+ if not session then
+  text("Оберіть місто",24)
+  if #snapshot.Towns == 0 then text("Міста ще не налаштовані. Додайте Flag з TownID і Team.") end
+  for _, town in ipairs(snapshot.Towns) do
+   button(town.Name, function() selected = if selected == town.ID then nil else town.ID; render() end)
+   if selected == town.ID then detail(town); button("Доєднатися", function() send("Join",town.ID) end) end
+  end
+  if player.Character then button("Закрити", function() hidden = true; render() end) end
+ elseif session.Kind == "Flag" then
+  local town = townByID(session.TownID)
+  if not town then return end
+  detail(town)
+  button("Членство",function() toggle("Member") end)
+  if section == "Member" then
+   if snapshot.TownID == town.ID then button("Покинути команду",function() confirm("Покинути команду міста?", "Leave") end)
+   elseif not snapshot.TownID then button("Доєднатися",function() send("JoinFlag") end)
+   else text("Щоб вступити сюди, покиньте свою команду біля її прапора.") end
+  end
+  if snapshot.TownID == town.ID then
+   button("Зміна влади",function() toggle("Power") end)
+   if section == "Power" then
+    if town.LeaderID == 0 then button("Стати мером",function() send("ClaimMayor") end)
+    elseif town.VoteEndsAt then text("Триває голосування.")
+    elseif town.CooldownEndsAt > workspace:GetServerTimeNow() then text("До наступного голосування: " .. math.ceil(town.CooldownEndsAt-workspace:GetServerTimeNow()) .. " с")
+    else button("Розпочати голосування",function() confirm("Розпочати анонімне голосування щодо усунення мера?", "Vote") end) end
+   end
+   if town.LeaderID == player.UserId then
+    button("Дипломатія",function() toggle("Diplomacy") end)
+    if section == "Diplomacy" then
+     for _, relation in ipairs(town.Relations) do
+      text(relation.Name .. " — " .. relationNames[relation.Relation])
+      for _, value in ipairs(Config.Relations) do
+       button(relationNames[value] .. (value == "Ally" and " — запропонувати" or " — встановити"),function() send("Relation",relation.TownID,value) end)
+      end
+     end
+    end
+    button("Власність міста",function() toggle("Ownership") end)
+    if section == "Ownership" then button("Привласнити всі будівлі",function() confirm("Привласнити всі збудовані будівлі міста? Співвласники залишаться.","OwnAll") end) end
+   end
+  end
+ else
+  local plot = session.Plot
+  local town = plot and townByID(plot.TownID)
+  text("Будівництво",24)
+  if not town then text("Область не прив’язана до міста.")
+  elseif snapshot.TownID ~= town.ID then text("Будувати можуть лише члени міста «" .. town.Name .. "».")
+  else
+   text(plot.BuildingID and ("Кухня · рівень " .. plot.Level .. "\nВласник: " .. plot.OwnerName .. "\nСпіввласники (UserID): " .. (plot.CoOwners ~= "" and plot.CoOwners or "немає")) or "Вільна область")
+   local isMayor = town.LeaderID == player.UserId
+   local co = string.find("," .. plot.CoOwners .. ",", "," .. player.UserId .. ",", 1, true) ~= nil
+   local owner = plot.OwnerID == player.UserId or co or isMayor
+   if plot.Pending then text("Очікуємо відповіді мера.")
+   elseif not plot.BuildingID or owner then
+    for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Покращити: " or "Збудувати: ") .. option.Name .. " · рівень " .. option.Level,function() send("Build",option.ID) end) end
+    if plot.BuildingID and #plot.Options == 0 then text("Наступний рівень ще не додано.") end
+   end
+   if plot.BuildingID then
+    if isMayor then
+     button("Змінити власника",function() toggle("Owner") end)
+     if section == "Owner" then
+      button("Прибрати власника",function() send("Owner",0) end)
+      for _, member in ipairs(town.Members) do button(member.Name,function() send("Owner",member.ID) end) end
+     end
+    end
+    if owner then
+     button("Співвласники",function() toggle("CoOwner") end)
+     if section == "CoOwner" then
+      local owners = require(ReplicatedStorage.Shared.TownRules).ParseOwners(plot.CoOwners)
+      for _, member in ipairs(town.Members) do
+       if member.ID ~= plot.OwnerID then button((owners[member.ID] and "Прибрати: " or "Додати: ") .. member.Name,function() send("CoOwner",member.ID,not owners[member.ID]) end) end
+      end
+      for id in pairs(owners) do
+       local online = false
+       for _, member in ipairs(town.Members) do if member.ID == id then online = true end end
+       if not online then button("Прибрати UserID " .. id,function() send("CoOwner",id,false) end) end
+      end
+     end
+     button("Зруйнувати будівлю",function() confirm("Зруйнувати будівлю?", "Destroy") end)
+    end
+   end
+  end
+ end
+ if session then button("Закрити",function() send("Close"); snapshot.Session = nil; confirmation = nil; hidden = true; render() end) end
+ scroll.CanvasPosition = offset
+end
+local notifications = Instance.new("Frame")
+notifications.AnchorPoint, notifications.Position = Vector2.new(.5,0), UDim2.fromScale(.5,.02)
+notifications.Size, notifications.AutomaticSize = UDim2.fromScale(.85,0), Enum.AutomaticSize.Y
+notifications.BackgroundColor3, notifications.Visible = Color3.fromRGB(30,39,44), false
+notifications.Parent = gui
+local noticeLayout = Instance.new("UIListLayout"); noticeLayout.Padding = UDim.new(0,6); noticeLayout.Parent = notifications
+local caption = Instance.new("TextLabel")
+caption.Size, caption.AutomaticSize = UDim2.new(1,0,0,0), Enum.AutomaticSize.Y
+caption.BackgroundTransparency, caption.TextColor3, caption.TextWrapped = 1, Color3.fromRGB(255,239,184), true
+caption.Font, caption.TextSize, caption.Parent = Enum.Font.GothamMedium, 17, notifications
+local answers = Instance.new("Frame"); answers.BackgroundTransparency = 1; answers.Size = UDim2.new(1,0,0,38); answers.Parent = notifications
+local function reply(choice)
+ local request = queue[1]
+ if not request then return end
+ send("Reply",request.ID,choice); table.remove(queue,1)
+end
+for index, yes in ipairs({true,false}) do
+ local item = Instance.new("TextButton")
+ item.Size, item.Position = UDim2.new(.5,-4,1,0), UDim2.new((index-1)*.5,0,0,0)
+ item.Text, item.TextSize = yes and "Y" or "N", 18
+ item.BackgroundColor3, item.TextColor3, item.Parent = Color3.fromRGB(58,75,76), Color3.new(1,1,1), answers
+ item.Activated:Connect(function() reply(yes) end)
+end
+local hovered
+local hint = Instance.new("TextLabel")
+hint.AnchorPoint, hint.Position, hint.Size = Vector2.new(.5,1), UDim2.fromScale(.5,.97), UDim2.fromOffset(300,38)
+hint.BackgroundColor3, hint.TextColor3, hint.TextSize = Color3.fromRGB(30,39,44), Color3.new(1,1,1), 16
+hint.Visible, hint.Parent = false, gui
+RunService.RenderStepped:Connect(function()
+ local time = workspace:GetServerTimeNow()
+ for index = #queue,1,-1 do if queue[index].EndsAt <= time then table.remove(queue,index) end end
+ local request = queue[1]
+ notifications.Visible = request ~= nil or messageUntil > time
+ answers.Visible = request ~= nil
+ if request then
+  caption.Text = request.Text .. "\n" .. (request.Kind == "Vote" and "Клавіша Y — залишити мера · Клавіша N — зняти з посади" or "Клавіша Y — погодити · Клавіша N — відмовити") .. "\n" .. math.ceil(request.EndsAt-time) .. " с" .. (#queue>1 and (" · Запитів у черзі: " .. #queue) or "")
+ else caption.Text = message end
+ hovered, hint.Visible = nil, false
+ if panel.Visible or player:GetAttribute("InventoryOpen") or UserInputService:GetFocusedTextBox() then return end
+ local character, camera = player.Character, workspace.CurrentCamera
+ local root = character and character:FindFirstChild("HumanoidRootPart")
+ if not root or not camera or character:GetAttribute("Knockout") then return end
+ local mouse = UserInputService:GetMouseLocation()
+ local ray = camera:ViewportPointToRay(mouse.X,mouse.Y)
+ local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude; params.FilterDescendantsInstances = {character}
+ local hit = workspace:Raycast(ray.Origin,ray.Direction*1000,params)
+ local object = hit and hit.Instance
+ while object and object ~= workspace do
+  if object:IsA("Model") and object.Name == "Flag" then
+   if Interaction.Distance(object,root.Position) <= Config.InteractionDistance then hovered = object end
+   break
+  elseif object.Name == "BuildingMenu" and object.Parent and object.Parent.Name == "BuildingSpace" then
+   if Interaction.Distance(object,root.Position) <= Config.InteractionDistance then hovered = object.Parent end
+   break
+  end
+  object = object.Parent
+ end
+ hint.Visible = hovered ~= nil
+ hint.Text = "[E] " .. (hovered and hovered.Name == "Flag" and "Місто" or "Будівництво")
+end)
+UserInputService.InputBegan:Connect(function(input,processed)
+ if processed or UserInputService:GetFocusedTextBox() then return end
+ if queue[1] and (input.KeyCode == Enum.KeyCode.Y or input.KeyCode == Enum.KeyCode.N) then reply(input.KeyCode == Enum.KeyCode.Y)
+ elseif input.KeyCode == Enum.KeyCode.E and hovered then hidden = false; section, confirmation = nil,nil; send("Open",hovered)
+ elseif input.KeyCode == Enum.KeyCode.Escape and panel.Visible and player.Character then hidden = true; snapshot.Session = nil; confirmation = nil; send("Close"); render() end
+end)
+notice.OnClientEvent:Connect(function(data)
+ if data.Kind then table.insert(queue,data) else message, messageUntil = data.Text, workspace:GetServerTimeNow()+6 end
+end)
+state.OnClientEvent:Connect(function(data)
+ local old = snapshot.Session
+ if (old and old.Kind) ~= (data.Session and data.Session.Kind) or (old and old.TownID) ~= (data.Session and data.Session.TownID) then section, confirmation = nil,nil end
+ if snapshot.TownID and not data.TownID then hidden = false end
+ for index = #queue,1,-1 do
+  if not table.find(data.Prompts or {}, queue[index].ID) then table.remove(queue,index) end
+ end
+ snapshot = data; render()
+end)
+send("Request")

@@ -36,3 +36,8 @@ World items, chests, corpses, stoves and cutting boards share the same distance 
 ## Validation
 
 Run `luau tests/resource_rules.test.luau tests/movement_rules.test.luau tests/resource_clearance.test.luau` for tool, durability, loot, spacing and occupied-home timer checks. `rojo build default.project.json` validates project packaging. A Roblox Studio playtest is still required for the actual models, pivots, ground and hit boxes.
+
+
+## Міста та кухня
+
+Налаштування Flag, BuildingSpace, TownSpawn і першої кухні описані в [TOWN_SETUP.md](TOWN_SETUP.md). Шаблон кухні: `ServerStorage/Buildings/Kitchen_1`.

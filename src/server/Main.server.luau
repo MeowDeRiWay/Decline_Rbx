@@ -60,7 +60,8 @@ local function added(player)
    Life.Finish(player,character)
   end)
  end)
- if player.Parent == Players then player:LoadCharacterAsync() end
+ -- TownService loads the first character after the player selects a city.
+ if player.Parent == Players and player:GetAttribute("TownID") then player:LoadCharacterAsync() end
 end
 Players.PlayerAdded:Connect(added)
 for _, player in ipairs(Players:GetPlayers()) do task.spawn(added, player) end

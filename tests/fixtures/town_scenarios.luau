@@ -1,0 +1,43 @@
+Service.Start()
+local action=ReplicatedStorage.TownRemotes.Action
+local function call(player,command,value,extra) clock+=.2; action.OnServerEvent:Fire(player,command,value,extra) end
+call(a,"Join",1); call(b,"Join",1); call(c,"Join",2)
+assert(a:GetAttribute("TownID")==1 and a.Character.Humanoid.Health==2)
+assert(flagA:GetAttribute("LeaderID")==101 and flagB:GetAttribute("LeaderID")==103)
+call(c,"Open",plot); call(c,"Build","Kitchen")
+assert(not plot:GetAttribute("BuildingID"),"foreign town must not build")
+call(b,"Open",plot); call(b,"Build","Kitchen")
+local notices=ReplicatedStorage.TownRemotes.Notice.sent
+local approval
+for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==a then approval=item.data.ID end end
+assert(approval and not plot:GetAttribute("BuildingID"))
+call(c,"Reply",approval,true); assert(not plot:GetAttribute("BuildingID"),"only actual mayor may approve")
+call(a,"Reply",approval,true)
+assert(plot:GetAttribute("BuildingID")=="Kitchen" and plot:GetAttribute("OwnerID")==102 and space.Parent==nil)
+call(a,"Open",plot); call(a,"Owner",101)
+call(a,"CoOwner",102,true); assert(plot:GetAttribute("Co-OwnerID")=="102")
+call(a,"Open",flagA); call(a,"Relation",2,"Ally")
+local alliance
+for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==c then alliance=item.data.ID end end
+assert(alliance)
+call(b,"Reply",alliance,true); assert(Service.Snapshot(a).Towns[1].Relations[1].Relation=="Neutral")
+call(c,"Reply",alliance,true); assert(Service.Snapshot(a).Towns[1].Relations[1].Relation=="Ally")
+call(a,"Relation",2,"War"); assert(Service.Snapshot(c).Towns[2].Relations[1].Relation=="War")
+call(b,"Open",flagA); call(b,"Vote")
+local vote=Service.Snapshot(b).Prompts[1]; assert(vote)
+call(c,"Reply",vote,false); call(a,"Reply",vote,true); call(b,"Reply",vote,false)
+call(b,"Reply",vote,true)
+tick(61)
+assert(flagA:GetAttribute("LeaderID")==101,"tie and duplicate vote preserve mayor")
+call(b,"Vote"); assert(not Service.Snapshot(b).Towns[1].VoteEndsAt,"cooldown enforced")
+tick(601); call(b,"Vote"); vote=Service.Snapshot(b).Prompts[1]; call(b,"Reply",vote,false); tick(61)
+assert(flagA:GetAttribute("LeaderID")==0,"remove majority makes office vacant")
+call(b,"ClaimMayor"); assert(flagA:GetAttribute("LeaderID")==102)
+call(a,"Open",plot); call(a,"Owner",0); assert(plot:GetAttribute("OwnerID")==101,"former mayor cannot revoke ownership")
+call(b,"Open",plot); call(b,"Destroy"); assert(space.Parent==plot and not plot:GetAttribute("BuildingID"))
+call(a,"Build","Kitchen")
+local expired
+for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==b then expired=item.data.ID end end
+assert(expired); tick(61); call(b,"Reply",expired,true); assert(not plot:GetAttribute("BuildingID"))
+call(b,"Open",flagA); call(b,"Leave"); assert(not b:GetAttribute("TownID") and flagA:GetAttribute("LeaderID")==0)
+print("PASS: city join/spawn 2 HP, foreign building rejection, mayor approval authorization, replacement/restoration of Space, ownership, bilateral alliance, unilateral war, vote anonymity/duplicates/ties/removal/cooldown, approval expiry, mayor departure")

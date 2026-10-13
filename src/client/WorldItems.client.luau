@@ -36,7 +36,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
- if not root or not camera or character:GetAttribute("Knockout") or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if not root or not camera or character:GetAttribute("Knockout") or (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen")) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  -- GetMouseLocation already matches ViewportPointToRay coordinates.
  local viewportMouse = mouse
@@ -83,7 +83,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  label.Visible = true
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
- if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not player:GetAttribute("InventoryOpen") then
+ if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen")) then
   action:FireServer(stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
  end
 end)
