@@ -45,8 +45,8 @@ Pivot Kitchen_1 суміщається з pivot Space: поставте їх у 
 
 - На вході гравець бачить міста; натискання розгортає кількість учасників **у поточному сервері**, дипломатію, Roblox username мера та вступ.
 - Членство зберігається між смертями в цьому сервері. Для зміни міста треба покинути свою команду через її прапор, потім вступити в іншу. Вступ переносить до спавну нового міста.
-- Перший учасник міста з LeaderID=0 стає мером. Якщо після усунення/виходу мера посада вакантна, наявний член може натиснути «Стати мером» біля прапора. Мер, який просто відключився, зберігає посаду; члени можуть усунути його голосуванням.
-- Голосування — 30 секунд або до голосу останнього виборця. Y залишає мера, N усуває. Перемагає більшість **поданих** голосів; нічия й відсутність голосів залишають мера. Кожен має один голос, змінити його не можна. Нові учасники не голосують у вже розпочатому голосуванні. При виході з міста/сервера голос вилучається.
+- Перший учасник міста з LeaderID=0 стає мером. Якщо після усунення/виходу мера посада вакантна, наявний член може розпочати вибори біля прапора. Мер, який просто відключився, зберігає посаду; члени можуть усунути його голосуванням.
+- Голосування — 30 секунд або до голосу останнього виборця. Y усуває мера, N залишає. Перемагає більшість **поданих** голосів; нічия й відсутність голосів залишають мера. Кожен має один голос, змінити його не можна. Нові учасники не голосують у вже розпочатому голосуванні. При виході з міста/сервера голос вилучається.
 - Ініціатора й індивідуальні голоси не публікують. Після завершення показують лише підсумкові числа. Мер отримує спеціальний текст про усунення. Кулдаун — 10 хв після завершення або скасування через зміну мера.
 - Початкові відносини — нейтралітет. Союз потребує Y від іншого мера. Війна та нейтралітет встановлюються односторонньо, симетрично для обох міст. Відносини поки інформаційні: зміни шкоди та дружнього вогню не додано.
 - Член міста обирає кухню біля BuildingMenu, мер отримує username заявника й відповідає Y/N протягом 60 секунд. Якщо мер офлайн або немає шаблону, з'являється пояснення. Запити мають окремі ID, чергу, перевірку ролі та строку дії.
@@ -78,6 +78,14 @@ Spawn identifiers are intentionally different attribute names: **Flag.Team** mat
 
 Opening Membership, Leadership or Diplomacy hides the other section headings until the open section is clicked again. Sections include short explanations. There is no bulk Claim all buildings action; mayors assign ownership individually through BuildingMenu.
 
-Mayors cannot initiate their own removal vote. Offer resignation starts an anonymous town vote with the same keep/remove choices; the mayor remains in office until the result. Voting ends after 30 seconds or immediately once all remaining eligible members have voted. The notification continues showing the countdown after voting.
+Mayors cannot initiate their own removal vote. Resign as mayor immediately leaves office and starts an election. Successful removal also starts an election. In removal votes Y removes the mayor and N keeps the mayor. Voting ends after 30 seconds or immediately once all remaining eligible members have voted. The notification continues showing the countdown after voting.
 
 Town notifications are on the right side. Flags and BuildingMenu use green cursor highlights plus a tooltip beside the cursor (Flag / Building Menu and [E] Open or Too far), matching Stove interactions. There is no bottom interaction hint. E remains the interaction key.
+
+## Mayor election flow
+
+Resignation immediately vacates the office. Successful removal (Y remove / N keep) vacates the office after the result. Both start a new 30-second election notification: Would you like to take part in electing a new mayor?
+
+Y opens the town's candidate list on the right; N skips the election. Self-voting is allowed. Each eligible citizen has one candidate ballot. The candidate with the most votes becomes mayor; the election ends after 30 seconds or when all eligible voters have selected a candidate or declined. People who opt in but do not choose before the deadline abstain.
+
+A tie starts one runoff between the tied leading candidates. A tied runoff or no ballots leaves the office vacant; citizens may start another election at the flag. Joining during an election does not grant voting eligibility or automatically make the newcomer mayor. Ballots and the initiator remain private. The 10-minute removal-vote cooldown starts again after the final election result; it does not block voluntary resignation or the election following removal.

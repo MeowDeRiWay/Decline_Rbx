@@ -130,7 +130,20 @@ function Service.Snapshot(player)
   if town.vote and town.vote.eligible[player.UserId] then table.insert(prompts, town.vote.id) end
  end
  for id, request in pairs(pending) do if request.leader == player.UserId then table.insert(prompts, id) end end
- return {Towns = list, Prompts = prompts, TownID = player:GetAttribute("TownID"), Session = session and {
+ local election
+ local town = townOf(player)
+ local vote = town and town.vote
+ if vote and vote.kind == "Election" and vote.eligible[player.UserId] then
+  local candidates = {}
+  for id in pairs(vote.candidates) do
+   local candidate = Players:GetPlayerByUserId(id)
+   if candidate and townOf(candidate) == town then table.insert(candidates, {ID = id, Name = candidate.Name}) end
+  end
+  table.sort(candidates, function(a,b) return a.ID < b.ID end)
+  election = {ID = vote.id, Candidates = candidates, Participating = vote.participants[player.UserId] == true,
+   Answered = vote.votes[player.UserId] ~= nil, EndsAt = vote.endsAt}
+ end
+ return {Towns = list, Election = election, Prompts = prompts, TownID = player:GetAttribute("TownID"), Session = session and {
   Kind = session.kind, TownID = session.town and session.town.id,
   Plot = session.plot and plotSnapshot(session.plot),
  } or nil}
@@ -185,7 +198,7 @@ local function join(player, town)
  player:SetAttribute("TeamID", town.teamID)
  player.Team, player.Neutral = town.team, false
  local claimedMayor = town.leader == 0
- if claimedMayor then setLeader(town, player.UserId) end
+ if claimedMayor and not town.vote then setLeader(town, player.UserId) end
  sessions[player] = nil
  if player.Character then Service.PlaceCharacter(player, player.Character)
  elseif Service.LoadCharacter(player) == false then
@@ -234,18 +247,44 @@ function Service.PlaceCharacter(player, character)
  hp.Health = hospital and hp.MaxHealth or 2
  character:SetAttribute("Health", hp.Health)
 end
+local startElection
 local function finishVote(town)
  local vote = town.vote
  if not vote then return end
  town.vote = nil
+ if vote.kind == "Election" then
+  town.cooldown = now() + Config.VoteCooldown
+  local counts, highest, winners = {}, 0, {}
+  for _, candidate in pairs(vote.votes) do
+   if typeof(candidate) == "number" and vote.candidates[candidate] then
+    local member = Players:GetPlayerByUserId(candidate)
+    if member and townOf(member) == town then counts[candidate] = (counts[candidate] or 0) + 1 end
+   end
+  end
+  for id, count in pairs(counts) do
+   if count > highest then highest, winners = count, {id}
+   elseif count == highest then table.insert(winners, id) end
+  end
+  if #winners == 1 then
+   setLeader(town, winners[1])
+   for _, member in ipairs(members(town)) do tell(member, nameOf(winners[1]) .. " has been elected mayor with " .. highest .. " votes.") end
+  elseif #winners > 1 and not vote.runoff then
+   for _, member in ipairs(members(town)) do tell(member, "The election is tied. A runoff between the leading candidates is starting.") end
+   startElection(town, winners)
+  else
+   for _, member in ipairs(members(town)) do tell(member, "No mayor was elected. The position remains vacant; start another election at the flag.") end
+  end
+  return
+ end
  town.cooldown = now() + Config.VoteCooldown
  local keep, remove = 0, 0
- for _, choice in pairs(vote.votes) do if choice then keep += 1 else remove += 1 end end
+ for _, choice in pairs(vote.votes) do if choice then remove += 1 else keep += 1 end end
  local removed = Rules.Removed(keep, remove)
  if removed and town.leader == vote.leader then cancelRequests(town); setLeader(town, 0) end
  for _, player in ipairs(members(town)) do
-  tell(player, string.format("Vote ended: keep — %d, remove — %d. %s", keep, remove, removed and "The mayor position is now vacant." or "The mayor stays in office."))
+  tell(player, string.format("Vote ended: remove — %d, keep — %d. %s", remove, keep, removed and "A new mayor will now be elected." or "The mayor stays in office."))
  end
+ if removed then startElection(town) end
 end
 local function completeVote(town)
  local vote = town.vote
@@ -253,35 +292,71 @@ local function completeVote(town)
  for id in pairs(vote.eligible) do if vote.votes[id] == nil then return end end
  finishVote(town)
 end
+startElection = function(town, finalists)
+ if town.vote then return end
+ local citizens = members(town)
+ if #citizens == 0 then return end
+ sequence += 1
+ local vote = {id = sequence, kind = "Election", endsAt = now() + Config.VoteDuration,
+  eligible = {}, candidates = {}, participants = {}, votes = {}, runoff = finalists ~= nil}
+ town.vote = vote
+ for _, member in ipairs(citizens) do
+  vote.eligible[member.UserId] = true
+  if not finalists or table.find(finalists, member.UserId) then vote.candidates[member.UserId] = true end
+ end
+ for _, member in ipairs(citizens) do
+  notice:FireClient(member, {ID = vote.id, Kind = "Election", Text = "Would you like to take part in electing a new mayor?", EndsAt = vote.endsAt})
+ end
+end
 local function startVote(player, town, resignation)
  if mayor(player, town) ~= (resignation == true) then
-  tell(player, "Mayors can offer their resignation; only other members can start a removal vote.")
+  tell(player, "Only the mayor can resign. Other members can start a removal vote."); return
+ end
+ if town.vote then tell(player, "A vote is already in progress."); return end
+ if town.leader == 0 then tell(player, "This town has no mayor."); return end
+ if resignation then
+  cancelRequests(town)
+  setLeader(town, 0)
+  for _, member in ipairs(members(town)) do tell(member, player.Name .. " has resigned as mayor.") end
+  startElection(town)
   return
  end
- if town.vote or town.cooldown > now() then tell(player, "Voting is not available yet."); return end
- if town.leader == 0 then tell(player, "This town has no mayor."); return end
+ if town.cooldown > now() then tell(player, "Voting is not available yet."); return end
  sequence += 1
- local vote = {id = sequence, leader = town.leader, endsAt = now() + Config.VoteDuration, eligible = {}, votes = {}}
+ local vote = {id = sequence, kind = "Removal", leader = town.leader, endsAt = now() + Config.VoteDuration, eligible = {}, votes = {}}
  town.vote = vote
  for _, member in ipairs(members(town)) do
   vote.eligible[member.UserId] = true
   notice:FireClient(member, {ID = vote.id, Kind = "Vote", Text = member.UserId == town.leader and
-   (resignation and "A vote on your resignation has started." or "A vote to remove you from office has started.") or
-   (resignation and "The mayor has offered their resignation. Vote to keep or release the mayor." or "A vote to remove the mayor has started."), EndsAt = vote.endsAt})
+   "A vote to remove you from office has started." or "A vote to remove the mayor has started.", EndsAt = vote.endsAt})
  end
 end
 local function handle(player, command, value, extra)
  if command == "Request" then remote:FireClient(player, Service.Snapshot(player)); return end
  if command == "Close" then sessions[player] = nil; return end
  if command == "Join" then local town = towns[value]; if town then join(player, town) end; return end
+ if command == "VoteCandidate" then
+  local town = townOf(player)
+  local vote = town and town.vote
+  local candidate = Rules.ValidID(extra) and Players:GetPlayerByUserId(extra)
+  if not vote or vote.kind ~= "Election" or vote.id ~= value or vote.endsAt <= now() or not vote.eligible[player.UserId]
+   or not vote.participants[player.UserId] or vote.votes[player.UserId] ~= nil or not vote.candidates[extra]
+   or not candidate or townOf(candidate) ~= town then return end
+  vote.votes[player.UserId] = extra
+  tell(player, "Your anonymous vote has been recorded.")
+  completeVote(town); Service.Publish(); return
+ end
  if command == "Reply" then
   if typeof(value) ~= "number" or typeof(extra) ~= "boolean" then return end
   for _, town in pairs(towns) do
    local vote = town.vote
    if vote and vote.id == value and vote.endsAt > now() and vote.eligible[player.UserId] and townOf(player) == town then
     if vote.votes[player.UserId] == nil then
-     vote.votes[player.UserId] = extra
-     tell(player, "Your anonymous vote has been recorded.")
+     if vote.kind == "Election" then
+      vote.participants[player.UserId] = extra
+      if not extra then vote.votes[player.UserId] = false end
+     else vote.votes[player.UserId] = extra end
+     tell(player, vote.kind == "Election" and (extra and "Choose a candidate from your town." or "You declined to participate.") or "Your anonymous vote has been recorded.")
      completeVote(town)
      Service.Publish()
     end
@@ -328,7 +403,12 @@ local function handle(player, command, value, extra)
   if townOf(player) ~= town then return end
   if command == "Leave" then
    if mayor(player, town) then cancelRequests(town); setLeader(town, 0) end
-   if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil; completeVote(town) end
+   if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil
+    if town.vote.kind == "Election" then
+     town.vote.candidates[player.UserId] = nil
+     for id, choice in pairs(town.vote.votes) do if choice == player.UserId then town.vote.votes[id] = nil end end
+    end
+    completeVote(town) end
    for id, request in pairs(pending) do
     if request.player == player then if request.plot then request.plot.pending = nil end; pending[id] = nil end
    end
@@ -337,7 +417,7 @@ local function handle(player, command, value, extra)
    sessions[player] = nil
   elseif command == "Vote" then startVote(player, town, false)
   elseif command == "Resign" then startVote(player, town, true)
-  elseif command == "ClaimMayor" and town.leader == 0 and not town.vote then setLeader(town, player.UserId)
+  elseif command == "Election" and town.leader == 0 and not town.vote then startElection(town)
   elseif command == "Relation" and mayor(player, town) then
    local other = towns[value]
    if not other or other == town or not table.find(Config.Relations, extra) then return end
@@ -439,7 +519,12 @@ function Service.Start()
  for _, player in ipairs(Players:GetPlayers()) do added(player) end
  Players.PlayerRemoving:Connect(function(player)
   sessions[player], lastAction[player] = nil, nil
-  for _, town in pairs(towns) do if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil; completeVote(town) end end
+  for _, town in pairs(towns) do if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil
+    if town.vote.kind == "Election" then
+     town.vote.candidates[player.UserId] = nil
+     for id, choice in pairs(town.vote.votes) do if choice == player.UserId then town.vote.votes[id] = nil end end
+    end
+    completeVote(town) end end
   for id, request in pairs(pending) do if request.player == player then if request.plot then request.plot.pending = nil end; pending[id] = nil end end
   task.defer(Service.Publish)
  end)

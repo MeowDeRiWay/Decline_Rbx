@@ -121,13 +121,13 @@ render = function()
   if snapshot.TownID == town.ID then
    if not section or section == "Power" then button("Leadership",function() toggle("Power") end) end
    if section == "Power" then
-    text("The mayor approves construction and manages town diplomacy and building ownership. Votes are anonymous and end after 30 seconds or when everyone has voted. A tie keeps the mayor in office.")
-    if town.LeaderID == 0 then button("Become mayor",function() send("ClaimMayor") end)
-    elseif town.VoteEndsAt then text("A vote is in progress. Check your notification for the remaining time.")
-    elseif town.CooldownEndsAt > workspace:GetServerTimeNow() then text("Next vote available in: " .. math.ceil(town.CooldownEndsAt-workspace:GetServerTimeNow()) .. " s")
+    text("The mayor approves construction and manages town diplomacy and building ownership. Votes are anonymous and end after 30 seconds or when everyone has voted. A tied removal vote keeps the mayor. A successful removal starts an election, where you can also vote for yourself.")
+    if town.VoteEndsAt then text("A vote is in progress. Check your notification for the remaining time.")
+    elseif town.LeaderID == 0 then button("Start election",function() send("Election") end)
     elseif town.LeaderID == player.UserId then
-     text("You cannot start a removal vote against yourself. You can offer your resignation for the town to vote on.")
-     button("Offer resignation",function() confirm("Offer your resignation and start a town vote?", "Resign") end)
+     text("You cannot start a removal vote against yourself. Resigning immediately leaves office and starts an election for a new mayor.")
+     button("Resign as mayor",function() confirm("Resign now and start an election for a new mayor?", "Resign") end)
+    elseif town.CooldownEndsAt > workspace:GetServerTimeNow() then text("Next removal vote available in: " .. math.ceil(town.CooldownEndsAt-workspace:GetServerTimeNow()) .. " s")
     else button("Start a vote",function() confirm("Start an anonymous vote to remove the mayor?", "Vote") end) end
    end
    if town.LeaderID == player.UserId then
@@ -201,8 +201,12 @@ caption.Font, caption.TextSize, caption.LayoutOrder, caption.Parent = Enum.Font.
 local answers = Instance.new("Frame"); answers.BackgroundTransparency = 1; answers.LayoutOrder = 2; answers.Size = UDim2.new(1,0,0,38); answers.Parent = notifications
 local function reply(choice)
  local request = queue[1]
- if not request or request.Answered then return end
+ if not request or request.Answered or request.Participating then return end
  send("Reply",request.ID,choice)
+ if request.Kind == "Election" then
+  request.Participating, request.Answered = choice, not choice
+  return
+ end
  table.remove(queue,1)
  if request.Kind == "Vote" then request.Answered = true; table.insert(queue,request) end
 end
@@ -212,6 +216,27 @@ for index, yes in ipairs({true,false}) do
  item.Text, item.TextSize = yes and "Y" or "N", 18
  item.BackgroundColor3, item.TextColor3, item.Parent = Color3.fromRGB(58,75,76), Color3.new(1,1,1), answers
  item.Activated:Connect(function() reply(yes) end)
+end
+local candidateList = Instance.new("ScrollingFrame")
+candidateList.Name, candidateList.LayoutOrder = "ElectionCandidates", 3
+candidateList.Size, candidateList.CanvasSize = UDim2.new(1,0,0,160), UDim2.new()
+candidateList.AutomaticCanvasSize, candidateList.ScrollBarThickness = Enum.AutomaticSize.Y, 6
+candidateList.BackgroundTransparency, candidateList.Visible, candidateList.Parent = 1, false, notifications
+local candidateLayout = Instance.new("UIListLayout")
+candidateLayout.SortOrder, candidateLayout.Padding, candidateLayout.Parent = Enum.SortOrder.LayoutOrder, UDim.new(0,4), candidateList
+local function updateCandidates(election)
+ for _, child in ipairs(candidateList:GetChildren()) do if child ~= candidateLayout then child:Destroy() end end
+ if not election or not election.Participating or election.Answered then return end
+ for index, candidate in ipairs(election.Candidates) do
+  local item = Instance.new("TextButton")
+  item.LayoutOrder, item.Size = index, UDim2.new(1,-8,0,36)
+  item.Text = candidate.Name .. (candidate.ID == player.UserId and " (you)" or "")
+  item.Font, item.TextSize = Enum.Font.GothamMedium, 15
+  item.BackgroundColor3, item.TextColor3, item.Parent = Color3.fromRGB(58,75,76), Color3.new(1,1,1), candidateList
+  item.Activated:Connect(function()
+   send("VoteCandidate",election.ID,candidate.ID)
+  end)
+ end
 end
 local hovered
 local highlight = Instance.new("Highlight")
@@ -232,9 +257,12 @@ RunService.RenderStepped:Connect(function()
  for index = #queue,1,-1 do if queue[index].EndsAt <= time then table.remove(queue,index) end end
  local request = queue[1]
  notifications.Visible = request ~= nil or messageUntil > time
- answers.Visible = request ~= nil and not request.Answered
+ answers.Visible = request ~= nil and not request.Answered and not request.Participating
+ candidateList.Visible = request ~= nil and request.Kind == "Election" and request.Participating == true and not request.Answered
  if request then
-  caption.Text = request.Text .. "\n" .. (request.Answered and "Your vote has been recorded." or (request.Kind == "Vote" and "Y — keep the mayor · N — remove from office" or "Y — approve · N — decline")) .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
+  caption.Text = request.Text .. "\n" .. (request.Answered and "Your response has been recorded." or (request.Kind == "Election" and
+   (request.Participating and "Choose the next mayor below. You may vote for yourself." or "Y — participate · N — skip") or
+   (request.Kind == "Vote" and "Y — remove the mayor · N — keep in office" or "Y — approve · N — decline"))) .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
  else caption.Text = message end
  hovered, highlight.Enabled, hoverLabel.Visible = nil, false, false
  if panel.Visible or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
@@ -288,6 +316,17 @@ state.OnClientEvent:Connect(function(data)
  for index = #queue,1,-1 do
   if not table.find(data.Prompts or {}, queue[index].ID) then table.remove(queue,index) end
  end
+ if data.Election then
+  for _, request in ipairs(queue) do
+   if request.ID == data.Election.ID then request.Participating, request.Answered = data.Election.Participating, data.Election.Answered end
+  end
+ end
+ table.sort(queue, function(a,b)
+  local answeredA, answeredB = a.Answered == true, b.Answered == true
+  if answeredA ~= answeredB then return not answeredA end
+  return a.ID < b.ID
+ end)
+ updateCandidates(data.Election)
  snapshot = data; render()
 end)
 send("Request")
