@@ -127,7 +127,7 @@ function Service.Snapshot(player)
  if session and not near(player, session.target) then sessions[player] = nil; session = nil end
  local prompts = {}
  for _, town in pairs(towns) do
-  if town.vote and town.vote.eligible[player.UserId] and town.vote.votes[player.UserId] == nil then table.insert(prompts, town.vote.id) end
+  if town.vote and town.vote.eligible[player.UserId] then table.insert(prompts, town.vote.id) end
  end
  for id, request in pairs(pending) do if request.leader == player.UserId then table.insert(prompts, id) end end
  return {Towns = list, Prompts = prompts, TownID = player:GetAttribute("TownID"), Session = session and {
@@ -247,7 +247,17 @@ local function finishVote(town)
   tell(player, string.format("Vote ended: keep — %d, remove — %d. %s", keep, remove, removed and "The mayor position is now vacant." or "The mayor stays in office."))
  end
 end
-local function startVote(player, town)
+local function completeVote(town)
+ local vote = town.vote
+ if not vote then return end
+ for id in pairs(vote.eligible) do if vote.votes[id] == nil then return end end
+ finishVote(town)
+end
+local function startVote(player, town, resignation)
+ if mayor(player, town) ~= (resignation == true) then
+  tell(player, "Mayors can offer their resignation; only other members can start a removal vote.")
+  return
+ end
  if town.vote or town.cooldown > now() then tell(player, "Voting is not available yet."); return end
  if town.leader == 0 then tell(player, "This town has no mayor."); return end
  sequence += 1
@@ -256,7 +266,8 @@ local function startVote(player, town)
  for _, member in ipairs(members(town)) do
   vote.eligible[member.UserId] = true
   notice:FireClient(member, {ID = vote.id, Kind = "Vote", Text = member.UserId == town.leader and
-   "A vote to remove you from office has started." or "A vote to remove the mayor has started.", EndsAt = vote.endsAt})
+   (resignation and "A vote on your resignation has started." or "A vote to remove you from office has started.") or
+   (resignation and "The mayor has offered their resignation. Vote to keep or release the mayor." or "A vote to remove the mayor has started."), EndsAt = vote.endsAt})
  end
 end
 local function handle(player, command, value, extra)
@@ -268,7 +279,12 @@ local function handle(player, command, value, extra)
   for _, town in pairs(towns) do
    local vote = town.vote
    if vote and vote.id == value and vote.endsAt > now() and vote.eligible[player.UserId] and townOf(player) == town then
-    if vote.votes[player.UserId] == nil then vote.votes[player.UserId] = extra; tell(player, "Your anonymous vote has been recorded.") end
+    if vote.votes[player.UserId] == nil then
+     vote.votes[player.UserId] = extra
+     tell(player, "Your anonymous vote has been recorded.")
+     completeVote(town)
+     Service.Publish()
+    end
     return
    end
   end
@@ -312,14 +328,15 @@ local function handle(player, command, value, extra)
   if townOf(player) ~= town then return end
   if command == "Leave" then
    if mayor(player, town) then cancelRequests(town); setLeader(town, 0) end
-   if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil end
+   if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil; completeVote(town) end
    for id, request in pairs(pending) do
     if request.player == player then if request.plot then request.plot.pending = nil end; pending[id] = nil end
    end
    player.Team, player.Neutral = nil, true
    player:SetAttribute("TownID", nil); player:SetAttribute("TeamID", nil)
    sessions[player] = nil
-  elseif command == "Vote" then startVote(player, town)
+  elseif command == "Vote" then startVote(player, town, false)
+  elseif command == "Resign" then startVote(player, town, true)
   elseif command == "ClaimMayor" and town.leader == 0 and not town.vote then setLeader(town, player.UserId)
   elseif command == "Relation" and mayor(player, town) then
    local other = towns[value]
@@ -336,8 +353,6 @@ local function handle(player, command, value, extra)
     end
     town.relations[other.id], other.relations[town.id] = extra, extra
    end
-  elseif command == "OwnAll" and mayor(player, town) then
-   for _, plot in pairs(plots) do if plotTown(plot) == town and plot.kind then plot.owner = player.UserId; syncPlot(plot) end end
   end
  else
   local plot = session.plot
@@ -424,7 +439,7 @@ function Service.Start()
  for _, player in ipairs(Players:GetPlayers()) do added(player) end
  Players.PlayerRemoving:Connect(function(player)
   sessions[player], lastAction[player] = nil, nil
-  for _, town in pairs(towns) do if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil end end
+  for _, town in pairs(towns) do if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil; completeVote(town) end end
   for id, request in pairs(pending) do if request.player == player then if request.plot then request.plot.pending = nil end; pending[id] = nil end end
   task.defer(Service.Publish)
  end)

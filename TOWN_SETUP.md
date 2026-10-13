@@ -46,12 +46,12 @@ Pivot Kitchen_1 суміщається з pivot Space: поставте їх у 
 - На вході гравець бачить міста; натискання розгортає кількість учасників **у поточному сервері**, дипломатію, Roblox username мера та вступ.
 - Членство зберігається між смертями в цьому сервері. Для зміни міста треба покинути свою команду через її прапор, потім вступити в іншу. Вступ переносить до спавну нового міста.
 - Перший учасник міста з LeaderID=0 стає мером. Якщо після усунення/виходу мера посада вакантна, наявний член може натиснути «Стати мером» біля прапора. Мер, який просто відключився, зберігає посаду; члени можуть усунути його голосуванням.
-- Голосування — 60 секунд. Y залишає мера, N усуває. Перемагає більшість **поданих** голосів; нічия й відсутність голосів залишають мера. Кожен має один голос, змінити його не можна. Нові учасники не голосують у вже розпочатому голосуванні. При виході з міста/сервера голос вилучається.
+- Голосування — 30 секунд або до голосу останнього виборця. Y залишає мера, N усуває. Перемагає більшість **поданих** голосів; нічия й відсутність голосів залишають мера. Кожен має один голос, змінити його не можна. Нові учасники не голосують у вже розпочатому голосуванні. При виході з міста/сервера голос вилучається.
 - Ініціатора й індивідуальні голоси не публікують. Після завершення показують лише підсумкові числа. Мер отримує спеціальний текст про усунення. Кулдаун — 10 хв після завершення або скасування через зміну мера.
 - Початкові відносини — нейтралітет. Союз потребує Y від іншого мера. Війна та нейтралітет встановлюються односторонньо, симетрично для обох міст. Відносини поки інформаційні: зміни шкоди та дружнього вогню не додано.
 - Член міста обирає кухню біля BuildingMenu, мер отримує username заявника й відповідає Y/N протягом 60 секунд. Якщо мер офлайн або немає шаблону, з'являється пояснення. Запити мають окремі ID, чергу, перевірку ролі та строку дії.
 - Мер будує без запиту самому собі. Після будівництва заявник стає власником.
-- Мер може призначити/прибрати основного власника, привласнити всі наявні будівлі, керувати співвласниками та знести будь-яку будівлю свого міста.
+- Мер може призначити/прибрати основного власника, привласнювати будівлі окремо через їхні таблички, керувати співвласниками та знести будь-яку будівлю свого міста.
 - Власник і співвласники можуть запросити покращення, керувати співвласниками та знести свою будівлю. Членство у відповідному місті обов'язкове. Знесення повертає Space без повернення ресурсів.
 - Дані міст, голосувань, дипломатії й збудованих під час гри будівель зараз живуть у поточному сервері; DataStore між серверами/перезапусками ще немає.
 - Моделі читаються при запуску сервера. Після зміни атрибутів/додавання нових моделей у Studio перезапустіть Play.
@@ -73,3 +73,11 @@ Pivot Kitchen_1 суміщається з pivot Space: поставте їх у 
 All built-in game UI and notifications are in English. User-supplied Town_name values retain their original text. Choose a town is a fixed title above the list; Join is inside the selected town details. UIListLayout uses explicit LayoutOrder.
 
 Spawn identifiers are intentionally different attribute names: **Flag.Team** matches **TownSpawn.TeamID** and **BuildingSpace.TeamID**. TownID identifies the town separately. Character positioning runs after LoadCharacterAsync finishes so Roblox cannot overwrite the town position during loading; respawns use the same function.
+
+## Flag menu and voting update
+
+Opening Membership, Leadership or Diplomacy hides the other section headings until the open section is clicked again. Sections include short explanations. There is no bulk Claim all buildings action; mayors assign ownership individually through BuildingMenu.
+
+Mayors cannot initiate their own removal vote. Offer resignation starts an anonymous town vote with the same keep/remove choices; the mayor remains in office until the result. Voting ends after 30 seconds or immediately once all remaining eligible members have voted. The notification continues showing the countdown after voting.
+
+Town notifications are on the right side. Flags and BuildingMenu use green cursor highlights; there is no bottom interaction hint. E remains the interaction key.

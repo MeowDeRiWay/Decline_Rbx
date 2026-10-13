@@ -107,24 +107,33 @@ render = function()
  elseif session.Kind == "Flag" then
   local town = townByID(session.TownID)
   if not town then return end
+  if section == "Diplomacy" and town.LeaderID ~= player.UserId then section = nil end
+  if snapshot.TownID ~= town.ID and section ~= "Member" then section = nil end
   detail(town)
-  button("Membership",function() toggle("Member") end)
+  if not section or section == "Member" then button("Membership",function() toggle("Member") end) end
   if section == "Member" then
+   text("Join a town to become one of its citizens. To move to another town, leave your current team at its flag first.")
    if snapshot.TownID == town.ID then button("Leave team",function() confirm("Leave this town team?", "Leave") end)
    elseif not snapshot.TownID then button("Join",function() send("JoinFlag") end)
-   else text("Leave your current team at its flag before joining this town.") end
+   else text("You currently belong to another town.") end
   end
   if snapshot.TownID == town.ID then
-   button("Leadership",function() toggle("Power") end)
+   if not section or section == "Power" then button("Leadership",function() toggle("Power") end) end
    if section == "Power" then
+    text("The mayor approves construction and manages town diplomacy and building ownership. Votes are anonymous and end after 30 seconds or when everyone has voted. A tie keeps the mayor in office.")
     if town.LeaderID == 0 then button("Become mayor",function() send("ClaimMayor") end)
-    elseif town.VoteEndsAt then text("A vote is in progress.")
+    elseif town.VoteEndsAt then text("A vote is in progress. Check your notification for the remaining time.")
     elseif town.CooldownEndsAt > workspace:GetServerTimeNow() then text("Next vote available in: " .. math.ceil(town.CooldownEndsAt-workspace:GetServerTimeNow()) .. " s")
+    elseif town.LeaderID == player.UserId then
+     text("You cannot start a removal vote against yourself. You can offer your resignation for the town to vote on.")
+     button("Offer resignation",function() confirm("Offer your resignation and start a town vote?", "Resign") end)
     else button("Start a vote",function() confirm("Start an anonymous vote to remove the mayor?", "Vote") end) end
    end
    if town.LeaderID == player.UserId then
-    button("Diplomacy",function() toggle("Diplomacy") end)
+    if not section or section == "Diplomacy" then button("Diplomacy",function() toggle("Diplomacy") end) end
     if section == "Diplomacy" then
+     text("Towns begin with neutral relations. An alliance needs approval from the other mayor. War and neutrality take effect for both towns as soon as you select them.")
+     if #town.Relations == 0 then text("There are no other towns to contact.") end
      for _, relation in ipairs(town.Relations) do
       text(relation.Name .. " — " .. relationNames[relation.Relation])
       for _, value in ipairs(Config.Relations) do
@@ -132,8 +141,6 @@ render = function()
       end
      end
     end
-    button("Town ownership",function() toggle("Ownership") end)
-    if section == "Ownership" then button("Claim all buildings",function() confirm("Claim all completed town buildings? Co-owners will remain.","OwnAll") end) end
    end
   end
  else
@@ -181,20 +188,22 @@ render = function()
  scroll.CanvasPosition = offset
 end
 local notifications = Instance.new("Frame")
-notifications.AnchorPoint, notifications.Position = Vector2.new(.5,0), UDim2.fromScale(.5,.02)
-notifications.Size, notifications.AutomaticSize = UDim2.fromScale(.85,0), Enum.AutomaticSize.Y
+notifications.AnchorPoint, notifications.Position = Vector2.new(1,.5), UDim2.fromScale(.98,.5)
+notifications.Size, notifications.AutomaticSize = UDim2.new(.28,0,0,0), Enum.AutomaticSize.Y
 notifications.BackgroundColor3, notifications.Visible = Color3.fromRGB(30,39,44), false
 notifications.Parent = gui
-local noticeLayout = Instance.new("UIListLayout"); noticeLayout.Padding = UDim.new(0,6); noticeLayout.Parent = notifications
+local noticeLayout = Instance.new("UIListLayout"); noticeLayout.SortOrder = Enum.SortOrder.LayoutOrder; noticeLayout.Padding = UDim.new(0,6); noticeLayout.Parent = notifications
 local caption = Instance.new("TextLabel")
 caption.Size, caption.AutomaticSize = UDim2.new(1,0,0,0), Enum.AutomaticSize.Y
 caption.BackgroundTransparency, caption.TextColor3, caption.TextWrapped = 1, Color3.fromRGB(255,239,184), true
-caption.Font, caption.TextSize, caption.Parent = Enum.Font.GothamMedium, 17, notifications
-local answers = Instance.new("Frame"); answers.BackgroundTransparency = 1; answers.Size = UDim2.new(1,0,0,38); answers.Parent = notifications
+caption.Font, caption.TextSize, caption.LayoutOrder, caption.Parent = Enum.Font.GothamMedium, 17, 1, notifications
+local answers = Instance.new("Frame"); answers.BackgroundTransparency = 1; answers.LayoutOrder = 2; answers.Size = UDim2.new(1,0,0,38); answers.Parent = notifications
 local function reply(choice)
  local request = queue[1]
- if not request then return end
- send("Reply",request.ID,choice); table.remove(queue,1)
+ if not request or request.Answered then return end
+ send("Reply",request.ID,choice)
+ table.remove(queue,1)
+ if request.Kind == "Vote" then request.Answered = true; table.insert(queue,request) end
 end
 for index, yes in ipairs({true,false}) do
  local item = Instance.new("TextButton")
@@ -204,20 +213,21 @@ for index, yes in ipairs({true,false}) do
  item.Activated:Connect(function() reply(yes) end)
 end
 local hovered
-local hint = Instance.new("TextLabel")
-hint.AnchorPoint, hint.Position, hint.Size = Vector2.new(.5,1), UDim2.fromScale(.5,.97), UDim2.fromOffset(300,38)
-hint.BackgroundColor3, hint.TextColor3, hint.TextSize = Color3.fromRGB(30,39,44), Color3.new(1,1,1), 16
-hint.Visible, hint.Parent = false, gui
+local highlight = Instance.new("Highlight")
+highlight.Name = "TownInteractionHover"
+highlight.FillColor, highlight.OutlineColor = Color3.fromRGB(80,190,110), Color3.fromRGB(125,255,160)
+highlight.FillTransparency, highlight.DepthMode = .7, Enum.HighlightDepthMode.Occluded
+highlight.Enabled, highlight.Parent = false, workspace
 RunService.RenderStepped:Connect(function()
  local time = workspace:GetServerTimeNow()
  for index = #queue,1,-1 do if queue[index].EndsAt <= time then table.remove(queue,index) end end
  local request = queue[1]
  notifications.Visible = request ~= nil or messageUntil > time
- answers.Visible = request ~= nil
+ answers.Visible = request ~= nil and not request.Answered
  if request then
-  caption.Text = request.Text .. "\n" .. (request.Kind == "Vote" and "Y — keep the mayor · N — remove from office" or "Y — approve · N — decline") .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
+  caption.Text = request.Text .. "\n" .. (request.Answered and "Your vote has been recorded." or (request.Kind == "Vote" and "Y — keep the mayor · N — remove from office" or "Y — approve · N — decline")) .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
  else caption.Text = message end
- hovered, hint.Visible = nil, false
+ hovered, highlight.Enabled = nil, false
  if panel.Visible or player:GetAttribute("InventoryOpen") or UserInputService:GetFocusedTextBox() then return end
  local character, camera = player.Character, workspace.CurrentCamera
  local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -229,16 +239,16 @@ RunService.RenderStepped:Connect(function()
  local object = hit and hit.Instance
  while object and object ~= workspace do
   if object:IsA("Model") and object.Name == "Flag" then
+   highlight.Adornee, highlight.Enabled = object, true
    if Interaction.Distance(object,root.Position) <= Config.InteractionDistance then hovered = object end
    break
   elseif object.Name == "BuildingMenu" and object.Parent and object.Parent.Name == "BuildingSpace" then
+   highlight.Adornee, highlight.Enabled = object, true
    if Interaction.Distance(object,root.Position) <= Config.InteractionDistance then hovered = object.Parent end
    break
   end
   object = object.Parent
  end
- hint.Visible = hovered ~= nil
- hint.Text = "[E] " .. (hovered and hovered.Name == "Flag" and "Town" or "Construction")
 end)
 UserInputService.InputBegan:Connect(function(input,processed)
  if processed or UserInputService:GetFocusedTextBox() then return end
@@ -247,7 +257,11 @@ UserInputService.InputBegan:Connect(function(input,processed)
  elseif input.KeyCode == Enum.KeyCode.Escape and panel.Visible and player.Character then hidden = true; snapshot.Session = nil; confirmation = nil; send("Close"); render() end
 end)
 notice.OnClientEvent:Connect(function(data)
- if data.Kind then table.insert(queue,data) else message, messageUntil = data.Text, workspace:GetServerTimeNow()+6 end
+ if data.Kind then
+  local index = #queue + 1
+  for i, item in ipairs(queue) do if item.Answered then index = i; break end end
+  table.insert(queue,index,data)
+ else message, messageUntil = data.Text, workspace:GetServerTimeNow()+6 end
 end)
 state.OnClientEvent:Connect(function(data)
  local old = snapshot.Session
