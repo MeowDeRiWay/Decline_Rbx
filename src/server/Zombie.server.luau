@@ -211,7 +211,10 @@ local function prepare(model)
  local navigation=Navigation.New(model,root)
  local function navigate(destination,speed,dt,stoppingDistance,ignored)
   local delta=destination-root.Position
-  if Vector3.new(delta.X,0,delta.Z).Magnitude<=stoppingDistance then return true,false end
+  if Vector3.new(delta.X,0,delta.Z).Magnitude<=stoppingDistance then
+   local ray=navigation:Parameters(ignored)
+   if navigation:Clear(root.Position,destination,ray) then return true,false end
+  end
   local waypoint=navigation:Waypoint(destination,ignored)
   if not waypoint then model:SetAttribute("NavigationStatus","NoRoute"); return false,true end
   model:SetAttribute("NavigationStatus","FollowingRoute")
@@ -344,7 +347,7 @@ local function prepare(model)
     end)
    end
   end
-  if delta.Magnitude<=stoppingDistance then return end
+  -- Being close across a wall/window is not the same as arriving.
   navigate(nearest.Position,humanoid.WalkSpeed,dt,stoppingDistance,nearest.Parent)
  end)
 end

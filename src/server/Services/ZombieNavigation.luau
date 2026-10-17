@@ -54,6 +54,29 @@ function Navigation:Clear(a,b,ray)
  if delta.Magnitude<.001 then return true end
  return workspace:Blockcast(self:BodyFrame(a,b),self:BodySize(),delta,ray)==nil
 end
+-- A player's center may be too close to a wall for the wider zombie body.
+-- Pick a nearby standing position on the same physical side of that wall.
+function Navigation:Target(goal,ray,overlap)
+ local start=self.Root.Position
+ local best,score
+ local radius=math.max(self.Root.Size.X,self.Root.Size.Z)/2+.05
+ for _,r in ipairs({0,radius,radius*2}) do
+  for index=0,(r==0 and 0 or 15) do
+   local angle=index*math.pi/8
+   local raw=Vector3.new(goal.X+math.cos(angle)*r,start.Y,goal.Z+math.sin(angle)*r)
+   local point=self:Ground(raw,ray)
+   if not point then continue end
+   local frame=self:BodyFrame(point,goal)
+   if #workspace:GetPartBoundsInBox(frame,self:BodySize(),overlap)>0 then continue end
+   local sight=Vector3.new(goal.X,point.Y,goal.Z)-point
+   if sight.Magnitude>.001 and workspace:Raycast(point,sight,ray) then continue end
+   local cost=r*10+(point-start).Magnitude
+   if not score or cost<score then best,score=point,cost end
+  end
+  if best then return best end
+ end
+ return nil
+end
 -- Door portals provide a coarse route around window sills and room walls.
 -- Collision tests still decide whether an authored doorway can be traversed.
 function Navigation:DoorRoute(target,ray,overlap)
@@ -118,9 +141,8 @@ function Navigation:Plan(goal,ignored,cellOverride)
  self.Route={}
  self.Index=1
  self.Goal=goal
- local target=self:Ground(Vector3.new(goal.X,start.Y,goal.Z),ray)
+ local target=self:Target(goal,ray,overlap)
  if not target then return false end
- if #workspace:GetPartBoundsInBox(self:BodyFrame(target,goal),self:BodySize(),overlap)>0 then return false end
  if self:Clear(start,target,ray) then self.Route={target}; return true end
  if not cellOverride then
   local doors=self:DoorRoute(target,ray,overlap)
@@ -128,7 +150,7 @@ function Navigation:Plan(goal,ignored,cellOverride)
  end
  local cell=cellOverride or self.Cell
  local function key(x,z) return x..":"..z end
- local function heuristic(position) return Vector3.new(position.X-goal.X,0,position.Z-goal.Z).Magnitude end
+ local function heuristic(position) return Vector3.new(position.X-target.X,0,position.Z-target.Z).Magnitude end
  local first={X=0,Z=0,Position=start,Cost=0,Score=heuristic(start)}
  local open={first}
  local best={[key(0,0)]=first}

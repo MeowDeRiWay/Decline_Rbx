@@ -94,7 +94,25 @@ for _,point in ipairs(nav.Route) do
  from=point
 end
 assert(usedDoor,"route must actually go to the door instead of the visible window")
-print("PASS: window-to-side-door detour, collision-safe portal route; real body-sized doorway clearance, fine-grid centering, collision-checked route segments, undersized door rejection")
+-- The target hugs the exterior window wall: their center is not a valid zombie standing point.
+local closeTarget=Vector3.new(0,.52,.3)
+function workspace:Raycast(origin,delta)
+ if math.abs(delta.Y)<.000001 then
+  for index=0,80 do
+   local p=origin+delta*(index/80)
+   if math.abs(p.Z)<.08 and math.abs(p.X-3)>.52 then return {Instance={}} end
+  end
+  return nil
+ end
+ if origin.Y < groundY or origin.Y+delta.Y > groundY then return nil end
+ return {Position=Vector3.new(origin.X,groundY,origin.Z),Normal=Vector3.new(0,1,0)}
+end
+assert(#workspace:GetPartBoundsInBox(CFrame.new(closeTarget),nav:BodySize())>0,"test target must hug wall")
+assert(nav:Plan(closeTarget),"target beside wall must produce reachable nearby endpoint")
+local endpoint=nav.Route[#nav.Route]
+assert(endpoint.Z>.5,"endpoint must stay on player's side of window wall")
+assert(not workspace:Raycast(endpoint,closeTarget-endpoint,{}),"endpoint must have no wall separating it from target")
+print("PASS: wall-hugging target and reachable endpoint on correct side; window-to-side-door detour, collision-safe portal route; real body-sized doorway clearance, fine-grid centering, collision-checked route segments, undersized door rejection")
 '''
 with tempfile.TemporaryDirectory(prefix='decline-door-') as directory:
     path=Path(directory)/'test.luau'

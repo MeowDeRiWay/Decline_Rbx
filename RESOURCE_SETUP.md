@@ -69,3 +69,6 @@ Navigation clearance now uses the travel-aligned root footprint rather than an i
 ## Window-to-door pursuit
 
 Zombies that see a target through a window now try a coarse doorway route before the fine-grid search. Doorway models are recognized by a name starting with DoorWay (case-insensitive), or NavigationDoor=true. All portal edges still use physical collision checks; neither walls nor window sills are ignored. After losing sight, the same routing leads to the last observed position. NavigationStatus and LastSeenPosition on the zombie expose route status for Studio debugging.
+
+
+Targets standing close to walls use a nearby collision-free standing endpoint when the zombie cannot fit at their exact center. Endpoint selection rejects points separated from the target by a physical wall. Close distance through a wall no longer stops route following automatically.
