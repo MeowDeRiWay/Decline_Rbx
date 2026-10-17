@@ -156,7 +156,10 @@ local function prepare(model)
   params.FilterDescendantsInstances=ignored and {model,ignored} or {model}
   params.RespectCanCollide=true
   local movementVector=direction*distance
-  local obstruction=workspace:Blockcast(root.CFrame,root.Size*.9,movementVector,params)
+  -- Match navigation's travel-aligned footprint when entering narrow doorways.
+  local travelFrame=CFrame.lookAt(root.Position,root.Position+direction)
+  local bodySize=Vector3.new(math.max(.01,root.Size.X-.02),root.Size.Y*.9,math.max(.01,root.Size.Z-.02))
+  local obstruction=workspace:Blockcast(travelFrame,bodySize,movementVector,params)
   if obstruction then
    distance=math.max(0,obstruction.Distance-.02)
    model:SetAttribute("AIState","Blocked")
@@ -182,7 +185,7 @@ local function prepare(model)
   groundParams.FilterType=Enum.RaycastFilterType.Exclude
   groundParams.FilterDescendantsInstances=groundExcluded
   groundParams.RespectCanCollide=true
-  local stepHeight=math.max(root.Size.Y,.2)
+  local stepHeight=math.max(.15,root.Size.Y*.5)
   local ground=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),groundParams)
   -- The home floor may be non-collidable. It still supports our server-driven
   -- zombie movement; otherwise the first step would drop it to the terrain below.
@@ -196,9 +199,11 @@ local function prepare(model)
    local homeGround=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),homeParams)
    if homeGround and homeGround.Normal.Y>=.95 and (not ground or homeGround.Position.Y>ground.Position.Y) then ground=homeGround end
   end
-  if not ground then model:SetAttribute("AIState","Blocked"); return false,true end
-  position=Vector3.new(position.X,ground.Position.Y+root.Size.Y/2,position.Z)
-  local turned=root.CFrame:Lerp(CFrame.lookAt(root.Position,root.Position+direction),math.clamp(dt*3,0,1))
+  if not ground or ground.Normal.Y < .85 or math.abs(ground.Position.Y+root.Size.Y/2+.02-root.Position.Y)>stepHeight then
+   model:SetAttribute("AIState","Blocked"); return false,true
+  end
+  position=Vector3.new(position.X,ground.Position.Y+root.Size.Y/2+.02,position.Z)
+  local turned=travelFrame
   local desiredRoot=CFrame.new(position)*turned.Rotation
   model:PivotTo(desiredRoot*root.CFrame:Inverse()*model:GetPivot())
   return false,obstruction ~= nil

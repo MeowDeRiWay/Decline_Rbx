@@ -59,3 +59,8 @@ City generator convention: house front is the pivot's **positive Z / blue arrow 
 
 
 City generation is now implemented for existing YardPlace markers. See [CITY_GENERATION.md](CITY_GENERATION.md) for template setup, source references, seed and validation.
+
+
+## Zombie doorway movement
+
+Navigation clearance now uses the travel-aligned root footprint rather than an inflated diagonal square. Route resolution refines on failed searches to center through narrow doors; actual movement uses the same footprint. Ground probes support small thresholds and reject high ledges/door lintels. Doors narrower than the body remain blocked. Test: `python tests/run_zombie_navigation.py /path/to/luau`.

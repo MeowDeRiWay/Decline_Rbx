@@ -2,7 +2,7 @@
 local Navigation = {}
 Navigation.__index = Navigation
 function Navigation.New(model,root)
- return setmetatable({Model=model,Root=root,Cell=math.max(.5,math.sqrt(root.Size.X^2+root.Size.Z^2)+.12),Route={},Index=1,NextPlan=0},Navigation)
+ return setmetatable({Model=model,Root=root,Cell=math.clamp(math.min(root.Size.X,root.Size.Z)*.2,.1,.25),Route={},Index=1,NextPlan=0},Navigation)
 end
 function Navigation:Parameters(ignored)
  local excluded={self.Model}
@@ -22,7 +22,7 @@ function Navigation:Parameters(ignored)
 end
 function Navigation:Ground(point,ray)
  local root=self.Root
- local step=math.max(.15,root.Size.Y*.2)
+ local step=math.max(.15,root.Size.Y*.5)
  local origin=point+Vector3.new(0,step,0)
  local delta=Vector3.new(0,-step-root.Size.Y/2-.3,0)
  local hit=workspace:Raycast(origin,delta,ray)
@@ -40,13 +40,21 @@ function Navigation:Ground(point,ray)
  if math.abs(height-point.Y)>step then return nil end
  return Vector3.new(point.X,height,point.Z)
 end
+-- The grid spacing controls route resolution, not the size of the body.
+-- Face the swept box along travel; an inflated diagonal square rejects real doors.
+function Navigation:BodyFrame(position, toward)
+ local delta = Vector3.new(toward.X-position.X,0,toward.Z-position.Z)
+ return delta.Magnitude > .001 and CFrame.lookAt(position,position+delta) or CFrame.new(position)
+end
+function Navigation:BodySize()
+ return Vector3.new(math.max(.01,self.Root.Size.X-.02),self.Root.Size.Y*.9,math.max(.01,self.Root.Size.Z-.02))
+end
 function Navigation:Clear(a,b,ray)
  local delta=b-a
  if delta.Magnitude<.001 then return true end
- local width=self.Cell-.05
- return workspace:Blockcast(CFrame.new(a),Vector3.new(width,self.Root.Size.Y*.9,width),delta,ray)==nil
+ return workspace:Blockcast(self:BodyFrame(a,b),self:BodySize(),delta,ray)==nil
 end
-function Navigation:Plan(goal,ignored)
+function Navigation:Plan(goal,ignored,cellOverride)
  local start=self.Root.Position
  local ray,overlap=self:Parameters(ignored)
  self.Ray=ray
@@ -55,10 +63,9 @@ function Navigation:Plan(goal,ignored)
  self.Goal=goal
  local target=self:Ground(Vector3.new(goal.X,start.Y,goal.Z),ray)
  if not target then return false end
- local clearance=self.Cell-.05
- if #workspace:GetPartBoundsInBox(CFrame.new(target),Vector3.new(clearance,self.Root.Size.Y*.9,clearance),overlap)>0 then return false end
+ if #workspace:GetPartBoundsInBox(self:BodyFrame(target,goal),self:BodySize(),overlap)>0 then return false end
  if self:Clear(start,target,ray) then self.Route={target}; return true end
- local cell=self.Cell
+ local cell=cellOverride or self.Cell
  local function key(x,z) return x..":"..z end
  local function heuristic(position) return Vector3.new(position.X-goal.X,0,position.Z-goal.Z).Magnitude end
  local first={X=0,Z=0,Position=start,Cost=0,Score=heuristic(start)}
@@ -67,7 +74,7 @@ function Navigation:Plan(goal,ignored)
  local closed={}
  local found
  local limit=math.min(40,heuristic(start)+12)
- for _=1,500 do
+ for _=1,2000 do
   if #open==0 then break end
   local index=1
   for i=2,#open do if open[i].Score<open[index].Score then index=i end end
@@ -83,8 +90,7 @@ function Navigation:Plan(goal,ignored)
    if closed[nextKey] or math.abs(nx)*cell>limit or math.abs(nz)*cell>limit then continue end
    local point=self:Ground(Vector3.new(start.X+nx*cell,current.Position.Y,start.Z+nz*cell),ray)
    if not point then continue end
-   local width=cell-.05
-   if #workspace:GetPartBoundsInBox(CFrame.new(point),Vector3.new(width,self.Root.Size.Y*.9,width),overlap)>0 or not self:Clear(current.Position,point,ray) then continue end
+   if #workspace:GetPartBoundsInBox(self:BodyFrame(point,point+(point-current.Position)),self:BodySize(),overlap)>0 or not self:Clear(current.Position,point,ray) then continue end
    local cost=current.Cost+(point-current.Position).Magnitude
    local previous=best[nextKey]
    if not previous or cost<previous.Cost then
@@ -94,7 +100,12 @@ function Navigation:Plan(goal,ignored)
    end
   end end
  end
- if not found then return false end
+ if not found then
+  -- A lattice may miss the center of a door only slightly wider than the body.
+  -- Refine only failed plans; direct clear routes never pay for this search.
+  if cell > .05 then return self:Plan(goal,ignored,math.max(.05,cell/2)) end
+  return false
+ end
  local route={}
  while found.Parent do table.insert(route,1,found.Position); found=found.Parent end
  if target then table.insert(route,target) end
