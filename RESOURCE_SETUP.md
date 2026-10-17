@@ -55,4 +55,7 @@ ZNumber limits simultaneously living zombies spawned by this house. All Zombie_h
 
 ZNumber=0 disables spawning. Missing/invalid values use 3; fractional values round down, negative values become 0. The house attribute takes precedence over a floor-level fallback. Existing standalone Zombie_home floor models also support ZNumber and otherwise use 3.
 
-City generator preparation only (generator not implemented yet): house front is the pivot's **positive Z / blue arrow direction**, NOT CFrame.LookVector (which points toward negative Z). No Front Part is required. A future generator must clone and rotate the outer house including Yard and Floor. YardPlace with ForZHouse=true marks destinations; Road=true identifies road models independent of names.
+City generator convention: house front is the pivot's **positive Z / blue arrow direction**, NOT CFrame.LookVector (which points toward negative Z). No Front Part is required. A future generator must clone and rotate the outer house including Yard and Floor. YardPlace with ForZHouse=true marks destinations; Road=true identifies road models independent of names.
+
+
+City generation is now implemented for existing YardPlace markers. See [CITY_GENERATION.md](CITY_GENERATION.md) for template setup, source references, seed and validation.

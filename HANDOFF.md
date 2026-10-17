@@ -4,11 +4,21 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Генератор будинків — реалізовано 18 жовтня
+
+- CityGeneration.server запускає CityGenerationService.Start; автоматично заповнює наявні Workspace/YardPlace з ForZHouse=true. **Дороги й нові ділянки поки не генеруються.**
+- Шаблони: ServerStorage/CityGeneration/Houses, довільна назва, Model ZHouse=true з безпосередньо вкладеним Yard. Повний House клонується в Workspace/GeneratedCityHouses.
+- Суміщення центрів bounding box Yard і YardPlace враховує зміщення pivot будинку. Перед +Z повертається до найближчого краю Road=true по одному з чотирьох напрямків ділянки. Yard/ділянки 20x20, перевіряється вміщення; діагональні/завеликі шаблони не ставляться.
+- Source YardPlace не знищується: невидимий, CanCollide/CanTouch/CanQuery=false. Клонований Yard теж невидимий; Floor і Zombie_home зберігаються, ZNumber діє. Усі деталі клону Anchored.
+- ObjectValue GeneratedHouse на ділянці і GenerationSource на будинку запобігають дублям. Повторний Generate/Start не заміняє вже поставлені будинки. Нові/невдалі ділянки перевіряються через 5с; видалення ділянки прибирає її будинок.
+- Seed і tolerance у CityGenerationConfig. Точні інструкції CITY_GENERATION.md.
+- Перевірки: компіляція, Rojo build, tests/run_city_geometry.py, tests/run_city_service.py (mock API), zombie_home_rules.test.luau. Власного Studio playtest немає.
+
 ## Підготовка генератора міста та ZNumber — 18 жовтня
 
-- Генератор міста ще НЕ реалізовано. Користувач підготував HouseA (brick), HouseB (brick), YardPlace ForZHouse=true і дороги з Road=true; назви шаблонів можуть змінюватися.
+- Початкові заготовки (після цього реалізовано заповнення ділянок, див. вище): користувач підготував HouseA (brick), HouseB (brick), YardPlace ForZHouse=true і дороги з Road=true; назви шаблонів можуть змінюватися.
 - Прочитано реальний HouseA (brick).rbxm: зовнішня Model ZHouse=true, усередині Yard/Part, Floor з Zombie_home=true, вкладені Wall/Corner/DoorWay/Window (brick) з Parts. **Yard усередині будинку**, а не будинок усередині Yard.
-- Перед будинку за домовленістю **+Z, синя стрілка pivot**; Front Part користувач не хоче. Не переплутати з LookVector=-Z. Це вимога до майбутнього генератора, не вже готове автоповернення.
+- Перед будинку за домовленістю **+Z, синя стрілка pivot**; Front Part користувач не хоче. Не переплутати з LookVector=-Z. Це узгоджений напрямок, який тепер використовує автоповернення.
 - Додано числовий атрибут ZNumber на зовнішню Model будинку: рекомендовано 3, 0 вимикає спавн, без атрибута/невалідне значення fallback3. Користувач додає атрибут у Studio; завантажений rbxm не змінювався.
 - ZombieHomeRules визначає найближчу Model-предка з ZHouse=true і рахує живих зомбі по їхньому ObjectValue ZombieHome. Кілька підлог у одному будинку ділять квоту. Ті, що вийшли з дому, рахуються; мертві/трупи — ні. Стара логіка зайнятості та 180 с блокування спавну збережена.
 - Перевірка tests/zombie_home_rules.test.luau. Структура й правила описані в RESOURCE_SETUP.md.
