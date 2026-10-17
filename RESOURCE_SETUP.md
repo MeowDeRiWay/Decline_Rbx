@@ -41,3 +41,18 @@ Run `luau tests/resource_rules.test.luau tests/movement_rules.test.luau tests/re
 ## Міста та кухня
 
 Налаштування Flag, BuildingSpace, TownSpawn і першої кухні описані в [TOWN_SETUP.md](TOWN_SETUP.md). Шаблон кухні: `ServerStorage/Buildings/Kitchen_1`.
+
+
+## Zombie houses: ZHouse and ZNumber
+
+Reference structure inspected from the supplied HouseA (brick).rbxm:
+- Outer house Model: any name, `ZHouse=true`, numeric `ZNumber` (recommended 3 for the small example).
+- `Yard` is INSIDE the house Model and contains its marker Part. Do not wrap the house inside Yard.
+- `Floor` is a Model inside the house, with `Zombie_home=true` and `BlocksVision=false`; its marker Parts remain non-collidable and queryable.
+- Walls/corners/doorways/windows remain nested Models, with arbitrary Part names. Material attributes are reserved for later bullet/environment behavior.
+
+ZNumber limits simultaneously living zombies spawned by this house. All Zombie_home floors in the same ZHouse share the limit. Zombies that leave the house still count, corpses/dead zombies do not. A freed slot can be replenished through the normal random 1–60 second spawn schedule, subject to occupancy and the existing 180-second post-exit delay.
+
+ZNumber=0 disables spawning. Missing/invalid values use 3; fractional values round down, negative values become 0. The house attribute takes precedence over a floor-level fallback. Existing standalone Zombie_home floor models also support ZNumber and otherwise use 3.
+
+City generator preparation only (generator not implemented yet): house front is the pivot's **positive Z / blue arrow direction**, NOT CFrame.LookVector (which points toward negative Z). No Front Part is required. A future generator must clone and rotate the outer house including Yard and Floor. YardPlace with ForZHouse=true marks destinations; Road=true identifies road models independent of names.

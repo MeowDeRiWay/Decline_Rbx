@@ -2,6 +2,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Area = require(script.Parent.Services.AreaService)
 local Rules = require(ReplicatedStorage.Shared.ResourceRules)
+local HomeRules = require(ReplicatedStorage.Shared.ZombieHomeRules)
 local random = Random.new()
 local active = {}
 local warned = setmetatable({},{__mode="k"})
@@ -19,6 +20,9 @@ local function template()
  return zombie and zombie:IsA("Model") and zombie or nil
 end
 local function spawn(home)
+ -- Count living zombies by their source house, even after they wander outside.
+ -- All Zombie_home floors inside one ZHouse share the same house-wide quota.
+ if HomeRules.Count(home, creatures, workspace) >= HomeRules.Limit(home) then return false end
  local source = template()
  if not source then
   if not warned[home] then
