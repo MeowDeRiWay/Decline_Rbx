@@ -54,6 +54,63 @@ function Navigation:Clear(a,b,ray)
  if delta.Magnitude<.001 then return true end
  return workspace:Blockcast(self:BodyFrame(a,b),self:BodySize(),delta,ray)==nil
 end
+-- Door portals provide a coarse route around window sills and room walls.
+-- Collision tests still decide whether an authored doorway can be traversed.
+function Navigation:DoorRoute(target,ray,overlap)
+ local start=self.Root.Position
+ local nodes={{Position=start},{Position=target}}
+ local doors={}
+ for _, object in ipairs(workspace:GetDescendants()) do
+  if object:IsA("Model") and (object:GetAttribute("NavigationDoor")==true or string.match(string.lower(object.Name),"^doorway"))
+   and object:FindFirstChildWhichIsA("BasePart",true) then
+   local frame,size=object:GetBoundingBox()
+   local center=Vector3.new(frame.Position.X,start.Y,frame.Position.Z)
+   local distance=(center-start).Magnitude
+   if distance<=40 then table.insert(doors,{Frame=frame,Size=size,Center=center,Distance=distance}) end
+  end
+ end
+ table.sort(doors,function(a,b) return a.Distance<b.Distance end)
+ for index,door in ipairs(doors) do
+  if index>24 then break end
+  local normal=door.Size.X>=door.Size.Z and door.Frame.LookVector or door.Frame.RightVector
+  normal=Vector3.new(normal.X,0,normal.Z)
+  if normal.Magnitude<.001 then continue end
+  normal=normal.Unit
+  local thickness=math.min(door.Size.X,door.Size.Z)
+  local offset=math.max(self.Root.Size.X,self.Root.Size.Z)/2+thickness/2+.3
+  for _,sign in ipairs({-1,0,1}) do
+   local point=self:Ground(door.Center+normal*(offset*sign),ray)
+   if point and #workspace:GetPartBoundsInBox(self:BodyFrame(point,point+normal),self:BodySize(),overlap)==0 then
+    table.insert(nodes,{Position=point})
+   end
+  end
+ end
+ if #nodes==2 then return nil end
+ local costs={[1]=0}
+ local parents,closed={},{}
+ for _=1,#nodes do
+  local current,score
+  for id,cost in pairs(costs) do
+   local estimate=cost+(nodes[id].Position-target).Magnitude
+   if not closed[id] and (not score or estimate<score) then current,score=id,estimate end
+  end
+  if not current then return nil end
+  if current==2 then
+   local route={}
+   while current~=1 do table.insert(route,1,nodes[current].Position); current=parents[current] end
+   return route
+  end
+  closed[current]=true
+  for id,node in ipairs(nodes) do
+   if closed[id] or id==current then continue end
+   local cost=costs[current]+(node.Position-nodes[current].Position).Magnitude
+   if (not costs[id] or cost<costs[id]) and self:Clear(nodes[current].Position,node.Position,ray) then
+    costs[id],parents[id]=cost,current
+   end
+  end
+ end
+ return nil
+end
 function Navigation:Plan(goal,ignored,cellOverride)
  local start=self.Root.Position
  local ray,overlap=self:Parameters(ignored)
@@ -65,6 +122,10 @@ function Navigation:Plan(goal,ignored,cellOverride)
  if not target then return false end
  if #workspace:GetPartBoundsInBox(self:BodyFrame(target,goal),self:BodySize(),overlap)>0 then return false end
  if self:Clear(start,target,ray) then self.Route={target}; return true end
+ if not cellOverride then
+  local doors=self:DoorRoute(target,ray,overlap)
+  if doors then self.Route=doors; return true end
+ end
  local cell=cellOverride or self.Cell
  local function key(x,z) return x..":"..z end
  local function heuristic(position) return Vector3.new(position.X-goal.X,0,position.Z-goal.Z).Magnitude end

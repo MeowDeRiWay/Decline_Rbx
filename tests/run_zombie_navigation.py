@@ -52,7 +52,49 @@ groundY=.3
 assert(nav:Ground(body.Position,{}),"small floor threshold is a valid step")
 groundY=1.3
 assert(not nav:Ground(body.Position,{}),"door lintel must not be treated as floor")
-print("PASS: real body-sized doorway clearance, fine-grid centering, collision-checked route segments, undersized door rejection")
+-- A solid window sill blocks the direct route at X=0; the usable door is X=3.
+groundY=0
+local doorFrame=cf(Vector3.new(3,1.5,0),0)
+local door={Name="DoorWay (brick)"}
+function door:IsA(class) return class=="Model" end
+function door:GetAttribute() return nil end
+function door:FindFirstChildWhichIsA() return {} end
+function door:GetBoundingBox() return doorFrame,Vector3.new(1.04,.2,.16) end
+function workspace:GetDescendants() return {door} end
+function vm.__mul(a,b)
+ if type(a)=="number" then a,b=b,a end
+ return Vector3.new(a.X*b,a.Y*b,a.Z*b)
+end
+local previousIndex=cm.__index
+function cm.__index(a,key)
+ if key=="LookVector" then return a:VectorToWorldSpace(Vector3.new(0,0,-1)) end
+ if key=="RightVector" then return a:VectorToWorldSpace(Vector3.new(1,0,0)) end
+ return previousIndex(a,key)
+end
+function workspace:GetPartBoundsInBox(frame,size)
+ local p=frame.Position
+ return math.abs(p.Z)<.08+size.Z/2 and math.abs(p.X-3)+size.X/2>1.04/2+.000001 and {{}} or {}
+end
+function workspace:Blockcast(frame,size,delta)
+ for index=0,80 do
+  local point=frame.Position+delta*(index/80)
+  if #self:GetPartBoundsInBox(CFrame.new(point),size)>0 then return {Distance=0} end
+ end
+ return nil
+end
+body.Position=Vector3.new(0,.52,-2)
+local destination=Vector3.new(0,.52,2)
+assert(not nav:Clear(body.Position,destination,{}),"window sill is physically blocking")
+assert(nav:Plan(destination),"visible target behind window must be reachable through side door")
+local usedDoor=false
+local from=body.Position
+for _,point in ipairs(nav.Route) do
+ if point.X>2.5 then usedDoor=true end
+ assert(nav:Clear(from,point,{}),"door detour must never cross the window sill")
+ from=point
+end
+assert(usedDoor,"route must actually go to the door instead of the visible window")
+print("PASS: window-to-side-door detour, collision-safe portal route; real body-sized doorway clearance, fine-grid centering, collision-checked route segments, undersized door rejection")
 '''
 with tempfile.TemporaryDirectory(prefix='decline-door-') as directory:
     path=Path(directory)/'test.luau'

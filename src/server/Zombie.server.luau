@@ -213,7 +213,8 @@ local function prepare(model)
   local delta=destination-root.Position
   if Vector3.new(delta.X,0,delta.Z).Magnitude<=stoppingDistance then return true,false end
   local waypoint=navigation:Waypoint(destination,ignored)
-  if not waypoint then return false,true end
+  if not waypoint then model:SetAttribute("NavigationStatus","NoRoute"); return false,true end
+  model:SetAttribute("NavigationStatus","FollowingRoute")
   local arrived,blocked=moveToward(waypoint,speed,dt,.08,ignored)
   if blocked then navigation:Blocked() end
   return false,blocked
@@ -281,6 +282,7 @@ local function prepare(model)
    end
    if nearest then
     lastSeenPosition,lastSeenCharacter=nearest.Position,nearest.Parent
+    model:SetAttribute("LastSeenPosition",lastSeenPosition)
     searchStart,searchElapsed,searchBlocked=nil,0,0
    end
    model:SetAttribute("DetectionReason",nearest and "Visible target" or reason)
