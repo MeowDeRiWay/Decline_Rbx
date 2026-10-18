@@ -6,6 +6,6 @@ return {
  ApprovalDuration = 60,
  Relations = {"Neutral", "Ally", "War"},
  Buildings = {
-  Kitchen = {Name = "Kitchen", Levels = {"Kitchen_1"}},
+  Kitchen = {Name = "Kitchen", Levels = {"Kitchen (T1)"}, Costs = {{TreeLog = 1}}},
  },
 }

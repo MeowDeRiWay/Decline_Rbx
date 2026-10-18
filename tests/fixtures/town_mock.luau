@@ -28,7 +28,12 @@ function vmeta.__sub(a,b) return Vector3.new(a.X-b.X,a.Y-b.Y,a.Z-b.Z) end
 function vmeta.__index(a,key) if key=="Magnitude" then return math.sqrt(a.X*a.X+a.Y*a.Y+a.Z*a.Z) end end
 Vector3.zero=Vector3.new(0,0,0)
 local CFrame={}
-function CFrame.new(position) return {Position=position or Vector3.zero,RightVector=Vector3.new(1,0,0),UpVector=Vector3.new(0,1,0),LookVector=Vector3.new(0,0,-1)} end
+local cfmeta={}
+function CFrame.new(position) return setmetatable({Position=position or Vector3.zero,RightVector=Vector3.new(1,0,0),UpVector=Vector3.new(0,1,0),LookVector=Vector3.new(0,0,-1)},cfmeta) end
+function cfmeta.__mul(a,b) return CFrame.new(a.Position+b.Position) end
+function cfmeta.__index(_,key)
+ if key=="ToObjectSpace" then return function(a,b) return CFrame.new(b.Position-a.Position) end end
+end
 local methods={}
 local meta={}
 function meta.__index(a,key)
@@ -120,7 +125,10 @@ make("Part","Pole",flagC)
 local spawnC=make("Part","TownSpawn",workspace,{TeamID=1})
 spawnC.CFrame=CFrame.new(Vector3.new(33,5,12))
 local folder=make("Folder","Buildings",ServerStorage)
-local kitchen=make("Model","Kitchen_1",folder); make("Part","Floor",kitchen)
+local kitchen=make("Model","Kitchen (T1)",folder); make("Part","Floor",kitchen)
+local kitchenSpace=make("Model","Space",kitchen); make("Part","Part",kitchenSpace)
+local kitchenMenu=make("Model","BuildingMenu",kitchen); make("Part","Sign",kitchenMenu)
+make("Model","Stove",kitchen)
 local function player(id)
  local p=make("Player","User"..id,Players); p.UserId=id; p.CharacterAdded=event()
  function p:LoadCharacterAsync()
@@ -134,3 +142,13 @@ local function player(id)
  return p
 end
 local a,b,c,d=player(101),player(102),player(103),player(104)
+
+local logs={[101]=3,[102]=3,[103]=3,[104]=3}
+local Inventory={}
+function Inventory.Snapshot(p) return {Items={TreeLog=logs[p.UserId] or 0}} end
+function Inventory.ConsumeIngredients(p,recipe,count)
+ local amount=(recipe.Ingredients.TreeLog or 0)*count
+ if (logs[p.UserId] or 0)<amount then return false end
+ logs[p.UserId]-=amount
+ return true
+end

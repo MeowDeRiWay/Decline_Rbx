@@ -33,11 +33,11 @@
 
 ## Перша кухня
 
-Створіть **ServerStorage/Buildings/Kitchen_1** (Model) із фізичними Parts.
+Створіть **ServerStorage/Buildings/Kitchen (T1)** (Model) із фізичними Parts.
 
-Pivot Kitchen_1 суміщається з pivot Space: поставте їх у відповідне місце, наприклад по центру підлоги. Будівля клонується всередину BuildingSpace й замінює Space, не зачіпаючи табличку.
+Pivot Kitchen (T1) суміщається з pivot Space: поставте їх у відповідне місце, наприклад по центру підлоги. Будівля клонується всередину BuildingSpace й замінює Space, не зачіпаючи табличку.
 
-Кухня зараз — будівля першого рівня. Наступних рівнів, ціни, витрати предметів і таймера робіт ще немає. Меню показує тільки перший рівень для порожньої області та тільки наступне покращення для збудованої. Нові рівні задаються в `src/shared/TownConfig.luau`.
+Кухня зараз — будівля першого рівня. Наступних рівнів, вартість будівництва — 1 TreeLog; таймера робіт поки немає. Меню показує тільки перший рівень для порожньої області та тільки наступне покращення для збудованої. Нові рівні задаються в `src/shared/TownConfig.luau`.
 
 Якщо кухня має підтримувати чинні крафти, додайте всередину моделі `Stove` та/або `CuttingBoard` за вже наявними правилами RESOURCE_SETUP. Саме містобудівництво не додає кухні обладнання.
 
@@ -50,7 +50,7 @@ Pivot Kitchen_1 суміщається з pivot Space: поставте їх у 
 - Ініціатора й індивідуальні голоси не публікують. Після завершення показують лише підсумкові числа. Мер отримує спеціальний текст про усунення. Кулдаун — 10 хв після завершення або скасування через зміну мера.
 - Початкові відносини — нейтралітет. Союз потребує Y від іншого мера. Війна та нейтралітет встановлюються односторонньо, симетрично для обох міст. Відносини поки інформаційні: зміни шкоди та дружнього вогню не додано.
 - Член міста обирає кухню біля BuildingMenu, мер отримує username заявника й відповідає Y/N протягом 60 секунд. Якщо мер офлайн або немає шаблону, з'являється пояснення. Запити мають окремі ID, чергу, перевірку ролі та строку дії.
-- Мер будує без запиту самому собі. Після будівництва заявник стає власником.
+- Мер також отримує запит Y/N і має погодити власне будівництво. Після будівництва заявник стає власником.
 - Мер може призначити/прибрати основного власника, привласнювати будівлі окремо через їхні таблички, керувати співвласниками та знести будь-яку будівлю свого міста.
 - Власник і співвласники можуть запросити покращення, керувати співвласниками та знести свою будівлю. Членство у відповідному місті обов'язкове. Знесення повертає Space без повернення ресурсів.
 - Дані міст, голосувань, дипломатії й збудованих під час гри будівель зараз живуть у поточному сервері; DataStore між серверами/перезапусками ще немає.
@@ -59,7 +59,7 @@ Pivot Kitchen_1 суміщається з pivot Space: поставте їх у 
 ## Перевірка
 
 1. Два Flag з різними TownID/Team і два відповідні TownSpawn.
-2. BuildingSpace з TownID/TeamID першого міста; Kitchen_1 у ServerStorage/Buildings.
+2. BuildingSpace з TownID/TeamID першого міста; Kitchen (T1) у ServerStorage/Buildings.
 3. Studio Start Server з 3 гравцями: два вступають у перше місто, третій у друге.
 4. Перевірте 2 HP, ім'я мера, кількість учасників, колір прапора.
 5. Другий учасник просить кухню, перший погоджує Y: Space зникає, кухня займає його місце.
@@ -89,3 +89,11 @@ Resignation immediately vacates the office. Successful removal (Y remove / N kee
 Y opens the town's candidate list on the right; N skips the election. Self-voting is allowed. Each eligible citizen has one candidate ballot. The candidate with the most votes becomes mayor; the election ends after 30 seconds or when all eligible voters have selected a candidate or declined. People who opt in but do not choose before the deadline abstain.
 
 A tie starts one runoff between the tied leading candidates. A tied runoff or no ballots leaves the office vacant; citizens may start another election at the flag. Joining during an election does not grant voting eligibility or automatically make the newcomer mayor. Ballots and the initiator remain private. The 10-minute removal-vote cooldown starts again after the final election result; it does not block voluntary resignation or the election following removal.
+
+## Kitchen (T1): materials and self-approval
+
+Put the complete **Kitchen (T1)** Model in **ServerStorage/Buildings**. It may contain Space (the 20x20 ground marker), BuildingMenu and Stove. The cloned Space aligns with the original plot Space, including authored pivot offset/rotation. Ownership, team and town attributes are overwritten with current plot values, so the template may leave IDs at 0. Stove keeps its existing crafting behavior.
+
+Kitchen construction requires **1 TreeLog from the builder's inventory**. The menu shows this cost. Materials are checked before requesting permission and consumed only after the mayor approves. If materials disappeared, the builder left the town, became incapacitated or moved away from the building sign, construction is cancelled. Declining or timing out spends nothing.
+
+The mayor receives the same Y/N request when building for themselves. There is no automatic self-approval. A completed kitchen with its own BuildingMenu replaces the empty plot's sign; the original sign is detached and restored after demolition. Nested kitchen signs remain interactive. Legacy Kitchen_1 templates are accepted as a fallback, but Kitchen (T1) takes precedence.

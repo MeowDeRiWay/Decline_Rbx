@@ -5,6 +5,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local Config = require(ReplicatedStorage.Shared.TownConfig)
 local Rules = require(ReplicatedStorage.Shared.TownRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
+local Inventory = require(script.Parent.InventoryService)
 local Service = {}
 local towns, plots, sessions, pending, lastAction = {}, {}, {}, {}, {}
 local sequence = 0
@@ -90,17 +91,29 @@ end
 local function owns(player, plot)
  return plot.owner == player.UserId or plot.coowners[player.UserId] or mayor(player, plotTown(plot))
 end
+local function buildingMenu(plot)
+ return (plot.building and plot.building:FindFirstChild("BuildingMenu",true)) or plot.menu
+end
+local function costFor(kind,level)
+ local definition=Config.Buildings[kind]
+ return (definition and definition.Costs and definition.Costs[level]) or {}
+end
+local function hasMaterials(player,kind,level)
+ local items=Inventory.Snapshot(player).Items
+ for id,amount in pairs(costFor(kind,level)) do if (items[id] or 0)<amount then return false end end
+ return true
+end
 local function plotSnapshot(plot)
  local town = plotTown(plot)
  local options = {}
  if plot.kind then
   local definition = Config.Buildings[plot.kind]
   if definition and definition.Levels[plot.level + 1] then
-   table.insert(options, {ID = plot.kind, Name = definition.Name, Level = plot.level + 1})
+   table.insert(options, {ID = plot.kind, Name = definition.Name, Level = plot.level + 1, Cost = costFor(plot.kind,plot.level+1)})
   end
  else
   for id, definition in pairs(Config.Buildings) do
-   table.insert(options, {ID = id, Name = definition.Name, Level = 1})
+   table.insert(options, {ID = id, Name = definition.Name, Level = 1, Cost = costFor(id,1)})
   end
  end
  return {Model = plot.model, TownID = town and town.id, OwnerID = plot.owner, OwnerName = nameOf(plot.owner),
@@ -166,17 +179,24 @@ local function templateFor(kind, level)
  local definition = Config.Buildings[kind]
  local folder = ServerStorage:FindFirstChild("Buildings")
  local template = definition and folder and folder:FindFirstChild(definition.Levels[level])
+ if not template and kind=="Kitchen" and level==1 and folder then template=folder:FindFirstChild("Kitchen_1") end
  return template and template:IsA("Model") and template:FindFirstChildWhichIsA("BasePart", true) and template or nil
 end
-local function build(plot, kind, level)
+local function build(plot, kind, level, player)
  local template = templateFor(kind, level)
  if not template then return false end
  local clone = template:Clone()
- clone:PivotTo(plot.frame)
+ local sourceSpace=clone:FindFirstChild("Space")
+ local alignment=sourceSpace and sourceSpace:GetPivot():ToObjectSpace(clone:GetPivot()) or CFrame.new()
+ clone:PivotTo(plot.frame*alignment)
+ if not Inventory.ConsumeIngredients(player,{Ingredients=costFor(kind,level)},1) then
+  clone:Destroy(); return false,"You need 1 Tree Log in your inventory to build this kitchen."
+ end
  if plot.building then plot.building:Destroy() end
  if plot.space.Parent then plot.space.Parent = nil end
  plot.kind, plot.level, plot.building = kind, level, clone
  clone.Parent = plot.model
+ if clone:FindFirstChild("BuildingMenu",true) then plot.menu.Parent=nil else plot.menu.Parent=plot.model end
  syncPlot(plot)
  return true
 end
@@ -184,6 +204,7 @@ local function destroyBuilding(plot)
  if plot.building then plot.building:Destroy() end
  plot.building, plot.kind, plot.level, plot.owner, plot.coowners = nil, nil, 0, 0, {}
  plot.space.Parent = plot.model
+ plot.menu.Parent = plot.model
  syncPlot(plot)
 end
 local function join(player, town)
@@ -372,10 +393,15 @@ local function handle(player, command, value, extra)
    local plot = request.plot
    if not plot.model:IsDescendantOf(workspace) or plotTown(plot) ~= request.town or townOf(request.player) ~= request.town or plot.kind ~= request.previousKind or plot.level ~= request.previousLevel then return end
    if plot.kind and not owns(request.player, plot) then return end
-   if build(plot, request.building, request.level) then
+   if not alive(request.player) or not near(request.player,buildingMenu(plot)) then
+    tell(request.player,"Construction cancelled: return to the building sign and request approval again.")
+    Service.Publish(); return
+   end
+   local built,reason=build(plot, request.building, request.level, request.player)
+   if built then
     if request.level == 1 then plot.owner = request.player.UserId; syncPlot(plot) end
     tell(request.player, "Construction approved. The building is complete.")
-   else tell(request.player, "Building template not found in ServerStorage/Buildings.") end
+   else tell(request.player, reason or "Building template not found in ServerStorage/Buildings.") end
   elseif request.kind == "Alliance" and mayor(request.player, request.other) then
    request.town.relations[request.other.id], request.other.relations[request.town.id] = "Ally", "Ally"
   end
@@ -391,7 +417,7 @@ local function handle(player, command, value, extra)
    end
   end
   local plot = plots[value]
-  local menu = plot and plot.model:FindFirstChild("BuildingMenu")
+  local menu = plot and buildingMenu(plot)
   if menu and near(player, menu) then sessions[player] = {kind = "Building", plot = plot, target = menu}; Service.Publish() end
   return
  end
@@ -443,10 +469,9 @@ local function handle(player, command, value, extra)
    local level = plot.kind and plot.level + 1 or 1
    if not definition or not definition.Levels[level] or (plot.kind and (plot.kind ~= value or not owns(player, plot))) or plot.pending then return end
    if not templateFor(value, level) then tell(player, "Add the model ServerStorage/Buildings/" .. definition.Levels[level]); return end
-   if mayor(player, town) then
-    if build(plot, value, level) and level == 1 then plot.owner = player.UserId; syncPlot(plot) end
-   else requestApproval(player, town, {kind = "Build", plot = plot, building = value, level = level,
-    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. "."}) end
+   if not hasMaterials(player,value,level) then tell(player,"You need 1 Tree Log in your inventory to build this kitchen."); return end
+   requestApproval(player, town, {kind = "Build", plot = plot, building = value, level = level,
+    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. ". Cost: 1 Tree Log from the builder's inventory."})
   elseif command == "Destroy" and plot.kind and owns(player, plot) then
    if plot.pending then pending[plot.pending] = nil; plot.pending = nil end
    destroyBuilding(plot)
@@ -499,13 +524,14 @@ function Service.Start()
   if object:IsA("Model") and object.Name == "BuildingSpace" then
    local space, menu = object:FindFirstChild("Space"), object:FindFirstChild("BuildingMenu")
    if space and menu and (space:IsA("Model") or space:IsA("BasePart")) then
-    local plot = {model = object, space = space, frame = space:GetPivot(), owner = object:GetAttribute("OwnerID") or 0,
+    local plot = {model = object, space = space, menu = menu, frame = space:GetPivot(), owner = object:GetAttribute("OwnerID") or 0,
      coowners = Rules.ParseOwners(object:GetAttribute("Co-OwnerID")), kind = nil, level = 0}
     -- Existing configured buildings survive service startup.
     for _, child in ipairs(object:GetChildren()) do
      local kind = child:GetAttribute("BuildingID")
      if child:IsA("Model") and Config.Buildings[kind] then plot.building, plot.kind, plot.level = child, kind, child:GetAttribute("BuildingLevel") or 1; space.Parent = nil; break end
     end
+    if plot.building and plot.building:FindFirstChild("BuildingMenu",true) then menu.Parent=nil end
     plots[object] = plot; syncPlot(plot)
     if not plotTown(plot) then warn("[Decline] BuildingSpace TownID/TeamID do not match a Flag") end
    else warn("[Decline] BuildingSpace needs Space and BuildingMenu") end

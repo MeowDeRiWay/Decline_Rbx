@@ -156,7 +156,7 @@ render = function()
    local owner = plot.OwnerID == player.UserId or co or isMayor
    if plot.Pending then text("Waiting for the mayor.")
    elseif not plot.BuildingID or owner then
-    for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level,function() send("Build",option.ID) end) end
+    for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level .. " · Cost: " .. tostring((option.Cost or {}).TreeLog or 0) .. " Tree Log",function() send("Build",option.ID) end) end
     if plot.BuildingID and #plot.Options == 0 then text("No further upgrades are available.") end
    end
    if plot.BuildingID then
@@ -280,10 +280,14 @@ RunService.RenderStepped:Connect(function()
    highlight.Adornee, highlight.Enabled = object, true
    if Interaction.Distance(object,root.Position) <= Config.InteractionDistance then hovered = object end
    break
-  elseif object.Name == "BuildingMenu" and object.Parent and object.Parent.Name == "BuildingSpace" then
-   highlight.Adornee, highlight.Enabled = object, true
-   if Interaction.Distance(object,root.Position) <= Config.InteractionDistance then hovered = object.Parent end
-   break
+  elseif object.Name == "BuildingMenu" then
+   local plot=object.Parent
+   while plot and plot~=workspace and plot.Name~="BuildingSpace" do plot=plot.Parent end
+   if plot and plot~=workspace then
+    highlight.Adornee, highlight.Enabled = object, true
+    if Interaction.Distance(object,root.Position) <= Config.InteractionDistance then hovered = plot end
+    break
+   end
   end
   object = object.Parent
  end

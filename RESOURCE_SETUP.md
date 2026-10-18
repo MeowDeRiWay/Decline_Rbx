@@ -72,3 +72,6 @@ Zombies that see a target through a window now try a coarse doorway route before
 
 
 Targets standing close to walls use a nearby collision-free standing endpoint when the zombie cannot fit at their exact center. Endpoint selection rejects points separated from the target by a physical wall. Close distance through a wall no longer stops route following automatically.
+
+
+Kitchen template: **ServerStorage/Buildings/Kitchen (T1)**, with nested Space, BuildingMenu and optional Stove. Costs 1 TreeLog from the builder upon mayor approval; mayors must approve their own requests too. See TOWN_SETUP.md for details.

@@ -18,6 +18,7 @@ for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==
 assert(approval and not plot:GetAttribute("BuildingID"))
 call(c,"Reply",approval,true); assert(not plot:GetAttribute("BuildingID"),"only actual mayor may approve")
 call(a,"Reply",approval,true)
+assert(logs[102]==2 and menu.Parent==nil and plot:FindFirstChild("Kitchen (T1)").BuildingMenu,"consume one log and use kitchen sign")
 assert(plot:GetAttribute("BuildingID")=="Kitchen" and plot:GetAttribute("OwnerID")==102 and space.Parent==nil)
 call(a,"Open",flagA); call(a,"OwnAll")
 assert(plot:GetAttribute("OwnerID")==102,"removed bulk ownership action must have no effect")
@@ -72,9 +73,32 @@ call(a,"VoteCandidate",runoff.ID,102); call(b,"VoteCandidate",runoff.ID,102)
 assert(flagA:GetAttribute("LeaderID")==102,"runoff elects winning candidate")
 call(a,"Open",plot); call(a,"Owner",0); assert(plot:GetAttribute("OwnerID")==101,"former mayor cannot revoke ownership")
 call(b,"Open",plot); call(b,"Destroy"); assert(space.Parent==plot and not plot:GetAttribute("BuildingID"))
-call(a,"Build","Kitchen")
+call(a,"Open",plot); call(a,"Build","Kitchen")
 local expired
 for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==b then expired=item.data.ID end end
 assert(expired); tick(61); call(b,"Reply",expired,true); assert(not plot:GetAttribute("BuildingID"))
+-- The mayor must receive and answer the same request, even for their own building.
+call(b,"Open",plot); call(b,"Build","Kitchen")
+local selfRequest
+for _,item in ipairs(notices) do if item.player==b and item.data.Kind=="Approval" then selfRequest=item.data.ID end end
+assert(selfRequest and not plot:GetAttribute("BuildingID") and logs[102]==2,"self-build waits for Y/N without spending")
+call(b,"Reply",selfRequest,false)
+assert(not plot:GetAttribute("BuildingID") and logs[102]==2,"decline does not consume logs")
+call(b,"Build","Kitchen")
+for _,item in ipairs(notices) do if item.player==b and item.data.Kind=="Approval" then selfRequest=item.data.ID end end
+call(b,"Reply",selfRequest,true)
+assert(plot:GetAttribute("BuildingID")=="Kitchen" and logs[102]==1,"self-approval consumes exactly one log")
+call(b,"Reply",selfRequest,true); assert(logs[102]==1,"repeated approval cannot charge twice")
+call(b,"Open",plot); call(b,"Destroy")
+assert(menu.Parent==plot,"demolition restores empty plot sign")
+logs[101]=1
+call(a,"Open",plot); call(a,"Build","Kitchen")
+local missing
+for _,item in ipairs(notices) do if item.player==b and item.data.Kind=="Approval" then missing=item.data.ID end end
+logs[101]=0
+call(b,"Reply",missing,true)
+assert(not plot:GetAttribute("BuildingID") and logs[101]==0,"materials checked again on approval")
+call(a,"Open",plot); call(a,"Build","Kitchen")
+assert(not Service.Snapshot(a).Session.Plot.Pending,"no materials cannot reserve construction")
 call(b,"Open",flagA); call(b,"Leave"); assert(not b:GetAttribute("TownID") and flagA:GetAttribute("LeaderID")==0)
 print("PASS: removal-to-election, immediate resignation, candidate validation, self-vote, plurality, skip, runoff, duplicate rejection;  city join/spawn 2 HP, foreign building rejection, mayor approval authorization, replacement/restoration of Space, ownership, bilateral alliance, unilateral war, vote anonymity/duplicates/ties/removal/cooldown, approval expiry, mayor departure")
