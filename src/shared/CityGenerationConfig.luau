@@ -1,6 +1,7 @@
 return {
- -- Same seed and same templates/plot layout produce the same initial choices.
- Seed = 1843,
+ -- false chooses a fresh random seed for each server/Play session.
+ -- Set a number to reproduce a particular layout for testing.
+ Seed = false,
  PlotSize = 20,
  FitTolerance = 0.05,
  RetryInterval = 5,

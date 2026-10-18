@@ -4,7 +4,10 @@ local Config = require(ReplicatedStorage.Shared.CityGenerationConfig)
 local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)
 local Service = {}
 local started = false
-local random = Random.new(Config.Seed)
+local configuredSeed = Config.Seed
+local seed = if typeof(configuredSeed)=="number" and configuredSeed==configuredSeed and math.abs(configuredSeed)<math.huge
+ then math.floor(configuredSeed) else Random.new():NextInteger(0,2147483647)
+local random = Random.new(seed)
 local generated, busy, warnings = {}, {}, {}
 local folder
 local function box(object)
@@ -88,7 +91,7 @@ local function place(plot, sources, roadList)
  local chosen = candidates[random:NextInteger(1,#candidates)]
  local clone = chosen.house:Clone()
  clone:SetAttribute("GeneratedCityHouse",true)
- clone:SetAttribute("GenerationSeed",Config.Seed)
+ clone:SetAttribute("GenerationSeed",seed)
  local yard = clone:FindFirstChild("Yard")
  for _, part in ipairs(yard:GetDescendants()) do
   if part:IsA("BasePart") then
@@ -127,6 +130,7 @@ function Service.Start()
  started = true
  folder = workspace:FindFirstChild("GeneratedCityHouses")
  if not folder then folder = Instance.new("Folder"); folder.Name = "GeneratedCityHouses"; folder.Parent = workspace end
+ folder:SetAttribute("GenerationSeed",seed)
  Service.Generate()
  task.spawn(function()
   while true do task.wait(Config.RetryInterval); Service.Generate() end

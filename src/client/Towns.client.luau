@@ -150,37 +150,57 @@ render = function()
   if not town then text("This plot is not assigned to a town.")
   elseif snapshot.TownID ~= town.ID then text("Only members of " .. town.Name .. " may build here.")
   else
-   text(plot.BuildingID and ("Kitchen · level " .. plot.Level .. "\nOwner: " .. plot.OwnerName .. "\nCo-owners (UserID): " .. (plot.CoOwners ~= "" and plot.CoOwners or "none")) or "Empty plot")
    local isMayor = town.LeaderID == player.UserId
-   local co = string.find("," .. plot.CoOwners .. ",", "," .. player.UserId .. ",", 1, true) ~= nil
-   local owner = plot.OwnerID == player.UserId or co or isMayor
-   if plot.Pending then text("Waiting for the mayor.")
-   elseif not plot.BuildingID or owner then
-    for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level .. " · Cost: " .. tostring((option.Cost or {}).TreeLog or 0) .. " Tree Log",function() send("Build",option.ID) end) end
-    if plot.BuildingID and #plot.Options == 0 then text("No further upgrades are available.") end
+   local owners = require(ReplicatedStorage.Shared.TownRules).ParseOwners(plot.CoOwners)
+   local owner = plot.OwnerID == player.UserId or owners[player.UserId] or isMayor
+   if (section == "Owner" and not isMayor) or (section == "CoOwner" and not owner) or not plot.BuildingID then section = nil end
+   local function back()
+    section, confirmation = nil,nil
+    scroll.CanvasPosition = Vector2.zero
+    render()
    end
-   if plot.BuildingID then
-    if isMayor then
-     button("Change owner",function() toggle("Owner") end)
-     if section == "Owner" then
-      button("Remove owner",function() send("Owner",0) end)
-      for _, member in ipairs(town.Members) do button(member.Name,function() send("Owner",member.ID) end) end
+   if section == "Owner" then
+    title.Text = "Owner"
+    button("← Back to building",back)
+    text("Current owner: " .. plot.OwnerName,20)
+    text("Select a town member to assign ownership of this building.")
+    button("Remove owner",function() send("Owner",0) end)
+    for _, member in ipairs(town.Members) do
+     button(member.Name .. (member.ID == plot.OwnerID and " · Current owner" or ""),function() send("Owner",member.ID) end)
+    end
+   elseif section == "CoOwner" then
+    title.Text = "Co-owners"
+    button("← Back to building",back)
+    text("Manage shared access",20)
+    text("Add or remove co-owners for this building. The primary owner is managed separately.")
+    local count = 0
+    for _, member in ipairs(town.Members) do
+     if member.ID ~= plot.OwnerID then
+      count += 1
+      button((owners[member.ID] and "Remove: " or "Add: ") .. member.Name,function() send("CoOwner",member.ID,not owners[member.ID]) end)
      end
     end
-    if owner then
-     button("Co-owners",function() toggle("CoOwner") end)
-     if section == "CoOwner" then
-      local owners = require(ReplicatedStorage.Shared.TownRules).ParseOwners(plot.CoOwners)
-      for _, member in ipairs(town.Members) do
-       if member.ID ~= plot.OwnerID then button((owners[member.ID] and "Remove: " or "Add: ") .. member.Name,function() send("CoOwner",member.ID,not owners[member.ID]) end) end
-      end
-      for id in pairs(owners) do
-       local online = false
-       for _, member in ipairs(town.Members) do if member.ID == id then online = true end end
-       if not online then button("Remove UserID " .. id,function() send("CoOwner",id,false) end) end
-      end
+    for id in pairs(owners) do
+     local online = false
+     for _, member in ipairs(town.Members) do if member.ID == id then online = true end end
+     if not online then count += 1; button("Remove UserID " .. id,function() send("CoOwner",id,false) end) end
+    end
+    if count == 0 then text("There are no other town members to add yet.") end
+   else
+    local count = 0
+    for _ in pairs(owners) do count += 1 end
+    text(plot.BuildingID and ("Kitchen · level " .. plot.Level .. "\nOwner: " .. plot.OwnerName .. "\nCo-owners: " .. count) or "Empty plot")
+    if plot.Pending then text("Waiting for the mayor.")
+    elseif not plot.BuildingID or owner then
+     for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level .. " · Cost: " .. tostring((option.Cost or {}).TreeLog or 0) .. " Tree Log",function() send("Build",option.ID) end) end
+     if plot.BuildingID and #plot.Options == 0 then text("No further upgrades are available.") end
+    end
+    if plot.BuildingID then
+     if isMayor then button("Owner",function() scroll.CanvasPosition=Vector2.zero; toggle("Owner") end) end
+     if owner then
+      button("Co-owners",function() scroll.CanvasPosition=Vector2.zero; toggle("CoOwner") end)
+      button("Demolish building",function() confirm("Demolish this building?", "Destroy") end)
      end
-     button("Demolish building",function() confirm("Demolish this building?", "Destroy") end)
     end
    end
   end

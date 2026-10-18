@@ -27,7 +27,7 @@ Only templates whose rotated Yard footprint fits inside the plot are eligible. F
 - New/unresolved plots are retried every 5 seconds, allowing delayed template/road loading. Removing a plot also removes its generated house on the next pass.
 - Generated Floor models are discovered by the existing zombie-home listener. House-wide ZNumber limits still apply.
 
-Change **src/shared/CityGenerationConfig.luau** for Seed, fitting tolerance or retry interval. The same seed, uniquely named template set and unchanged initial plot layout produce the same initial random house choices. Adding plots or changing templates can change later choices. Stop and restart Play to regenerate the full layout with a new seed.
+Change **src/shared/CityGenerationConfig.luau** for Seed, fitting tolerance or retry interval. **Seed=false** (default) chooses a fresh random seed on each server/Play session, so restarting Play no longer repeats a fixed house sequence. A numeric Seed deliberately reproduces the same initial choices with the same uniquely named templates and initial plot layout. The actual numeric seed is recorded on Workspace/GeneratedCityHouses and on each generated house as GenerationSeed. Random choices may still coincide by chance, and only templates that fit each plot are eligible. Already generated houses stay unchanged during the same server session.
 
 ## Validation
 

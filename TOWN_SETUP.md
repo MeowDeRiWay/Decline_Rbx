@@ -97,3 +97,8 @@ Put the complete **Kitchen (T1)** Model in **ServerStorage/Buildings**. It may c
 Kitchen construction requires **1 TreeLog from the builder's inventory**. The menu shows this cost. Materials are checked before requesting permission and consumed only after the mayor approves. If materials disappeared, the builder left the town, became incapacitated or moved away from the building sign, construction is cancelled. Declining or timing out spends nothing.
 
 The mayor receives the same Y/N request when building for themselves. There is no automatic self-approval. A completed kitchen with its own BuildingMenu replaces the empty plot's sign; the original sign is detached and restored after demolition. Nested kitchen signs remain interactive. Legacy Kitchen_1 templates are accepted as a fallback, but Kitchen (T1) takes precedence.
+
+
+## Ownership submenus
+
+Owner and Co-owners now open separate menu pages instead of inserting controls into the building action list. Each page has its own title and Back to building button. Server refreshes preserve the open page; changed permissions or demolition return to the building view. All labels remain English.
