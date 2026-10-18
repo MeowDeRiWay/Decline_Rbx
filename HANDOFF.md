@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Рецепти Workstation — 18 жовтня
+
+- Plank (0.6кг) і Handle (0.3кг) зареєстровані в ItemConfig; моделі ServerStorage/Items/Plank і Handle.
+- Workstation: 1TreeLog→3Plank; 1Plank→1Handle; 1Handle+3Scrap→1Axe або окремо1Showel; 3Scrap→1Knife.
+- Тимчасові тривалості10/10/20/20/15с за партію, MaxBatch5, RequiresPresence=true; додаткового інструмента не потрібно. Закриття/відхід скасовує роботу за наявною логікою з поверненням інгредієнтів.
+
 ## Майстерня — 18 жовтня ввечері
 
 - ServerStorage/Buildings/Workbench (T1), BuildingID=Workbench, UI Workshop, ціна1TreeLog з дозволом мера. Space/BuildingMenu як у кухні.

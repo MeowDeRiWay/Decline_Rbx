@@ -1,5 +1,35 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 return {
+ MakePlanks = {
+  Name = "Make planks", Station = "Workstation",
+  Description = "Cut one tree log into three planks.",
+  Ingredients = {TreeLog = 1}, Output = "Plank", OutputCount = 3,
+  MaxBatch = 5, Duration = 10, RequiresPresence = true,
+ },
+ MakeHandle = {
+  Name = "Make handle", Station = "Workstation",
+  Description = "Shape one plank into a tool handle.",
+  Ingredients = {Plank = 1}, Output = "Handle", OutputCount = 1,
+  MaxBatch = 5, Duration = 10, RequiresPresence = true,
+ },
+ MakeAxe = {
+  Name = "Make axe", Station = "Workstation",
+  Description = "Assemble an axe using a handle and three pieces of scrap.",
+  Ingredients = {Handle = 1, Scrap = 3}, Output = "Axe", OutputCount = 1,
+  MaxBatch = 5, Duration = 20, RequiresPresence = true,
+ },
+ MakeShovel = {
+  Name = "Make shovel", Station = "Workstation",
+  Description = "Assemble a shovel using a handle and three pieces of scrap.",
+  Ingredients = {Handle = 1, Scrap = 3}, Output = "Showel", OutputCount = 1,
+  MaxBatch = 5, Duration = 20, RequiresPresence = true,
+ },
+ MakeKnife = {
+  Name = "Make knife", Station = "Workstation",
+  Description = "Shape three pieces of scrap into a knife.",
+  Ingredients = {Scrap = 3}, Output = "Knife", OutputCount = 1,
+  MaxBatch = 5, Duration = 15, RequiresPresence = true,
+ },
  BoilPotatoes = {
   Name = "Boil potatoes", Station = "Stove",
   Description = "Boil potatoes using one bottle of clean water per potato.",

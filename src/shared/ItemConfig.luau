@@ -24,6 +24,14 @@ ItemConfig.Items = {
   Description = "A heavy wooden log cut from a tree.",
   ResourceMaterial = "Wood",
  },
+ Plank = {
+  Name = "Plank", Weight = 0.6, ResourceMaterial = "Wood",
+  Description = "A wooden plank cut from a log. Used for construction and crafting.",
+ },
+ Handle = {
+  Name = "Handle", Weight = 0.3, ResourceMaterial = "Wood",
+  Description = "A wooden handle for crafting tools.",
+ },
  Scrap = {
   Name = "Scrap", Weight = 0.2,
   Description = "Salvaged scrap metal.",
