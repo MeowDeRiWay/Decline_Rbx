@@ -9,21 +9,28 @@ Names are case-sensitive. The shovel item ID is intentionally `Showel` to match 
 | `ServerStorage/Items` | `Axe`, `Showel` |
 | `ServerStorage/Resources/Trees` | `Tree_1`, `Tree_2`, `Tree_3` |
 | `ServerStorage/Resources/ScrapPiles` | `PileScrap` |
-| `ServerStorage/Items` | `TreeLog`, `Scrap`, `Rags` (optional art templates; temporary blocks are used until supplied) |
+| `ServerStorage/Resources/StoneVeins` | `StoneVein` |
+| `ServerStorage/Items` | `TreeLog`, `Scrap`, `Rags`, `Stone` (optional art templates; temporary blocks are used until supplied) |
 
 Tree and scrap-pile models placed in Workspace can be harvested directly for testing. Move their originals to the template folders after testing. Preserve their existing `BlocksVision` attributes. Trees are assigned Wood material and `ResourceMaterial = "Wood"`; no Humanoid, health popup or highlight is added.
 
-Add Models named `Forest` and `ScrapYard` to Workspace. Each model contains one or more flat rectangular Parts marking the spawn surfaces. Keep only marker Parts inside these models; generated resources go into a separate `Workspace/Resources` folder. Give markers visible colors/transparency in Studio. The server hides and anchors them, disables collision, touch and queries, and makes them transparent to vision at runtime. Place the markers at ground level with real ground beneath them. Rotating markers around the vertical axis is supported.
+Add Models named `Forest`, `ScrapYard` and `StoneYard` to Workspace. Each model contains one or more flat rectangular Parts marking the spawn surfaces. Keep only marker Parts inside these models; generated resources go into a separate `Workspace/Resources` folder. Give markers visible colors/transparency in Studio. The server hides and anchors them, disables collision, touch and queries, and makes them transparent to vision at runtime. Place the markers at ground level with real ground beneath them. Rotating markers around the vertical axis is supported.
 
-Hand-placed resources inside a matching region count toward its current population. An empty region initially generates a random batch of 1–20 resources. Forest trees have at least 8 studs between model pivots in the horizontal plane; scrap piles have at least 1 stud. Only the resource bounding-box center must be inside a marker. The resource may protrude beyond a marker edge. There must be at least 3 studs between the horizontal bounding-box edges of resources, including rotated and differently sized models; this applies across overlapping regions and resource types. The original same-type center-spacing limits remain additional minimums. If the random batch cannot fit, the generator places fewer resources and warns in Output instead of breaking the spacing rule. Overlapping same-type regions also respect the minimum spacing.
+Hand-placed resources in a matching region count as its current population. When an area is empty, generation makes one independent 10% trial per 1x1 stud cell on each marker; successful trials place one randomly rotated template at a random point inside the cell. Partial edge cells scale the probability by their area. A 10x10 marker has 100 trials, averaging 10 candidates, with no minimum and no 20-object cap. Overlapping markers within one region do not double-populate the same space.
 
-Only after the last resource in a region is destroyed does a random 30–300 second timer start. When it expires, a new 1–20 batch is generated. Empty regions with missing templates or no valid placement retry every five seconds. Moving or deleting markers affects subsequent generation.
+Only the resource bounding-box center must be inside a marker; models may protrude past the edge. There is no center-spacing or edge-gap requirement. Horizontal resource bounding boxes may touch, but not overlap, across all resource types and regions. Candidates that overlap, have no ground, or cannot fit are skipped without relocating or rerolling; large models therefore reduce actual density. A spatial index limits overlap checks in dense areas.
+
+After the last resource is removed, the usual random 30–300 second respawn timer starts. The next generation performs fresh cell trials. A valid generation with zero placements also waits 30–300 seconds, so a failed probability roll is not immediately retried. Missing templates or empty marker lists retry every five seconds. Moving/deleting markers affects future generation.
 
 ## Harvesting
 
 Both Axe and Showel use the `SwingLeft` animation, deal 20 damage and attack 25 times/minute. Every actual weapon impact on a resource costs one durability use. Swinging into empty space costs none. An unsuitable weapon wears but deals no resource damage.
 
-Trees have 100 HP and accept only items whose `HarvestTool` is `Axe`, allowing future axe variants. Five axe hits yield 1–4 TreeLog, each weighing 2 kg. Scrap piles have 100 HP and require `HarvestTool = "Shovel"`; five shovel hits yield independently rolled 1–5 Scrap (0.2 kg each) and 1–5 Rags (0.05 kg each). Loot is spawned once on the ground at the destroyed node. Each loot type is a separate world pickup with its rolled Quantity, not an automatic inventory grant. Add TreeLog, Scrap and Rags models to ServerStorage/Items for custom visuals. Missing resource art uses temporary blocks which can still be picked up and dropped.
+Trees have 100 HP and accept only items whose `HarvestTool` is `Axe`, allowing future axe variants. Five axe hits yield 1–4 TreeLog, each weighing 2 kg. Scrap piles have 100 HP and require `HarvestTool = "Shovel"`; five shovel hits yield independently rolled 1–5 Scrap (0.2 kg each) and 1–5 Rags (0.05 kg each). Stone veins have 100 HP, require `HarvestTool = "Shovel"`, and yield 1–5 Stone (0.2 kg each). The StoneVein template lives at `ServerStorage/Resources/StoneVeins/StoneVein`; its loot model lives at `ServerStorage/Items/Stone`.
+
+Workstation axe and shovel recipes each cost 1 Handle + 3 Stone; the knife costs 3 Stone. Internal item IDs remain Axe, Showel and Knife, so the authored models can be replaced with stone versions without renaming them. Log/plank/handle recipes are unchanged.
+
+Loot is spawned once on the ground at the destroyed node. Each loot type is a separate world pickup with its rolled Quantity, not an automatic inventory grant. Add TreeLog, Scrap and Rags models to ServerStorage/Items for custom visuals. Missing resource art uses temporary blocks which can still be picked up and dropped.
 
 Zombie homes keep their existing `Zombie_home = true` attribute and normal random spawn interval. Any living player standing on one of their marker surfaces blocks new spawns. After the last player leaves, spawning is blocked for another 180 seconds. Re-entry resets that delay. Players on another vertical floor do not occupy the lower marker.
 
@@ -35,7 +42,7 @@ World items, chests, corpses, stoves and cutting boards share the same distance 
 
 ## Validation
 
-Run `luau tests/resource_rules.test.luau tests/movement_rules.test.luau tests/resource_clearance.test.luau` for tool, durability, loot, spacing and occupied-home timer checks. `rojo build default.project.json` validates project packaging. A Roblox Studio playtest is still required for the actual models, pivots, ground and hit boxes.
+Run `luau tests/resource_rules.test.luau tests/movement_rules.test.luau tests/resource_clearance.test.luau tests/resource_density.test.luau` for tool, durability, loot, spacing and occupied-home timer checks. `python tests/run_resource_service.py /path/to/luau` exercises generation and stone harvesting through the real service on engine mocks. `rojo build default.project.json` validates project packaging. A Roblox Studio playtest is still required for the actual models, pivots, ground and hit boxes.
 
 
 ## Міста та кухня

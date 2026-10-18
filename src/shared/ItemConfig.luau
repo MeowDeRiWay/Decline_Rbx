@@ -11,12 +11,12 @@ ItemConfig.Items = {
  },
  Axe = {
   Name = "Axe", Weight = 1.5, Slot = "Hands", HarvestTool = "Axe",
-  Description = "An axe for chopping trees into logs.",
+  Description = "A stone axe for chopping trees into logs.",
   Weapon = {Damage = 20, AttacksPerMinute = 25, DamageType = "Slashing", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
  },
  Showel = {
   Name = "Shovel", Weight = 2, Slot = "Hands", HarvestTool = "Shovel",
-  Description = "A shovel for collecting scrap and rags from scrap piles.",
+  Description = "A stone shovel for digging stone veins and collecting scrap and rags.",
   Weapon = {Damage = 20, AttacksPerMinute = 25, DamageType = "Blunt", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
  },
  TreeLog = {
@@ -32,6 +32,10 @@ ItemConfig.Items = {
   Name = "Handle", Weight = 0.3, ResourceMaterial = "Wood",
   Description = "A wooden handle for crafting tools.",
  },
+ Stone = {
+  Name = "Stone", Weight = 0.2, ResourceMaterial = "Stone",
+  Description = "Stone dug from a stone vein. Used for crafting stone tools.",
+ },
  Scrap = {
   Name = "Scrap", Weight = 0.2,
   Description = "Salvaged scrap metal.",
@@ -42,7 +46,7 @@ ItemConfig.Items = {
  },
  Knife = {
   Name = "Knife", Weight = 0.3, Slot = "Hands", CraftTool = "Knife", CraftSpeed = 1,
-  Description = "A knife from some store. Its sharp blade is good for slicing meat products.",
+  Description = "A stone knife with a sharp edge for slicing meat products.",
   Weapon = {Damage = 10, AttacksPerMinute = 40, DamageType = "Piercing", MaxUses = 500, CanDamageStructures = false, Range = 1.2, Width = 0.7, Thrust = 0.5},
   -- Optional HeldOffset = CFrame.new(x, y, z) * CFrame.Angles(rx, ry, rz),
   -- An Attachment named HandsGrip inside the character Body overrides this offset.

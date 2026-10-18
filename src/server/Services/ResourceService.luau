@@ -80,7 +80,7 @@ local function watchZone(zone)
 end
 local function sources(kind)
  local resources = ServerStorage:FindFirstChild("Resources")
- local group = resources and resources:FindFirstChild(kind == "Tree" and "Trees" or "ScrapPiles")
+ local group = resources and resources:FindFirstChild(Config[kind].Folder)
  local result = {}
  for _,name in ipairs(Config[kind].Templates) do
   local source = group and group:FindFirstChild(name)
@@ -88,28 +88,12 @@ local function sources(kind)
  end
  return result
 end
-local function sample(parts,margin)
- local total = 0
- for _,part in ipairs(parts) do total += math.max(0,part.Size.X-2*margin)*math.max(0,part.Size.Z-2*margin) end
- if total <= 0 then return nil end
- local pick = random:NextNumber(0,total)
- for _,part in ipairs(parts) do
-  local width,depth = math.max(0,part.Size.X-2*margin),math.max(0,part.Size.Z-2*margin)
-  local area = width*depth
-  pick -= area
-  if area > 0 and pick <= 0 then
-   local point = part.CFrame:PointToWorldSpace(Vector3.new(random:NextNumber(-width/2,width/2),part.Size.Y/2,random:NextNumber(-depth/2,depth/2)))
-   return part,point
-  end
- end
- return nil
-end
 local function generate(zone,state)
  local definition = Config[state.Kind]
  local templates,parts = sources(state.Kind),Area.Parts(zone)
  if #templates == 0 or #parts == 0 then
   if not state.Warned then
-   warn("[Decline] Empty resource zone or missing templates for "..zone:GetFullName().."; use ServerStorage/Resources/"..(state.Kind == "Tree" and "Trees" or "ScrapPiles"))
+   warn("[Decline] Empty resource zone or missing templates for "..zone:GetFullName().."; use ServerStorage/Resources/"..definition.Folder)
    state.Warned = true
   end
   state.NextAt = os.clock()+5
@@ -129,54 +113,51 @@ local function generate(zone,state)
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = excluded
  params.RespectCanCollide = true
- local points,footprints = {},{}
+ local footprints = Rules.FootprintIndex(8)
  for model,node in pairs(nodes) do
   if model:IsDescendantOf(workspace) then
    local box,size=model:GetBoundingBox()
-   table.insert(footprints,Rules.Footprint(box,size))
-   if node.Kind == state.Kind then table.insert(points,box.Position) end
+   footprints:Insert(Rules.Footprint(box,size))
   end
  end
- local wanted = random:NextInteger(definition.MinCount,definition.MaxCount)
  local made = 0
- -- Bounded attempts: a small region may not physically fit the random count.
- for _=1,wanted*80 do
-  if made >= wanted then break end
-  local surface,point = sample(parts,0)
-  if not point then break end
-  local source = templates[random:NextInteger(1,#templates)]
-  local sourceBox,size = source:GetBoundingBox()
-  local pivot = source:GetPivot()
-  local rotation = CFrame.Angles(0,random:NextNumber(-math.pi,math.pi),0)*pivot.Rotation
-  local ground = workspace:Raycast(point+Vector3.new(0,2,0),Vector3.new(0,-16,0),params)
-  if not ground or ground.Normal.Y < .5 then continue end
-  local relativeBox = pivot:ToObjectSpace(sourceBox)
-  local orientationBox = rotation*relativeBox
-  -- Account for a pivot that is not at the bottom of the model.
-  local halfHeight = math.abs(orientationBox.RightVector.Y)*size.X/2 + math.abs(orientationBox.UpVector.Y)*size.Y/2 + math.abs(orientationBox.LookVector.Y)*size.Z/2
-  local position = ground.Position+Vector3.new(-orientationBox.Position.X,halfHeight-orientationBox.Position.Y+.02,-orientationBox.Position.Z)
-  local target = CFrame.new(position)*rotation
-  local targetBox = target*relativeBox
-  if not Area.Contains(surface,targetBox.Position) then continue end
-  if not Rules.Spaced(points,targetBox.Position.X,targetBox.Position.Z,definition.Spacing) then continue end
-  local footprint=Rules.Footprint(targetBox,size)
-  if not Rules.Clearance(footprints,footprint,definition.EdgeGap) then continue end
-  local clone = source:Clone()
-  clone:PivotTo(target)
-  clone.Parent = folder
-  register(clone)
-  local node = nodes[clone]
-  if node then
-   if node.Zone then zones[node.Zone].Nodes[clone] = nil end
-   node.Zone = zone
-   state.Nodes[clone] = true
-   table.insert(points,targetBox.Position)
-   table.insert(footprints,footprint)
-   made += 1
-  else clone:Destroy() end
+ for partIndex,surface in ipairs(parts) do
+  Rules.RollCells(surface.Size.X,surface.Size.Z,definition.SpawnChance,random,function(x,z)
+   local point=surface.CFrame:PointToWorldSpace(Vector3.new(x,surface.Size.Y/2,z))
+   -- Overlapping markers in one zone must not get a second chance at the same area.
+   for i=1,partIndex-1 do if Area.Contains(parts[i],point) then return end end
+   local source = templates[random:NextInteger(1,#templates)]
+   local sourceBox,size = source:GetBoundingBox()
+   local pivot = source:GetPivot()
+   local rotation = CFrame.Angles(0,random:NextNumber(-math.pi,math.pi),0)*pivot.Rotation
+   local ground = workspace:Raycast(point+Vector3.new(0,2,0),Vector3.new(0,-16,0),params)
+   if not ground or ground.Normal.Y < .5 then return end
+   local relativeBox = pivot:ToObjectSpace(sourceBox)
+   local orientationBox = rotation*relativeBox
+   -- Account for a pivot that is not at the bottom of the model.
+   local halfHeight = math.abs(orientationBox.RightVector.Y)*size.X/2 + math.abs(orientationBox.UpVector.Y)*size.Y/2 + math.abs(orientationBox.LookVector.Y)*size.Z/2
+   local position = ground.Position+Vector3.new(-orientationBox.Position.X,halfHeight-orientationBox.Position.Y+.02,-orientationBox.Position.Z)
+   local target = CFrame.new(position)*rotation
+   local targetBox = target*relativeBox
+   if not Area.Contains(surface,targetBox.Position) then return end
+   local footprint=Rules.Footprint(targetBox,size)
+   if not footprints:Clear(footprint) then return end
+   local clone = source:Clone()
+   clone:PivotTo(target)
+   clone.Parent = folder
+   register(clone)
+   local node = nodes[clone]
+   if node then
+    if node.Zone then zones[node.Zone].Nodes[clone] = nil end
+    node.Zone = zone
+    state.Nodes[clone] = true
+    footprints:Insert(footprint)
+    made += 1
+   else clone:Destroy() end
+  end)
  end
- if made < wanted then warn(string.format("[Decline] %s fits %d of %d requested resources; increase the marker area if needed.",zone:GetFullName(),made,wanted)) end
- state.NextAt = made == 0 and os.clock()+5 or nil
+ -- A legitimate zero roll waits for the normal respawn, rather than rerolling every five seconds.
+ state.NextAt = made == 0 and os.clock()+random:NextInteger(definition.RespawnMin,definition.RespawnMax) or nil
 end
 function Service.Find(part)
  local ancestor = part

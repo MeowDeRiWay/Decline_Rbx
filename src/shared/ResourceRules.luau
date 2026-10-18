@@ -42,7 +42,7 @@ local function separated(a,b)
   local amin,amax,bmin,bmax=math.huge,-math.huge,math.huge,-math.huge
   for _,v in ipairs(a) do local n=v.X*nx+v.Z*nz;amin=math.min(amin,n);amax=math.max(amax,n) end
   for _,v in ipairs(b) do local n=v.X*nx+v.Z*nz;bmin=math.min(bmin,n);bmax=math.max(bmax,n) end
-  if amax<bmin or bmax<amin then return true end
+  if amax<=bmin or bmax<=amin then return true end
  end
  return false
 end
@@ -61,9 +61,58 @@ function Rules.GapSquared(a,b)
 end
 function Rules.Clearance(footprints,candidate,gap)
  for _,other in ipairs(footprints) do
-  if Rules.GapSquared(candidate,other)<gap*gap-1e-8 then return false end
+  if gap == 0 then
+   if not separated(candidate,other) and not separated(other,candidate) then return false end
+  elseif Rules.GapSquared(candidate,other)<gap*gap-1e-8 then return false end
  end
  return true
+end
+-- One Bernoulli trial per square stud. Partial edge cells scale by their area.
+function Rules.RollCells(width, depth, chance, random, visit)
+ for x=0,math.ceil(width)-1 do
+  local cellWidth=math.min(1,width-x)
+  for z=0,math.ceil(depth)-1 do
+   local cellDepth=math.min(1,depth-z)
+   if random:NextNumber() < chance*cellWidth*cellDepth then
+    visit(-width/2+x+random:NextNumber()*cellWidth, -depth/2+z+random:NextNumber()*cellDepth)
+   end
+  end
+ end
+end
+-- Broad phase for dense resource regions; exact footprint overlap remains authoritative.
+function Rules.FootprintIndex(cellSize)
+ local buckets={}
+ local function keys(footprint,visit)
+  local xmin,xmax,zmin,zmax=math.huge,-math.huge,math.huge,-math.huge
+  for _,p in ipairs(footprint) do
+   xmin=math.min(xmin,p.X); xmax=math.max(xmax,p.X)
+   zmin=math.min(zmin,p.Z); zmax=math.max(zmax,p.Z)
+  end
+  for x=math.floor(xmin/cellSize),math.floor(xmax/cellSize) do
+   for z=math.floor(zmin/cellSize),math.floor(zmax/cellSize) do
+    if visit(x..":"..z)==false then return false end
+   end
+  end
+  return true
+ end
+ return {
+  Insert=function(_,footprint)
+   keys(footprint,function(key)
+    buckets[key]=buckets[key] or {}; table.insert(buckets[key],footprint)
+   end)
+  end,
+  Clear=function(_,footprint)
+   local seen={}
+   return keys(footprint,function(key)
+    for _,other in ipairs(buckets[key] or {}) do
+     if not seen[other] then
+      seen[other]=true
+      if not Rules.Clearance({other},footprint,0) then return false end
+     end
+    end
+   end)
+  end,
+ }
 end
 -- The last occupant leaving starts a fresh delay; re-entry resets it.
 function Rules.Occupancy(state, occupied, now, delay)

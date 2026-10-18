@@ -10,6 +10,8 @@ assert(Rules.CanDamage(Config.Tree,axe) and not Rules.CanDamage(Config.Tree,shov
 assert(Rules.CanDamage(Config.Tree,{HarvestTool="Axe"}),"Future axes use the same harvest category")
 assert(Rules.CanDamage(Config.ScrapPile,shovel) and not Rules.CanDamage(Config.ScrapPile,axe))
 assert(not Rules.CanDamage(Config.Tree,Items.Knife))
+assert(Rules.CanDamage(Config.StoneVein,shovel) and not Rules.CanDamage(Config.StoneVein,axe))
+assert(Config.StoneVein.Zone=="StoneYard" and Config.StoneVein.Loot.Stone.Min==1 and Config.StoneVein.Loot.Stone.Max==5)
 local health = Config.Tree.Health
 for hit=1,5 do
  health = Rules.Damage(health,axe.Weapon.Damage)
@@ -21,8 +23,8 @@ assert(not Rules.Spaced({{X=0,Z=0}},7.99,0,8))
 assert(Rules.Spaced({{X=0,Z=0}},1,0,1))
 assert(not Rules.Spaced({{X=0,Z=0}},.7,.7,1))
 for _,resource in pairs(Config) do
- assert(resource.MinCount == 1 and resource.MaxCount == 20)
- assert(resource.EdgeGap == 3)
+ assert(resource.SpawnChance == .1)
+ assert(resource.Spacing == nil and resource.EdgeGap == nil)
  assert(resource.RespawnMin == 30 and resource.RespawnMax == 300)
  for id,range in pairs(resource.Loot) do
   assert(Items[id] and range.Min >= 1 and range.Max >= range.Min)

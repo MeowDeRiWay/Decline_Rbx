@@ -6,7 +6,7 @@ local Inventory = require(script.Parent.InventoryService)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Service = {}
-local fallbackItems = {TreeLog = true, Scrap = true, Rags = true}
+local fallbackItems = {TreeLog = true, Scrap = true, Rags = true, Stone = true}
 local warned = {}
 local folder = workspace:FindFirstChild("WorldItems")
 if not folder then
@@ -99,8 +99,8 @@ local function makeItem(id)
  local item = Instance.new("Part")
  item.Name = id
  item.Size = id == "TreeLog" and Vector3.new(1,.2,.2) or Vector3.new(.3,.1,.3)
- item.Material = id == "TreeLog" and Enum.Material.Wood or (id == "Scrap" and Enum.Material.Metal or Enum.Material.Fabric)
- item.Color = id == "TreeLog" and Color3.fromRGB(120,85,50) or (id == "Scrap" and Color3.fromRGB(110,110,110) or Color3.fromRGB(150,135,105))
+ item.Material = id == "Stone" and Enum.Material.Slate or id == "TreeLog" and Enum.Material.Wood or (id == "Scrap" and Enum.Material.Metal or Enum.Material.Fabric)
+ item.Color = id == "Stone" and Color3.fromRGB(125,125,125) or id == "TreeLog" and Color3.fromRGB(120,85,50) or (id == "Scrap" and Color3.fromRGB(110,110,110) or Color3.fromRGB(150,135,105))
  return item
 end
 local function place(item,position,count,id)

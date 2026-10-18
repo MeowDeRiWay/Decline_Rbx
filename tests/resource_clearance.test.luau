@@ -18,3 +18,17 @@ assert(Rules.Clearance({rotated},rectangle(10,0,2,.2,math.pi/4),3))
 -- Large models need more space than small ones at identical center distances.
 assert(not Rules.Clearance({rectangle(0,0,4,1)},rectangle(9,0,4,1),3))
 print("PASS: true model-edge clearance, exact boundary, corners, overlap, containment, rotation and different model sizes")
+
+-- Zero gap still rejects overlap, but permits edge contact and tiny clearances.
+assert(not Rules.Clearance({a},rectangle(.5,.5,1,1),0))
+assert(not Rules.Clearance({a},rectangle(0,0,.1,.1),0))
+assert(Rules.Clearance({a},rectangle(2,0,1,1),0))
+assert(Rules.Clearance({a},rectangle(2.001,0,1,1),0))
+local index=Rules.FootprintIndex(8)
+index:Insert(a)
+index:Insert(rectangle(-16,-16,2,2))
+assert(not index:Clear(rectangle(.5,.5,1,1)))
+assert(not index:Clear(rectangle(-16,-16,.1,.1)))
+assert(index:Clear(rectangle(2.001,0,1,1)))
+assert(index:Clear(rectangle(40,40,1,1)))
+print("PASS: zero-gap overlap rejection and spatial index, including negative buckets")

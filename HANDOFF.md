@@ -4,6 +4,15 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Камінь і генерація за площею — 18 жовтня
+
+- StoneVein template: ServerStorage/Resources/StoneVeins/StoneVein; Stone item model: ServerStorage/Items/Stone; зона Workspace/StoneYard з плоскими Parts. Stone0.2кг, жила100HP, лопата HarvestTool=Shovel, лут1–5Stone на землю. Тимчасові значення HP/виходу/ваги задані агентом.
+- Axe/Showel/Knife залишаються тими ж ID; користувач переробляє моделі під кам’яні. Рецепти Workstation замінено3Scrap→3Stone (Handle для сокири/лопати збережено).
+- УСІ ресурсні області: 1незалежний шанс10% на кожну1x1 клітинку; дробова крайова площа пропорційна. Позиція випадкова в клітинці, поворот випадковий. 10x10=100спроб, середнє10кандидатів, не гарантовані10.
+- MinCount/MaxCount/Spacing/EdgeGap видалено. Перевіряється лише неперекриття горизонтальних bbox ресурсів; дотик дозволено. Просторовий індекс8студс. Центр у маркері, краї можуть виступати. Невдалі кандидати пропускаються.
+- Старий таймер30–300с після спустошення; валідний нульовий результат також чекає30–300с, без повторних шансів кожні5с. Відсутні шаблони/маркери retry5с.
+- Перевірки: resource rules/clearance/density, реальний ResourceService на mock API (100клітинок, дубль маркера, лопата/знос/одноразовий лут), town scenarios, Luau compile, Rojo build. Studio playtest не було.
+
 ## Рецепти Workstation — 18 жовтня
 
 - Plank (0.6кг) і Handle (0.3кг) зареєстровані в ItemConfig; моделі ServerStorage/Items/Plank і Handle.
