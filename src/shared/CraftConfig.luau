@@ -15,19 +15,31 @@ return {
  MakeAxe = {
   Name = "Make stone axe", Station = "Workstation",
   Description = "Assemble an axe using a handle and three stones.",
-  Ingredients = {Handle = 1, Stone = 3}, Output = "Axe", OutputCount = 1,
+  Ingredients = {Handle = 1, Stone = 3}, Output = "StoneAxe", OutputCount = 1,
   MaxBatch = 5, Duration = 20, RequiresPresence = true,
  },
  MakeShovel = {
   Name = "Make stone shovel", Station = "Workstation",
   Description = "Assemble a shovel using a handle and three stones.",
-  Ingredients = {Handle = 1, Stone = 3}, Output = "Showel", OutputCount = 1,
+  Ingredients = {Handle = 1, Stone = 3}, Output = "StoneShowel", OutputCount = 1,
+  MaxBatch = 5, Duration = 20, RequiresPresence = true,
+ },
+ MakeScrapAxe = {
+  Name = "Make scrap axe", Station = "Workstation",
+  Description = "Assemble a scrap axe using a handle and three pieces of scrap.",
+  Ingredients = {Handle = 1, Scrap = 3}, Output = "ScrapAxe", OutputCount = 1,
+  MaxBatch = 5, Duration = 20, RequiresPresence = true,
+ },
+ MakeScrapShovel = {
+  Name = "Make scrap shovel", Station = "Workstation",
+  Description = "Assemble a scrap shovel using a handle and three pieces of scrap.",
+  Ingredients = {Handle = 1, Scrap = 3}, Output = "ScrapShowel", OutputCount = 1,
   MaxBatch = 5, Duration = 20, RequiresPresence = true,
  },
  MakeKnife = {
-  Name = "Make stone knife", Station = "Workstation",
-  Description = "Shape three stones into a knife.",
-  Ingredients = {Stone = 3}, Output = "Knife", OutputCount = 1,
+  Name = "Make scrap knife", Station = "Workstation",
+  Description = "Shape three pieces of scrap into a knife.",
+  Ingredients = {Scrap = 3}, Output = "ScrapKnife", OutputCount = 1,
   MaxBatch = 5, Duration = 15, RequiresPresence = true,
  },
  BoilPotatoes = {

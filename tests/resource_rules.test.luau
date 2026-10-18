@@ -7,15 +7,15 @@ local axe, shovel = Items.Axe, Items.Showel
 assert(axe.Weapon.AttacksPerMinute == 25 and shovel.Weapon.AttacksPerMinute == 25)
 assert(axe.Weapon.Animation == shovel.Weapon.Animation and axe.Weapon.Damage == shovel.Weapon.Damage)
 assert(Rules.CanDamage(Config.Tree,axe) and not Rules.CanDamage(Config.Tree,shovel))
-assert(Rules.CanDamage(Config.Tree,{HarvestTool="Axe"}),"Future axes use the same harvest category")
+assert(Rules.CanDamage(Config.Tree,{HarvestTool="Axe",HarvestTier=1}),"Future axes use the same harvest category")
 assert(Rules.CanDamage(Config.ScrapPile,shovel) and not Rules.CanDamage(Config.ScrapPile,axe))
 assert(not Rules.CanDamage(Config.Tree,Items.Knife))
 assert(Rules.CanDamage(Config.StoneVein,shovel) and not Rules.CanDamage(Config.StoneVein,axe))
 assert(Config.StoneVein.Zone=="StoneYard" and Config.StoneVein.Loot.Stone.Min==1 and Config.StoneVein.Loot.Stone.Max==5)
 local health = Config.Tree.Health
-for hit=1,5 do
- health = Rules.Damage(health,axe.Weapon.Damage)
- assert(health == 100-hit*20)
+for hit=1,20 do
+ health = Rules.Damage(health,Rules.HarvestDamage(Config.Tree,axe))
+ assert(health == 100-hit*5)
 end
 assert(Rules.Damage(5,20) == 0)
 assert(Rules.Spaced({{X=0,Z=0}},8,0,8))
@@ -49,4 +49,4 @@ assert(not Rules.Occupancy(occupancy,true,1182,180),"Re-entry blocks spawning ag
 assert(not Rules.Occupancy(occupancy,false,1183,180))
 assert(not Rules.Occupancy(occupancy,false,1362.99,180))
 assert(Rules.Occupancy(occupancy,false,1363,180))
-print("PASS: tool attacks and wear, valid resource tools, five-hit tree, loot weights, spacing boundaries, respawn ranges and occupied-home delay")
+print("PASS: tool attacks and wear, valid resource tools, twenty-hit stone axe tree, loot weights, spacing boundaries, respawn ranges and occupied-home delay")

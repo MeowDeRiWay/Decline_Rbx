@@ -57,13 +57,21 @@ local target=generated[1]
 assert(target:GetAttribute("Health")==100 and target:GetAttribute("ResourceMaterial")=="Stone")
 assert(target.Part.Anchored and target.Part.CanQuery)
 local player={Character=make("Model","Character")}
-player.Character:SetAttribute("HandsItem","Axe")
+player.Character:SetAttribute("HandsItem","StoneAxe")
 assert(Service.Hit(player,target,weapon) and target:GetAttribute("Health")==100 and used==1,"wrong tool wears but cannot mine")
-player.Character:SetAttribute("HandsItem","Showel")
-for _=1,5 do assert(Service.Hit(player,target,weapon)) end
-assert(target.destroyed and lootCalls==1 and used==6,"five shovel hits drop stone once")
+player.Character:SetAttribute("HandsItem","StoneShowel")
+for _=1,20 do assert(Service.Hit(player,target,weapon)) end
+assert(target.destroyed and lootCalls==1 and used==21,"twenty stone shovel hits drop stone once")
 assert(not Service.Hit(player,target,weapon) and lootCalls==1,"no duplicate loot")
 assert(#workspace.Resources:GetChildren()==99)
+local scrapTarget=generated[2]
+player.Character:SetAttribute("HandsItem","ScrapShowel")
+for _=1,10 do assert(Service.Hit(player,scrapTarget,weapon)) end
+assert(scrapTarget.destroyed and lootCalls==2,"scrap multiplier mines in ten hits")
+local ironTarget=generated[3]
+player.Character:SetAttribute("HandsItem","IronShowel")
+for _=1,7 do assert(Service.Hit(player,ironTarget,weapon)) end
+assert(ironTarget.destroyed and lootCalls==3,"iron multiplier mines in seven hits")
 print("PASS: real resource service generates StoneYard by cells, skips duplicate markers, anchors veins, requires shovel and drops stone once")
 '''
 parts = [(root/'tests/fixtures/town_mock.luau').read_text(), (root/'tests/city_geometry.fixture.luau').read_text(), setup]

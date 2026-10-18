@@ -1,6 +1,11 @@
 local Rules = {}
 function Rules.CanDamage(resource, definition)
  return definition ~= nil and definition.HarvestTool == resource.Tool
+  and (definition.HarvestTier or 0) >= (resource.MinHarvestTier or 0)
+end
+function Rules.HarvestDamage(resource, definition)
+ if not Rules.CanDamage(resource,definition) or not definition.Weapon then return 0 end
+ return definition.Weapon.Damage*(definition.HarvestMultiplier or 1)
 end
 function Rules.Damage(health, damage)
  return math.max(0, health - damage)

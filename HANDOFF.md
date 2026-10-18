@@ -4,6 +4,16 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Рівні інструментів — 18 жовтня ввечері
+
+- Нові точні ID зі скріну: StoneAxe, ScrapAxe, IronAxe, StoneShowel, ScrapShowel, IronShowel, ScrapKnife, IronKnife. Шаблони ServerStorage/Items. Showel — саме така назва! Старі Axe/Showel/Knife підтримані як сумісність, нові рецепти їх не видають.
+- Сокири/лопати Weapon.Damage=5 по живих, HarvestTier=1/2/3 і HarvestMultiplier=1/2/3; ResourceService окремо рахує 5/10/15 по відповідних вузлах через ResourceRules.HarvestDamage. Швидкість25/хв, міцність1000 без змін.
+- ResourceConfig.MinHarvestTier=1 для нинішніх ресурсів. ScrapPile вимагає мінімум кам’яну лопату; unranked інструмент не годиться. Майбутня залізна жила мусить мати MinHarvestTier=2. Саме залізо/жила/рецепти залізних ще не додані за словами користувача «потім додам».
+- ScrapKnife Damage10, IronKnife20; CraftTool=Knife обом для дошки; параметри атаки старого ножа збережені.
+- Рецепти кам’яних видають StoneAxe/StoneShowel (Handle+3Stone); додані ScrapAxe/ScrapShowel (Handle+3Scrap); MakeKnife тепер ScrapKnife за3Scrap. Кам’яного ножа немає.
+- HP нинішніх вузлів100: 20/10/7 влучань по рівнях. Нові tools не видаються автоматично при спавні: стартові означає перший рівень розвитку.
+- Перевірено tool_tiers, resource_rules/density, справжній ResourceService на mock API (видобування 20/10/7 ударами), компіляція, Rojo. Studio playtest не було.
+
 ## Камінь і генерація за площею — 18 жовтня
 
 - StoneVein template: ServerStorage/Resources/StoneVeins/StoneVein; Stone item model: ServerStorage/Items/Stone; зона Workspace/StoneYard з плоскими Parts. Stone0.2кг, жила100HP, лопата HarvestTool=Shovel, лут1–5Stone на землю. Тимчасові значення HP/виходу/ваги задані агентом.

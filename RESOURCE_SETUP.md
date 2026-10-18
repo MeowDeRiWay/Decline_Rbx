@@ -1,12 +1,12 @@
 # Resource models and spawn areas
 
-Names are case-sensitive. The shovel item ID is intentionally `Showel` to match the supplied model.
+Names are case-sensitive. Shovel model IDs intentionally use `Showel`: StoneShowel, ScrapShowel and IronShowel.
 
 ## Models in Studio
 
 | Location | Model names |
 | --- | --- |
-| `ServerStorage/Items` | `Axe`, `Showel` |
+| `ServerStorage/Items` | `StoneAxe`, `StoneShowel`, `ScrapAxe`, `ScrapShowel`, `IronAxe`, `IronShowel`, `ScrapKnife`, `IronKnife` |
 | `ServerStorage/Resources/Trees` | `Tree_1`, `Tree_2`, `Tree_3` |
 | `ServerStorage/Resources/ScrapPiles` | `PileScrap` |
 | `ServerStorage/Resources/StoneVeins` | `StoneVein` |
@@ -24,11 +24,15 @@ After the last resource is removed, the usual random 30–300 second respawn tim
 
 ## Harvesting
 
-Both Axe and Showel use the `SwingLeft` animation, deal 20 damage and attack 25 times/minute. Every actual weapon impact on a resource costs one durability use. Swinging into empty space costs none. An unsuitable weapon wears but deals no resource damage.
+Axes and shovels deal **5 damage to living targets**, attack 25 times/minute and use SwingLeft. Against matching resources, stone tools multiply this by 1 (5), scrap by 2 (10), and iron by 3 (15). Tool category still matters: axes cut trees, shovels mine stone and scrap. Every actual impact costs one durability use, even with an unsuitable or insufficient-tier tool. Empty swings cost none.
 
-Trees have 100 HP and accept only items whose `HarvestTool` is `Axe`, allowing future axe variants. Five axe hits yield 1–4 TreeLog, each weighing 2 kg. Scrap piles have 100 HP and require `HarvestTool = "Shovel"`; five shovel hits yield independently rolled 1–5 Scrap (0.2 kg each) and 1–5 Rags (0.05 kg each). Stone veins have 100 HP, require `HarvestTool = "Shovel"`, and yield 1–5 Stone (0.2 kg each). The StoneVein template lives at `ServerStorage/Resources/StoneVeins/StoneVein`; its loot model lives at `ServerStorage/Items/Stone`.
+HarvestTier and MinHarvestTier enforce access independently from damage. Current trees, stone veins and scrap piles require tier 1 (stone) or better; an unranked shovel cannot harvest scrap. Future iron deposits should require MinHarvestTier=2 (scrap or iron); no iron deposit or Iron ingredient is added yet.
 
-Workstation axe and shovel recipes each cost 1 Handle + 3 Stone; the knife costs 3 Stone. Internal item IDs remain Axe, Showel and Knife, so the authored models can be replaced with stone versions without renaming them. Log/plank/handle recipes are unchanged.
+All current resource nodes have 100 HP: 20 stone-tool hits, 10 scrap-tool hits, or 7 iron-tool hits. Trees yield 1–4 TreeLog (2 kg each); scrap piles yield independently 1–5 Scrap (0.2 kg each) and 1–5 Rags (0.05 kg each); stone veins yield 1–5 Stone (0.2 kg each).
+
+Workstation: 1 Handle + 3 Stone makes StoneAxe or StoneShowel; 1 Handle + 3 Scrap makes ScrapAxe or ScrapShowel; 3 Scrap makes ScrapKnife. Iron tools are registered and usable but have no crafting recipe until the iron resource is supplied. No stone knife recipe remains. Log/plank/handle recipes are unchanged. Legacy Axe/Showel IDs map to stone stats; Knife maps to scrap knife stats for older placed models.
+
+ScrapKnife deals 10 damage and IronKnife 20. Both share CraftTool="Knife", so either works for slicing sausage. Their attack speed, reach and durability remain the existing knife settings.
 
 Loot is spawned once on the ground at the destroyed node. Each loot type is a separate world pickup with its rolled Quantity, not an automatic inventory grant. Add TreeLog, Scrap and Rags models to ServerStorage/Items for custom visuals. Missing resource art uses temporary blocks which can still be picked up and dropped.
 

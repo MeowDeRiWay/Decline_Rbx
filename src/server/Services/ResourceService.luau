@@ -179,7 +179,7 @@ function Service.Hit(player,model,weapon)
  local resource = Config[node.Kind]
  if not Rules.CanDamage(resource,definition) then return true end
  local previousHealth = node.Health
- node.Health = Rules.Damage(node.Health,weapon.Damage)
+ node.Health = Rules.Damage(node.Health,Rules.HarvestDamage(resource,definition))
  model:SetAttribute("Health",node.Health)
  if node.Health == 0 then
   local loot = {}

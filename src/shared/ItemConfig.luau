@@ -9,16 +9,6 @@ ItemConfig.Items = {
   Description = "A zombie's right hand.",
   Weapon = {Damage = 5, AttacksPerMinute = 10, DamageType = "Blunt", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
  },
- Axe = {
-  Name = "Axe", Weight = 1.5, Slot = "Hands", HarvestTool = "Axe",
-  Description = "A stone axe for chopping trees into logs.",
-  Weapon = {Damage = 20, AttacksPerMinute = 25, DamageType = "Slashing", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
- },
- Showel = {
-  Name = "Shovel", Weight = 2, Slot = "Hands", HarvestTool = "Shovel",
-  Description = "A stone shovel for digging stone veins and collecting scrap and rags.",
-  Weapon = {Damage = 20, AttacksPerMinute = 25, DamageType = "Blunt", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
- },
  TreeLog = {
   Name = "Tree Log", Weight = 2,
   Description = "A heavy wooden log cut from a tree.",
@@ -43,13 +33,6 @@ ItemConfig.Items = {
  Rags = {
   Name = "Rags", Weight = 0.05,
   Description = "Pieces of old fabric salvaged from scrap piles.",
- },
- Knife = {
-  Name = "Knife", Weight = 0.3, Slot = "Hands", CraftTool = "Knife", CraftSpeed = 1,
-  Description = "A stone knife with a sharp edge for slicing meat products.",
-  Weapon = {Damage = 10, AttacksPerMinute = 40, DamageType = "Piercing", MaxUses = 500, CanDamageStructures = false, Range = 1.2, Width = 0.7, Thrust = 0.5},
-  -- Optional HeldOffset = CFrame.new(x, y, z) * CFrame.Angles(rx, ry, rz),
-  -- An Attachment named HandsGrip inside the character Body overrides this offset.
  },
  EmptyBottle = {
   Name = "Empty Bottle", Weight = 0.1,
@@ -111,5 +94,30 @@ ItemConfig.Items = {
  -- SmallBackpack = {Name = "Small Backpack", Weight = 1.5, Slot = "Back"},
  -- Metal = {Name = "Metal", Weight = 0.2},
 }
+-- Tier is progression/access; HarvestMultiplier scales damage only to resource nodes.
+for tier,material in ipairs({"Stone","Scrap","Iron"}) do
+ for _,tool in ipairs({"Axe","Showel"}) do
+  local axe=tool=="Axe"
+  ItemConfig.Items[material..tool]={
+   Name=material..(axe and " Axe" or " Shovel"), Weight=axe and 1.5 or 2,
+   Slot="Hands", HarvestTool=axe and "Axe" or "Shovel", HarvestTier=tier, HarvestMultiplier=tier,
+   Description=axe and "An axe for chopping trees into logs." or "A shovel for digging resource deposits.",
+   Weapon={Damage=5, AttacksPerMinute=25, DamageType=axe and "Slashing" or "Blunt", MaxUses=1000,
+    CanDamageStructures=false, Range=1, Width=1, Animation="SwingLeft"},
+  }
+ end
+end
+for _,material in ipairs({"Scrap","Iron"}) do
+ ItemConfig.Items[material.."Knife"]={
+  Name=material.." Knife", Weight=.3, Slot="Hands", CraftTool="Knife", CraftSpeed=1,
+  Description="A sharp knife for combat and slicing food.",
+  Weapon={Damage=material=="Iron" and 20 or 10, AttacksPerMinute=40, DamageType="Piercing", MaxUses=500,
+   CanDamageStructures=false, Range=1.2, Width=.7, Thrust=.5},
+ }
+end
+-- Compatibility for already placed legacy models; new recipes use explicit material IDs.
+ItemConfig.Items.Axe=ItemConfig.Items.StoneAxe
+ItemConfig.Items.Showel=ItemConfig.Items.StoneShowel
+ItemConfig.Items.Knife=ItemConfig.Items.ScrapKnife
 return ItemConfig
 
