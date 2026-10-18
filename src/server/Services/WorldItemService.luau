@@ -5,6 +5,7 @@ local ItemConfig = require(ReplicatedStorage.Shared.ItemConfig)
 local Inventory = require(script.Parent.InventoryService)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
+local EquipmentVisuals = require(script.Parent.EquipmentVisuals)
 local Service = {}
 local fallbackItems = {TreeLog = true, Scrap = true, Rags = true, Stone = true}
 local warned = {}
@@ -21,6 +22,7 @@ local function register(item)
  if not item:IsA("Model") and not item:IsA("BasePart") then return end
  local id=item:GetAttribute("Item_ID") or item.Name
  if not ItemConfig.Items[id] then return end
+ EquipmentVisuals.CaptureTemplate(item,id)
  item:SetAttribute("Item_ID",id)
  if item:GetAttribute("Quantity")==nil then item:SetAttribute("Quantity",1) end
  queryable(item)

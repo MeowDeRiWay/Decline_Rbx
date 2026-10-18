@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Екіпірування моделей із карти — 18 жовтня
+
+- Користувач не міг екіпірувати нові предмети: попередній скрін показує їх у Workspace/WorldItems, тоді як EquipmentVisuals.Validate вимагає ServerStorage/Items/<ID>. Inventory pickup не створював шаблон.
+- WorldItemService.register тепер викликає EquipmentVisuals.CaptureTemplate для Hands-предметів: сервер клонує світову модель в ServerStorage/Items, якщо валідного шаблону немає, перед pickup. Існуючий валідний authored шаблон має пріоритет. Зберігаються pivot/PrimaryPart/деталі, Quantity не копіюється. Це шаблон лише поточної сесії, не редакторське збереження. Для крафту без світової копії шаблони слід як і раніше класти в ServerStorage/Items.
+- Перевірки: capture/validate на mock Instances, tool tiers, компіляція, Rojo; Studio не запускався.
+
 ## Рівні інструментів — 18 жовтня ввечері
 
 - Нові точні ID зі скріну: StoneAxe, ScrapAxe, IronAxe, StoneShowel, ScrapShowel, IronShowel, ScrapKnife, IronKnife. Шаблони ServerStorage/Items. Showel — саме така назва! Старі Axe/Showel/Knife підтримані як сумісність, нові рецепти їх не видають.

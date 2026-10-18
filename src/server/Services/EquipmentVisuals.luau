@@ -9,6 +9,23 @@ local function templateFor(id)
  if template:IsA("Model") and not template:FindFirstChildWhichIsA("BasePart",true) then return nil end
  return template
 end
+-- Hand-authored world tools can supply their own reusable equipment template.
+-- Called by server registration before a world pickup is consumed.
+function Visuals.CaptureTemplate(item, id)
+ local definition=Items.Items[id]
+ if not definition or definition.Slot~="Hands" or templateFor(id) then return end
+ if not item:IsA("Model") and not item:IsA("BasePart") then return end
+ if item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart",true) then return end
+ local clone=item:Clone()
+ if not clone then return end
+ local folder=ServerStorage:FindFirstChild("Items")
+ if not folder then folder=Instance.new("Folder"); folder.Name="Items"; folder.Parent=ServerStorage end
+ local invalid=folder:FindFirstChild(id)
+ if invalid then invalid:Destroy() end
+ clone.Name=id
+ clone:SetAttribute("Quantity",nil)
+ clone.Parent=folder
+end
 function Visuals.Validate(id)
  local definition = Items.Items[id]
  if not definition or definition.Slot ~= "Hands" then return true end

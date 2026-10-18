@@ -12,6 +12,8 @@ Names are case-sensitive. Shovel model IDs intentionally use `Showel`: StoneShow
 | `ServerStorage/Resources/StoneVeins` | `StoneVein` |
 | `ServerStorage/Items` | `TreeLog`, `Scrap`, `Rags`, `Stone` (optional art templates; temporary blocks are used until supplied) |
 
+Hand-slot tools placed in Workspace/WorldItems automatically supply a session template in ServerStorage/Items when no valid template exists. This lets placed tools be picked up and equipped without a separate template copy. Existing templates take precedence. For crafting without any copy on the map, keep the authored model in ServerStorage/Items; the session cache does not save back to Studio.
+
 Tree and scrap-pile models placed in Workspace can be harvested directly for testing. Move their originals to the template folders after testing. Preserve their existing `BlocksVision` attributes. Trees are assigned Wood material and `ResourceMaterial = "Wood"`; no Humanoid, health popup or highlight is added.
 
 Add Models named `Forest`, `ScrapYard` and `StoneYard` to Workspace. Each model contains one or more flat rectangular Parts marking the spawn surfaces. Keep only marker Parts inside these models; generated resources go into a separate `Workspace/Resources` folder. Give markers visible colors/transparency in Studio. The server hides and anchors them, disables collision, touch and queries, and makes them transparent to vision at runtime. Place the markers at ground level with real ground beneath them. Rotating markers around the vertical axis is supported.
