@@ -110,3 +110,5 @@ Place the authored model at **ServerStorage/Buildings/Workbench (T1)**. Use the 
 Workshop T1 costs **1 TreeLog**, with the usual mayor approval (including self-approval). Chest remains public: town ownership does not restrict deposits or withdrawals.
 
 On upgrades the live Chest model and its inventory are moved to the new level's Chest position, replacing the new empty chest. Its current appearance is retained. For multiple chests give each a unique string **StorageID**, identical across levels. An upgrade without a matching destination chest is rejected before spending materials or replacing the old building. Only T1 is configured for now; add actual level models and costs when ready. Storage survives building upgrades within this server session, not server restarts or demolition.
+
+First successful character spawn in the current server session starts at 100 HP. Later respawns retain the existing rule: 2 HP at TownSpawn, full HP at an available hospital. Repositioning the same character does not reset health.

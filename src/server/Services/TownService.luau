@@ -9,6 +9,8 @@ local Inventory = require(script.Parent.InventoryService)
 local BuildingStorage = require(script.Parent.BuildingStorage)
 local Service = {}
 local towns, plots, sessions, pending, lastAction = {}, {}, {}, {}, {}
+local spawnedPlayers = setmetatable({}, {__mode = "k"})
+local initializedCharacters = setmetatable({}, {__mode = "k"})
 local sequence = 0
 local remote, notice
 local names = {}
@@ -269,8 +271,12 @@ function Service.PlaceCharacter(player, character)
  local radius = math.abs(frame.RightVector.Y)*size.X/2 + math.abs(frame.UpVector.Y)*size.Y/2 + math.abs(frame.LookVector.Y)*size.Z/2
  character:PivotTo(CFrame.new(frame.Position + Vector3.new(0, radius + root.Size.Y/2 + hp.HipHeight + .1, 0)))
  root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
- hp.Health = hospital and hp.MaxHealth or 2
- character:SetAttribute("Health", hp.Health)
+ if not initializedCharacters[character] then
+  hp.Health = not spawnedPlayers[player] and 100 or (hospital and hp.MaxHealth or 2)
+  spawnedPlayers[player] = true
+  initializedCharacters[character] = true
+  character:SetAttribute("Health", hp.Health)
+ end
 end
 local startElection
 local function finishVote(town)

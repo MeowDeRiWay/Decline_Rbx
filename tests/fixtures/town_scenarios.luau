@@ -2,10 +2,13 @@ Service.Start()
 local action=ReplicatedStorage.TownRemotes.Action
 local function call(player,command,value,extra) clock+=.2; action.OnServerEvent:Fire(player,command,value,extra) end
 call(a,"Join",1); call(b,"Join",1); call(c,"Join",2)
-assert(a:GetAttribute("TownID")==1 and a.Character.Humanoid.Health==2)
+assert(a:GetAttribute("TownID")==1 and a.Character.Humanoid.Health==100)
 call(d,"Join",3)
-assert(d:GetAttribute("TeamID")==1 and d.Character:GetPivot().Position.X==33 and d.Character.Humanoid.Health==2,
+assert(d:GetAttribute("TeamID")==1 and d.Character:GetPivot().Position.X==33 and d.Character.Humanoid.Health==100,
  "TownSpawn.TeamID=1 must match Flag.Team=1 rather than TownID=3, after engine placement")
+d.Character.Humanoid.Health=41
+Service.PlaceCharacter(d,d.Character)
+assert(d.Character.Humanoid.Health==41,"repeated placement must not heal or reduce current health")
 Service.LoadCharacter(d)
 assert(d.Character:GetPivot().Position.X==33 and d.Character.Humanoid.Health==2,"respawn must also use final town placement")
 assert(flagA:GetAttribute("LeaderID")==101 and flagB:GetAttribute("LeaderID")==103)

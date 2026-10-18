@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## HP першої появи — 18 жовтня
+
+- Перша успішна поява гравця в поточній сесії сервера має100HP; новий персонаж після смерті —2HP без лікарні, повне HP в лікарні як раніше.
+- TownService тримає серверні weak-key spawnedPlayers/initializedCharacters; повторний PlaceCharacter того самого персонажа не перепризначає HP (не лікує/не знижує при зміні міста). Першу появу рахує лише після валідного spawn/humanoid/root.
+- Перевірки town scenarios:100 при вступі, повторне розміщення зберігає41HP, наступний персонаж2HP; compile/Rojo. Studio не було.
+
 ## Екіпірування моделей із карти — 18 жовтня
 
 - Користувач не міг екіпірувати нові предмети: попередній скрін показує їх у Workspace/WorldItems, тоді як EquipmentVisuals.Validate вимагає ServerStorage/Items/<ID>. Inventory pickup не створював шаблон.
