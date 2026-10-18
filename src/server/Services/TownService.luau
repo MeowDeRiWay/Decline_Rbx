@@ -6,6 +6,7 @@ local Config = require(ReplicatedStorage.Shared.TownConfig)
 local Rules = require(ReplicatedStorage.Shared.TownRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Inventory = require(script.Parent.InventoryService)
+local BuildingStorage = require(script.Parent.BuildingStorage)
 local Service = {}
 local towns, plots, sessions, pending, lastAction = {}, {}, {}, {}, {}
 local sequence = 0
@@ -189,9 +190,12 @@ local function build(plot, kind, level, player)
  local sourceSpace=clone:FindFirstChild("Space")
  local alignment=sourceSpace and sourceSpace:GetPivot():ToObjectSpace(clone:GetPivot()) or CFrame.new()
  clone:PivotTo(plot.frame*alignment)
+ local migrate, migrationError = BuildingStorage.PrepareUpgrade(plot.building, clone)
+ if not migrate then clone:Destroy(); return false,migrationError end
  if not Inventory.ConsumeIngredients(player,{Ingredients=costFor(kind,level)},1) then
-  clone:Destroy(); return false,"You need 1 Tree Log in your inventory to build this kitchen."
+  clone:Destroy(); return false,"You need the required building materials in your inventory."
  end
+ migrate()
  if plot.building then plot.building:Destroy() end
  if plot.space.Parent then plot.space.Parent = nil end
  plot.kind, plot.level, plot.building = kind, level, clone
@@ -469,7 +473,7 @@ local function handle(player, command, value, extra)
    local level = plot.kind and plot.level + 1 or 1
    if not definition or not definition.Levels[level] or (plot.kind and (plot.kind ~= value or not owns(player, plot))) or plot.pending then return end
    if not templateFor(value, level) then tell(player, "Add the model ServerStorage/Buildings/" .. definition.Levels[level]); return end
-   if not hasMaterials(player,value,level) then tell(player,"You need 1 Tree Log in your inventory to build this kitchen."); return end
+   if not hasMaterials(player,value,level) then tell(player,"You need the required building materials in your inventory."); return end
    requestApproval(player, town, {kind = "Build", plot = plot, building = value, level = level,
     previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. ". Cost: 1 Tree Log from the builder's inventory."})
   elseif command == "Destroy" and plot.kind and owns(player, plot) then

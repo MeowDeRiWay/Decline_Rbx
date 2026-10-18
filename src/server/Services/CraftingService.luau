@@ -12,7 +12,7 @@ local sessions={}
 local changed=Instance.new("BindableEvent")
 Service.Changed=changed.Event
 local function reachable(player,stove)
- if typeof(stove)~="Instance" or not stove:IsA("Model") or (stove.Name~="Stove" and stove.Name~="CuttingBoard") or not stove:IsDescendantOf(workspace) or not stove:FindFirstChildWhichIsA("BasePart",true) then return false end
+ if typeof(stove)~="Instance" or not stove:IsA("Model") or (stove.Name~="Stove" and stove.Name~="CuttingBoard" and stove.Name~="Workstation") or not stove:IsDescendantOf(workspace) or not stove:FindFirstChildWhichIsA("BasePart",true) then return false end
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")

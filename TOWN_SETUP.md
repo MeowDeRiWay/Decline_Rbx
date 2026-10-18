@@ -102,3 +102,11 @@ The mayor receives the same Y/N request when building for themselves. There is n
 ## Ownership submenus
 
 Owner and Co-owners now open separate menu pages instead of inserting controls into the building action list. Each page has its own title and Back to building button. Server refreshes preserve the open page; changed permissions or demolition return to the building view. All labels remain English.
+
+## Workshop — Workbench (T1)
+
+Place the authored model at **ServerStorage/Buildings/Workbench (T1)**. Use the same Space (20x20), BuildingMenu and ownership/team attributes as Kitchen (T1). Keep **Workstation** and **Chest** as nested Models with BaseParts. Workstation supports highlight, E and the recipes panel; it currently says “No recipes available yet.” No recipes were added.
+
+Workshop T1 costs **1 TreeLog**, with the usual mayor approval (including self-approval). Chest remains public: town ownership does not restrict deposits or withdrawals.
+
+On upgrades the live Chest model and its inventory are moved to the new level's Chest position, replacing the new empty chest. Its current appearance is retained. For multiple chests give each a unique string **StorageID**, identical across levels. An upgrade without a matching destination chest is rejected before spending materials or replacing the old building. Only T1 is configured for now; add actual level models and costs when ready. Storage survives building upgrades within this server session, not server restarts or demolition.

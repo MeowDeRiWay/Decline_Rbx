@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Майстерня — 18 жовтня ввечері
+
+- ServerStorage/Buildings/Workbench (T1), BuildingID=Workbench, UI Workshop, ціна1TreeLog з дозволом мера. Space/BuildingMenu як у кухні.
+- Workstation Model працює як crafting station, без рецептів, highlight/E і empty state англійською. Chest загальнодоступний.
+- BuildingStorage.PrepareUpgrade до списання ресурсів перевіряє відповідність скринь, потім переносить самі live Chest у новий рівень замість порожніх шаблонів: зберігає ChestService storage/identity й вигляд старої скрині. Для кількох потрібні унікальні StorageID, однакові на рівнях. Немає відповідника — скасування без втрат. Знесення/рестарт не зберігають вміст. T2 ще немає.
+- Перевірки: компіляція Luau, town scenarios + chest migration scenarios, Rojo build; Studio не запускався.
+
 ## Підменю власності та випадкова забудова — 18 жовтня вдень
 
 - Користувач підтвердив кухню і попросив Owner/Co-owners як окремі підменю. Реалізовано окремі сторінки з власним заголовком і Back to building; основні будівельні дії на цих сторінках не показуються. Оновлення стану зберігає обрану сторінку, втрата прав/знесення скидає її.

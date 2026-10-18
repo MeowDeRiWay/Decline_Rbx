@@ -207,6 +207,7 @@ local function renderRecipes()
  local ids={}
  for id,recipe in pairs(Recipes) do if recipe.Station==snapshot.CookingStation then table.insert(ids,id) end end
  table.sort(ids)
+ if #ids==0 then text(equipment,"No recipes available yet.",UDim2.fromOffset(8,8),UDim2.new(1,-16,0,50)) end
  for order,id in ipairs(ids) do
   local recipe=Recipes[id]
   local available=CraftRules.Available(snapshot.Items,recipe)
