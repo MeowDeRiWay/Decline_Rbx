@@ -45,6 +45,7 @@ end
 print("PASS: category probability boundary, 1x10/1x1 furniture tiling, no oversize placement and four rotations")
 print("PASS: all four road directions, positive-Z front, offset Yard alignment, marker height, rotated plots, oversized/diagonal yard rejection, nearest road edge")
 '''
+cases += (root/'tests/fixtures/shelf_geometry.luau').read_text()
 with tempfile.TemporaryDirectory(prefix='decline-city-') as directory:
     path = Path(directory)/'city_geometry.luau'
     path.write_text(mock+'\nlocal Rules=(function()\n'+rules+'\nend)()\n'+cases)

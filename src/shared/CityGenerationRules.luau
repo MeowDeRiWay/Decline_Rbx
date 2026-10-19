@@ -1,5 +1,24 @@
 local Rules = {}
 function Rules.Category(roll,chance) return roll<chance and "Stores" or "Houses" end
+-- Measure furniture in upright axes, preserving yaw but ignoring pivot pitch/roll.
+function Rules.UprightFurnitureBox(pivot,points)
+ local right=Vector3.new(pivot.RightVector.X,0,pivot.RightVector.Z)
+ local back
+ if right.Magnitude>.001 then
+  right=right.Unit; back=Vector3.new(-right.Z,0,right.X)
+ else
+  back=Vector3.new(-pivot.LookVector.X,0,-pivot.LookVector.Z).Unit
+ end
+ local axes=CFrame.lookAt(pivot.Position,pivot.Position-back)
+ local xmin,ymin,zmin=math.huge,math.huge,math.huge
+ local xmax,ymax,zmax=-math.huge,-math.huge,-math.huge
+ for _,point in ipairs(points) do
+  local p=axes:PointToObjectSpace(point)
+  xmin=math.min(xmin,p.X); ymin=math.min(ymin,p.Y); zmin=math.min(zmin,p.Z)
+  xmax=math.max(xmax,p.X); ymax=math.max(ymax,p.Y); zmax=math.max(zmax,p.Z)
+ end
+ return axes*CFrame.new(Vector3.new((xmin+xmax)/2,(ymin+ymax)/2,(zmin+zmax)/2)),Vector3.new(xmax-xmin,ymax-ymin,zmax-zmin)
+end
 function Rules.FurnitureGrid(zoneSize,sourceSize)
  if sourceSize.X<=0 or sourceSize.Z<=0 then return 0,0 end
  return math.floor((zoneSize.X+.001)/sourceSize.X),math.floor((zoneSize.Z+.001)/sourceSize.Z)

@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Виправлення полиці за реальними rbxm — 19 жовтня
+
+- Користувач надавStore.rbxm/Shelf.rbxm. Прочитано черезrbxmkv0.9.1 в/tmp: FoodShelf(iron) фізично1.000021x2.000012x1.000064; Model.WorldPivotData нахил90°X, PrimaryPartnull. СтарийGetBoundingBoxміг рахуватиоснову1x2черезpivot, відхиляючиїївсіхзонахZ1.
+- Rules.UprightFurnitureBox рахуєкутовіточкивсіхчастинджерелаувертикальнійсистеміYup,зберігаєyaw/ігноруєpitchrollpivot; StoreFurnitureService використовуєцігабарити йзберігаєoffsetbox→pivot підчасPivotTo,тожфізичнуполицюнеперевертає. SourceмоделіНЕмодифіковано.
+- РеальніShelfзониStore:9.999933x1,3.999933x1,3.999933x1→10+4+4=18полок, floatnoiseвміщуєтьсянаявноюtolerance. FourthAutoPlacer stringStoreFurniture="StoreСheckout (wood)" міститькириличнуС(U+0421); templateкасимаєназиватисьідентично. Моделькасине надана. Yardіснує; Floor Zombie_home=true іBlocksVision=false.
+- tests/fixtures/shelf_geometry.luauміститьлише24кутитрьохреальнихPartsтаpivot,новийregression уrun_city_geometry. Cityservice/furnituremockтежоновленопідреальнегеометричневимірювання. ПопередженняfitтеперміститьточніXZджерелатазони.
+- Перевіркиactualassetgeometry regression, cityservice,compile/Rojo. Studioнебуло.
+
 ## Магазини й AutoPlacer — 19 жовтня ввечері
 
 - CityGenerationConfig.StoreChance=.05; YardPlace ForZHouse=true тепер95%Houses/5%Stores за незалежнимroll. ШаблониServerStorage/CityGeneration/Stores/<назва> зYard20x20; дляStoresнепотрібнийZHouse,не додаєтьсясам. HousesякбулиZHouse=true. Обидва орієнтуються+ZдоRoad, offset/fitзбережено.

@@ -8,6 +8,19 @@ local function box(object)
  if object:IsA("BasePart") then return object.CFrame,object.Size end
  return nil
 end
+local function furnitureBox(source)
+ local parts=source:IsA("BasePart") and {source} or source:GetDescendants()
+ local points={}
+ for _,part in ipairs(parts) do
+  if part:IsA("BasePart") then
+   for _,x in ipairs({-1,1}) do for _,y in ipairs({-1,1}) do for _,z in ipairs({-1,1}) do
+    table.insert(points,part.CFrame:PointToWorldSpace(Vector3.new(x*part.Size.X/2,y*part.Size.Y/2,z*part.Size.Z/2)))
+   end end end
+  end
+ end
+ if #points==0 then return nil end
+ return Rules.UprightFurnitureBox(source:GetPivot(),points)
+end
 local function warnOnce(marker,message)
  if warnings[marker]~=message then warnings[marker]=message; warn("[Decline Furniture] "..message) end
 end
@@ -30,10 +43,10 @@ local function fill(marker)
  local templates=root and root:FindFirstChild("StoreFurniture")
  local source=templates and templates:FindFirstChild(name)
  local sourceFrame,sourceSize
- if source then sourceFrame,sourceSize=box(source) end
+ if source and (source:IsA("Model") or source:IsA("BasePart")) then sourceFrame,sourceSize=furnitureBox(source) end
  if not sourceFrame then warnOnce(marker,"Add a furniture Model or Part at ServerStorage/CityGeneration/StoreFurniture/"..name); return end
  local columns,rows=Rules.FurnitureGrid(zoneSize,sourceSize)
- if columns==0 or rows==0 then warnOnce(marker,name.." does not fit inside "..marker:GetFullName()); return end
+ if columns==0 or rows==0 then warnOnce(marker,string.format("%s footprint %.3fx%.3f does not fit %s area %.3fx%.3f",name,sourceSize.X,sourceSize.Z,marker:GetFullName(),zoneSize.X,zoneSize.Z)); return end
  local group=Instance.new("Folder"); group.Name="GeneratedFurniture"
  local offset=sourceFrame:ToObjectSpace(source:GetPivot())
  for x=1,columns do for z=1,rows do

@@ -19,6 +19,8 @@ function CFrame.lookAt(position,target)
 end
 function cm.__index(a,k)
  if k=="UpVector" then return Vector3.new(0,1,0) end
+ if k=="RightVector" then return Vector3.new(math.cos(a.yaw),0,-math.sin(a.yaw)) end
+ if k=="LookVector" then return Vector3.new(-math.sin(a.yaw),0,-math.cos(a.yaw)) end
  return cm[k]
 end
 function cm:ToObjectSpace(other) return cf(self:PointToObjectSpace(other.Position),other.yaw-self.yaw) end
