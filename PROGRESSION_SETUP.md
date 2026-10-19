@@ -1,6 +1,6 @@
 # Character progression and Cook
 
-Press **P** to open Character. Choose **Cook**, inspect XP/bonuses and allocate attribute points with the corresponding [+] buttons. The profession can currently be selected once per server session; switching and DataStore persistence are not implemented. Progression and allocated points survive death/respawn within that server. All attributes start at zero, with no free points at level 0.
+Press **P** to open the two-column Character panel: **Attributes** on the left, **Talents** on the right. The left panel holds XP, unspent points, allocation buttons and derived stats. The right panel holds profession selection, an independently scrolling talent tree with prerequisite connections, and a selected talent details pane. The dark bronze interface scales to the viewport. Choose **Cook**, inspect XP/bonuses and allocate attribute points with the corresponding [+] buttons. The profession can currently be selected once per server session; switching and DataStore persistence are not implemented. Progression and allocated points survive death/respawn within that server. All attributes start at zero, with no free points at level 0.
 
 ## Experience
 

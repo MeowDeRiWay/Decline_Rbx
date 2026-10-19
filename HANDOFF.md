@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Двоколонкове меню P — 19 жовтня
+
+- Progression.client перероблено: ліворуч Attributes (XPbar/points/4stats із окремим+/totals), праворуч Talents (professionchoice/tree/details). Темне оформлення з бронзовими рамками в дусі DiabloII, UIScale під viewport. Праворуч власний ScrollFrame для дерева, ліві характеристики не прокручуються з ним.
+- Вузли майбутніх талантів групуються рядками за requiredLevel, зв’язки за Requires, натискання показуєDescription/level/prerequisites іLearn/Locked/Learned. Cook.Talents усе ще порожній; чесний empty state без вигаданих здібностей. Серверні правила не змінені.
+- Перевірки: компіляція клієнта, Rojo build, diff check. Візуального Studio playtest немає.
+
 ## Прогресія, характеристики та Cook — 19 жовтня
 
 - Детальна актуальна інструкція: PROGRESSION_SETUP.md. Додано ProgressionConfig/Rules/Service, Progression.server, меню P. Session-only, зберігається після смерті, без DataStore. Вибір Cook один раз, XP до вибору не губиться.
