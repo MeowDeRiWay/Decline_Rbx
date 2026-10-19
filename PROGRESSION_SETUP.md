@@ -1,6 +1,6 @@
 # Character progression and Cook
 
-Press **P** to open the two-column Character panel: **Attributes** on the left, **Talents** on the right. The left panel holds XP, unspent points, allocation buttons. Attribute bonuses, derived values and caps appear only in a tooltip while hovering the relevant attribute card. The right panel holds profession selection, an independently scrolling talent tree with prerequisite connections, and a selected talent details pane. The interface matches the Inventory palette and Gotham fonts, and scales to the viewport. Choose **Cook**, inspect XP/bonuses and allocate attribute points with the corresponding [+] buttons. The profession can currently be selected once per server session; switching and DataStore persistence are not implemented. Progression and allocated points survive death/respawn within that server. All attributes start at zero, with no free points at level 0.
+Press **P** to open the two-column Character panel: **Attributes** on the left, **Talents** on the right. The left panel holds XP, unspent points, allocation buttons. Attribute bonuses, derived values and caps appear only in a tooltip while hovering the relevant attribute card. The right panel holds profession selection, an independently scrolling talent tree with prerequisite connections, and a selected talent details pane. The interface matches the Inventory palette and Gotham fonts, and scales to the viewport. Choose **Cook**, inspect XP/bonuses and allocate attribute points with the corresponding [+] buttons. The profession can currently be selected once per server session; switching and DataStore persistence are not implemented. Progression and allocated points survive death/respawn within that server. All attributes start at zero, with **5 unspent attribute points at level 0**. Each later level still grants another five points.
 
 ## Experience
 
@@ -30,7 +30,19 @@ Luck rolls independently for each output item type with a positive quantity. A s
 
 Cook unlocks **Stove** and **CuttingBoard** and can request construction/upgrades of **Kitchen** only. Mayor approval and building ownership checks still apply. Mayor status does not bypass profession requirements. **Workstation** and its general recipes remain usable by everyone. Before choosing a profession, existing building choices remain available; after choosing Cook, Workshop construction is blocked. Existing public chests are unchanged.
 
-Shared `ProgressionConfig` contains profession station/building permissions and an empty Cook `Talents` table. The Character menu and server support talent IDs, level requirements and prerequisite IDs (`Requires`). No talent names, bonuses or tree entries have been invented: those must be specified next. Learning talents does not consume the five attribute points awarded per level. Effect implementations must be added with the actual talent design.
+## Cook talents
+
+All three talents are currently available at profession level 0, independently, since the intended level requirements have not yet been specified. Learn them in the right-hand tree; they do not consume attribute points.
+
+| Talent | Effect |
+| --- | --- |
+| Whoa, Where Did That Come From? | A full Stove batch of five raw ingredients produces six servings instead of five. Smaller batches get no extra serving. |
+| Grandma Said to Do It Something Like This... | Stove recipes take 20% less time (60 seconds becomes 48). |
+| Just Like Ramsay Did on TV. | CuttingBoard recipes take 20% less time (10 seconds becomes 8). |
+
+Talent effects are captured when a job starts. The serving bonus is added to the base output before the independent Luck roll; it does not consume extra ingredients. Cancelled work grants no extra output. Workstation recipes are unaffected. The talent config retains `Level` and `Requires` support for future unlock thresholds and branches.
+
+Attribute hover detection uses the cards' native MouseEnter/MouseLeave events, so it follows UI inset and scaling without mixing raw mouse coordinates with AbsolutePosition.
 
 Server-owned progress is mirrored in Player attributes: Profession, ProfessionLevel, ProfessionXP, AttributePoints, Strength, Endurance, Attention, Luck and derived bonuses. Character attributes mirror derived carry, speed, HP and other bonuses. Remote requests cannot grant XP, select an unknown profession or spend unavailable points.
 

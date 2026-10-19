@@ -45,7 +45,7 @@ local xp=label(left,"XP 0 / 100",UDim2.fromOffset(20,79),UDim2.fromOffset(420,20
 local xpTrack=frame(left,UDim2.fromOffset(20,104),UDim2.fromOffset(422,6),palette.Background)
 local xpFill=frame(xpTrack,UDim2.new(),UDim2.fromScale(0,1),palette.Accent)
 local points=label(left,"Unspent points: 0",UDim2.fromOffset(20,122),UDim2.fromOffset(420,26),16,palette.Accent)
-local snapshot,selectedTalent
+local snapshot,selectedTalent,hoveredAttribute
 local cards={}
 local initials={Strength="STR",Endurance="END",Attention="ATT",Luck="LCK"}
 for order,stat in ipairs(config.Stats) do
@@ -57,6 +57,8 @@ for order,stat in ipairs(config.Stats) do
  local plus=button(card,"+",UDim2.fromOffset(366,16),UDim2.fromOffset(40,36),function()
   if snapshot and snapshot.Points>0 then action:FireServer("Spend",stat) end
  end)
+ card.MouseEnter:Connect(function() hoveredAttribute=stat end)
+ card.MouseLeave:Connect(function() if hoveredAttribute==stat then hoveredAttribute=nil end end)
  cards[stat]={Frame=card,Value=value,Plus=plus}
 end
 frame(panel,UDim2.fromOffset(487,62),UDim2.fromOffset(1,640),palette.Border)
@@ -167,7 +169,7 @@ local function redraw()
  else selectedTalent=nil; detailTitle.Text="Talent details"; detailText.Text="Select a talent to inspect its requirements and effects.\nTalents unlock at the required profession level."; learn.Visible=false end
 end
 local function setOpen(open)
- panel.Visible=open; tooltip.Visible=false; player:SetAttribute("ProgressionOpen",open)
+ panel.Visible=open; tooltip.Visible=false; hoveredAttribute=nil; player:SetAttribute("ProgressionOpen",open)
  if open then
   Context:BindActionAtPriority("ProgressionBlockMovement",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+2,Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump)
   action:FireServer("Request")
@@ -182,16 +184,12 @@ Run.RenderStepped:Connect(function()
  scale.Scale=math.min(1,camera.ViewportSize.X*.95/1100,camera.ViewportSize.Y*.9/720)
  if not snapshot then return end
  local mouse=Input:GetMouseLocation()
- for stat,card in pairs(cards) do
-  local position,size=card.Frame.AbsolutePosition,card.Frame.AbsoluteSize
-  if mouse.X>=position.X and mouse.X<=position.X+size.X and mouse.Y>=position.Y and mouse.Y<=position.Y+size.Y then
-   tooltip.Text=attributeText(stat)
-   local width=math.min(340,math.max(1,camera.ViewportSize.X-16))
-   tooltip.Size=UDim2.fromOffset(width,200)
-   tooltip.Position=UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-width)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-200)))
-   tooltip.Visible=true
-   break
-  end
+ if hoveredAttribute then
+  tooltip.Text=attributeText(hoveredAttribute)
+  local width=math.min(340,math.max(1,camera.ViewportSize.X-16))
+  tooltip.Size=UDim2.fromOffset(width,200)
+  tooltip.Position=UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-width)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-200)))
+  tooltip.Visible=true
  end
 end)
 Input.InputBegan:Connect(function(input,processed)

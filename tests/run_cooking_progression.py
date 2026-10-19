@@ -6,7 +6,7 @@ import sys
 import tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/CraftingService.luau').read_text()
-for variable in ['Inventory','Items','Recipes','Rules','Amounts','Interaction','Progression']:
+for variable in ['Inventory','Items','Recipes','Rules','Amounts','Interaction','Progression','ProgressionRules']:
  service=re.sub(rf'local {variable}=require\([^\n]+\)\n','',service)
 setup='''
 local baseNew=Instance.new
@@ -16,11 +16,12 @@ function Instance.new(class)
  return object
 end
 
-local callbacks={}
-function task.delay(_,fn) table.insert(callbacks,fn) end
+local callbacks,durations={},{}
+function task.delay(duration,fn) table.insert(callbacks,fn); table.insert(durations,duration) end
+local cookState={Profession="Cook",Talents={}}
 local allowed=false
 local xp,bonuses=0,0
-local Progression={CanStation=function(_,name) return name=="Workstation" or allowed end,
+local Progression={CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
  CraftXP=function(_,name) if name=="Stove" or name=="CuttingBoard" then xp+=10 end end,
  Loot=function(_,items) bonuses+=1; return items end}
 local stock={Potato=10,CleanWater=10,TreeLog=5}
@@ -50,9 +51,24 @@ assert(not Service.Cook(a,"BoilPotatoes",1),"station remains single-job")
 callbacks[2]()
 assert(Service.Snapshot(a).CookingReady.BoiledPotato==5 and stock.Potato==5 and stock.CleanWater==5)
 assert(xp==10 and bonuses==1,"one specialty XP award and loot roll at successful completion")
-print("PASS: profession-gated cooking, general workstation, cancellation refunds, no cancellation rewards, batch five and specialty XP")
+cookState.Talents={SurpriseServing=true,GrandmasMethod=true,RamsayMethod=true}
+assert(Service.Cook(a,"BoilPotatoes",5))
+assert(durations[3]==48,"20 percent less time for stove")
+callbacks[3]()
+assert(Service.Snapshot(a).CookingReady.BoiledPotato==11,"second full batch adds six")
+stock.Potato=1; stock.CleanWater=1
+assert(Service.Cook(a,"BoilPotatoes",1)); callbacks[4]()
+assert(Service.Snapshot(a).CookingReady.BoiledPotato==12,"partial batch has no extra serving")
+local board=make("Model","CuttingBoard",workspace); make("Part","Part",board)
+stock.Sausage=1
+assert(Service.Open(a,board) and Service.Cook(a,"SliceSausage",1))
+assert(durations[5]==8,"20 percent less time for cutting board")
+callbacks[5]()
+assert(Service.Snapshot(a).CookingReady.SausageSlice==5,"stove serving talent must not affect board")
+assert(xp==40 and bonuses==4)
+print("PASS: cook talents, correct station timing, full/partial batches, profession-gated cooking, general workstation, cancellation refunds, no cancellation rewards, batch five and specialty XP")
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text(),setup]
+parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]
 for variable,file in [('Items','ItemConfig'),('Recipes','CraftConfig'),('Rules','CraftRules'),('Amounts','InventoryRules')]:
  parts.append(f'local {variable}=(function()\n'+(root/f'src/shared/{file}.luau').read_text()+'\nend)()')
 parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])

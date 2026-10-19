@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Стартові5очок і таланти Cook — 19 жовтня
+
+- ProgressionConfig.StartingPoints=5; Rules.New дає5всім гравцям наLevel0, +5за кожен рівень лишається. Це не одноразовий admin grant, а стартовий баланс.
+- Три Cookталанти, поки всіLevel0 і безRequires (рівні користувач не задав, не вигадувати): SurpriseServing — Whoa, Where Did That Come From?; GrandmasMethod — Grandma Said to Do It Something Like This...; RamsayMethod — Just Like Ramsay Did on TV.
+- SurpriseServing: Stove batchcount==5 додає1порцію recipe.OutputCount до готового output. Часткові партії/дошка/верстак не зачіпаються. GrandmasMethod duration*.8 дляStove; RamsayMethod duration*.8 дляCuttingBoard. Сервер бере effectssnapshot на старті job, після завершення застосовує bonusserving потімluck. Скасування не дає нагород.
+- Наведенняатрибутів виправлено за скріном: замість порівняння rawmouse таAbsolutePosition використовує card.MouseEnter/MouseLeave, що враховують inset/UIScale. Tooltip усеще білякурсора й clampedviewport.
+- Перевірки progression rules/service/cooking workflows (5→6, 60→48,10→8, partial/noextra, luckstack,5початковихочок), compile/Rojo. ВізуальногоStudioplaytest немає.
+
 ## Стиль інвентаря та hover атрибутів — 19 жовтня
 
 - Користувач уточнив: бонуси/обмеження атрибутів видимі лише при наведенні, палітра має відповідати Inventory. Progression.client тепер використовує фон22/28/33, cards30/38/45, buttons42/53/62, текст235/240/244, divider63/73/82 та Gotham/GothamMedium; бронзові рамки/Garamond прибрані.

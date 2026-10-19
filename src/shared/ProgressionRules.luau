@@ -1,6 +1,6 @@
 local Rules = {}
-function Rules.New()
- return {Level=0, XP=0, Points=0, Profession="", Stats={Strength=0,Endurance=0,Attention=0,Luck=0}, Talents={}}
+function Rules.New(startingPoints)
+ return {Level=0, XP=0, Points=startingPoints or 5, Profession="", Stats={Strength=0,Endurance=0,Attention=0,Luck=0}, Talents={}}
 end
 function Rules.AddXP(state,amount)
  if typeof(amount)~="number" or amount~=amount or amount<=0 or amount==math.huge or amount~=math.floor(amount) then return false end
@@ -34,6 +34,23 @@ function Rules.Learn(state,id,definition)
  for _,parent in ipairs(definition.Requires or {}) do if not state.Talents[parent] then return false end end
  state.Talents[id]=true
  return true
+end
+-- Freeze learned recipe effects when work starts, independently from luck.
+function Rules.CraftEffects(state,station,count)
+ local effects={DurationMultiplier=1,BonusServing=false}
+ if state.Profession~="Cook" then return effects end
+ if station=="Stove" then
+  if state.Talents.GrandmasMethod then effects.DurationMultiplier=.8 end
+  effects.BonusServing=state.Talents.SurpriseServing==true and count==5
+ elseif station=="CuttingBoard" and state.Talents.RamsayMethod then effects.DurationMultiplier=.8 end
+ return effects
+end
+function Rules.CraftOutputs(outputs,recipe,effects)
+ local result=table.clone(outputs)
+ if effects.BonusServing and recipe.Output and result[recipe.Output] then
+  result[recipe.Output]+=recipe.OutputCount or 1
+ end
+ return result
 end
 -- Forward ground distance to the perspective frustum edge, in camera-local coordinates.
 function Rules.ViewScale(origin,direction,tangent,aspect,bonus)

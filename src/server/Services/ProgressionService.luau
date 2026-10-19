@@ -7,7 +7,7 @@ local states={}
 local remote
 local random=Random.new()
 local function stateFor(player)
- if not states[player] then states[player]=Rules.New() end
+ if not states[player] then states[player]=Rules.New(Config.StartingPoints) end
  return states[player]
 end
 function Service.Sync(player)
@@ -45,6 +45,9 @@ function Service.CanBuild(player,kind)
  local profession=Config.Professions[stateFor(player).Profession]
  -- Before selecting a profession existing buildings remain available.
  return stateFor(player).Profession=="" or (profession and profession.Buildings[kind]==true) or false
+end
+function Service.CraftEffects(player,station,count)
+ return Rules.CraftEffects(stateFor(player),station,count)
 end
 function Service.CraftXP(player,station)
  local profession=Config.Professions[stateFor(player).Profession]

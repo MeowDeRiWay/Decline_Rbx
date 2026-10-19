@@ -4,6 +4,7 @@ local Inventory=require(script.Parent.InventoryService)
 local Items=require(ReplicatedStorage.Shared.ItemConfig)
 local Recipes=require(ReplicatedStorage.Shared.CraftConfig)
 local Rules=require(ReplicatedStorage.Shared.CraftRules)
+local ProgressionRules=require(ReplicatedStorage.Shared.ProgressionRules)
 local Amounts=require(ReplicatedStorage.Shared.InventoryRules)
 local Interaction=require(ReplicatedStorage.Shared.Interaction)
 local Progression=require(script.Parent.ProgressionService)
@@ -83,7 +84,8 @@ function Service.Cook(player,id,requested)
  if not count then return false end
  local plan=Rules.Plan(own.Items,recipe,count)
  if not plan then return false end
- local duration=recipe.Duration/speed
+ local effects=Progression.CraftEffects(player,stove.Name,count)
+ local duration=recipe.Duration/speed*effects.DurationMultiplier
  local character=player.Character
  local root=character:FindFirstChild("HumanoidRootPart")
  local job={Recipe=id,Count=count,EndsAt=workspace:GetServerTimeNow()+duration,Player=player,Character=character,Root=root,WasAnchored=root.Anchored,RequiresPresence=recipe.RequiresPresence==true,Ingredients=plan.Ingredients}
@@ -98,7 +100,7 @@ function Service.Cook(player,id,requested)
   if not stove:IsDescendantOf(workspace) or state.Job~=job then return end
   if job.RequiresPresence and (sessions[player]~=stove or player.Character~=character or not reachable(player,stove)) then cancel(stove,job); return end
   unlock(job)
-  local outputs=Progression.Loot(player,plan.Outputs)
+  local outputs=Progression.Loot(player,ProgressionRules.CraftOutputs(plan.Outputs,recipe,effects))
   for output,amount in pairs(outputs) do state.Ready[output]=(state.Ready[output] or 0)+amount end
   state.Job=nil
   Progression.CraftXP(player,stove.Name)
