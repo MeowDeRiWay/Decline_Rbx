@@ -4,6 +4,7 @@ local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Damage = require(script.Parent.Services.DamageService)
 local Inventory = require(script.Parent.Services.InventoryService)
 local Resources = require(script.Parent.Services.ResourceService)
+local Items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local attack = Instance.new("RemoteEvent")
 attack.Name = "WeaponAttack"
 attack.Parent = ReplicatedStorage
@@ -20,10 +21,14 @@ attack.OnServerEvent:Connect(function(player)
  if now < (ready[player] or 0) then return end
  local weapon = Inventory.GetWeapon(player)
  if not weapon then return end
- local cooldown = 60 / weapon.AttacksPerMinute
+ local definition=Items[character:GetAttribute("HandsItem")]
+ local knifeMultiplier=definition and definition.CraftTool=="Knife" and (player:GetAttribute("KnifeMultiplier") or 1) or 1
+ local motionWeapon=weapon
+ if knifeMultiplier~=1 then motionWeapon=table.clone(weapon); motionWeapon.AttacksPerMinute*=knifeMultiplier end
+ local cooldown = 60 / motionWeapon.AttacksPerMinute
  ready[player] = now + cooldown
- Motion.Play(motor,weapon)
- task.delay(Motion.HitDelay(weapon),function()
+ Motion.Play(motor,motionWeapon)
+ task.delay(Motion.HitDelay(motionWeapon),function()
  if player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or motor.Parent ~= held or held.Parent ~= character or Inventory.GetWeapon(player) ~= weapon then return end
  local params = OverlapParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
@@ -76,7 +81,8 @@ attack.OnServerEvent:Connect(function(player)
     return
    end
    nearest.Parent:SetAttribute("LastDamagerID",player.UserId)
-   local dealt = Damage.Apply(nearest,weapon.Damage+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position)
+   nearest.Parent:SetAttribute("LastHitItem",character:GetAttribute("HandsItem"))
+   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position,"Melee")
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
  end

@@ -15,7 +15,7 @@ local b=Rules.Bonuses(state.Stats)
 assert(b.CarryLimitKg==21 and b.MeleeBonus==1 and b.MaxHealth==100 and b.Accuracy==.25 and b.LuckChance==0)
 state.Stats.Endurance=2; state.Stats.Attention=100; state.Stats.Luck=100
 b=Rules.Bonuses(state.Stats)
-assert(b.MaxHealth==110 and b.RunBonus==.4 and b.Accuracy==.9 and b.ViewBonus==500 and b.LuckChance==.5)
+assert(b.MaxHealth==110 and b.RunBonus==.4 and b.Accuracy==.9 and b.ViewBonus==200 and b.LuckChance==.5)
 local items={Stone=2,Scrap=4}
 state.Stats.Luck=3
 local lucky=Rules.BonusLoot(items,state.Stats,function() return 0 end)
@@ -25,20 +25,19 @@ local talent={Level=11,Requires={"Base"},Cost=1}
 assert(not Rules.Learn(state,"Next",talent))
 state.Level=11; assert(not Rules.Learn(state,"Next",talent))
 state.Talents.Base=true; assert(Rules.Learn(state,"Next",talent))
+state.TalentPoints=0
 assert(not Rules.Learn(state,"Next",talent))
 print("PASS: 0–10 XP curve, points, invalid allocations, bonuses/caps, independent bonus loot and talent level prerequisites")
 
-for _,direction in ipairs({{X=1,Y=0,Z=0},{X=0,Y=.98,Z=-.16},{X=0,Y=-.98,Z=.16}}) do
- local origin={X=0,Y=0,Z=-30}
- local scale,extent=Rules.ViewScale(origin,direction,math.tan(math.rad(20)),1.77,15)
- local _,expanded=Rules.ViewScale({X=0,Y=0,Z=-30*scale},direction,math.tan(math.rad(20)),1.77,0)
- assert(math.abs(expanded-extent-15)<1e-6,"three Attention adds exactly 15 studs ahead regardless of facing")
-end
+local near,far=Rules.ZoomBounds(0,30,40)
+assert(near==18 and far==30)
+local _,expanded=Rules.ZoomBounds(20,30,40)
+assert(math.abs((expanded-far)*math.tan(math.rad(20))-20)<1e-6)
 local Movement=require("../src/shared/MovementRules")
 local Game=require("../src/shared/GameConfig")
 assert(Movement.LoadMultiplier(21,Game,21)==1)
 assert(math.abs(Movement.LoadMultiplier(22,Game,21)-.95)<1e-6)
-print("PASS: forward camera extent and strength-adjusted carrying threshold")
+print("PASS: stable zoom limits and strength-adjusted carrying threshold")
 
 local cook=Rules.New(); cook.Profession="Cook"
 cook.Talents={SurpriseServing=true,GrandmasMethod=true,RamsayMethod=true}
@@ -49,11 +48,31 @@ local outputs=Rules.CraftOutputs({BoiledPotato=5},recipe,effects)
 assert(outputs.BoiledPotato==6)
 assert(Rules.CraftOutputs({BoiledPotato=4},recipe,Rules.CraftEffects(cook,"Stove",4)).BoiledPotato==4)
 assert(Rules.CraftEffects(cook,"CuttingBoard",5).DurationMultiplier==.8)
-assert(not Rules.CraftEffects(cook,"CuttingBoard",5).BonusServing)
+assert(Rules.CraftEffects(cook,"CuttingBoard",5).BonusServing==0)
 assert(Rules.CraftEffects(cook,"Workstation",5).DurationMultiplier==1)
 cook.Stats.Luck=3
 assert(Rules.BonusLoot(outputs,cook.Stats,function() return 0 end).BoiledPotato==8,"luck and bonus serving stack")
 cook.Profession=""
-assert(not Rules.CraftEffects(cook,"Stove",5).BonusServing)
+assert(Rules.CraftEffects(cook,"Stove",5).BonusServing==0)
 assert(Rules.CraftEffects(cook,"Stove",5).DurationMultiplier==1)
 print("PASS: 5 initial points, full-batch serving, both cooking duration effects and independent luck stacking")
+
+local ranked=Rules.New(); ranked.Profession="Cook"
+assert(ranked.TalentPoints==0 and not Rules.Learn(ranked,"KnifeMaster",{Level=1}))
+Rules.AddXP(ranked,5500)
+assert(ranked.Level==10 and ranked.TalentPoints==10)
+for i=1,10 do assert(Rules.Learn(ranked,"KnifeMaster",{Level=1})); assert(Rules.Rank(ranked,"KnifeMaster")==i) end
+assert(ranked.TalentPoints==0 and not Rules.Learn(ranked,"KnifeMaster",{Level=1}))
+ranked.TalentPoints=1; assert(not Rules.Learn(ranked,"KnifeMaster",{Level=1}),"max ten ranks")
+local combat=Rules.CombatBonuses(ranked)
+assert(combat.KnifeMultiplier==1.5 and combat.MeleeAbsorption==0)
+ranked.Talents.KevlarApron=10
+assert(Rules.CombatBonuses(ranked).MeleeAbsorption==10)
+ranked.Profession="Worker"; ranked.Talents={Redhead=10,GoldenHands=10}
+assert(Rules.CombatBonuses(ranked).KnifeMultiplier==1 and Rules.CombatBonuses(ranked).MeleeAbsorption==0)
+assert(Rules.ShovelLoot(ranked,true,function() return .69 end)==1)
+assert(Rules.ShovelLoot(ranked,true,function() return .71 end)==0)
+assert(Rules.ShovelLoot(ranked,false,function() return 0 end)==0)
+assert(math.abs(Rules.CraftEffects(ranked,"Workstation",1).DurationMultiplier-.6)<1e-6)
+assert(Rules.CraftEffects(ranked,"Stove",5).DurationMultiplier==1)
+print("PASS: one talent point per level, paid ranks 1–10, knife scaling, absorption, fixed-quantity shovel drops and Worker crafting speed")

@@ -341,7 +341,7 @@ local function prepare(model)
      if not Sector.InSector(facing.X,facing.Z,offset.X,offset.Z,160) then return end
      local hit=Sight.Cast(head.Position,victimRoot.Position-head.Position,model)
      if hit and not hit.Instance:IsDescendantOf(victimRoot.Parent) then return end
-     if Damage.Apply(victim,weapon.Damage,weapon.DamageType,root.Position)>0 then
+     if Damage.Apply(victim,weapon.Damage,weapon.DamageType,root.Position,"Melee")>0 then
       model:SetAttribute("WeaponCondition",math.max(0,(model:GetAttribute("WeaponCondition") or 0)-1))
      end
     end)

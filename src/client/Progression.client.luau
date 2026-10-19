@@ -5,6 +5,7 @@ local Context=game:GetService("ContextActionService")
 local Run=game:GetService("RunService")
 local player=Players.LocalPlayer
 local config=require(ReplicatedStorage.Shared.ProgressionConfig)
+local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
 local remotes=ReplicatedStorage:WaitForChild("ProgressionRemotes")
 local action=remotes:WaitForChild("Action")
 local palette={Background=Color3.fromRGB(22,28,33),Panel=Color3.fromRGB(22,28,33),Card=Color3.fromRGB(30,38,45),Button=Color3.fromRGB(42,53,62),Accent=Color3.fromRGB(235,240,244),Border=Color3.fromRGB(63,73,82),Text=Color3.fromRGB(235,240,244),Muted=Color3.fromRGB(160,174,184),Green=Color3.fromRGB(90,220,145)}
@@ -74,13 +75,15 @@ local function attributeText(stat)
  elseif stat=="Endurance" then
   return header..string.format("Per point: +0.2 running speed\n+5 maximum HP\n\nRun speed bonus: +%g\nMaximum health: %g HP\nWalking speed is unchanged · No limit",bonus.RunBonus,bonus.MaxHealth)
  elseif stat=="Attention" then
-  return header..string.format("Per point: +2%% accuracy\n+5 studs forward view\n\nAccuracy: %.0f%% · Maximum: 90%%\nForward view bonus: +%g studs\nFailed living-target attacks show Miss",bonus.Accuracy*100,bonus.ViewBonus)
+  return header..string.format("Per point: +2%% accuracy\n+2 studs forward view\n\nAccuracy: %.0f%% · Maximum: 90%%\nForward view bonus: +%g studs\nFailed living-target attacks show Miss",bonus.Accuracy*100,bonus.ViewBonus)
  end
  return header..string.format("Per point: +3%% bonus loot chance\n+1 bonus item per 3 invested points\n\nBonus chance: %.0f%% · Maximum: 50%%\nExtra items on success: %d\nApplies to newly generated loot",bonus.LuckChance*100,bonus.LuckAmount)
 end
 local profession=label(right,"No profession selected",UDim2.fromOffset(20,48),UDim2.fromOffset(340,28),18)
-local permissions=label(right,"",UDim2.fromOffset(20,82),UDim2.fromOffset(548,40),12,palette.Muted)
+local permissions=label(right,"",UDim2.fromOffset(20,82),UDim2.fromOffset(340,30),12,palette.Muted)
 local choose=button(right,"Choose Cook",UDim2.fromOffset(378,46),UDim2.fromOffset(190,32),function() action:FireServer("Choose","Cook") end)
+local chooseWorker=button(right,"Choose Worker",UDim2.fromOffset(378,84),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Worker") end)
+local talentPoints=label(right,"Talent points: 0",UDim2.fromOffset(20,114),UDim2.fromOffset(340,18),13)
 local tree=Instance.new("ScrollingFrame")
 tree.Position=UDim2.fromOffset(20,134); tree.Size=UDim2.fromOffset(548,330); tree.BackgroundColor3=palette.Background
  tree.BorderSizePixel=0; tree.ScrollBarThickness=4; tree.ScrollBarImageColor3=palette.Accent; tree.CanvasSize=UDim2.new(); tree.Parent=right
@@ -95,20 +98,16 @@ local learn=button(detail,"Learn",UDim2.fromOffset(386,82),UDim2.fromOffset(148,
  end
 end)
 learn.Visible=false
-local function canLearn(id,definition)
- if snapshot.Talents[id] or snapshot.Level<(definition.Level or 0) then return false end
- for _,parent in ipairs(definition.Requires or {}) do if not snapshot.Talents[parent] then return false end end
- return true
-end
+local function canLearn(id,definition) return Rules.CanLearn(snapshot,id,definition) end
 local function talentDetails(id,definition)
- detailTitle.Text=definition.Name or id
+ detailTitle.Text=(definition.Name or id).." · "..Rules.Rank(snapshot,id).." / 10"
  local prerequisiteNames={}
  local current=config.Professions[snapshot.Profession]
  for _,parent in ipairs(definition.Requires or {}) do table.insert(prerequisiteNames,current.Talents[parent] and (current.Talents[parent].Name or parent) or parent) end
  detailText.Text=(definition.Description or "").."\nRequires profession level "..(definition.Level or 0)..(#prerequisiteNames>0 and "\nRequires: "..table.concat(prerequisiteNames,", ") or "")
  learn.Visible=true
  local available=canLearn(id,definition)
- learn.Text=snapshot.Talents[id] and "Learned" or available and "Learn" or "Locked"
+ learn.Text=Rules.Rank(snapshot,id)>=10 and "Max rank" or available and "Upgrade (1 point)" or "Locked"
  learn.Active=available; learn.AutoButtonColor=available; learn.TextColor3=available and palette.Accent or palette.Muted
 end
 local function redraw()
@@ -124,8 +123,15 @@ local function redraw()
   card.Plus.TextColor3=snapshot.Points>0 and palette.Accent or palette.Muted
  end
  profession.Text=definition and definition.Name.." · Level "..snapshot.Level or "Choose a profession"
- choose.Visible=definition==nil
- permissions.Text=definition and "Cook · Stove / Cutting Board · Construction: Kitchen" or "Cook unlocks cooking stations and kitchen construction. Selection lasts for this server session."
+ choose.Visible=definition==nil; chooseWorker.Visible=definition==nil
+ talentPoints.Text="Talent points: "..snapshot.TalentPoints
+ if definition then
+  local stations,buildings={},{}
+  for station in pairs(definition.Stations) do table.insert(stations,station) end
+  for building in pairs(definition.Buildings) do table.insert(buildings,building=="Workbench" and "Workshop" or building) end
+  table.sort(stations); table.sort(buildings)
+  permissions.Text=table.concat(stations," / ").." · Build: "..table.concat(buildings,", ")
+ else permissions.Text="Select a profession for this server session." end
  for _,child in ipairs(tree:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
  local talents=definition and definition.Talents or {}
  local ids={}; for id in pairs(talents) do table.insert(ids,id) end
@@ -136,14 +142,14 @@ local function redraw()
   local required=talents[id].Level or 0
   if required~=level then level=required; row=nextRow; column=0 end
   if column>=3 then row+=1; column=0 end
-  positions[id]=Vector2.new(18+column*174,20+row*112)
+  positions[id]=Vector2.new(18+column*174,20+row*128)
   nextRow=math.max(nextRow,row+1); column+=1
  end
  for _,id in ipairs(ids) do
   for _,parent in ipairs(talents[id].Requires or {}) do
    if positions[parent] then
-    local a=positions[parent]+Vector2.new(79,38)
-    local b=positions[id]+Vector2.new(79,38)
+    local a=positions[parent]+Vector2.new(79,48)
+    local b=positions[id]+Vector2.new(79,48)
     local delta=b-a
     local connector=frame(tree,UDim2.fromOffset((a.X+b.X)/2,(a.Y+b.Y)/2),UDim2.fromOffset(delta.Magnitude,2),palette.Border)
     connector.AnchorPoint=Vector2.new(.5,.5); connector.Rotation=math.deg(math.atan2(delta.Y,delta.X)); connector.ZIndex=1
@@ -152,15 +158,15 @@ local function redraw()
  end
  for _,id in ipairs(ids) do
   local talent=talents[id]
-  local node=button(tree,(talent.Name or id).."\nLevel "..(talent.Level or 0),UDim2.fromOffset(positions[id].X,positions[id].Y),UDim2.fromOffset(158,76),function()
+  local node=button(tree,(talent.Name or id).."\nRank "..Rules.Rank(snapshot,id).." / 10 · Requires level "..(talent.Level or 1),UDim2.fromOffset(positions[id].X,positions[id].Y),UDim2.fromOffset(158,96),function()
    selectedTalent=id; talentDetails(id,talent)
   end)
   node.TextWrapped=true; node.TextSize=13; node.ZIndex=2
-  node.TextColor3=snapshot.Talents[id] and palette.Green or canLearn(id,talent) and palette.Accent or palette.Muted
+  node.TextColor3=Rules.Rank(snapshot,id)>0 and palette.Green or canLearn(id,talent) and palette.Accent or palette.Muted
  end
- tree.CanvasSize=UDim2.fromOffset(0,math.max(330,nextRow*112+20))
+ tree.CanvasSize=UDim2.fromOffset(0,math.max(330,nextRow*128+20))
  if #ids==0 then
-  local emptyTitle=label(tree,definition and "COOK" or "NO PROFESSION",UDim2.fromOffset(30,78),UDim2.fromOffset(480,44),28,palette.Accent)
+  local emptyTitle=label(tree,definition and string.upper(definition.Name) or "NO PROFESSION",UDim2.fromOffset(30,78),UDim2.fromOffset(480,44),28,palette.Accent)
   emptyTitle.Font=Enum.Font.GothamMedium; emptyTitle.TextXAlignment=Enum.TextXAlignment.Center
   local emptyText=label(tree,definition and "No talents available yet.\nYour profession tree will appear here." or "Choose a profession to view its talent tree.",UDim2.fromOffset(60,140),UDim2.fromOffset(420,76),15,palette.Muted)
   emptyText.TextXAlignment=Enum.TextXAlignment.Center

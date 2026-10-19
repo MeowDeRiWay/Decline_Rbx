@@ -5,8 +5,9 @@ import tempfile
 import sys
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/ProgressionService.luau').read_text()
-for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig')]:
+for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig'),('ItemsConfig','ItemConfig')]:
  service=service.replace(f'local {name}=require(ReplicatedStorage.Shared.{module})','')
+service=service.replace('local Items=require(ReplicatedStorage.Shared.ItemConfig).Items','local Items=ItemsConfig.Items')
 cases='''
 Service.Start()
 a:LoadCharacterAsync()
@@ -25,6 +26,7 @@ Service.CraftXP(a,"Stove"); assert(Service.Snapshot(a).XP==10)
 call("Choose","Other"); assert(Service.Snapshot(a).Profession=="Cook")
 call("Spend","Forged"); assert(Service.Snapshot(a).Points==8)
 call("Talent","Forged"); assert(Service.Snapshot(a).Points==8)
+Service.Award(a,500)
 local points=Service.Snapshot(a).Points
 call("Talent","SurpriseServing"); call("Talent","GrandmasMethod"); call("Talent","RamsayMethod")
 assert(Service.Snapshot(a).Points==points,"talents do not spend attribute points")
@@ -32,6 +34,16 @@ assert(Service.CraftEffects(a,"Stove",5).BonusServing and Service.CraftEffects(a
 assert(Service.CraftEffects(a,"CuttingBoard",1).DurationMultiplier==.8)
 local zombie=make("Model","Zombie",workspace,{LastDamagerID=a.UserId})
 Service.ZombieDied(zombie,{Scrap=1}); assert(Service.Snapshot(a).XP==20)
+local worker=ReplicatedStorage.ProgressionRemotes.Action
+clock+=.2; worker.OnServerEvent:Fire(b,"Choose","Worker")
+assert(Service.CanBuild(b,"Workbench") and not Service.CanBuild(b,"Kitchen"))
+Service.Award(b,100)
+clock+=.2; worker.OnServerEvent:Fire(b,"Talent","Redhead")
+local killed=make("Model","Zombie",workspace,{LastDamagerID=b.UserId,LastHitItem="StoneShowel"})
+assert(Service.ZombieDied(killed,{}).Cloth==1)
+killed:SetAttribute("LastHitItem","StoneAxe")
+assert(Service.ZombieDied(killed,{}).Cloth==nil)
+Service.CraftXP(b,"Workstation"); assert(Service.Snapshot(b).XP==30)
 local old=a.Character
 local fresh=make("Model","Character",workspace); local hp=make("Humanoid","Humanoid",fresh)
 a.Character=fresh; a.CharacterAdded:Fire(fresh)
@@ -41,7 +53,7 @@ assert(Service.Snapshot(a).Level==0,"state is session only")
 print("PASS: server XP, stat allocation, Cook station/build permissions, specialty XP, invalid commands and respawn restoration")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Random={new=function() return {NextNumber=function() return 0 end} end}']
-for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig')]:
+for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig'),('ItemsConfig','ItemConfig')]:
  parts.append('local '+name+'=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
 parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])
 with tempfile.TemporaryDirectory(prefix='decline-progression-') as directory:

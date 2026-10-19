@@ -1,51 +1,55 @@
-# Character progression and Cook
+# Progression, professions and talents
 
-Press **P** to open the two-column Character panel: **Attributes** on the left, **Talents** on the right. The left panel holds XP, unspent points, allocation buttons. Attribute bonuses, derived values and caps appear only in a tooltip while hovering the relevant attribute card. The right panel holds profession selection, an independently scrolling talent tree with prerequisite connections, and a selected talent details pane. The interface matches the Inventory palette and Gotham fonts, and scales to the viewport. Choose **Cook**, inspect XP/bonuses and allocate attribute points with the corresponding [+] buttons. The profession can currently be selected once per server session; switching and DataStore persistence are not implemented. Progression and allocated points survive death/respawn within that server. All attributes start at zero, with **5 unspent attribute points at level 0**. Each later level still grants another five points.
+Press **P** for the two-column Character menu: attributes on the left, profession/talent tree on the right. The appearance matches Inventory. Attribute effects and caps appear only while hovering the relevant card. Choose Cook or Worker; selection lasts for the server session. Progression survives respawn, but has no DataStore persistence yet.
 
-## Experience
+## Levels and points
 
-- Destroy a resource node: 10 XP once, after a successful loot drop. No XP per individual hit.
-- Kill a zombie: 10 XP to the last player who successfully damaged it. Existing zombie death handling prevents duplicate awards. No XP from training targets or player kills.
-- Complete Cook work at Stove or CuttingBoard: 10 XP per crafting operation, regardless of batch size. This is an initial balance choice; general Workstation work gives no specialty XP for Cook. Cancelled work gives none.
-- Level 0 → 1 requires 100 XP; the next level requires 200, then 300, etc. Level 9 → 10 requires 1000 XP. XP rolls over and every level grants 5 unspent attribute points.
+Start at level 0 with zero invested attributes, 5 unspent attribute points, and **0 talent points**. Level 0→1 requires 100 XP; each subsequent transition requires another 100 (9→10 costs 1000). Each level gives **5 attribute points and 1 talent point**. One talent rank costs one talent point, up to **rank 10**. All currently configured talents require profession level 1 and have no prerequisite branches. Server checks points, profession, minimum level and rank cap.
 
-## Attributes
+Resource destruction grants 10 XP after a successful loot spawn; zombie kills grant 10 XP to the last successful attacker. Successful specialty crafting gives 10 XP per operation: Cook at Stove/CuttingBoard, Worker at Workstation. Cancelled work gives none. Existing build ownership and mayor approvals still apply.
 
-| Attribute | Per point | Cap |
+## Attributes and camera
+
+| Attribute | Per point | Limit |
 | --- | --- | --- |
-| Strength | +1 kg before overload penalties; +1 melee damage to living targets | None |
-| Endurance | +0.2 studs/s while running only; +5 max HP | None |
-| Attention | +2 percentage points living-target accuracy; +5 studs visible ahead | Accuracy 90%; view uncapped |
-| Luck | +3 percentage points chance for extra newly generated loot | Chance 50% |
+| Strength | +1 kg carry capacity, +1 living-target melee damage | None |
+| Endurance | +0.2 running speed only, +5 maximum HP | None |
+| Attention | +2 percentage points accuracy, +2 studs of additional view allowance | Accuracy 90% |
+| Luck | +3 percentage points bonus loot chance | Chance 50% |
 
-Base carry capacity is 20 kg, max HP 100, accuracy 25%, luck 0%. Walking and running base speeds are unchanged. Endurance increases max HP without healing current HP when points are assigned. First spawn/hospital spawns use the effective max HP; later TownSpawn respawns remain at 2 HP.
+Base carry capacity is 20 kg, HP 100, accuracy 25%, Luck 0%. Endurance changes max HP without healing. First spawn/hospital starts at the effective max HP; ordinary respawns remain at 2 HP. Living-target accuracy failures show Miss and spend one weapon durability use. Resource hits retain tool-tier damage and do not roll accuracy.
 
-Living-target melee attacks roll accuracy after reach, target and obstruction checks. Failure shows **Miss**, inflicts no damage and costs one durability use. Resources do not roll accuracy and retain their tool-tier damage (5/10/15); Strength affects living-target melee damage only.
+**Mouse wheel controls zoom.** It changes target camera height by 2 per notch, smoothed toward the target. Camera orientation/height no longer changes when the character turns toward the mouse. Nearest height is 18; the base far height is 30. Attention expands the far limit by `ViewBonus / tan(verticalFOV/2)`, where ViewBonus is now 2 per invested point. This is a stable zoom allowance, not an automatic directional camera adjustment. Zoom is ignored while menus or a text field consume input.
 
-Attention scales camera distance so the viewport ground edge in the character's horizontal facing direction extends by 5 studs per point. The original field of view, sector and obstruction checks remain in effect; the camera also reveals more surrounding ground as it zooms out. This is geometrically checked with multiple facing directions; actual Studio presentation still needs a playtest.
+Luck rolls independently for each positive output item type and adds `1 + floor(Luck / 3)` on success. It applies to newly harvested loot, zombie drops and completed crafting; pickup, transfer, chest opening and collecting finished crafts do not reroll existing items.
 
-Luck rolls independently for each output item type with a positive quantity. A success adds **1 + floor(Luck / 3)** items: 1–2 invested points add one, 3–5 add two, and so on. It applies to harvested resource drops, zombie loot credited to the killer, and completed crafting output. Opening chests/corpses, collecting ready crafts, dropping/picking up or transferring existing items do not reroll luck. Empty loot does not invent new item types.
+## Cook
 
-## Profession permissions
+Cook can build/upgrade Kitchen and use Stove/CuttingBoard. General Workstation remains usable by everyone. Each talent has 10 ranks:
 
-Cook unlocks **Stove** and **CuttingBoard** and can request construction/upgrades of **Kitchen** only. Mayor approval and building ownership checks still apply. Mayor status does not bypass profession requirements. **Workstation** and its general recipes remain usable by everyone. Before choosing a profession, existing building choices remain available; after choosing Cook, Workshop construction is blocked. Existing public chests are unchanged.
+| ID | English name | Effect per rank |
+| --- | --- | --- |
+| KnifeMaster | Knife Master | +5% knife attack speed and +5% base knife damage; rank 10 is ×1.5. Strength is added afterward. |
+| KevlarApron | Kevlar Apron | Absorb 1 incoming melee damage, clamped at zero damage. Passive, currently independent of clothing. |
+| SurpriseServing | Whoa, Where Did That Come From? | A full Stove batch of 5 gains 1 extra serving per rank. |
+| GrandmasMethod | Grandma Said to Do It Something Like This... | Multiply remaining Stove duration by 0.8 per rank. Rank 2 is ×0.64; duration stays positive. |
+| RamsayMethod | Just Like Ramsay Did on TV. | Multiply remaining CuttingBoard duration by 0.8 per rank. |
 
-## Cook talents
+Crafting effects are captured at job start, and the serving bonus is applied before the independent Luck roll. Knife cooldown and attack animation use the same speed multiplier on client/server; server damage applies the damage multiplier. Melee absorption applies only to attacks explicitly classified Melee, not environmental or future projectile damage.
 
-All three talents are currently available at profession level 0, independently, since the intended level requirements have not yet been specified. Learn them in the right-hand tree; they do not consume attribute points.
+**Apron** is a registered item in slot **Additional**, weight 0.5 kg. Put its future art model at `ServerStorage/Items/Apron`. Wearing visuals and offsets will be fitted later; the item does not add its own armor value or require a new recipe yet.
 
-| Talent | Effect |
-| --- | --- |
-| Whoa, Where Did That Come From? | A full Stove batch of five raw ingredients produces six servings instead of five. Smaller batches get no extra serving. |
-| Grandma Said to Do It Something Like This... | Stove recipes take 20% less time (60 seconds becomes 48). |
-| Just Like Ramsay Did on TV. | CuttingBoard recipes take 20% less time (10 seconds becomes 8). |
+## Worker
 
-Talent effects are captured when a job starts. The serving bonus is added to the base output before the independent Luck roll; it does not consume extra ingredients. Cancelled work grants no extra output. Workstation recipes are unaffected. The talent config retains `Level` and `Requires` support for future unlock thresholds and branches.
+Worker can build/upgrade Workshop (`BuildingID=Workbench`) and receives specialty XP from Workstation crafting. Cook stations remain locked.
 
-Attribute hover detection uses the cards' native MouseEnter/MouseLeave events, so it follows UI inset and scaling without mixing raw mouse coordinates with AbsolutePosition.
+| ID | English name | Effect per rank |
+| --- | --- | --- |
+| Redhead | Redhead, Redhead... | A zombie killed with a shovel has a 7% chance per rank to yield 1 Cloth; rank 10 is 70%. Only chance scales with this talent. |
+| GoldenHands | Golden Hands | Workstation duration is reduced by 4% per rank: rank 10 takes 60% of the original time. |
 
-Server-owned progress is mirrored in Player attributes: Profession, ProfessionLevel, ProfessionXP, AttributePoints, Strength, Endurance, Attention, Luck and derived bonuses. Character attributes mirror derived carry, speed, HP and other bonuses. Remote requests cannot grant XP, select an unknown profession or spend unavailable points.
+The killing hit's item ID is recorded before damage, so switching weapons after the kill cannot change the talent roll. Only Shovel-category weapons qualify. `Cloth` is distinct from `Rags`, weighs 0.05 kg and uses `ServerStorage/Items/Cloth` (a temporary fabric block is available until art is supplied). The talent injects one Cloth into the ordinary zombie loot before Luck processing; Luck remains an independent bonus source. No drops come from merely hitting a creature or training target.
 
 ## Verification
 
-`luau tests/progression_rules.test.luau` checks level thresholds, allocation, caps, luck, talent prerequisites, camera extent and carry capacity. `python tests/run_progression_service.py /path/to/luau` checks real server permission/allocation workflows on engine mocks. `python tests/run_cooking_progression.py /path/to/luau` checks real crafting access, batch-five cooking, cancellation refunds, completion XP and the luck hook. Existing town/resource scenarios and Rojo build are also run. These checks are not a Studio playtest.
+`tests/progression_rules.test.luau` covers XP, points, ranks, caps, recipes, stable zoom bounds, knife scaling, absorption totals and shovel drop probabilities. `tests/run_progression_service.py` checks real server permissions, allocation, Worker kill rewards and XP. `tests/run_cooking_progression.py` checks real cooking cancellation, serving bonuses and rank-ten Worker duration. `tests/run_melee_absorption.py` checks real damage routing and the Apron slot. Town/resource regressions, Luau compilation and Rojo build pass. These are engine mocks, not a Studio playtest.

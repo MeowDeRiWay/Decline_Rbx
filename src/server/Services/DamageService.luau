@@ -29,7 +29,7 @@ local function popup(target,amount)
  Debris:AddItem(gui,1)
 end
 function Service.Miss(target) popup(target,"Miss") end
-function Service.Apply(humanoid,amount,damageType,sourcePosition)
+function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind)
  local target = humanoid.Parent
  if not target or humanoid.Health <= 0 then return 0 end
  if sourcePosition then
@@ -41,7 +41,10 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition)
  local player=Players:GetPlayerFromCharacter(target)
  if player then
   if target:FindFirstChildOfClass("ForceField") then amount=0
-  else amount=Life.Damage(player,humanoid,amount) end
+  else
+   if attackKind=="Melee" then amount=math.max(0,amount-(player:GetAttribute("MeleeAbsorption") or 0)) end
+   amount=amount>0 and Life.Damage(player,humanoid,amount) or 0
+  end
  elseif target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.
   if not target:FindFirstChildOfClass("ForceField") then

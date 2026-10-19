@@ -7,7 +7,7 @@ local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local EquipmentVisuals = require(script.Parent.EquipmentVisuals)
 local Service = {}
-local fallbackItems = {TreeLog = true, Scrap = true, Rags = true, Stone = true}
+local fallbackItems = {TreeLog = true, Scrap = true, Rags = true, Stone = true, Cloth = true}
 local warned = {}
 local folder = workspace:FindFirstChild("WorldItems")
 if not folder then

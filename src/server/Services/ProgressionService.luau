@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
 local Config=require(ReplicatedStorage.Shared.ProgressionConfig)
+local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Service={}
 local states={}
 local remote
@@ -13,10 +14,12 @@ end
 function Service.Sync(player)
  local state=stateFor(player)
  local bonus=Rules.Bonuses(state.Stats)
+ for id,value in pairs(Rules.CombatBonuses(state)) do bonus[id]=value end
  player:SetAttribute("Profession",state.Profession)
  player:SetAttribute("ProfessionLevel",state.Level)
  player:SetAttribute("ProfessionXP",state.XP)
  player:SetAttribute("AttributePoints",state.Points)
+ player:SetAttribute("TalentPoints",state.TalentPoints)
  for id,value in pairs(state.Stats) do player:SetAttribute(id,value) end
  for id,value in pairs(bonus) do player:SetAttribute(id,value) end
  local character=player.Character
@@ -30,7 +33,7 @@ end
 function Service.Snapshot(player)
  local s=stateFor(player)
  return {Level=s.Level,XP=s.XP,NextXP=100*(s.Level+1),Points=s.Points,Profession=s.Profession,
-  Stats=table.clone(s.Stats),Bonuses=Rules.Bonuses(s.Stats),Talents=table.clone(s.Talents)}
+  TalentPoints=s.TalentPoints,Stats=table.clone(s.Stats),Bonuses=Rules.Bonuses(s.Stats),Talents=table.clone(s.Talents)}
 end
 function Service.Award(player,amount)
  if not player or player.Parent~=Players then return end
@@ -60,6 +63,11 @@ end
 function Service.ZombieDied(model,items)
  local player=Players:GetPlayerByUserId(model:GetAttribute("LastDamagerID") or 0)
  Service.Award(player,Config.ZombieXP)
+ if player and player.Parent==Players then
+  local definition=Items[model:GetAttribute("LastHitItem")]
+  local extra=Rules.ShovelLoot(stateFor(player),definition and definition.HarvestTool=="Shovel",function() return random:NextNumber() end)
+  if extra>0 then items=table.clone(items); items.Cloth=(items.Cloth or 0)+extra end
+ end
  return Service.Loot(player,items)
 end
 function Service.Start()

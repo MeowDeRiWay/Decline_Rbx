@@ -66,6 +66,11 @@ assert(durations[5]==8,"20 percent less time for cutting board")
 callbacks[5]()
 assert(Service.Snapshot(a).CookingReady.SausageSlice==5,"stove serving talent must not affect board")
 assert(xp==40 and bonuses==4)
+cookState.Profession="Worker"; cookState.Talents={GoldenHands=10}
+assert(Service.Open(a,bench) and Service.Cook(a,"MakePlanks",1))
+assert(math.abs(durations[6]-6)<1e-6,"rank ten Golden Hands saves forty percent crafting time")
+callbacks[6]()
+assert(Service.Snapshot(a).CookingReady.Plank==3)
 print("PASS: cook talents, correct station timing, full/partial batches, profession-gated cooking, general workstation, cancellation refunds, no cancellation rewards, batch five and specialty XP")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]

@@ -4,6 +4,16 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Ранги талантів, Worker і ручний зум — 19 жовтня ввечері
+
+- Найсвіжіші повні правила PROGRESSION_SETUP.md. Автозум від facing прибраний: колесоInputChanged змінює targetHeight, smooth exp, min18, max30+ViewBonus/tan(FOV/2); не змінюється при наведеннімиші/повороті, scrollменю не зумить. ViewBonus тепер2*Attention замість5. Старий ViewScale видалений, новийZoomBounds.
+- TalentPoints0 наLevel0,+1на коженрівень; купівля1рангу=1point,Max10. Talentsтеперnumericrank, Rank суміснийзістаримtrue→1. UIпоказуєpoints/rank0..10/Upgrade, server перевіряєpoints/level/profession. Усі нинішніталантиLevel1, незалежні. AttributePoints5старт/+5рівень незмінні.
+- Cook: KnifeMaster+5%APM/базовоїшкоди ножів наранг, serverclientcooldown/animationузгоджені, Strengthдодаєтьсяпіслямножника. KevlarApron+1passiveMeleeAbsorption/ранг; DamageServiceмаєattackKindMelee тількидлярукопашнихвикликів, 0damageclamp. Apronitem0.5kgSlotAdditional зареєстрований, ServerStorage/Items/Apron, безвізуалів/armorстатівпредмета(припасуємопотім).
+- СтаріCooktalentsтеж10рангів: SurpriseServing+rankпорційзаbatch5; Grandmas/Ramsay duration*.8^rank(щобнестати0/від’ємним); effectsнаjobstart, потімLuckякбув.
+- Worker професія будуєWorkbench, specialtyXP10заWorkstation. Redhead:7%*rank, на10ранзі70%,1ClothзаkillзомбіShovelкатегорією, кількістьне масштабуєтьсярангом. LastHitItemзберігаєтьсяпередшкодою. ClothокремийвідRags, .05kg, шаблонServerStorage/Items/Cloth +fallbackFabric. ТалантдодаєClothдоcorpseLoot передLuck(окремийбонусможеще додати).
+- GoldenHands linear durationMultiplier1-.04*rank лишеWorkstation, rank10=.6. НеКухня. Workstationдосіgeneralaccessдлявсіх, алеXPзафахWorker.
+- Перевірки progressionrules/service/cooking/meleeabsorption/Apronequip, town/resource regressions, всіLuaucompile/Rojo; Studioнебуло. Рівністарихталантів1тагеометріюзуму/візуалперевіритькористувач.
+
 ## Стартові5очок і таланти Cook — 19 жовтня
 
 - ProgressionConfig.StartingPoints=5; Rules.New дає5всім гравцям наLevel0, +5за кожен рівень лишається. Це не одноразовий admin grant, а стартовий баланс.
