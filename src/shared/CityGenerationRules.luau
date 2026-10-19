@@ -1,4 +1,12 @@
 local Rules = {}
+function Rules.Category(roll,chance) return roll<chance and "Stores" or "Houses" end
+function Rules.FurnitureGrid(zoneSize,sourceSize)
+ if sourceSize.X<=0 or sourceSize.Z<=0 then return 0,0 end
+ return math.floor((zoneSize.X+.001)/sourceSize.X),math.floor((zoneSize.Z+.001)/sourceSize.Z)
+end
+function Rules.FurnitureFrame(zoneFrame,zoneSize,sourceSize,columns,rows,x,z)
+ return zoneFrame*CFrame.new(Vector3.new((x-.5-columns/2)*sourceSize.X,zoneSize.Y/2+sourceSize.Y/2,(z-.5-rows/2)*sourceSize.Z))
+end
 -- House forward is +Z, unlike Roblox LookVector (-Z).
 function Rules.Frame(plotFrame, localYardFrame, roadPoint)
  local delta = roadPoint - plotFrame.Position

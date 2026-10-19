@@ -2,6 +2,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.CityGenerationConfig)
 local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)
+local Furniture=require(script.Parent.StoreFurnitureService)
 local Service = {}
 local started = false
 local configuredSeed = Config.Seed
@@ -9,6 +10,7 @@ local seed = if typeof(configuredSeed)=="number" and configuredSeed==configuredS
  then math.floor(configuredSeed) else Random.new():NextInteger(0,2147483647)
 local random = Random.new(seed)
 local generated, busy, warnings = {}, {}, {}
+local categories=setmetatable({},{__mode="k"})
 local folder
 local function box(object)
  if object:IsA("Model") and object:FindFirstChildWhichIsA("BasePart",true) then return object:GetBoundingBox() end
@@ -18,14 +20,14 @@ end
 local function warnOnce(plot, message)
  if warnings[plot] ~= message then warnings[plot] = message; warn("[Decline City] " .. message) end
 end
-local function templates()
+local function templates(category)
  local root = ServerStorage:FindFirstChild("CityGeneration")
- local houses = root and root:FindFirstChild("Houses")
+ local houses = root and root:FindFirstChild(category)
  local result = {}
  if houses then
   for _, house in ipairs(houses:GetChildren()) do
    local yard = house:FindFirstChild("Yard")
-   if house:IsA("Model") and house:GetAttribute("ZHouse") == true and yard and box(yard) then table.insert(result,house) end
+   if house:IsA("Model") and (category=="Stores" or house:GetAttribute("ZHouse") == true) and yard and box(yard) then table.insert(result,house) end
   end
  end
  table.sort(result,function(a,b) return a.Name < b.Name end)
@@ -73,27 +75,39 @@ local function place(plot, sources, roadList)
   generated[plot] = existing.Value; hidePlot(plot); return
  end
  if generated[plot] and generated[plot]:IsDescendantOf(workspace) then return end
- if #sources == 0 then warnOnce(plot,"Put house Models with ZHouse=true and an inner Yard in ServerStorage/CityGeneration/Houses"); return end
+ if #sources.Houses==0 and #sources.Stores==0 then warnOnce(plot,"Add building Models with an inner Yard in ServerStorage/CityGeneration/Houses or Stores"); return end
  local plotFrame,plotSize = box(plot)
  if not plotFrame then warnOnce(plot,"YardPlace needs a physical marker Part"); return end
  if math.abs(plotFrame.UpVector.Y-1) > .001 then warnOnce(plot,"YardPlace must be horizontal; yaw rotation is supported"); return end
  local roadPoint = nearestRoad(plotFrame,roadList)
  if not roadPoint then warnOnce(plot,"No usable road with Road=true near YardPlace"); return end
  busy[plot] = true
- local candidates = {}
- for _, house in ipairs(sources) do
-  local yardFrame,yardSize = box(house:FindFirstChild("Yard"))
-  local localYard = house:GetPivot():ToObjectSpace(yardFrame)
-  local frame = Rules.Frame(plotFrame,localYard,roadPoint)
-  if Rules.Fits(frame,localYard,yardSize,plotFrame,plotSize,Config.FitTolerance) then table.insert(candidates,{house=house,frame=frame}) end
+ local function candidatesFor(category)
+  local result={}
+  for _,house in ipairs(sources[category]) do
+   local yardFrame,yardSize=box(house:FindFirstChild("Yard"))
+   local localYard=house:GetPivot():ToObjectSpace(yardFrame)
+   local frame=Rules.Frame(plotFrame,localYard,roadPoint)
+   if Rules.Fits(frame,localYard,yardSize,plotFrame,plotSize,Config.FitTolerance) then table.insert(result,{house=house,frame=frame}) end
+  end
+  return result
  end
- if #candidates == 0 then busy[plot] = nil; warnOnce(plot,"No house Yard fits this YardPlace; expected matching 20x20 markers and aligned yard axes"); return end
+ if not categories[plot] then categories[plot]=Rules.Category(random:NextNumber(),Config.StoreChance) end
+ local category=categories[plot]
+ local candidates=candidatesFor(category)
+ if #candidates==0 then
+  category=category=="Stores" and "Houses" or "Stores"
+  candidates=candidatesFor(category)
+ end
+ if #candidates==0 then busy[plot]=nil; warnOnce(plot,"No building Yard fits this YardPlace; expected matching 20x20 markers and aligned yard axes"); return end
  local chosen = candidates[random:NextInteger(1,#candidates)]
  local clone = chosen.house:Clone()
  clone:SetAttribute("GeneratedCityHouse",true)
+ clone:SetAttribute("GenerationCategory",category)
  clone:SetAttribute("GenerationSeed",seed)
  local yard = clone:FindFirstChild("Yard")
- for _, part in ipairs(yard:GetDescendants()) do
+ local yardParts=yard:IsA("BasePart") and {yard} or yard:GetDescendants()
+ for _, part in ipairs(yardParts) do
   if part:IsA("BasePart") then
    part.Transparency,part.CanCollide,part.CanTouch,part.CanQuery = 1,false,false,false
    part:SetAttribute("BlocksVision",false)
@@ -102,6 +116,7 @@ local function place(plot, sources, roadList)
  yard:SetAttribute("BlocksVision",false)
  for _, part in ipairs(clone:GetDescendants()) do if part:IsA("BasePart") then part.Anchored = true end end
  clone:PivotTo(chosen.frame)
+ Furniture.Fill(clone)
  local reference = Instance.new("ObjectValue")
  reference.Name,reference.Value,reference.Parent = "GenerationSource",plot,clone
  generated[plot] = clone
@@ -114,15 +129,16 @@ local function place(plot, sources, roadList)
  warnings[plot],busy[plot] = nil,nil
 end
 function Service.Generate()
- local sources,roadList,plots = templates(),roads(),{}
+ local sources,roadList,plots = {Houses=templates("Houses"),Stores=templates("Stores")},roads(),{}
  for _, object in ipairs(workspace:GetDescendants()) do
   if object:IsA("Model") and object.Name == "YardPlace" and object:GetAttribute("ForZHouse") == true then table.insert(plots,object) end
  end
  table.sort(plots,plotOrder)
  for _, plot in ipairs(plots) do place(plot,sources,roadList) end
+ Furniture.Fill(workspace)
  -- Release markers that have been removed; do not leave their generated houses behind.
  for plot, house in pairs(generated) do
-  if not plot:IsDescendantOf(workspace) then house:Destroy(); generated[plot],warnings[plot],busy[plot] = nil,nil,nil end
+  if not plot:IsDescendantOf(workspace) then house:Destroy(); generated[plot],warnings[plot],busy[plot],categories[plot] = nil,nil,nil,nil end
  end
 end
 function Service.Start()

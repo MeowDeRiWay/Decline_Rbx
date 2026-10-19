@@ -27,6 +27,22 @@ local diagonalFrame=Rules.Frame(plot,diagonalYard,Vector3.new(90,7,70))
 assert(not Rules.Fits(diagonalFrame,diagonalYard,size,plot,size,.05),"diagonal yard cannot spill into neighboring plots")
 local road=Rules.RoadPoint(CFrame.new(Vector3.new(0,0,0)),Vector3.new(20,1,20),Vector3.new(30,7,3))
 assert((road-Vector3.new(10,0,3)).Magnitude<.00001,"road orientation uses closest edge rather than tile center")
+assert(Rules.Category(.049,.05)=="Stores" and Rules.Category(.05,.05)=="Houses")
+local columns,rows=Rules.FurnitureGrid(Vector3.new(1,.2,10),Vector3.new(1,2,1))
+assert(columns==1 and rows==10)
+assert(select(2,Rules.FurnitureGrid(Vector3.new(1,.2,10),Vector3.new(1,2,10)))==1)
+assert(select(2,Rules.FurnitureGrid(Vector3.new(1,.2,1),Vector3.new(1,2,10)))==0)
+for _,yaw in ipairs({0,math.pi/2,math.pi,-math.pi/2}) do
+ local area=cf(Vector3.new(20,2,30),yaw)
+ for z=1,rows do
+  local frame=Rules.FurnitureFrame(area,Vector3.new(1,.2,10),Vector3.new(1,2,1),columns,rows,1,z)
+  local localPoint=area:PointToObjectSpace(frame.Position)
+  assert(math.abs(localPoint.X)<1e-6 and math.abs(localPoint.Z-(-5+z-.5))<1e-6)
+  assert(math.abs(localPoint.Y-1.1)<1e-6,"shelf bottom sits on area surface")
+  assert(math.abs(frame.yaw-yaw)<1e-6,"furniture follows area rotation")
+ end
+end
+print("PASS: category probability boundary, 1x10/1x1 furniture tiling, no oversize placement and four rotations")
 print("PASS: all four road directions, positive-Z front, offset Yard alignment, marker height, rotated plots, oversized/diagonal yard rejection, nearest road edge")
 '''
 with tempfile.TemporaryDirectory(prefix='decline-city-') as directory:

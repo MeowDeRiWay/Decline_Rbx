@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Магазини й AutoPlacer — 19 жовтня ввечері
+
+- CityGenerationConfig.StoreChance=.05; YardPlace ForZHouse=true тепер95%Houses/5%Stores за незалежнимroll. ШаблониServerStorage/CityGeneration/Stores/<назва> зYard20x20; дляStoresнепотрібнийZHouse,не додаєтьсясам. HousesякбулиZHouse=true. Обидва орієнтуються+ZдоRoad, offset/fitзбережено.
+- Якщообранакатегоріяне маєпридатнихшаблонів—fallbackінша; порожняобидвіretry. Rollкешуєтьсядоуспіху, готовіділянкинеперегенеровуються. OutputGeneratedCityHousesзалишивсядлясумісності, GenerationCategory=Houses/Stores, старіObjectValuelinksнезмінні. Workspace/roads іYardsпідтримані.
+- StoreFurnitureService.Fill вызываєтьсянаcloneдоparentінапісляGenerate(workspace)дляretry. AutoPlacerModel/Part зіStoreFurniturestringShelf; джерелоServerStorage/CityGeneration/StoreFurniture/Shelf Model/Part. Областьbboxрозбиваєтьсянаціліbboxмеблів,поворотзонивизначаєосі; offsetpivotзбережений, низнадповерхнеюmarker. 1x10→10штук1x1або1штука1x10; oversizedнеставиться.
+- МаркерсхованийCanQuery/Collide/Touchfalse, мебліAnchoredімаютьавторськіcollision/BlocksVision. РезультатAutoPlacer/GeneratedFurniturefolder +FurnitureCount. Існуючийgroupнеперезаповнюється,видаленнявсьогобудинкуприбираємеблі. Лут/магазиннізапасиНЕдодані. ПовніінструкціїCITY_GENERATION.md.
+- Перевірки: реальнийcityservice+furnitureserviceнаmockAPI(StoresбезZHouse,вкладеніplots,10полок,anchor/hidemarker,missingfallback/retry/idempotence/cleanup); geometry4rotations,1x1/1x10grid,probabilityboundary; compile/Rojo. Studioнебуло.
+
 ## Щільність ресурсів1% — 19 жовтня
 
 - Післяскрінуобласті40x100 користувач попросивзменшити загальнущільність. ResourceConfig.SpawnChance=.01дляTree/StoneVein/ScrapPile, замість.1. На4000квстудс середнє40кандидатівнаодинтипобласті, перевіркинеперекриття/земліякбули. Перекритіобластірізнихтипів додаютькандидатів(40+40тощо).

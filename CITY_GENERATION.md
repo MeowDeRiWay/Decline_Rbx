@@ -36,3 +36,21 @@ Change **src/shared/CityGenerationConfig.luau** for Seed, fitting tolerance or r
 `python tests/run_city_service.py /path/to/luau` exercises template discovery, marker hiding, attribute preservation, repeat calls and removed-plot cleanup with Roblox mocks.
 
 Luau compilation and Rojo build are also checked. These tests do not replace checking the supplied models in Studio Play.
+
+## Stores and AutoPlacer
+
+The existing eligible YardPlace models (`ForZHouse=true`, including those in Workspace/Yards) now roll **Houses 95% / Stores 5%** independently. A small town is not guaranteed to have a store. Templates are:
+
+- `ServerStorage/CityGeneration/Houses/<any name>`: Model with ZHouse=true and an inner Yard.
+- `ServerStorage/CityGeneration/Stores/<any name>`: Model with an inner Yard; ZHouse is optional and not added automatically.
+- Both use the same aligned 20x20 Yard footprint, +Z front, road-facing placement and fit checks. Roads inside Workspace/roads work normally.
+
+If the rolled category has no fitting template, a fitting template from the other category is used. If neither fits, generation retries as before. The category roll is retained across unsuccessful retries; filled plots never reroll within the session. Generated stores share Workspace/GeneratedCityHouses for compatibility, with `GenerationCategory="Stores"` (houses use "Houses"). Existing GeneratedHouse/GenerationSource links and removal cleanup are unchanged. Adding Stores later does not replace already spawned houses; restart Play to regenerate.
+
+For shelves, create **`ServerStorage/CityGeneration/StoreFurniture/Shelf`** as a Model or BasePart with the intended dimensions. Inside a store template place a **Model or Part named `AutoPlacer`**, with a string attribute **`StoreFurniture = "Shelf"`**. Its bounding box is the rectangular placement region. A Model region should contain only its authored flat marker Parts; use a sensible pivot/PrimaryPart so its box axes follow the desired orientation.
+
+The filler tiles the named furniture's bounding-box footprint without overlap: a 1x10 area gets ten 1x1 shelves or one 1x10 shelf; a 1x1 area cannot hold a 1x10 shelf. Whole objects only, with any unused strip centered around the grid. Each furniture bounding box follows the region's rotation; its bottom sits on the marker's top surface. Template offsets between pivot and bounding box are preserved. Furniture templates should have their box axes/front aligned consistently; rotate the AutoPlacer to turn the shelves.
+
+Marker Parts become invisible, anchored and non-colliding/non-queryable at runtime. Generated furniture retains authored collision and BlocksVision, and all its parts are anchored. It is parented into a reserved `AutoPlacer/GeneratedFurniture` folder; `FurnitureCount` records the number placed. A completed marker is not refilled, even when its contents are removed or its attributes change. Delete the generated group or restart Play to intentionally refill. Missing/oversized templates warn without placing invalid furniture; a missing template can be supplied before a later retry.
+
+AutoPlacer also works in house templates and on directly authored Workspace objects. This step only places models; no shelf loot, shop inventories or additional interior rules are added.
