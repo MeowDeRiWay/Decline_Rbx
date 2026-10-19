@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Виправлення тканини — 19 жовтня
+
+- Користувач уточнив: Redhead має давати наявний Rags, не новий Cloth. Reward/config/tests замінено наRags; Cloth видалений зItemConfig/fallback. Крафти не змінені, шанс7%/ранг лишився.
+
 ## Ранги талантів, Worker і ручний зум — 19 жовтня ввечері
 
 - Найсвіжіші повні правила PROGRESSION_SETUP.md. Автозум від facing прибраний: колесоInputChanged змінює targetHeight, smooth exp, min18, max30+ViewBonus/tan(FOV/2); не змінюється при наведеннімиші/повороті, scrollменю не зумить. ViewBonus тепер2*Attention замість5. Старий ViewScale видалений, новийZoomBounds.

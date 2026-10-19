@@ -13,7 +13,7 @@ return {
     Description = "Each rank reduces remaining cutting board time by 20%."},
   }},
   Worker = {Name = "Worker", Stations = {Workstation = true}, Buildings = {Workbench = true}, Talents = {
-   Redhead = {Name = "Redhead, Redhead...", Level = 1, Description = "Shovel kills have a 7% chance per rank to yield 1 Cloth. Only the chance increases."},
+   Redhead = {Name = "Redhead, Redhead...", Level = 1, Description = "Shovel kills have a 7% chance per rank to yield 1 Rags. Only the chance increases."},
    GoldenHands = {Name = "Golden Hands", Level = 1, Description = "Workstation crafting takes 4% less time per rank."},
   }},
  },

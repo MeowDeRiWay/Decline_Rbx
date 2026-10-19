@@ -66,7 +66,7 @@ function Service.ZombieDied(model,items)
  if player and player.Parent==Players then
   local definition=Items[model:GetAttribute("LastHitItem")]
   local extra=Rules.ShovelLoot(stateFor(player),definition and definition.HarvestTool=="Shovel",function() return random:NextNumber() end)
-  if extra>0 then items=table.clone(items); items.Cloth=(items.Cloth or 0)+extra end
+  if extra>0 then items=table.clone(items); items.Rags=(items.Rags or 0)+extra end
  end
  return Service.Loot(player,items)
 end

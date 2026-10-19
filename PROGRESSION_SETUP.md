@@ -45,10 +45,10 @@ Worker can build/upgrade Workshop (`BuildingID=Workbench`) and receives specialt
 
 | ID | English name | Effect per rank |
 | --- | --- | --- |
-| Redhead | Redhead, Redhead... | A zombie killed with a shovel has a 7% chance per rank to yield 1 Cloth; rank 10 is 70%. Only chance scales with this talent. |
+| Redhead | Redhead, Redhead... | A zombie killed with a shovel has a 7% chance per rank to yield 1 Rags; rank 10 is 70%. Only chance scales with this talent. |
 | GoldenHands | Golden Hands | Workstation duration is reduced by 4% per rank: rank 10 takes 60% of the original time. |
 
-The killing hit's item ID is recorded before damage, so switching weapons after the kill cannot change the talent roll. Only Shovel-category weapons qualify. `Cloth` is distinct from `Rags`, weighs 0.05 kg and uses `ServerStorage/Items/Cloth` (a temporary fabric block is available until art is supplied). The talent injects one Cloth into the ordinary zombie loot before Luck processing; Luck remains an independent bonus source. No drops come from merely hitting a creature or training target.
+The killing hit's item ID is recorded before damage, so switching weapons after the kill cannot change the talent roll. Only Shovel-category weapons qualify. The reward uses the existing `Rags` item and its model at `ServerStorage/Items/Rags`. The talent injects one Rags into the ordinary zombie loot before Luck processing; Luck remains an independent bonus source. No drops come from merely hitting a creature or training target.
 
 ## Verification
 

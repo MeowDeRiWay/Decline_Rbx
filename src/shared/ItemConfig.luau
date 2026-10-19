@@ -31,7 +31,6 @@ ItemConfig.Items = {
   Description = "Salvaged scrap metal.",
  },
  Apron = {Name = "Apron", Weight = 0.5, Slot = "Additional", Description = "An apron worn over clothing."},
- Cloth = {Name = "Cloth", Weight = 0.05, Description = "A piece of cloth recovered from a creature."},
  Rags = {
   Name = "Rags", Weight = 0.05,
   Description = "Pieces of old fabric salvaged from scrap piles.",
