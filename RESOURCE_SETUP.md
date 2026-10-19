@@ -32,7 +32,7 @@ HarvestTier and MinHarvestTier enforce access independently from damage. Current
 
 All current resource nodes have 100 HP: 20 stone-tool hits, 10 scrap-tool hits, or 7 iron-tool hits. Trees yield 1–4 TreeLog (2 kg each); scrap piles yield independently 1–5 Scrap (0.2 kg each) and 1–5 Rags (0.05 kg each); stone veins yield 1–5 Stone (0.2 kg each).
 
-Workstation: 1 Handle + 3 Stone makes StoneAxe or StoneShowel; 1 Handle + 3 Scrap makes ScrapAxe or ScrapShowel; 3 Scrap makes ScrapKnife. Iron tools are registered and usable but have no crafting recipe until the iron resource is supplied. No stone knife recipe remains. Log/plank/handle recipes are unchanged. Legacy Axe/Showel IDs map to stone stats; Knife maps to scrap knife stats for older placed models.
+Workstation: 1 Handle + 1 Stone makes StoneAxe or StoneShowel; 1 Handle + 3 Scrap makes ScrapAxe or ScrapShowel; 3 Scrap makes ScrapKnife. Iron tools are registered and usable but have no crafting recipe until the iron resource is supplied. No stone knife recipe remains. Log/plank/handle recipes are unchanged. Legacy Axe/Showel IDs map to stone stats; Knife maps to scrap knife stats for older placed models.
 
 ScrapKnife deals 10 damage and IronKnife 20. Both share CraftTool="Knife", so either works for slicing sausage. Their attack speed, reach and durability remain the existing knife settings.
 
@@ -88,3 +88,5 @@ Targets standing close to walls use a nearby collision-free standing endpoint wh
 
 
 Kitchen template: **ServerStorage/Buildings/Kitchen (T1)**, with nested Space, BuildingMenu and optional Stove. Costs 1 TreeLog from the builder upon mayor approval; mayors must approve their own requests too. See TOWN_SETUP.md for details.
+
+All Workstation recipes are limited to one crafting operation per batch. One log still yields three planks in that operation. Stove boiling accepts up to five raw food units per batch, with ingredients charged per unit.
