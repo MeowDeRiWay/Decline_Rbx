@@ -4,6 +4,17 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Прогресія, характеристики та Cook — 19 жовтня
+
+- Детальна актуальна інструкція: PROGRESSION_SETUP.md. Додано ProgressionConfig/Rules/Service, Progression.server, меню P. Session-only, зберігається після смерті, без DataStore. Вибір Cook один раз, XP до вибору не губиться.
+- Рівень0, XP0, очки0; поріг100*(level+1), переносXP, +5очки/рівень. +10XP за повністю видобутий вузол, +10XP вбивці зомбі (LastDamagerID перед влучанням, один die). Тимчасово +10XP/завершена кухарська операція, не за кожну одиницю партії, безXP за скасування чи Workstation.
+- Сила +1кг поріг перенесення та +1melee по живих; витривалість +.2 лише біг, +5MaxHealth без лікування поточногоHP. Уважність +.02 до базової.25 точності (cap.9), +5студс видимого простору вперед через perspective camera scaling за напрямком. Перешкоди й сектор незмінні. Удача +.03chance cap.5; бонус1+floor(Luck/3) за успіх незалежно на item type.
+- Luck тільки нові resource drops, zombie corpse loot, completed craft output; не pickup/transfer/collectready (не дублювати вже наявні речі). Нульовий лут новихтипів не вигадує.
+- Melee по живих після range/LOS кидає accuracy; Miss англійською над ціллю,0шкоди,1знос. Ресурси accuracy не мають; шкода5/10/15 без бонусуStrength. Ножі10/20+Strength по живих.
+- Cook потрібний дляStove/CuttingBoard, будування/upgrade лишеKitchen. Workstation загальний. Без вибраної професії старі buildingchoices лишаються, післяCook Workshop будувати не можна. Сервер перевіряє при запиті та при погодженні, мер не обходить фах.
+- Cook.Talents поки порожній, меню прямо каже not defined. Каркас перевіряєLevel/Requires і дублікати, атрибутніочки не витрачає; конкретні таланти/ефекти треба уточнити в користувача. Не стверджувати, що дерево талантів уже наповнене.
+- Перевірено: progression_rules, realProgressionService та crafting workflows на mockAPI, town/resource workflows, всіLuaucompile/Rojo. Studio playtest не було.
+
 ## Крафти та майбутні професії — 19 жовтня
 
 - Усі Workstation-рецепти MaxBatch=1; MakePlanks залишається1TreeLog→3Plank за одне виготовлення. MakeHandle1Plank→1Handle. StoneAxe/StoneShowel тепер1Stone+1Handle. ScrapAxe/ScrapShowel3Scrap+1Handle, ScrapKnife3Scrap. Плита BoilPotatoes до5Potato+відповідна CleanWater, як раніше.

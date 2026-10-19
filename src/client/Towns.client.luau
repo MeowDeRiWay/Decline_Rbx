@@ -285,7 +285,7 @@ RunService.RenderStepped:Connect(function()
    (request.Kind == "Vote" and "Y — remove the mayor · N — keep in office" or "Y — approve · N — decline"))) .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
  else caption.Text = message end
  hovered, highlight.Enabled, hoverLabel.Visible = nil, false, false
- if panel.Visible or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if panel.Visible or player:GetAttribute("ProgressionOpen") or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local character, camera = player.Character, workspace.CurrentCamera
  local root = character and character:FindFirstChild("HumanoidRootPart")
  if not root or not camera or character:GetAttribute("Knockout") then return end

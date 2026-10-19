@@ -21,13 +21,14 @@ local function popup(target,amount)
  label.TextSize = 24
  label.TextColor3 = Color3.fromRGB(255,85,85)
  label.TextStrokeTransparency = .3
- label.Text = string.format("-%g",amount)
+ label.Text = typeof(amount)=="string" and amount or string.format("-%g",amount)
  label.Parent = gui
  local info = TweenInfo.new(.85,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
  TweenService:Create(gui,info,{StudsOffsetWorldSpace=gui.StudsOffsetWorldSpace+Vector3.new(0,.7,0)}):Play()
  TweenService:Create(label,info,{TextTransparency=1,TextStrokeTransparency=1}):Play()
  Debris:AddItem(gui,1)
 end
+function Service.Miss(target) popup(target,"Miss") end
 function Service.Apply(humanoid,amount,damageType,sourcePosition)
  local target = humanoid.Parent
  if not target or humanoid.Health <= 0 then return 0 end

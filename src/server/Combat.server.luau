@@ -7,6 +7,7 @@ local Resources = require(script.Parent.Services.ResourceService)
 local attack = Instance.new("RemoteEvent")
 attack.Name = "WeaponAttack"
 attack.Parent = ReplicatedStorage
+local random = Random.new()
 local ready = {}
 attack.OnServerEvent:Connect(function(player)
  local character = player.Character
@@ -69,7 +70,13 @@ attack.OnServerEvent:Connect(function(player)
  if nearest then
   if resourceTarget then Resources.Hit(player,nearest,weapon)
   else
-   local dealt = Damage.Apply(nearest,weapon.Damage,weapon.DamageType,root.Position)
+   if random:NextNumber()>=(player:GetAttribute("Accuracy") or .25) then
+    Damage.Miss(nearest.Parent)
+    Inventory.UseWeapon(player)
+    return
+   end
+   nearest.Parent:SetAttribute("LastDamagerID",player.UserId)
+   local dealt = Damage.Apply(nearest,weapon.Damage+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position)
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
  end

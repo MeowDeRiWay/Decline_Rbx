@@ -5,10 +5,13 @@ import sys
 import tempfile
 root = Path(__file__).resolve().parents[1]
 service = (root/'src/server/Services/ResourceService.luau').read_text()
-for name in ['Config', 'Rules', 'Area', 'Inventory', 'WorldItems', 'Items']:
+for name in ['Config', 'Rules', 'Area', 'Inventory', 'WorldItems', 'Items', 'Progression']:
     import re
     service = re.sub(rf'local {name} = require\([^\n]+\)\n', '', service)
 setup = '''
+local xp=0
+local Progression={Loot=function(_,items) return items end,Award=function(_,amount) xp+=amount end}
+
 function CFrame.Angles(_,y,_) return cf(Vector3.zero,y) end
 local originalIndex=cm.__index
 function cm.__index(a,k)
@@ -71,6 +74,7 @@ assert(scrapTarget.destroyed and lootCalls==2,"scrap multiplier mines in ten hit
 local ironTarget=generated[3]
 player.Character:SetAttribute("HandsItem","IronShowel")
 for _=1,7 do assert(Service.Hit(player,ironTarget,weapon)) end
+assert(xp==30,"ten XP per successfully harvested deposit, no XP per hit")
 assert(ironTarget.destroyed and lootCalls==3,"iron multiplier mines in seven hits")
 print("PASS: real resource service generates StoneYard by cells, skips duplicate markers, anchors veins, requires shovel and drops stone once")
 '''

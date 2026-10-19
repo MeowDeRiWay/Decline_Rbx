@@ -24,8 +24,8 @@ RunService.Heartbeat:Connect(function()
   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
   if not humanoid then continue end
   local running = wantsRun and humanoid.Health > 0 and not humanoid.Sit and not humanoid.PlatformStand and not character:GetAttribute("Knockout")
-  local multiplier = Rules.LoadMultiplier(character:GetAttribute("LoadKg"),Config)
-  local speed = (character:GetAttribute("Knockout") or character:GetAttribute("CraftingLocked")) and 0 or (Config.WalkSpeed + (running and Config.RunSpeedBonus or 0))*multiplier
+  local multiplier = Rules.LoadMultiplier(character:GetAttribute("LoadKg"),Config,player:GetAttribute("CarryLimitKg"))
+  local speed = (character:GetAttribute("Knockout") or character:GetAttribute("CraftingLocked")) and 0 or (Config.WalkSpeed + (running and (Config.RunSpeedBonus+(player:GetAttribute("RunBonus") or 0)) or 0))*multiplier
   if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
   if character:GetAttribute("Running") ~= running then character:SetAttribute("Running",running) end
  end

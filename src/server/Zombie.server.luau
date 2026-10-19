@@ -90,7 +90,7 @@ local function prepare(model)
   end
   -- Loot and terminal state are set before the fall animation. Rig state events
   -- and animation failures must not prevent looting or leave the AI running.
-  Chests.CreateCorpse(model,LootRules.Roll(LootConfig,Items))
+  Chests.CreateCorpse(model,require(script.Parent.Services.ProgressionService).ZombieDied(model,LootRules.Roll(LootConfig,Items)))
   local direction=model:GetAttribute("LastHitDirection")
   if typeof(direction)~="Vector3" then direction=root.CFrame.LookVector end
   direction=Vector3.new(direction.X,0,direction.Z)

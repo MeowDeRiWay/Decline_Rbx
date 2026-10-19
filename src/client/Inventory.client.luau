@@ -334,6 +334,7 @@ redraw = function()
  end
 end
 local function setOpen(open)
+ if open and player:GetAttribute("ProgressionOpen") then return end
  if not open then
   selectedRecipe = nil
   selectedItem = nil

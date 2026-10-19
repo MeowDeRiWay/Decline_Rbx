@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ContextActionService = game:GetService("ContextActionService")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
+local ProgressionRules = require(ReplicatedStorage.Shared.ProgressionRules)
 local player = Players.LocalPlayer
 -- Default Roblox controls handle walking relative to the camera.
 ContextActionService:BindActionAtPriority("DeclineNoJump", function()
@@ -25,7 +26,16 @@ RunService:BindToRenderStep("DeclineCamera", Enum.RenderPriority.Camera.Value + 
  camera.CameraType = Enum.CameraType.Scriptable
  camera.FieldOfView = Config.CameraFieldOfView
  local target = root.Position
- local position = target + Vector3.new(0, Config.CameraHeight, Config.CameraBack)
+ local offset=Vector3.new(0,Config.CameraHeight,Config.CameraBack)
+ local base=CFrame.lookAt(target+offset,target,Vector3.new(0,0,-1))
+ local origin=base:PointToObjectSpace(target)
+ local forward=root.CFrame.LookVector
+ forward=Vector3.new(forward.X,0,forward.Z)
+ local direction=base:VectorToObjectSpace(forward.Magnitude>.001 and forward.Unit or Vector3.new(0,0,-1))
+ local tangent=math.tan(math.rad(Config.CameraFieldOfView/2))
+ local bonus=player:GetAttribute("ViewBonus") or 0
+ local scale=ProgressionRules.ViewScale(origin,direction,tangent,camera.ViewportSize.X/math.max(1,camera.ViewportSize.Y),bonus)
+ local position = target + offset*scale
  camera.CFrame = CFrame.lookAt(position, target, Vector3.new(0, 0, -1))
  camera.Focus = CFrame.new(target)
 end)

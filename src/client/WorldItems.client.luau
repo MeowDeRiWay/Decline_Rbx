@@ -36,7 +36,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
- if not root or not camera or character:GetAttribute("Knockout") or (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen")) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if not root or not camera or character:GetAttribute("Knockout") or (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen")) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  -- GetMouseLocation already matches ViewportPointToRay coordinates.
  local viewportMouse = mouse
@@ -62,6 +62,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
   label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and (chest.Name=="CuttingBoard" and "Cutting Board" or chest.Name=="Workstation" and "Workstation" or "Stove") or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
+  if stoveHovered and chest.Name~="Workstation" and player:GetAttribute("Profession")~="Cook" then label.Text=chest.Name.."\nCook profession required" end
   label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-44)))
   label.Visible = true
   return
@@ -83,7 +84,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  label.Visible = true
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
- if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen")) then
+ if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen")) then
   action:FireServer(stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
  end
 end)

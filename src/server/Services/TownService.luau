@@ -7,6 +7,7 @@ local Rules = require(ReplicatedStorage.Shared.TownRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Inventory = require(script.Parent.InventoryService)
 local BuildingStorage = require(script.Parent.BuildingStorage)
+local Progression = require(script.Parent.ProgressionService)
 local Service = {}
 local towns, plots, sessions, pending, lastAction = {}, {}, {}, {}, {}
 local spawnedPlayers = setmetatable({}, {__mode = "k"})
@@ -106,17 +107,17 @@ local function hasMaterials(player,kind,level)
  for id,amount in pairs(costFor(kind,level)) do if (items[id] or 0)<amount then return false end end
  return true
 end
-local function plotSnapshot(plot)
+local function plotSnapshot(plot,player)
  local town = plotTown(plot)
  local options = {}
  if plot.kind then
   local definition = Config.Buildings[plot.kind]
-  if definition and definition.Levels[plot.level + 1] then
+  if definition and definition.Levels[plot.level + 1] and Progression.CanBuild(player,plot.kind) then
    table.insert(options, {ID = plot.kind, Name = definition.Name, Level = plot.level + 1, Cost = costFor(plot.kind,plot.level+1)})
   end
  else
   for id, definition in pairs(Config.Buildings) do
-   table.insert(options, {ID = id, Name = definition.Name, Level = 1, Cost = costFor(id,1)})
+   if Progression.CanBuild(player,id) then table.insert(options, {ID = id, Name = definition.Name, Level = 1, Cost = costFor(id,1)}) end
   end
  end
  return {Model = plot.model, TownID = town and town.id, OwnerID = plot.owner, OwnerName = nameOf(plot.owner),
@@ -161,7 +162,7 @@ function Service.Snapshot(player)
  end
  return {Towns = list, Election = election, Prompts = prompts, TownID = player:GetAttribute("TownID"), Session = session and {
   Kind = session.kind, TownID = session.town and session.town.id,
-  Plot = session.plot and plotSnapshot(session.plot),
+  Plot = session.plot and plotSnapshot(session.plot,player),
  } or nil}
 end
 function Service.Publish()
@@ -188,6 +189,7 @@ end
 local function build(plot, kind, level, player)
  local template = templateFor(kind, level)
  if not template then return false end
+ if not Progression.CanBuild(player,kind) then return false,"Your profession cannot construct this building." end
  local clone = template:Clone()
  local sourceSpace=clone:FindFirstChild("Space")
  local alignment=sourceSpace and sourceSpace:GetPivot():ToObjectSpace(clone:GetPivot()) or CFrame.new()
@@ -272,7 +274,8 @@ function Service.PlaceCharacter(player, character)
  character:PivotTo(CFrame.new(frame.Position + Vector3.new(0, radius + root.Size.Y/2 + hp.HipHeight + .1, 0)))
  root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
  if not initializedCharacters[character] then
-  hp.Health = not spawnedPlayers[player] and 100 or (hospital and hp.MaxHealth or 2)
+  hp.MaxHealth = player:GetAttribute("MaxHealth") or 100
+  hp.Health = not spawnedPlayers[player] and hp.MaxHealth or (hospital and hp.MaxHealth or 2)
   spawnedPlayers[player] = true
   initializedCharacters[character] = true
   character:SetAttribute("Health", hp.Health)
@@ -475,6 +478,7 @@ local function handle(player, command, value, extra)
   local town = plotTown(plot)
   if not town or townOf(player) ~= town then return end
   if command == "Build" then
+   if not Progression.CanBuild(player,value) then tell(player,"Your profession cannot construct this building."); return end
    local definition = typeof(value) == "string" and Config.Buildings[value]
    local level = plot.kind and plot.level + 1 or 1
    if not definition or not definition.Levels[level] or (plot.kind and (plot.kind ~= value or not owns(player, plot))) or plot.pending then return end

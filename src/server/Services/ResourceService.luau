@@ -6,6 +6,7 @@ local Area = require(script.Parent.AreaService)
 local Inventory = require(script.Parent.InventoryService)
 local WorldItems = require(script.Parent.WorldItemService)
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
+local Progression = require(script.Parent.ProgressionService)
 local Service = {}
 local random = Random.new()
 local nodes, zones = {}, {}
@@ -184,6 +185,7 @@ function Service.Hit(player,model,weapon)
  if node.Health == 0 then
   local loot = {}
   for id,amount in pairs(resource.Loot) do loot[id] = random:NextInteger(amount.Min,amount.Max) end
+  loot = Progression.Loot(player,loot)
   if not WorldItems.SpawnLoot(loot,bottom(model),{model,character}) then
    node.Health = previousHealth
    model:SetAttribute("Health",node.Health)
@@ -191,6 +193,7 @@ function Service.Hit(player,model,weapon)
   end
   -- Invalidate before granting loot so a second strike cannot harvest twice.
   nodes[model] = nil
+  Progression.Award(player,10)
   if node.Zone and zones[node.Zone] then
    local state = zones[node.Zone]
    state.Nodes[model] = nil

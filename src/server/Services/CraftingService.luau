@@ -6,6 +6,7 @@ local Recipes=require(ReplicatedStorage.Shared.CraftConfig)
 local Rules=require(ReplicatedStorage.Shared.CraftRules)
 local Amounts=require(ReplicatedStorage.Shared.InventoryRules)
 local Interaction=require(ReplicatedStorage.Shared.Interaction)
+local Progression=require(script.Parent.ProgressionService)
 local Service={}
 local states=setmetatable({},{__mode="k"})
 local sessions={}
@@ -47,7 +48,7 @@ local function cancel(stove,job)
  notify(stove)
 end
 function Service.Open(player,stove)
- if not reachable(player,stove) then return false end
+ if not reachable(player,stove) or not Progression.CanStation(player,stove.Name) then return false end
  if sessions[player] and sessions[player]~=stove then Service.Close(player) end
  states[stove]=states[stove] or {Ready={}}
  sessions[player]=stove
@@ -73,7 +74,7 @@ function Service.Cook(player,id,requested)
  if not reachable(player,stove) then Service.Close(player); return false end
  local recipe=typeof(id)=="string" and Recipes[id]
  local state=states[stove]
- if not recipe or recipe.Station~=stove.Name or state.Job then return false end
+ if not recipe or recipe.Station~=stove.Name or state.Job or not Progression.CanStation(player,stove.Name) then return false end
  local own=Inventory.Snapshot(player)
  local speed=Rules.Speed(own.CraftTools or {},recipe)
  if not speed or speed<=0 then return false end
@@ -97,8 +98,10 @@ function Service.Cook(player,id,requested)
   if not stove:IsDescendantOf(workspace) or state.Job~=job then return end
   if job.RequiresPresence and (sessions[player]~=stove or player.Character~=character or not reachable(player,stove)) then cancel(stove,job); return end
   unlock(job)
-  for output,amount in pairs(plan.Outputs) do state.Ready[output]=(state.Ready[output] or 0)+amount end
+  local outputs=Progression.Loot(player,plan.Outputs)
+  for output,amount in pairs(outputs) do state.Ready[output]=(state.Ready[output] or 0)+amount end
   state.Job=nil
+  Progression.CraftXP(player,stove.Name)
   notify(stove)
  end)
  return true
