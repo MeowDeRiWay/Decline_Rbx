@@ -18,7 +18,7 @@ Tree and scrap-pile models placed in Workspace can be harvested directly for tes
 
 Add Models named `Forest`, `ScrapYard` and `StoneYard` to Workspace. Each model contains one or more flat rectangular Parts marking the spawn surfaces. Keep only marker Parts inside these models; generated resources go into a separate `Workspace/Resources` folder. Give markers visible colors/transparency in Studio. The server hides and anchors them, disables collision, touch and queries, and makes them transparent to vision at runtime. Place the markers at ground level with real ground beneath them. Rotating markers around the vertical axis is supported.
 
-Hand-placed resources in a matching region count as its current population. When an area is empty, generation makes one independent 10% trial per 1x1 stud cell on each marker; successful trials place one randomly rotated template at a random point inside the cell. Partial edge cells scale the probability by their area. A 10x10 marker has 100 trials, averaging 10 candidates, with no minimum and no 20-object cap. Overlapping markers within one region do not double-populate the same space.
+Hand-placed resources in a matching region count as its current population. When an area is empty, generation makes one independent 1% trial per 1x1 stud cell on each marker; successful trials place one randomly rotated template at a random point inside the cell. Partial edge cells scale the probability by their area. A 10x10 marker has 100 trials, averaging 1 candidate, with no minimum and no 20-object cap. Overlapping markers within one region do not double-populate the same space.
 
 Only the resource bounding-box center must be inside a marker; models may protrude past the edge. There is no center-spacing or edge-gap requirement. Horizontal resource bounding boxes may touch, but not overlap, across all resource types and regions. Candidates that overlap, have no ground, or cannot fit are skipped without relocating or rerolling; large models therefore reduce actual density. A spatial index limits overlap checks in dense areas.
 
@@ -90,3 +90,5 @@ Targets standing close to walls use a nearby collision-free standing endpoint wh
 Kitchen template: **ServerStorage/Buildings/Kitchen (T1)**, with nested Space, BuildingMenu and optional Stove. Costs 1 TreeLog from the builder upon mayor approval; mayors must approve their own requests too. See TOWN_SETUP.md for details.
 
 All Workstation recipes are limited to one crafting operation per batch. One log still yields three planks in that operation. Stove boiling accepts up to five raw food units per batch, with ingredients charged per unit.
+
+Resource density is now **1% per square stud** for Forest, ScrapYard and StoneYard. A 40x100 region averages 40 candidates per resource type present, before ground/overlap rejection. If different resource region types share the same footprint their candidate counts add together.

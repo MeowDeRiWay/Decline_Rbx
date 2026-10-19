@@ -35,3 +35,10 @@ for _,id in ipairs({"MakeAxe","MakeShovel"}) do
 end
 assert(Items.Stone.Weight==.2)
 print("PASS: area trials, 0–100 range, fractional cells, ten-percent density and stone tool recipe costs")
+
+local Config=require("../src/shared/ResourceConfig")
+local candidates=0
+for _=1,100 do Rules.RollCells(40,100,Config.Tree.SpawnChance,rng,function() candidates+=1 end) end
+assert(candidates>3700 and candidates<4300,"40x100 at 1 percent averages about 40 candidates")
+for _,definition in pairs(Config) do assert(definition.SpawnChance==.01) end
+print("PASS: all resource types use one-percent density; 40x100 averages forty candidates")

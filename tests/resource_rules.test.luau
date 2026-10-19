@@ -23,7 +23,7 @@ assert(not Rules.Spaced({{X=0,Z=0}},7.99,0,8))
 assert(Rules.Spaced({{X=0,Z=0}},1,0,1))
 assert(not Rules.Spaced({{X=0,Z=0}},.7,.7,1))
 for _,resource in pairs(Config) do
- assert(resource.SpawnChance == .1)
+ assert(resource.SpawnChance == .01)
  assert(resource.Spacing == nil and resource.EdgeGap == nil)
  assert(resource.RespawnMin == 30 and resource.RespawnMax == 300)
  for id,range in pairs(resource.Loot) do
