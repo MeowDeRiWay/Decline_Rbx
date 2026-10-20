@@ -42,20 +42,20 @@ print("PASS: stable zoom limits and strength-adjusted carrying threshold")
 local cook=Rules.New(); cook.Profession="Cook"
 cook.Talents={SurpriseServing=true,GrandmasMethod=true,RamsayMethod=true}
 local effects=Rules.CraftEffects(cook,"Stove",5)
-assert(effects.DurationMultiplier==.8 and effects.BonusServing)
+assert(effects.DurationMultiplier==1 and effects.BonusServing==0)
 local recipe={Output="BoiledPotato",OutputCount=1}
 local outputs=Rules.CraftOutputs({BoiledPotato=5},recipe,effects)
-assert(outputs.BoiledPotato==6)
+assert(outputs.BoiledPotato==5)
 assert(Rules.CraftOutputs({BoiledPotato=4},recipe,Rules.CraftEffects(cook,"Stove",4)).BoiledPotato==4)
-assert(Rules.CraftEffects(cook,"CuttingBoard",5).DurationMultiplier==.8)
+assert(Rules.CraftEffects(cook,"CuttingBoard",5).DurationMultiplier==1)
 assert(Rules.CraftEffects(cook,"CuttingBoard",5).BonusServing==0)
 assert(Rules.CraftEffects(cook,"Workstation",5).DurationMultiplier==1)
 cook.Stats.Luck=3
-assert(Rules.BonusLoot(outputs,cook.Stats,function() return 0 end).BoiledPotato==8,"luck and bonus serving stack")
+assert(Rules.BonusLoot(outputs,cook.Stats,function() return 0 end).BoiledPotato==7,"luck remains independent after retired cooking talents")
 cook.Profession=""
 assert(Rules.CraftEffects(cook,"Stove",5).BonusServing==0)
 assert(Rules.CraftEffects(cook,"Stove",5).DurationMultiplier==1)
-print("PASS: 5 initial points, full-batch serving, both cooking duration effects and independent luck stacking")
+print("PASS: 5 initial points, retired cooking talents inactive, base cooking outputs and independent luck stacking")
 
 local ranked=Rules.New(); ranked.Profession="Cook"
 assert(ranked.TalentPoints==0 and not Rules.Learn(ranked,"KnifeMaster",{Level=1}))

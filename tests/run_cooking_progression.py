@@ -53,16 +53,16 @@ assert(Service.Snapshot(a).CookingReady.BoiledPotato==5 and stock.Potato==5 and 
 assert(xp==10 and bonuses==1,"one specialty XP award and loot roll at successful completion")
 cookState.Talents={SurpriseServing=true,GrandmasMethod=true,RamsayMethod=true}
 assert(Service.Cook(a,"BoilPotatoes",5))
-assert(durations[3]==48,"20 percent less time for stove")
+assert(durations[3]==60,"retired talent cannot speed stove")
 callbacks[3]()
-assert(Service.Snapshot(a).CookingReady.BoiledPotato==11,"second full batch adds six")
+assert(Service.Snapshot(a).CookingReady.BoiledPotato==10,"second full batch adds five")
 stock.Potato=1; stock.CleanWater=1
 assert(Service.Cook(a,"BoilPotatoes",1)); callbacks[4]()
-assert(Service.Snapshot(a).CookingReady.BoiledPotato==12,"partial batch has no extra serving")
+assert(Service.Snapshot(a).CookingReady.BoiledPotato==11,"partial batch has no extra serving")
 local board=make("Model","CuttingBoard",workspace); make("Part","Part",board)
 stock.Sausage=1
 assert(Service.Open(a,board) and Service.Cook(a,"SliceSausage",1))
-assert(durations[5]==8,"20 percent less time for cutting board")
+assert(durations[5]==10,"retired talent cannot speed cutting board")
 callbacks[5]()
 assert(Service.Snapshot(a).CookingReady.SausageSlice==5,"stove serving talent must not affect board")
 assert(xp==40 and bonuses==4)

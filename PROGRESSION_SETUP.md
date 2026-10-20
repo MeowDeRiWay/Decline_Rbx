@@ -83,3 +83,18 @@ not the hit. Per-rank maximums:50%dodge,90%crit cancellation,90%condition saving
 only for Hunter. Weight discount affects carried loose ammunition (including
 allocated magazine rounds), not guns/resources/chests. Inventory total and LoadKg
 refresh when the multiplier changes. Attention camera allowance is0.5stud/point.
+
+## Compact progression menu (20 October)
+
+Attribute hover contains ONLY Per point bonuses, sized to its text. Talent list
+has Requires level N headings and two-column compact name/rank cards. Hover shows
+this talent's current and next cumulative rank bonuses; clicking the card spends
+one talent point if unlocked. No bottom detail/learn panel. Percentages display
+as %, with additive accuracy semantics unchanged. Maximum rank10 and server
+prerequisite/point validation unchanged.
+
+Cook now has ONLY Knife Master and Kevlar Apron. SurpriseServing,
+GrandmasMethod,RamsayMethod removed from definitions AND cooking effects.
+Legacy stored ranks do not grant speed or extra servings. Stove/board use base
+recipe time and outputs; Worker Golden Hands and independent Luck are preserved.
+This supersedes earlier descriptions of those three retired talents.

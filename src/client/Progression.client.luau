@@ -6,6 +6,8 @@ local Run=game:GetService("RunService")
 local player=Players.LocalPlayer
 local config=require(ReplicatedStorage.Shared.ProgressionConfig)
 local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
+local Presentation=require(ReplicatedStorage.Shared.ProgressionPresentation)
+local TextService=game:GetService("TextService")
 local remotes=ReplicatedStorage:WaitForChild("ProgressionRemotes")
 local action=remotes:WaitForChild("Action")
 local palette={Background=Color3.fromRGB(22,28,33),Panel=Color3.fromRGB(22,28,33),Card=Color3.fromRGB(30,38,45),Button=Color3.fromRGB(42,53,62),Accent=Color3.fromRGB(235,240,244),Border=Color3.fromRGB(63,73,82),Text=Color3.fromRGB(235,240,244),Muted=Color3.fromRGB(160,174,184),Green=Color3.fromRGB(90,220,145)}
@@ -46,7 +48,7 @@ local xp=label(left,"XP 0 / 100",UDim2.fromOffset(20,79),UDim2.fromOffset(420,20
 local xpTrack=frame(left,UDim2.fromOffset(20,104),UDim2.fromOffset(422,6),palette.Background)
 local xpFill=frame(xpTrack,UDim2.new(),UDim2.fromScale(0,1),palette.Accent)
 local points=label(left,"Unspent points: 0",UDim2.fromOffset(20,122),UDim2.fromOffset(420,26),16,palette.Accent)
-local snapshot,selectedTalent,hoveredAttribute
+local snapshot,hoveredTalent,hoveredAttribute
 local cards={}
 local initials={Strength="STR",Endurance="END",Attention="ATT",Luck="LCK"}
 for order,stat in ipairs(config.Stats) do
@@ -58,7 +60,7 @@ for order,stat in ipairs(config.Stats) do
  local plus=button(card,"+",UDim2.fromOffset(366,16),UDim2.fromOffset(40,36),function()
   if snapshot and snapshot.Points>0 then action:FireServer("Spend",stat) end
  end)
- card.MouseEnter:Connect(function() hoveredAttribute=stat end)
+ card.MouseEnter:Connect(function() hoveredAttribute=stat;hoveredTalent=nil end)
  card.MouseLeave:Connect(function() if hoveredAttribute==stat then hoveredAttribute=nil end end)
  cards[stat]={Frame=card,Value=value,Plus=plus}
 end
@@ -66,19 +68,9 @@ frame(panel,UDim2.fromOffset(487,62),UDim2.fromOffset(1,640),palette.Border)
 local tooltip=label(gui,"",UDim2.new(),UDim2.fromOffset(340,200),15)
 tooltip.Name="AttributeTooltip"; tooltip.BackgroundTransparency=.05
  tooltip.BackgroundColor3=Color3.fromRGB(20,26,31); tooltip.ZIndex=30; tooltip.Visible=false
- tooltip.TextXAlignment=Enum.TextXAlignment.Center
-local function attributeText(stat)
- local bonus=snapshot.Bonuses
- local header=stat.." · "..snapshot.Stats[stat].."\n\n"
- if stat=="Strength" then
-  return header..string.format("Per point: +1 kg carry capacity\n+1 melee damage\n\nCarry capacity: %g kg\nMelee damage bonus: +%g\nNo attribute limit",bonus.CarryLimitKg,bonus.MeleeBonus)
- elseif stat=="Endurance" then
-  return header..string.format("Per point: +0.2 running speed\n+5 maximum HP\n\nRun speed bonus: +%g\nMaximum health: %g HP\nWalking speed is unchanged · No limit",bonus.RunBonus,bonus.MaxHealth)
- elseif stat=="Attention" then
-  return header..string.format("Per point: +2%% accuracy\n+0.5 studs forward view\n\nAccuracy: %.0f%% · Maximum: 90%%\nForward view bonus: +%g studs\nFailed living-target attacks show Miss",bonus.Accuracy*100,bonus.ViewBonus)
- end
- return header..string.format("Per point: +3%% bonus loot chance\n+1 bonus item per 3 invested points\n\nBonus chance: %.0f%% · Maximum: 50%%\nExtra items on success: %d\nApplies to newly generated loot",bonus.LuckChance*100,bonus.LuckAmount)
-end
+ tooltip.TextXAlignment=Enum.TextXAlignment.Left
+ tooltip.TextYAlignment=Enum.TextYAlignment.Top
+local tooltipPadding=Instance.new("UIPadding");tooltipPadding.PaddingTop=UDim.new(0,10);tooltipPadding.PaddingBottom=UDim.new(0,10);tooltipPadding.PaddingLeft=UDim.new(0,12);tooltipPadding.PaddingRight=UDim.new(0,12);tooltipPadding.Parent=tooltip
 local profession=label(right,"No profession selected",UDim2.fromOffset(20,48),UDim2.fromOffset(340,28),18)
 local permissions=label(right,"",UDim2.fromOffset(20,82),UDim2.fromOffset(340,30),12,palette.Muted)
 local choose=button(right,"Choose Cook",UDim2.fromOffset(378,46),UDim2.fromOffset(190,32),function() action:FireServer("Choose","Cook") end)
@@ -88,29 +80,7 @@ local talentPoints=label(right,"Talent points: 0",UDim2.fromOffset(20,114),UDim2
 local tree=Instance.new("ScrollingFrame")
 tree.Position=UDim2.fromOffset(20,134); tree.Size=UDim2.fromOffset(548,330); tree.BackgroundColor3=palette.Background
  tree.BorderSizePixel=0; tree.ScrollBarThickness=4; tree.ScrollBarImageColor3=palette.Accent; tree.CanvasSize=UDim2.new(); tree.Parent=right
-local detail=frame(right,UDim2.fromOffset(20,480),UDim2.fromOffset(548,138),palette.Background)
-local detailTitle=label(detail,"Talent details",UDim2.fromOffset(14,10),UDim2.fromOffset(520,24),17,palette.Accent)
-local detailText=label(detail,"Select a talent to inspect its requirements and effects.",UDim2.fromOffset(14,40),UDim2.fromOffset(350,84),12,palette.Muted)
-detailText.TextYAlignment=Enum.TextYAlignment.Top
-local learn=button(detail,"Learn",UDim2.fromOffset(386,82),UDim2.fromOffset(148,38),function()
- if selectedTalent and snapshot then
-  local profession=config.Professions[snapshot.Profession]
-  if profession and profession.Talents[selectedTalent] then action:FireServer("Talent",selectedTalent) end
- end
-end)
-learn.Visible=false
 local function canLearn(id,definition) return Rules.CanLearn(snapshot,id,definition) end
-local function talentDetails(id,definition)
- detailTitle.Text=(definition.Name or id).." · "..Rules.Rank(snapshot,id).." / 10"
- local prerequisiteNames={}
- local current=config.Professions[snapshot.Profession]
- for _,parent in ipairs(definition.Requires or {}) do table.insert(prerequisiteNames,current.Talents[parent] and (current.Talents[parent].Name or parent) or parent) end
- detailText.Text=(definition.Description or "").."\nRequires profession level "..(definition.Level or 0)..(#prerequisiteNames>0 and "\nRequires: "..table.concat(prerequisiteNames,", ") or "")
- learn.Visible=true
- local available=canLearn(id,definition)
- learn.Text=Rules.Rank(snapshot,id)>=10 and "Max rank" or available and "Upgrade (1 point)" or "Locked"
- learn.Active=available; learn.AutoButtonColor=available; learn.TextColor3=available and palette.Accent or palette.Muted
-end
 local function redraw()
  if not snapshot then return end
  local definition=config.Professions[snapshot.Profession]
@@ -126,7 +96,7 @@ local function redraw()
  profession.Text=definition and definition.Name.." · Level "..snapshot.Level or "Choose a profession"
  choose.Visible=definition==nil; chooseWorker.Visible=definition==nil; chooseHunter.Visible=definition==nil
  tree.Position=UDim2.fromOffset(20,definition and 134 or 172)
- tree.Size=UDim2.fromOffset(548,definition and 330 or 292)
+ tree.Size=UDim2.fromOffset(548,definition and 484 or 446)
  talentPoints.Text="Talent points: "..snapshot.TalentPoints
  if definition then
   local stations,buildings={},{}
@@ -139,46 +109,41 @@ local function redraw()
  local talents=definition and definition.Talents or {}
  local ids={}; for id in pairs(talents) do table.insert(ids,id) end
  table.sort(ids,function(a,b) local x,y=talents[a].Level or 0,talents[b].Level or 0; return x==y and a<b or x<y end)
- local positions={}
- local nextRow,level,row,column=0,nil,0,0
- for _,id in ipairs(ids) do
-  local required=talents[id].Level or 0
-  if required~=level then level=required; row=nextRow; column=0 end
-  if column>=3 then row+=1; column=0 end
-  positions[id]=Vector2.new(18+column*174,20+row*128)
-  nextRow=math.max(nextRow,row+1); column+=1
- end
- for _,id in ipairs(ids) do
-  for _,parent in ipairs(talents[id].Requires or {}) do
-   if positions[parent] then
-    local a=positions[parent]+Vector2.new(79,48)
-    local b=positions[id]+Vector2.new(79,48)
-    local delta=b-a
-    local connector=frame(tree,UDim2.fromOffset((a.X+b.X)/2,(a.Y+b.Y)/2),UDim2.fromOffset(delta.Magnitude,2),palette.Border)
-    connector.AnchorPoint=Vector2.new(.5,.5); connector.Rotation=math.deg(math.atan2(delta.Y,delta.X)); connector.ZIndex=1
-   end
+ local y,index=10,1
+ while index<=#ids do
+  local required=talents[ids[index]].Level or 1
+  label(tree,"Requires level "..required..":",UDim2.fromOffset(8,y),UDim2.fromOffset(520,26),15,palette.Accent)
+  y+=34
+  local column=0
+  while index<=#ids and (talents[ids[index]].Level or 1)==required do
+   local id=ids[index]
+   local talent=talents[id]
+   local node=button(tree,(talent.Name or id).."\n"..Rules.Rank(snapshot,id).." / 10",UDim2.fromOffset(8+column*266,y),UDim2.fromOffset(254,58),function()
+    if canLearn(id,talent) then action:FireServer("Talent",id) end
+   end)
+   node.TextWrapped=true;node.TextSize=14
+   node.AutoButtonColor=canLearn(id,talent)
+   node.TextColor3=Rules.Rank(snapshot,id)>0 and palette.Green or canLearn(id,talent) and palette.Accent or palette.Muted
+   node.MouseEnter:Connect(function() hoveredTalent=id;hoveredAttribute=nil end)
+   node.MouseLeave:Connect(function() if hoveredTalent==id then hoveredTalent=nil end end)
+   index+=1;column+=1
+   if column==2 then column=0;y+=68 end
   end
+  if column>0 then y+=68 end
+  y+=12
  end
- for _,id in ipairs(ids) do
-  local talent=talents[id]
-  local node=button(tree,(talent.Name or id).."\nRank "..Rules.Rank(snapshot,id).." / 10 · Requires level "..(talent.Level or 1),UDim2.fromOffset(positions[id].X,positions[id].Y),UDim2.fromOffset(158,96),function()
-   selectedTalent=id; talentDetails(id,talent)
-  end)
-  node.TextWrapped=true; node.TextSize=13; node.ZIndex=2
-  node.TextColor3=Rules.Rank(snapshot,id)>0 and palette.Green or canLearn(id,talent) and palette.Accent or palette.Muted
- end
- tree.CanvasSize=UDim2.fromOffset(0,math.max(330,nextRow*128+20))
+ tree.CanvasSize=UDim2.fromOffset(0,y)
+ if hoveredTalent and not talents[hoveredTalent] then hoveredTalent=nil end
  if #ids==0 then
   local emptyTitle=label(tree,definition and string.upper(definition.Name) or "NO PROFESSION",UDim2.fromOffset(30,78),UDim2.fromOffset(480,44),28,palette.Accent)
   emptyTitle.Font=Enum.Font.GothamMedium; emptyTitle.TextXAlignment=Enum.TextXAlignment.Center
   local emptyText=label(tree,definition and "No talents available yet.\nYour profession tree will appear here." or "Choose a profession to view its talent tree.",UDim2.fromOffset(60,140),UDim2.fromOffset(420,76),15,palette.Muted)
   emptyText.TextXAlignment=Enum.TextXAlignment.Center
  end
- if selectedTalent and talents[selectedTalent] then talentDetails(selectedTalent,talents[selectedTalent])
- else selectedTalent=nil; detailTitle.Text="Talent details"; detailText.Text="Select a talent to inspect its requirements and effects.\nTalents unlock at the required profession level."; learn.Visible=false end
+
 end
 local function setOpen(open)
- panel.Visible=open; tooltip.Visible=false; hoveredAttribute=nil; player:SetAttribute("ProgressionOpen",open)
+ panel.Visible=open; tooltip.Visible=false; hoveredAttribute=nil; hoveredTalent=nil; player:SetAttribute("ProgressionOpen",open)
  if open then
   Context:BindActionAtPriority("ProgressionBlockMovement",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+2,Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump)
   action:FireServer("Request")
@@ -193,11 +158,21 @@ Run.RenderStepped:Connect(function()
  scale.Scale=math.min(1,camera.ViewportSize.X*.95/1100,camera.ViewportSize.Y*.9/720)
  if not snapshot then return end
  local mouse=Input:GetMouseLocation()
- if hoveredAttribute then
-  tooltip.Text=attributeText(hoveredAttribute)
-  local width=math.min(340,math.max(1,camera.ViewportSize.X-16))
-  tooltip.Size=UDim2.fromOffset(width,200)
-  tooltip.Position=UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-width)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-200)))
+ local text
+ if hoveredAttribute then text=Presentation.Attribute(hoveredAttribute)
+ elseif hoveredTalent then
+  local profession=config.Professions[snapshot.Profession]
+  local talent=profession and profession.Talents[hoveredTalent]
+  if talent then text=Presentation.Talent(snapshot,hoveredTalent,talent) end
+ end
+ if text then
+  tooltip.Text=text
+  local natural=TextService:GetTextSize(text,15,tooltip.Font,Vector2.new(1000,1000))
+  local width=math.min(hoveredAttribute and 300 or 340,math.max(180,natural.X+24),math.max(1,camera.ViewportSize.X-16))
+  local measured=TextService:GetTextSize(text,15,tooltip.Font,Vector2.new(math.max(1,width-24),1000))
+  local height=measured.Y+20
+  tooltip.Size=UDim2.fromOffset(width,height)
+  tooltip.Position=UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-width)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-height)))
   tooltip.Visible=true
  end
 end)

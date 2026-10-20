@@ -30,8 +30,8 @@ Service.Award(a,500)
 local points=Service.Snapshot(a).Points
 call("Talent","SurpriseServing"); call("Talent","GrandmasMethod"); call("Talent","RamsayMethod")
 assert(Service.Snapshot(a).Points==points,"talents do not spend attribute points")
-assert(Service.CraftEffects(a,"Stove",5).BonusServing and Service.CraftEffects(a,"Stove",5).DurationMultiplier==.8)
-assert(Service.CraftEffects(a,"CuttingBoard",1).DurationMultiplier==.8)
+assert(Service.CraftEffects(a,"Stove",5).BonusServing==0 and Service.CraftEffects(a,"Stove",5).DurationMultiplier==1)
+assert(Service.CraftEffects(a,"CuttingBoard",1).DurationMultiplier==1)
 local zombie=make("Model","Zombie",workspace,{LastDamagerID=a.UserId})
 Service.ZombieDied(zombie,{Scrap=1}); assert(Service.Snapshot(a).XP==20)
 local worker=ReplicatedStorage.ProgressionRemotes.Action

@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Compact attributes and grouped click-to-upgrade talents — 20 October
+
+- Progression.client rebuilt right list: Requires level N headings,2columns compact58px name/rank cards; MouseEnter shows current/next rank cumulative numeric bonuses via new shared ProgressionPresentation; click sendsTalent directly ifCanLearn. Bottom details/Learn removed, list usesavailableheight484. Correct percent sign instead percentagepoints wording, English text maintained.
+- Attribute tooltip only Per point lines; no name/current totals/caps/extras. Auto-size usingTextService and padding, viewport-clamped mouse positioning, original MouseEnter/Leave prevents inset offset. Shared presentation covers ALL remainingCook/Worker/Huntertalents, locked/nopoints/max states.
+- Cook SurpriseServing/GrandmasMethod/RamsayMethod deleted fromConfig; CraftEffects no longer reads them, CraftOutputs clonesbaseoutputs. Oldrankdata inert, not merely hidden. Cook KnifeMaster/KevlarApron retained; GoldenHands/Luck unchanged. Updated tests retiredcook assertions and added run_progression_presentation.py. Compile, progressionrules/service/cooking andRojo. Studio visual check still user.
+
 ## Hunter profession and critical/dodge combat — 20 October
 
 - Hunter added to P choice and tree (English), max10ranks/1point each; talent levels1/5/10 per user. All exact descriptions/formula PROGRESSION_SETUP.md. Hunter no assigned buildings/stations yet, public Workstation retained. Rifle223 Category Automatic (not rifle talent); future Pistol/Rifle/MachineGun mapped by Firearm.Category.

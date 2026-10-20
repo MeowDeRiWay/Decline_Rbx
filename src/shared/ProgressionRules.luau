@@ -63,22 +63,13 @@ end
 -- Effects are captured when work starts, independently from luck.
 function Rules.CraftEffects(state,station,count)
  local effects={DurationMultiplier=1,BonusServing=0}
- if state.Profession=="Cook" then
-  if station=="Stove" then
-   effects.DurationMultiplier=.8^Rules.Rank(state,"GrandmasMethod")
-   effects.BonusServing=count==5 and Rules.Rank(state,"SurpriseServing") or 0
-  elseif station=="CuttingBoard" then effects.DurationMultiplier=.8^Rules.Rank(state,"RamsayMethod") end
- elseif state.Profession=="Worker" and station=="Workstation" then
+ if state.Profession=="Worker" and station=="Workstation" then
   effects.DurationMultiplier=1-.04*Rules.Rank(state,"GoldenHands")
  end
  return effects
 end
 function Rules.CraftOutputs(outputs,recipe,effects)
- local result=table.clone(outputs)
- if effects.BonusServing>0 and recipe.Output and result[recipe.Output] then
-  result[recipe.Output]+=(recipe.OutputCount or 1)*effects.BonusServing
- end
- return result
+ return table.clone(outputs)
 end
 -- Zoom bounds are independent of facing/mouse position; Attention expands only the far limit.
 function Rules.ZoomBounds(viewBonus,height,fieldOfView)
