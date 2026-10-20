@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Five-second automatic door closing — 20 October
+
+- All authorized E openings and mayor-approved gate passages now auto-close after5seconds. Authorized activation always opens/restarts timer; no invisible-door closing interaction required. English prompts updated. This supersedes prior20second/toggle behavior. run_town_doors covers both approval and member auto-close with authored-property restoration.
+
 ## Server zombie activity bands — 20 October
 
 - ZombieActivity service centralizes movement: Zombie.server registers AI callbacks instead of one Heartbeat per zombie. Active only executes AI; Minimal/AFK callbacks never run. Server reclassifies against ALL living players' screen ground footprints every~0.5s, yielding every32zombies. ActivityMode replicated for inspection.

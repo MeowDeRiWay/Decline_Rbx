@@ -74,12 +74,12 @@ Co-OwnerID from the live building/BuildingSpace. Public town members can operate
 town gates; private doors allow the owner, co-owners and mayor of the same town.
 Only the owner and mayor can manage co-owners at BuildingMenu.
 
-Hover: green allowed, red locked. E toggles authorized doors, preserving authored
+Hover: green allowed, red locked. E opens authorized doors for 5 seconds, automatically closing them, preserving authored
 part transparency/collision/query/touch/BlocksVision on closing. Opening disables
-collision/query/touch/vision. Hovering the invisible open assembly allows closing.
+collision/query/touch/vision. Activating an already open door restarts its 5-second timer.
 A player without a town can press E on a locked town gate to request passage.
 The current mayor receives an English Y/N approval on the right. Approval only
-opens that specific Door assembly for 20 seconds, then restores it; no membership
+opens that specific Door assembly for 5 seconds, then restores it; no membership
 is granted. The requester must still be alive, unaffiliated and at that gate when
 approved. Other factions cannot request passage. Missing/offline mayor, denial,
 expiry or invalidated leadership leave gates shut. This is passage authorization,

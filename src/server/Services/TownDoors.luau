@@ -64,7 +64,7 @@ function Service.Admit(player, door, townID)
  local record = doors[door]
  if not record or not door:IsDescendantOf(workspace) or ancestorAttribute(door,"TownGate") ~= true
   or ancestorAttribute(door,"TownID") ~= townID or player:GetAttribute("TownID") ~= nil or not near(player,door) then return false end
- record.untilTime = workspace:GetServerTimeNow()+20
+ record.untilTime = workspace:GetServerTimeNow()+5
  setOpen(door,record,true)
  return true
 end
@@ -119,8 +119,8 @@ function Service.Start(requestPassage, tell)
   if not near(player,door) then return end
   local record=doors[door]
   if Service.Allowed(player,door) then
-   record.untilTime=nil
-   setOpen(door,record,not door:GetAttribute("DoorOpen"))
+   record.untilTime=workspace:GetServerTimeNow()+5
+   setOpen(door,record,true)
   elseif player:GetAttribute("TownID")==nil and ancestorAttribute(door,"TownGate")==true and not door:GetAttribute("DoorOpen") then
    requestPassage(player,door,ancestorAttribute(door,"TownID"))
   else tell(player,"This door is locked. You do not have access.") end
