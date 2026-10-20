@@ -74,6 +74,14 @@ function Visuals.Apply(character, id)
   if joint:IsA("JointInstance") or joint:IsA("WeldConstraint") then joint:Destroy() end
  end
  local gripPart = held:IsA("Model") and (held.PrimaryPart or parts[1]) or held
+ if definition.Firearm then
+  local muzzle=held:FindFirstChild("Muzzle",true)
+  if muzzle and (muzzle:IsA("Model") or muzzle:IsA("BasePart") or muzzle:IsA("Attachment")) then
+   local frame=muzzle:IsA("Attachment") and muzzle.WorldCFrame or muzzle:GetPivot()
+   local origin=Instance.new("Attachment");origin.Name="_ShotOrigin"
+   origin.CFrame=gripPart.CFrame:ToObjectSpace(frame);origin.Parent=gripPart
+  end
+ end
  for _, part in ipairs(parts) do
   part.Anchored = false
   part.CanCollide,part.CanTouch,part.CanQuery = false,false,false

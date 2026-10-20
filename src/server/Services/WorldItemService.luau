@@ -6,8 +6,10 @@ local Inventory = require(script.Parent.InventoryService)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local EquipmentVisuals = require(script.Parent.EquipmentVisuals)
+local AmmoRules=require(ReplicatedStorage.Shared.FirearmRules)
+local random=Random.new()
 local Service = {}
-local fallbackItems = {TreeLog = true, Scrap = true, Rags = true, Stone = true}
+local fallbackItems = {TreeLog = true, Scrap = true, Rags = true, Stone = true, Ammo223FMJ=true, Ammo223AP=true}
 local warned = {}
 local folder = workspace:FindFirstChild("WorldItems")
 if not folder then
@@ -23,6 +25,12 @@ local function register(item)
  local id=item:GetAttribute("Item_ID") or item.Name
  if not ItemConfig.Items[id] then return end
  EquipmentVisuals.CaptureTemplate(item,id)
+ local box=ItemConfig.Items[id].AmmoBox
+ if box and item:GetAttribute("AmmoCount")==nil then
+  local count=AmmoRules.BoxCount(item:GetAttribute("MaxAmmo") or box.Maximum,random:NextNumber())
+  if not count then return end
+  item:SetAttribute("AmmoCount",count)
+ end
  item:SetAttribute("Item_ID",id)
  if item:GetAttribute("Quantity")==nil then item:SetAttribute("Quantity",1) end
  queryable(item)
@@ -83,12 +91,21 @@ function Service.Pickup(player, item)
   if not ok then return false end
   conditions = value
  end
- if not Inventory.Add(player, id, count, conditions) then return false end
+ local box=ItemConfig.Items[id].AmmoBox
+ if box then
+  local caliber=item:GetAttribute("Caliber") or box.Caliber
+  local kind=item:GetAttribute("AmmoType") or box.Type
+  local ammo=AmmoRules.AmmoID(caliber,kind)
+  local rounds=item:GetAttribute("AmmoCount")
+  if not ammo or typeof(rounds)~="number" or rounds<1 or rounds>10000 or rounds~=math.floor(rounds) then return false end
+  if not Inventory.Add(player,ammo,rounds) then return false end
+ elseif not Inventory.Add(player, id, count, conditions) then return false end
  item:Destroy()
  return true
 end
 local function makeItem(id)
  local source = EquipmentVisuals.Template(id)
+ if not source and (id=="Ammo223FMJ" or id=="Ammo223AP") then source=EquipmentVisuals.Template("AmmoBox223"..string.sub(id,8)) end
  if source and (source:IsA("Model") or source:IsA("BasePart")) then
   local item = source:Clone()
   if item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart",true) then item:Destroy()

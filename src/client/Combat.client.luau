@@ -14,6 +14,7 @@ Input.InputBegan:Connect(function(input,processed)
  local motor = held and held:FindFirstChild("WeaponGrip")
  local definition = character and items[character:GetAttribute("HandsItem")]
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+ if definition and definition.Firearm then return end
  if not motor or not definition or not definition.Weapon or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") or (character:GetAttribute("WeaponCondition") or 0) <= 0 or os.clock() < ready then return end
  local weapon = definition.Weapon
  if definition.CraftTool=="Knife" then

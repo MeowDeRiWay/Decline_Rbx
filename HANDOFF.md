@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Rifle223 firearms — 20 October
+
+- Implemented first firearm, not pistol yet. FIREARMS_SETUP.md authoritative. ItemConfig Rifle223 Firearm+Weapon, Ammo223FMJ/AP loose stacks and AmmoBox223FMJ/AP box definitions. World boxes rollAmmoCount1..MaxAmmo once, pickup converts to loose rounds; world ammo drops retain exactQuantity and can reuse box art. Caliber223 string, AmmoTypeFMJ/AP. User corrected screenshot FJM typo, retained Model Muzzle and set pivot.
+- EquipmentVisuals derives internal _ShotOrigin Attachment from Muzzle pivot for weld-safe origin; authored model kept. Combat melee excludes Firearm items server/client. New Firearms.server owns30mag/600RPM/2.5reload/750speed/350range/25damage/3000condition, Inventory.Changed clamps allocations. Ammo stays in total inventory until shot (reserve=total-loaded), no duplication/loss on drops/death/swap. Ttype,Rreload,holdLMB and emptyautoReload. HUD ammo/reloading attributes.
+- Shared FirearmRules block OBB slab, merged contiguous/overlapping intervals, resistance budget. FirearmProjectiles sharedHeartbeat swept rays, serverdamage/Accuracy/killtag, origin guard, lifetime range, AP half hard resistance, wall entry/exit FXbatched200stud nearby clients. Limits256bullets/64impacts/128materialparts. Thickness only blockParts; unknownmaterials/nonblock stop. Livinghit stops bullet. No compositeembeddedmaterial/verticalaim/audio/ricochet/destruction yet. Game balance not physicalballistics.
+- Tests rules/service/projectiles/ammo_pickup actualmodules inengine mocks; auto reloadrate/ammo/swap, thin2layer wall FXmerge, AP, movingtarget/exactrange, boxesrollonce/dropcount. Compile/Rojo. User must Studio-test grip/visuals/performance.
+
 ## Nested Items categories — 20 October
 
 - User organizes ServerStorage/Items into CookedFood,Materials,RawFood,Food,Tools,Weapons/Close,Weapons/Range; arbitrary Folder nesting now supported. EquipmentVisuals.Template performs category-Folder-only recursive lookup of valid Model/BasePart; does NOT descend into item models, so embedded Handle is not an item template. WorldItemService.makeItem shares resolver for drops/crafts. Existing nested equipment prevents duplicate root capture. Unique item names required; ItemConfig IDs unchanged. Tests run_equipment_templates covers nested weapons/materials/food, no duplicate capture, embedded Handle ignored.

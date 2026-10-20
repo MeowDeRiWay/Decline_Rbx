@@ -1,0 +1,44 @@
+local Rules={}
+-- Gameplay resistance: additional range consumed per stud of material.
+Rules.Resistance={Glass=15,Wood=180,Brick=1800,Concrete=3200,Metal=9000,ArmorSteel=24000}
+function Rules.AmmoID(caliber,kind)
+ return caliber=="223" and (kind=="FMJ" or kind=="AP") and ("Ammo223"..kind) or nil
+end
+function Rules.BoxCount(maximum,roll)
+ if typeof(maximum)~="number" or maximum~=maximum or maximum<1 or maximum==math.huge then return nil end
+ return math.clamp(math.floor(roll*math.min(10000,math.floor(maximum)))+1,1,math.min(10000,math.floor(maximum)))
+end
+function Rules.Cost(material,thickness,kind)
+ local resistance=Rules.Resistance[material]
+ if not resistance then return math.huge end
+ local hard=material=="Brick" or material=="Concrete" or material=="Metal" or material=="ArmorSteel"
+ return thickness*(1+resistance*(kind=="AP" and hard and .5 or 1))
+end
+-- Slab intersection in Part local coordinates; returns path distances, not bbox size.
+function Rules.Interval(origin,direction,frame,size)
+ local p,d=frame:PointToObjectSpace(origin),frame:VectorToObjectSpace(direction)
+ local near,far=-math.huge,math.huge
+ for _,axis in ipairs({"X","Y","Z"}) do
+  local half=size[axis]/2
+  if math.abs(d[axis])<1e-8 then if math.abs(p[axis])>half then return nil end
+  else
+   local a,b=(-half-p[axis])/d[axis],(half-p[axis])/d[axis]
+   if a>b then a,b=b,a end
+   near,far=math.max(near,a),math.min(far,b)
+   if near>far then return nil end
+  end
+ end
+ if far<0 then return nil end
+ return math.max(0,near),far
+end
+function Rules.Merge(intervals)
+ table.sort(intervals,function(a,b) return a[1]<b[1] end)
+ local result={}
+ for _,span in ipairs(intervals) do
+  local previous=result[#result]
+  if previous and span[1]<=previous[2]+.00001 then previous[2]=math.max(previous[2],span[2])
+  else table.insert(result,{span[1],span[2]}) end
+ end
+ return result
+end
+return Rules

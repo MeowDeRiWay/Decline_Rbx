@@ -80,13 +80,16 @@ local function refresh()
  condition.Text = string.format("Condition %d / %d",uses,weapon.MaxUses)
  local fraction = uses/weapon.MaxUses
  condition.TextColor3 = Color3.fromRGB(100,12,20):Lerp(Color3.fromRGB(80,220,110),fraction)
- speed.Text = string.format("%d attacks/min · %.1f kg",weapon.AttacksPerMinute,definition.Weight or 0)
+ if definition.Firearm then
+  damage.Text=string.format("%d / %d · %s",character:GetAttribute("MagazineAmmo") or 0,definition.Firearm.Magazine,character:GetAttribute("AmmoType") or "FMJ")
+  speed.Text=character:GetAttribute("Reloading") and "Reloading..." or string.format("Reserve %d · R reload · T ammo",character:GetAttribute("ReserveAmmo") or 0)
+ else speed.Text = string.format("%d attacks/min · %.1f kg",weapon.AttacksPerMinute,definition.Weight or 0) end
 end
 local function bind(model)
  for _,connection in ipairs(connections) do connection:Disconnect() end
  table.clear(connections)
  character,held = model,nil
- for _,attribute in ipairs({"HandsItem","WeaponCondition"}) do table.insert(connections,model:GetAttributeChangedSignal(attribute):Connect(refresh)) end
+ for _,attribute in ipairs({"HandsItem","WeaponCondition","MagazineAmmo","ReserveAmmo","AmmoType","Reloading"}) do table.insert(connections,model:GetAttributeChangedSignal(attribute):Connect(refresh)) end
  table.insert(connections,model.ChildAdded:Connect(refresh))
  table.insert(connections,model.ChildRemoved:Connect(refresh))
  refresh()

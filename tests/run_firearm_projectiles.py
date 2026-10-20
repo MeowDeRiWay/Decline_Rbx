@@ -1,0 +1,92 @@
+"""Run the real projectile loop on block geometry, including a two-layer wall."""
+from pathlib import Path
+import re,subprocess,sys,tempfile
+root=Path(__file__).resolve().parents[1]
+service=(root/'src/server/Services/FirearmProjectiles.luau').read_text()
+service=re.sub(r'local (Rules|Damage)=require[^\n]+\n','',service)
+mock='''
+function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
+local function signal() return {Connect=function(self,fn) self.fire=fn end} end
+local heartbeat=signal()
+local packets={}
+Instance={new=function() return {FireClient=function(_,player,events) local copy={} for _,e in ipairs(events) do table.insert(copy,table.clone(e)) end;table.insert(packets,copy) end} end}
+local player={UserId=7,GetAttribute=function() return 1 end,Character={FindFirstChild=function() return {Position=Vector3.zero} end}}
+local Players={GetPlayers=function() return {player} end}
+game={GetService=function(_,name) return ({Players=Players,RunService={Heartbeat=heartbeat},ReplicatedStorage={}})[name] end}
+Random={new=function() return {NextNumber=function() return 0 end} end}
+Enum={RaycastFilterType={Exclude=1},PartType={Block=1}}
+RaycastParams={new=function() return {} end}
+local dealt=0
+local Damage={Apply=function(_,amount) dealt+=amount end,Miss=function() error("unexpected miss") end}
+local parts={}
+workspace={}
+function workspace:Raycast(origin,delta,params)
+ local best,nearest=nil,math.huge
+ for _,part in ipairs(parts) do
+  local ignored=false
+  for _,object in ipairs(params.FilterDescendantsInstances) do if object==part or part:IsDescendantOf(object) then ignored=true end end
+  if ignored then continue end
+  local a,b=Rules.Interval(origin,delta.Unit,part.CFrame,part.Size)
+  if a and b>1e-7 and a<=delta.Magnitude and a<nearest then
+   nearest=a;best={Instance=part,Position=origin+delta.Unit*a,Normal=Vector3.new(0,0,-1)}
+  end
+ end
+ return best
+end
+local function group(kind)
+ local g={Parent=workspace,children={}}
+ function g:IsA(class) return class=="Model" end
+ function g:GetAttribute(key) return key=="Material" and kind or nil end
+ function g:GetDescendants() return self.children end
+ function g:FindFirstChildOfClass() end
+ function g:SetAttribute() end
+ return g
+end
+local function part(parent,z,depth)
+ local p={Parent=parent,CFrame=CFrame.new(Vector3.new(0,0,z)),Size=Vector3.new(2,3,depth),CanQuery=true,Shape=1,Material={Name="Plastic"}}
+ function p:IsA(class) return class=="Part" or class=="BasePart" end
+ function p:GetAttribute() end
+ function p:IsDescendantOf(object) local a=self.Parent while a do if a==object then return true end;a=a.Parent end;return false end
+ table.insert(parent.children,p);table.insert(parts,p);return p
+end
+local character=group(nil)
+local target=group(nil)
+local hp={Health=100,Parent=target}
+function target:FindFirstChildOfClass() return hp end
+local definition={Speed=750,Range=350,Damage=25}
+'''
+cases='''
+local function run(kind,ammo)
+ parts={};packets={};dealt=0
+ if kind then local wall=group(kind);part(wall,3-.025,.05);part(wall,3+.025,.05) end
+ part(target,5,.5)
+ assert(Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,ammo,"Rifle223"))
+ for i=1,60 do heartbeat.fire(1/60) end
+ return dealt
+end
+local clear=run(nil,"FMJ");assert(clear>0)
+local fmj=run("Brick","FMJ");assert(fmj>0 and fmj<clear,"thin wall crossed with damage loss")
+local brick=0
+for _,packet in ipairs(packets) do for _,e in ipairs(packet) do if e.Kind=="Impact" and e.Material=="Brick" then brick+=1 end end end
+assert(brick==2,"two visual layers produce ONE entrance and ONE exit")
+local ap=run("Brick","AP");assert(ap>fmj,"AP retains more range/damage through hard material")
+assert(run("Metal","FMJ")==0,"insufficient budget stops projectile before target")
+assert(run("Unknown","AP")==0,"unknown material stops safely")
+parts={};packets={};definition.Range=10
+Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","Rifle223")
+heartbeat.fire(1/60)
+local stopped=false
+for _,packet in ipairs(packets) do for _,e in ipairs(packet) do if e.Kind=="Stop" then assert(math.abs(e.Point.Z-10)<1e-6);stopped=true end end end
+assert(stopped,"air travel consumes range 1:1")
+parts={};packets={};dealt=0;definition.Range=350;definition.Speed=60
+local moving=part(target,5,.5)
+Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","Rifle223")
+heartbeat.fire(1/60);assert(dealt==0)
+moving.CFrame=CFrame.new(Vector3.new(0,0,2))
+heartbeat.fire(1/60);assert(dealt>0,"world raycasts sample moved target during flight")
+print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, AP retention, metal/unknown stop and exact air range")
+'''
+with tempfile.TemporaryDirectory() as directory:
+ path=Path(directory)/'projectiles.luau'
+ path.write_text((root/'tests/city_geometry.fixture.luau').read_text()+'\nlocal Rules=(function()\n'+(root/'src/shared/FirearmRules.luau').read_text()+'\nend)()\n'+mock+'\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
+ subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

@@ -22,6 +22,7 @@ attack.OnServerEvent:Connect(function(player)
  local weapon = Inventory.GetWeapon(player)
  if not weapon then return end
  local definition=Items[character:GetAttribute("HandsItem")]
+ if definition and definition.Firearm then return end
  local knifeMultiplier=definition and definition.CraftTool=="Knife" and (player:GetAttribute("KnifeMultiplier") or 1) or 1
  local motionWeapon=weapon
  if knifeMultiplier~=1 then motionWeapon=table.clone(weapon); motionWeapon.AttacksPerMinute*=knifeMultiplier end
