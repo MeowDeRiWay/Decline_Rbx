@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Character-position audio listener — 20 October
+
+- ReloadSound max25 vs overhead cameraheight30 meant even own reload could be inaudible; same issue affected new12stud footsteps. AudioListener.client now sets legacy SoundService listener CFrame each renderstep to character root position + camera rotation, so zoom/Attention do not alter perceived distances and stereo stays camera-relative. Falls back to camera without character/root, binds automatically afterrespawn. Spatial ranges unchanged. Official Roblox SetListener docs verified; no Studio audio audition.
+
 ## Quieter player footsteps — 20 October
 
 - Footsteps.client configures default Roblox Sound named Running on ALL player characters on EACH listener client, including respawns/late sound creation. GameConfig FootstepVolume=.15 ceiling, RollOffMinDistance2, MaxDistance12, InverseTapered. Volume watcher prevents default controller raising it, preserving quieter/silent values. Other sounds untouched. No per-frame work; old character listeners cleaned on respawn/removal.

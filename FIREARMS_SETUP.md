@@ -96,3 +96,8 @@ Rifle held height uses Firearm.HoldHeightRatio=.4 of root height above root cent
 (shoulder). Existing grip X/Z and rotation are retained; melee tools keep their
 old positions. Muzzle safety ray follows a vertical-then-horizontal path through
 shoulder height, so a low window sill does not block a clear raised muzzle.
+
+AudioListener.client positions the legacy Sound listener at the player root with
+camera orientation. Overhead camera height and zoom no longer attenuate the
+player's own reload/footsteps. Without a character it restores default camera
+listening. This affects spatial Sound instances; no new audio assets are required.
