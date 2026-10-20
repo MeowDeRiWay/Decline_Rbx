@@ -65,15 +65,15 @@ function Service.Close(player)
 end
 function Service.Snapshot(player)
  local chest = sessions[player]
- return {ChestOpen = chest ~= nil, Chest = chest, ChestReadOnly = chest ~= nil and chest:GetAttribute("IsCorpse") == true, ChestName = chest and (chest:GetAttribute("DisplayName") or chest.Name), ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}
+ return {ChestOpen = chest ~= nil, Chest = chest, ChestReadOnly = chest ~= nil and chest:GetAttribute("IsCorpse") == true, ChestName = chest and (chest:GetAttribute("DisplayName") or chest.Name), ChestStacks=chest and contents[chest] and Rules.Stacks(contents[chest],Items.Items) or {}, ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}
 end
-function Service.Transfer(player, id, requested, intoChest)
+function Service.Transfer(player, id, requested, intoChest,key)
  local chest = sessions[player]
  if not reachable(player, chest) then Service.Close(player); return false end
  if intoChest and chest:GetAttribute("IsCorpse") == true then return false end
  if typeof(id) ~= "string" or not Items.Items[id] then return false end
  local storage = contents[chest]
- if not Inventory.Transfer(player, storage, id, requested, intoChest) then return false end
+ if not Inventory.Transfer(player, storage, id, requested, intoChest,key) then return false end
  notify(chest)
  return true
 end

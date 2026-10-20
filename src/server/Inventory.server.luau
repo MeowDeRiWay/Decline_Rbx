@@ -36,11 +36,16 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  if not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return end
- if command == "Equip" then Service.Equip(player, value)
+ local key
+ if typeof(value)=="table" then
+  if typeof(value.ID)~="string" or typeof(value.Key)~="string" or #value.Key>160 then return end
+  key=value.Key;value=value.ID
+ end
+ if command == "Equip" then Service.Equip(player, value,key)
  elseif command == "Holster" then Service.ToggleHolster(player)
  elseif command == "Unequip" then Service.Unequip(player, value)
  elseif command == "Pickup" then WorldItems.Pickup(player, value)
- elseif command == "Drop" then WorldItems.Drop(player, value, amount)
+ elseif command == "Drop" then WorldItems.Drop(player, value, amount,key)
  elseif command == "Eat" then Consumables.Eat(player, value)
  elseif command == "OpenStove" then Chests.Close(player); Crafting.Open(player,value)
  elseif command == "Cook" then Crafting.Cook(player,value,amount)
@@ -48,6 +53,6 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  elseif command == "CollectCooked" then Crafting.Collect(player,value,amount)
  elseif command == "OpenChest" then Crafting.Close(player); Chests.Open(player, value)
  elseif command == "TakeAll" then Chests.TakeAll(player)
- elseif command == "TransferIn" then Chests.Transfer(player, value, amount, true)
- elseif command == "TransferOut" then Chests.Transfer(player, value, amount, false) end
+ elseif command == "TransferIn" then Chests.Transfer(player, value, amount, true,key)
+ elseif command == "TransferOut" then Chests.Transfer(player, value, amount, false,key) end
 end)

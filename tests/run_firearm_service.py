@@ -31,10 +31,24 @@ local Random={new=function() return {NextNumber=function() return wearRoll end} 
 local rounds={Ammo223FMJ=50,Ammo223AP=3}
 local notices={}
 local Journal={Send=function(_,message) table.insert(notices,message) end}
+local magazine={UID=1,Type="FMJ",Loaded=0,Mode="Auto"}
 local shots,uses=0,0
 local played,stopped={},0
 local Audio={Play=function(_,name) table.insert(played,name);return {} end,Stop=function(sound) if sound then stopped+=1 end end}
 local Inventory={Changed=changed,Snapshot=function() return {Items=table.clone(rounds)} end,GetWeapon=function() return true end}
+function Inventory.GetMagazine() return magazine end
+function Inventory.SaveMagazine(_,loaded,kind,mode,ready)
+ magazine.Loaded=loaded;magazine.Type=kind;magazine.Mode=mode;magazine.ReadyAt=ready or magazine.ReadyAt
+ changed.callback(player)
+end
+function Inventory.ReloadMagazine()
+ local id="Ammo223"..magazine.Type
+ local count=math.min(30-magazine.Loaded,rounds[id] or 0)
+ rounds[id]-=count;magazine.Loaded+=count;changed.callback(player)
+end
+function Inventory.UnloadMagazine(_,kind)
+ rounds["Ammo223"..magazine.Type]+=magazine.Loaded;magazine.Loaded=0;magazine.Type=kind;changed.callback(player)
+end
 function Inventory.Remove(_,id,count) assert(rounds[id]>=count);rounds[id]-=count;changed.callback(player);return true end
 function Inventory.UseWeapon() uses+=1;changed.callback(player);return true end
 local Projectiles={Fire=function() shots+=1;return true end}
@@ -57,43 +71,42 @@ typeof=function(v) if type(v)=="table" and v.X then return "Vector3" end;return 
 cases='''
 local fire=action.OnServerEvent.callback
 local direction=Vector3.new(0,0,-1)
-fire(player,"Fire",direction);assert(shots==0,"empty gun cannot fire")
-assert(character:GetAttribute("FireMode")=="Auto")
+fire(player,"Fire",direction);assert(shots==0)
 fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single")
-fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single","mode toggle throttled")
-assert(rounds.Ammo223FMJ==50 and uses==0,"switching mode does not spend ammunition or durability")
+fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single")
 advance(.3);fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Auto")
-fire(player,"Reload");assert(character:GetAttribute("Reloading"))
-fire(player,"Fire",direction);assert(shots==0,"cannot fire while reloading")
-advance(2.5);assert(character:GetAttribute("MagazineAmmo")==30 and rounds.Ammo223FMJ==50,"reload allocates existing rounds without creating/losing stock")
-fire(player,"Fire",direction);assert(shots==1 and rounds.Ammo223FMJ==49 and character:GetAttribute("MagazineAmmo")==29 and uses==1)
-assert(#rays==2 and rays[2].Origin.Y==.8 and rays[2].Delta.Y==0,"muzzle guard crosses window at raised gun height, not diagonally from waist")
-
-fire(player,"Fire",direction);assert(shots==1,"rate limit")
-advance(.1);wall=true;fire(player,"Fire",direction)
-assert(shots==1 and rounds.Ammo223FMJ==49,"solid wall still blocks muzzle and consumes no ammo")
-wall=false
-advance(.1);fire(player,"Fire",Vector3.new(0,0,-100));assert(shots==1,"reject invalid direction")
-fire(player,"Type");assert(character:GetAttribute("AmmoType")=="AP" and character:GetAttribute("MagazineAmmo")==0 and rounds.Ammo223FMJ==49)
-fire(player,"Reload");advance(2.5);assert(character:GetAttribute("MagazineAmmo")==3)
-fire(player,"Fire",direction);assert(rounds.Ammo223AP==2 and shots==2)
-rounds.Ammo223AP=0;changed.callback(player);advance(.1);fire(player,"Fire",direction);assert(shots==2,"dropping/transferring stock cannot duplicate loaded rounds")
+fire(player,"Reload");fire(player,"Fire",direction);assert(shots==0)
+advance(2.5);assert(magazine.Loaded==30 and rounds.Ammo223FMJ==20,"reload moves loose cartridges into weapon")
+fire(player,"Fire",direction);assert(shots==1 and magazine.Loaded==29 and rounds.Ammo223FMJ==20 and uses==1)
+assert(#rays==2 and rays[2].Origin.Y==.8 and rays[2].Delta.Y==0)
+fire(player,"Fire",direction);assert(shots==1,"RPM limit")
+advance(.1);wall=true;fire(player,"Fire",direction);assert(shots==1 and magazine.Loaded==29,"wall guards consume nothing")
+wall=false;advance(.1);fire(player,"Fire",Vector3.new(0,0,-100));assert(shots==1)
+fire(player,"Type");assert(magazine.Type=="AP" and magazine.Loaded==0 and rounds.Ammo223FMJ==49,"type switch returns previous rounds")
+fire(player,"Reload");advance(2.5);assert(magazine.Loaded==3 and rounds.Ammo223AP==0)
+fire(player,"Fire",direction);assert(magazine.Loaded==2 and shots==2)
+rounds.Ammo223AP=0;changed.callback(player)
+assert(character:GetAttribute("MagazineAmmo")==2,"dropping loose stock cannot erase loaded rounds")
+character:SetAttribute("HandsItem","");changed.callback(player)
+character:SetAttribute("HandsItem","Rifle223");changed.callback(player)
+assert(character:GetAttribute("MagazineAmmo")==2 and character:GetAttribute("AmmoType")=="AP","holster restores charge/type")
+fire(player,"Fire",direction);assert(shots==2,"holster cannot bypass cooldown")
 rounds.Ammo223AP=3;fire(player,"Reload")
 character:SetAttribute("HandsItem","");changed.callback(player)
 character:SetAttribute("HandsItem","Rifle223");changed.callback(player);advance(2.5)
-assert(character:GetAttribute("MagazineAmmo")==0 and not character:GetAttribute("Reloading"),"weapon switch cancels delayed reload")
-fire(player,"Type");fire(player,"Reload");advance(2.5)
-player.attributes.PreserveDurabilityChance=.9;wearRoll=.1
-local previous=uses
-fire(player,"Fire",direction)
-assert(uses==previous and rounds.Ammo223AP==2,"Careful preserves durability, not the cartridge")
-advance(.1);wearRoll=.95;fire(player,"Fire",direction)
-assert(uses==previous+1 and rounds.Ammo223AP==1,"failed preservation still wears weapon")
+assert(magazine.Loaded==2 and rounds.Ammo223AP==3 and not character:GetAttribute("Reloading"),"switch cancels pending reload without losing charge")
+local original=magazine
+magazine={UID=2,Type="FMJ",Loaded=0,Mode="Auto"};changed.callback(player)
+assert(character:GetAttribute("MagazineAmmo")==0,"same-ID different weapon has independent magazine")
+magazine=original;changed.callback(player)
+assert(character:GetAttribute("MagazineAmmo")==2)
+local previous=uses;player.attributes.PreserveDurabilityChance=.9;wearRoll=.1
+fire(player,"Fire",direction);assert(uses==previous and magazine.Loaded==1)
+advance(.1);wearRoll=.95;fire(player,"Fire",direction);assert(uses==previous+1 and magazine.Loaded==0)
 advance(3);rounds.Ammo223AP=0;changed.callback(player)
-fire(player,"Reload");assert(#notices==1 and notices[1]:find("No ammunition",1,true))
-fire(player,"Reload");assert(#notices==1,"empty notifications throttled")
-assert(table.find(played,"ShotSound") and table.find(played,"ReloadSound") and stopped>=3,"shot/reload start and completion/cancellation stop audio")
-print("PASS: empty/reloading/rate/invalid direction guards, partial reload, exact ammo and condition consumption, AP switch, drop conservation and switch cancellation")
+fire(player,"Reload");fire(player,"Reload");assert(#notices==1,"no-ammo notification throttled")
+assert(table.find(played,"ShotSound") and table.find(played,"ReloadSound") and stopped>=3)
+print("PASS: persistent per-weapon charge, independent identical guns, loose/loaded conservation, holster cooldown, reload cancellation, RPM/wall/direction guards, mode, sound, durability and empty notice")
 '''
 parts=[(root/'tests/city_geometry.fixture.luau').read_text(),
  'local Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items',

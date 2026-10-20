@@ -91,6 +91,13 @@ function Service.Pickup(player, item)
   if not ok then return false end
   conditions = value
  end
+ local weaponData
+ local encodedWeapons=item:GetAttribute("WeaponData")
+ if encodedWeapons then
+  local ok,value=pcall(function() return HttpService:JSONDecode(encodedWeapons) end)
+  if not ok then return false end
+  weaponData=value
+ end
  local box=ItemConfig.Items[id].AmmoBox
  if box then
   local caliber=item:GetAttribute("Caliber") or box.Caliber
@@ -99,7 +106,7 @@ function Service.Pickup(player, item)
   local rounds=item:GetAttribute("AmmoCount")
   if not ammo or typeof(rounds)~="number" or rounds<1 or rounds>10000 or rounds~=math.floor(rounds) then return false end
   if not Inventory.Add(player,ammo,rounds) then return false end
- elseif not Inventory.Add(player, id, count, conditions) then return false end
+ elseif not Inventory.Add(player, id, count, conditions,weaponData) then return false end
  item:Destroy()
  return true
 end
@@ -133,6 +140,8 @@ local function place(item,position,count,id)
  item.Name = id
  item:SetAttribute("Item_ID",id)
  item:SetAttribute("Quantity",count)
+ item:SetAttribute("Conditions",nil)
+ item:SetAttribute("WeaponData",nil)
 end
 function Service.SpawnLoot(loot,position,ignored)
  local ids,prepared = {},{}
@@ -161,9 +170,15 @@ function Service.SpawnLoot(loot,position,ignored)
  for _,item in ipairs(prepared) do item.Parent = folder end
  return true
 end
-function Service.Drop(player, id, requested)
+function Service.Drop(player, id, requested,key)
  if typeof(id) ~= "string" or not ItemConfig.Items[id] then return false end
- local count = Rules.DropAmount(Inventory.Snapshot(player).Items[id], requested)
+ local snapshot=Inventory.Snapshot(player)
+ local available=snapshot.Items[id]
+ if key then
+  available=0
+  for _,stack in ipairs(snapshot.Stacks or {}) do if stack.Key==key and stack.ID==id then available=stack.Count end end
+ end
+ local count = Rules.DropAmount(available, requested)
  if not count then return false end
  local root, character = aliveRoot(player)
  if not root then return false end
@@ -180,9 +195,10 @@ function Service.Drop(player, id, requested)
  local hit = workspace:Raycast(destination + Vector3.new(0, 2, 0), Vector3.new(0, -12, 0), params)
  if not hit then item:Destroy(); return false end
  place(item,hit.Position,count,id)
- local ok,conditions = Inventory.Remove(player, id, count)
+ local ok,conditions,weaponData = Inventory.Remove(player, id, count,key)
  if not ok then item:Destroy(); return false end
  if conditions then item:SetAttribute("Conditions",HttpService:JSONEncode(conditions)) end
+ if weaponData then item:SetAttribute("WeaponData",HttpService:JSONEncode(weaponData)) end
  item.Parent = folder
  -- World drops remain until collected or until this server closes.
  return true

@@ -128,11 +128,11 @@ local takeAll = button(window,"Take all",UDim2.new(.5,12,1,-88),UDim2.new(.5,-32
 takeAll.Visible=false
 takeAll.Activated:Connect(function() action:FireServer("TakeAll") end)
 local redraw
-local tooltip = text(gui, "", UDim2.new(), UDim2.fromOffset(270, 110))
+local tooltip = text(gui, "", UDim2.new(), UDim2.fromOffset(300, 170))
 tooltip.Name = "ItemTooltip"
 tooltip.BackgroundTransparency = 0.05
 tooltip.BackgroundColor3 = Theme.Card
-tooltip.TextSize = 15
+tooltip.TextSize = 13
 tooltip.TextXAlignment = Enum.TextXAlignment.Center
 tooltip.ZIndex = 20
 tooltip.Visible = false
@@ -161,20 +161,33 @@ RunService.RenderStepped:Connect(function()
  local inset = game:GetService("GuiService"):GetGuiInset()
  local position = mouse - inset
  local viewport = workspace.CurrentCamera.ViewportSize
- tooltip.Position = UDim2.fromOffset(math.clamp(position.X + 16,0,math.max(0,viewport.X-270)),math.clamp(position.Y+16,0,math.max(0,viewport.Y-inset.Y-110)))
+ tooltip.Position = UDim2.fromOffset(math.clamp(position.X + 16,0,math.max(0,viewport.X-300)),math.clamp(position.Y+16,0,math.max(0,viewport.Y-inset.Y-170)))
 end)
 local function renderItems(frame, items, side)
  local cards = {}
- local ids = {}
- for id in pairs(items) do table.insert(ids, id) end
- table.sort(ids, function(a,b) return (ItemConfig.Items[a].Name or a) < (ItemConfig.Items[b].Name or b) end)
- if #ids == 0 then text(frame, side == "Chest" and "Chest is empty" or "Inventory is empty", UDim2.new(), UDim2.new(1, -8, 0, 50)) end
- for order, id in ipairs(ids) do
-  local definition = ItemConfig.Items[id]
-  local itemWeight=(definition.Weight or 0)*(definition.Ammo and side=="Player" and (player:GetAttribute("AmmoWeightMultiplier") or 1) or 1)
-  local key = side .. ":" .. id
-  local caption = string.format("%s ×%d\n%.1f kg%s", definition.Name or id, items[id], itemWeight * items[id], "")
-  local available = items[id]
+ local stacks=side=="Player" and snapshot.Stacks or snapshot.ChestStacks
+ if not stacks then
+  stacks={}
+  for id,count in pairs(items) do table.insert(stacks,{ID=id,Key=id,Count=count}) end
+ end
+ table.sort(stacks,function(a,b)
+  local x,y=ItemConfig.Items[a.ID].Name or a.ID,ItemConfig.Items[b.ID].Name or b.ID
+  return x==y and a.Key<b.Key or x<y
+ end)
+ if #stacks==0 then text(frame,side=="Chest" and "Chest is empty" or "Inventory is empty",UDim2.new(),UDim2.new(1,-8,0,50)) end
+ for order,stack in ipairs(stacks) do
+  local id=stack.ID
+  local definition=ItemConfig.Items[id]
+  local multiplier=side=="Player" and (player:GetAttribute("AmmoWeightMultiplier") or 1) or 1
+  local itemWeight=(definition.Weight or 0)*(definition.Ammo and multiplier or 1)
+  local ammo=definition.Firearm and ItemConfig.Items["Ammo"..definition.Firearm.Caliber..(stack.AmmoType or "FMJ")]
+  if ammo then itemWeight+=(stack.Loaded or 0)*ammo.Weight*multiplier end
+  local key=side..":"..stack.Key
+  local selection=definition.Weapon and {ID=id,Key=stack.Key} or id
+  local stateText=definition.Weapon and string.format(" · %d/%d",stack.Condition or 0,definition.Weapon.MaxUses) or ""
+  local caption=string.format("%s ×%d%s\n%.1f kg",definition.Name or id,stack.Count,stateText,itemWeight*stack.Count)
+  if definition.Firearm then caption..=string.format(" · %d %s",stack.Loaded or 0,stack.AmmoType or "FMJ") end
+  local available=stack.Count
   local selected = math.clamp(dropAmounts[key] or 1, 1, available)
   local container = Instance.new("Frame")
   container.Size = UDim2.new(1, -8, 0, 68)
@@ -184,7 +197,7 @@ local function renderItems(frame, items, side)
   container.Parent = frame
   local row = button(container, caption, UDim2.fromOffset(6, 6), UDim2.new(1, -12, 0, 56))
   row.MouseEnter:Connect(function()
-   tooltip.Text = (definition.Name or id) .. "\n" .. effectText(definition) .. string.format(definition.Ammo and "\nWeight %.3f kg" or "\nWeight %.1f kg", itemWeight)
+   tooltip.Text = (definition.Name or id) .. "\n" .. effectText(definition)..(definition.Weapon and string.format("\nCondition %d / %d",stack.Condition or 0,definition.Weapon.MaxUses) or "")..(definition.Firearm and string.format("\nLoaded %d / %d · %s",stack.Loaded or 0,definition.Firearm.Magazine,stack.AmmoType or "FMJ") or "") .. string.format(definition.Ammo and "\nWeight %.3f kg" or "\nWeight %.1f kg", itemWeight)
    tooltip.Visible = true
   end)
   row.MouseLeave:Connect(function() tooltip.Visible = false end)
@@ -237,14 +250,14 @@ local function renderItems(frame, items, side)
   amount.FocusLost:Connect(readAmount)
   local drop = button(actions, chestOpen and (chestReadOnly and "Take" or "Transfer") or "Drop", UDim2.fromOffset(6, 36), UDim2.new(0.5, -9, 0, 32))
   local all = button(actions, chestOpen and (chestReadOnly and "Take all" or "Transfer all") or "Drop all", UDim2.new(0.5, 3, 0, 36), UDim2.new(0.5, -9, 0, 32))
-  drop.Activated:Connect(function() readAmount(); action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, selected) end)
-  all.Activated:Connect(function() action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", id, "All") end)
+  drop.Activated:Connect(function() readAmount(); action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", selection, selected) end)
+  all.Activated:Connect(function() action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", selection, "All") end)
   if definition.Consume and not chestOpen then
    local eat = button(actions, definition.ConsumeAction or "Eat", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
    eat.Activated:Connect(function() action:FireServer("Eat", id) end)
   elseif definition.Slot and not chestOpen then
    local equip = button(actions, "Equip", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
-   equip.Activated:Connect(function() action:FireServer("Equip", id) end)
+   equip.Activated:Connect(function() action:FireServer("Equip", selection) end)
   end
  end
 end
@@ -343,8 +356,13 @@ local function foodDetails(definition,bonus)
 end
 redraw = function()
  tooltip.Visible = false
- local selectedId = selectedItem and selectedItem:match("^Player:(.+)$")
- if selectedId and not snapshot.Items[selectedId] then selectedItem,selectedId = nil,nil end
+ local selectedId,selectedStack
+ for _,stack in ipairs(snapshot.Stacks or {}) do
+  if selectedItem=="Player:"..stack.Key then selectedId=stack.ID;selectedStack=stack end
+ end
+ local validSelection=selectedId~=nil
+ for _,stack in ipairs(snapshot.ChestStacks or {}) do if selectedItem=="Chest:"..stack.Key then validSelection=true end end
+ if not validSelection then selectedItem=nil end
  clear(inventory)
  clear(equipment)
 
@@ -360,7 +378,9 @@ redraw = function()
  if selectedId then
   local definition = ItemConfig.Items[selectedId]
   rightTitle.Text = "Item details"
-  text(equipment, definition.Name or selectedId, UDim2.new(), UDim2.new(1,-8,0,40)).LayoutOrder = 1
+  local stateText=definition.Weapon and string.format("\nCondition %d / %d",selectedStack.Condition or 0,definition.Weapon.MaxUses) or ""
+  if definition.Firearm then stateText..=string.format("\nLoaded %d / %d · %s",selectedStack.Loaded or 0,definition.Firearm.Magazine,selectedStack.AmmoType or "FMJ") end
+  text(equipment,(definition.Name or selectedId)..stateText,UDim2.new(),UDim2.new(1,-8,0,90)).LayoutOrder=1
   local bonus = text(equipment, "Bonuses\n" .. foodDetails(definition,true), UDim2.new(), UDim2.new(1,-8,0,90))
   bonus.LayoutOrder,bonus.TextColor3 = 2,Color3.fromRGB(110,214,150)
   local debuff = text(equipment, "Debuffs\n" .. foodDetails(definition,false), UDim2.new(), UDim2.new(1,-8,0,64))

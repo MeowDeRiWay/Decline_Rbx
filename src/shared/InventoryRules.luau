@@ -1,6 +1,7 @@
 local Rules = {}
+local serial=0
 function Rules.New()
- return {Items = {}, Equipment = {}, Conditions = {}, EquipmentCondition = {}}
+ return {Items = {}, Equipment = {}, Conditions = {}, EquipmentCondition = {}, Weapons = {}, EquipmentWeapon = {}}
 end
 local function quantity(value)
  return typeof(value) == "number" and value == value and value > 0 and value < math.huge and value == math.floor(value)
@@ -12,7 +13,39 @@ function Rules.DropAmount(available, requested)
  if not quantity(requested) or requested > available then return nil end
  return requested
 end
-function Rules.Add(state, definitions, id, amount, conditions)
+function Rules.StackKey(id,condition,data)
+ data=data or {}
+ return string.format("%s|%d|%d|%s",id,condition or 0,data.Loaded or 0,data.Type or "FMJ")
+end
+function Rules.Stacks(state,definitions)
+ local result,groups={},{}
+ for id,count in pairs(state.Items) do
+  if definitions[id].Weapon then
+   for index,condition in ipairs(state.Conditions[id] or {}) do
+    local data=state.Weapons and state.Weapons[id] and state.Weapons[id][index] or {}
+    local key=Rules.StackKey(id,condition,data)
+    if not groups[key] then
+     groups[key]={ID=id,Key=key,Count=0,Condition=condition,Loaded=data.Loaded or 0,AmmoType=data.Type or "FMJ"}
+     table.insert(result,groups[key])
+    end
+    groups[key].Count+=1
+   end
+  else table.insert(result,{ID=id,Key=id,Count=count}) end
+ end
+ table.sort(result,function(a,b) return a.Key<b.Key end)
+ return result
+end
+function Rules.Available(state,id,key)
+ if not key then return state.Items[id] or 0 end
+ if not state.Conditions[id] then return key==id and (state.Items[id] or 0) or 0 end
+ local count=0
+ for index,condition in ipairs(state.Conditions[id]) do
+  local data=state.Weapons and state.Weapons[id] and state.Weapons[id][index]
+  if Rules.StackKey(id,condition,data)==key then count+=1 end
+ end
+ return count
+end
+function Rules.Add(state, definitions, id, amount, conditions, weaponData)
  if typeof(id) ~= "string" or not definitions[id] or not quantity(amount) then return false end
  local weapon = definitions[id].Weapon
  if weapon then
@@ -22,31 +55,62 @@ function Rules.Add(state, definitions, id, amount, conditions)
     if typeof(value) ~= "number" or value ~= value or value < 0 or value > weapon.MaxUses or value ~= math.floor(value) then return false end
    end
   end
+  if weaponData then
+   if typeof(weaponData)~="table" or #weaponData~=amount then return false end
+   for _,data in ipairs(weaponData) do
+    if typeof(data)~="table" or (data.Type~="FMJ" and data.Type~="AP") or typeof(data.Loaded)~="number" or data.Loaded~=math.floor(data.Loaded) or data.Loaded<0 or data.Loaded>(definitions[id].Firearm and definitions[id].Firearm.Magazine or 0) then return false end
+   end
+  end
+  state.Weapons=state.Weapons or {};state.Weapons[id]=state.Weapons[id] or {}
   state.Conditions[id] = state.Conditions[id] or {}
-  for i=1,amount do table.insert(state.Conditions[id], conditions and conditions[i] or weapon.MaxUses) end
+  for i=1,amount do
+   serial+=1
+   local data=weaponData and table.clone(weaponData[i]) or {Loaded=0,Type="FMJ",Mode="Auto"}
+   data.UID=data.UID or serial
+   table.insert(state.Weapons[id],data)
+   table.insert(state.Conditions[id], conditions and conditions[i] or weapon.MaxUses)
+  end
  end
  state.Items[id] = (state.Items[id] or 0) + amount
  return true
 end
-function Rules.Remove(state, id, amount)
- if typeof(id) ~= "string" or not quantity(amount) or (state.Items[id] or 0) < amount then return false end
- local removed = nil
- if state.Conditions[id] then
-  removed = {}
-  for _=1,amount do table.insert(removed,table.remove(state.Conditions[id])) end
-  if #state.Conditions[id] == 0 then state.Conditions[id] = nil end
+function Rules.Remove(state,id,amount,key,uid)
+ if typeof(id)~="string" or not quantity(amount) or Rules.Available(state,id,key)<amount then return false end
+ if uid then
+  local found=false
+  for index,data in ipairs(state.Weapons[id] or {}) do
+   if data.UID==uid and (not key or Rules.StackKey(id,state.Conditions[id][index],data)==key) then found=true end
+  end
+  if not found or amount~=1 then return false end
  end
- local remaining = state.Items[id] - amount
- state.Items[id] = remaining > 0 and remaining or nil
- return true, removed
+ local removed,data=nil,nil
+ if state.Conditions[id] then
+  removed,data={},{}
+  local list=state.Weapons and state.Weapons[id] or {}
+  for index=#state.Conditions[id],1,-1 do
+   if #removed>=amount then break end
+   if (not uid or list[index].UID==uid) and (not key or Rules.StackKey(id,state.Conditions[id][index],list[index])==key) then
+    table.insert(removed,table.remove(state.Conditions[id],index))
+    table.insert(data,table.remove(list,index) or {Loaded=0,Type="FMJ"})
+   end
+  end
+  if #state.Conditions[id]==0 then state.Conditions[id]=nil;state.Weapons[id]=nil end
+ end
+ local remaining=state.Items[id]-amount
+ state.Items[id]=remaining>0 and remaining or nil
+ return true,removed,data
 end
-function Rules.Equip(state, definitions, slots, id)
+function Rules.Equip(state, definitions, slots, id, key,uid)
  local item = typeof(id) == "string" and definitions[id]
- if not item or not table.find(slots, item.Slot) or (state.Items[id] or 0) < 1 then return false end
+ if not item or not table.find(slots, item.Slot) or Rules.Available(state,id,key) < 1 then return false end
  local previous = state.Equipment[item.Slot]
  local previousCondition = state.EquipmentCondition[item.Slot]
- local _,removed = Rules.Remove(state, id, 1)
- if previous then Rules.Add(state, definitions, previous, 1, previousCondition ~= nil and {previousCondition} or nil) end
+ local previousData=state.EquipmentWeapon and state.EquipmentWeapon[item.Slot]
+ local ok,removed,data = Rules.Remove(state, id, 1,key,uid)
+ if not ok then return false end
+ if previous then Rules.Add(state, definitions, previous, 1, previousCondition ~= nil and {previousCondition} or nil,previousData and {previousData}) end
+ state.EquipmentWeapon=state.EquipmentWeapon or {}
+ state.EquipmentWeapon[item.Slot]=data and data[1] or nil
  state.EquipmentCondition[item.Slot] = removed and removed[1] or nil
  state.Equipment[item.Slot] = id
  return true
@@ -55,7 +119,8 @@ function Rules.Unequip(state, definitions, slots, slot)
  if typeof(slot) ~= "string" or not table.find(slots, slot) then return false end
  local id = state.Equipment[slot]
  if not id then return false end
- Rules.Add(state, definitions, id, 1, state.EquipmentCondition[slot] ~= nil and {state.EquipmentCondition[slot]} or nil)
+ Rules.Add(state, definitions, id, 1, state.EquipmentCondition[slot] ~= nil and {state.EquipmentCondition[slot]} or nil,state.EquipmentWeapon and state.EquipmentWeapon[slot] and {state.EquipmentWeapon[slot]})
+ if state.EquipmentWeapon then state.EquipmentWeapon[slot]=nil end
  state.EquipmentCondition[slot] = nil
  state.Equipment[slot] = nil
  return true
@@ -64,17 +129,24 @@ function Rules.Weight(state, definitions, ammoMultiplier)
  local total = 0
  for id, count in pairs(state.Items) do total += (definitions[id].Weight or 0) * count * (definitions[id].Ammo and (ammoMultiplier or 1) or 1) end
  for _, id in pairs(state.Equipment) do total += definitions[id].Weight or 0 end
+ local function magazine(id,data)
+  local gun=definitions[id].Firearm
+  local ammo=gun and definitions["Ammo"..gun.Caliber..(data.Type or "FMJ")]
+  if ammo then total+=(data.Loaded or 0)*ammo.Weight*(ammoMultiplier or 1) end
+ end
+ for id,list in pairs(state.Weapons or {}) do for _,data in ipairs(list) do magazine(id,data) end end
+ for slot,data in pairs(state.EquipmentWeapon or {}) do magazine(state.Equipment[slot],data) end
  return total
 end
-function Rules.Transfer(source, target, definitions, id, requested)
+function Rules.Transfer(source, target, definitions, id, requested,key)
  if typeof(id) ~= "string" or not definitions[id] then return false end
- local count = Rules.DropAmount(source.Items[id], requested)
+ local count = Rules.DropAmount(Rules.Available(source,id,key), requested)
  if not count then return false end
  -- Both states are server-owned. No yields or partial public updates.
- local ok, conditions = Rules.Remove(source, id, count)
+ local ok, conditions, data = Rules.Remove(source, id, count,key)
  if not ok then return false end
- if not Rules.Add(target, definitions, id, count, conditions) then
-  Rules.Add(source, definitions, id, count, conditions)
+ if not Rules.Add(target, definitions, id, count, conditions,data) then
+  Rules.Add(source, definitions, id, count, conditions,data)
   return false
  end
  return true

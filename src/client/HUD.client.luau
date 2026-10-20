@@ -39,7 +39,7 @@ end
 Layout.Log.Event:Connect(log)
 ReplicatedStorage:WaitForChild("CombatReport").OnClientEvent:Connect(function(event)
  if typeof(event)~="table" then return end
- if Visibility.Witnessed(event,player.Character,workspace.CurrentCamera) then log(Presentation.Combat(event)) end
+ if Visibility.Witnessed(event,player.Character,workspace.CurrentCamera) then log(Presentation.Combat(event,player.UserId)) end
 end)
 ReplicatedStorage:WaitForChild("PersonalNotice").OnClientEvent:Connect(log)
 label(bar,"Events / chat",12,4,220,20,12)

@@ -29,12 +29,21 @@ GAMEPLAY values, not a physical ballistics reference. All registered in ItemConf
 Only .223 FMJ/AP are wired at this stage; the other discussed calibers need future
 item/weapon definitions.
 
-Ammo in the magazine remains allocated from the same inventory total until fired.
-Reserve HUD is total minus allocation. A shot consumes exactly1 inventory round
-and1condition. Switching/unequipping clears the allocation without deleting ammo;
-dropping/transferring stock clamps the magazine, preventing duplication. Death
-uses existing inventory extraction, so loaded rounds remain recoverable in loot.
-No standalone magazine items. Reload cancels on weapon/character changes.
+Loaded ammunition belongs to each weapon's inventory record. Reload completion
+moves loose rounds into that weapon; firing consumes one loaded round and normally
+one condition point. Switching ammo type returns the old loaded rounds to pockets.
+The reserve HUD counts loose rounds only. Dropping loose ammunition never removes
+the contents of a weapon's magazine.
+
+Weapon records preserve condition, loaded count, FMJ/AP selection and fire mode
+through holster/equip, chest transfers, world drops/pickups and corpse extraction.
+Identical weapon condition + loaded count + ammo type share an inventory stack;
+any difference creates a separate row. Actions select the exact displayed variant,
+and inventory descriptions show condition and magazine contents. Holster remembers
+the actual weapon UID, and cannot restore an item no longer owned. Its next-shot
+cooldown survives holster to prevent bypassing the fire rate. Pending reloads cancel
+on weapon/character changes and consume nothing until successful completion.
+No standalone magazine items or cross-server persistence have been added.
 
 ## Projectile and materials
 

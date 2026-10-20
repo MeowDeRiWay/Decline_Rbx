@@ -19,26 +19,27 @@ local function context(player)
  return character,root,id,definition.Firearm
 end
 local function stateFor(player,character,id)
+ local data=Inventory.GetMagazine(player)
  local state=states[player]
- if not state or state.Character~=character or state.ID~=id then
+ if not state or state.Character~=character or state.ID~=id or state.UID~=data.UID then
   if state then Audio.Stop(state.ReloadSound) end
-  state={Character=character,ID=id,Type="FMJ",Loaded=0,Ready=0,Token=0,Mode="Auto"};states[player]=state
+  state={Character=character,ID=id,Type=data.Type,Loaded=data.Loaded,Ready=data.ReadyAt or 0,Token=0,Mode=data.Mode or "Auto",UID=data.UID};states[player]=state
  end
  return state
 end
 local function sync(player,state,gun)
+ local data=Inventory.GetMagazine(player)
+ if data and data.UID==state.UID then state.Loaded=data.Loaded;state.Type=data.Type;state.Mode=data.Mode or "Auto" end
  local ammo=Rules.AmmoID(gun.Caliber,state.Type)
  local total=Inventory.Snapshot(player).Items[ammo] or 0
- state.Loaded=math.min(state.Loaded,total)
  local c=state.Character
  c:SetAttribute("MagazineAmmo",state.Loaded)
- c:SetAttribute("ReserveAmmo",math.max(0,total-state.Loaded))
+ c:SetAttribute("ReserveAmmo",total)
  c:SetAttribute("AmmoType",state.Type)
  c:SetAttribute("FireMode",state.Mode)
  c:SetAttribute("Reloading",state.Reloading==true)
 end
--- Ammunition remains counted in inventory until fired. Magazine is an allocation
--- of that stock, preventing loss/duplication across drops, transfers and death.
+-- Loaded rounds belong to this weapon record, separate from loose pocket ammunition.
 Inventory.Changed:Connect(function(player)
  local character,_,id,gun=context(player)
  if not character then local old=states[player];if old then Audio.Stop(old.ReloadSound) end;states[player]=nil;return end
@@ -52,16 +53,16 @@ action.OnServerEvent:Connect(function(player,command,direction)
  local now=os.clock()
  if command=="Mode" then
   if now<(state.NextMode or 0) then return end
-  state.NextMode=now+.25;state.Mode=state.Mode=="Auto" and "Single" or "Auto";sync(player,state,gun);return
+  state.NextMode=now+.25;state.Mode=state.Mode=="Auto" and "Single" or "Auto";Inventory.SaveMagazine(player,state.Loaded,state.Type,state.Mode);sync(player,state,gun);return
  elseif command=="Type" then
   if now<(state.NextType or 0) then return end
   Audio.Stop(state.ReloadSound);state.ReloadSound=nil
   state.NextType=now+.3;state.Token+=1;state.Reloading=false;state.Loaded=0
-  state.Type=state.Type=="FMJ" and "AP" or "FMJ";sync(player,state,gun);return
+  state.Type=state.Type=="FMJ" and "AP" or "FMJ";Inventory.UnloadMagazine(player,state.Type);sync(player,state,gun);return
  elseif command=="Reload" then
   if state.Reloading or state.Loaded>=gun.Magazine then return end
   local total=Inventory.Snapshot(player).Items[Rules.AmmoID(gun.Caliber,state.Type)] or 0
-  if total<=state.Loaded then
+  if total<=0 then
    if total==0 and now>=(state.NextEmpty or 0) then state.NextEmpty=now+2;Journal.Send(player,"No ammunition for the selected ammo type.") end
    return
   end
@@ -72,7 +73,7 @@ action.OnServerEvent:Connect(function(player,command,direction)
    if states[player]~=state or token~=state.Token then return end
    Audio.Stop(state.ReloadSound);state.ReloadSound=nil;state.Reloading=false
    if current~=character or currentID~=id then sync(player,state,gun);return end
-   state.Loaded=math.min(gun.Magazine,Inventory.Snapshot(player).Items[Rules.AmmoID(gun.Caliber,state.Type)] or 0)
+   Inventory.ReloadMagazine(player)
    sync(player,state,gun)
   end)
   return
@@ -92,7 +93,7 @@ action.OnServerEvent:Connect(function(player,command,direction)
  if not Projectiles.Fire(player,character,origin,direction,gun,state.Type,id) then return end
  Audio.Play(character,"ShotSound")
  state.Ready=now+60/gun.RPM;state.Loaded-=1
- Inventory.Remove(player,Rules.AmmoID(gun.Caliber,state.Type),1)
+ Inventory.SaveMagazine(player,state.Loaded,state.Type,state.Mode,state.Ready)
  if random:NextNumber()>=(player:GetAttribute("PreserveDurabilityChance") or 0) then Inventory.UseWeapon(player) end
  sync(player,state,gun)
 end)

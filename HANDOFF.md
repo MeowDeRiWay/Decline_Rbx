@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Weapon-state stacks, persistent magazines and viewer narration — 21 October
+
+- InventoryRules keeps aggregate Items/Conditions for compatibility plus aligned Weapons records and EquipmentWeapon. Records carry UID, Loaded, Type, Mode, ReadyAt. Stacks groups by ID+condition+loaded+type; snapshot Stacks/ChestStacks, client actions use server-validated ID/Key selectors. Equip/drop/transfer/all target the selected variant; stale/forged keys rejected. Holster restores exact UID (not arbitrary same-ID gun).
+- Magazines now physically own their rounds: reload transfers loose ammo on completion; shot decrements magazine only; type switch unloads old rounds. Save/Get/Reload/UnloadMagazine methods in InventoryService. Reserve HUD is loose ammo only. All loaded weapons/equipment contribute ammunition weight with Hunter multiplier. Runtime Firearms keys on UID; same-ID gun swaps cancel reload, holster retains charge/type/mode and shot cooldown. Old ammo-allocation/clamping design superseded.
+- Metadata follows chest transfers, WorldItems WeaponData JSON drops/pickups and ExtractAll corpse storage. Fresh spawned loot clears inherited template metadata before normalization. Server-local state only, no DataStore. Inventory row/tooltip/details show actual condition, loaded count and ammo type; selected chest actions stay expandable.
+- CombatReport includes actor/target UserIds and creature flags; JournalPresentation receives viewer ID: own actions You, incoming target you, observers names; creature names lower-case mid-sentence. Integer HP, visibility filtering and kill/KO clauses retained.
+- Checks actual firearm service for reload/shot/type ammo conservation, independent same-ID magazines, holster cooldown, cancellation, existing guards/audio/condition; actual InventoryService + WorldItemService for state stacks, selected transfers, persistent charged drop/pickup, mass/condition/type, exact UID and corpse extraction; existing pickup/cooking/projectile/damage/progression tests, compile/Rojo. No Studio visual playtest.
+
 ## Witnessed journal, personal events, holster toggle — 21 October
 
 - CombatReport now sends structured actor/target refs, display names, attack kind, actual damage, critical, death and newly entered knockout. Nearby observers receive payload; HUD EventVisibility.Witnessed requires BOTH participants visible under the renderer's exact screen/sector/occlusion function (CreatureVisibility installs Check). Hidden attackers' identities are not revealed. Own knockout hit is allowed; later events while unconscious suppressed. 250+10*ViewBonus server distance bound. No client request/authoritative damage changes.

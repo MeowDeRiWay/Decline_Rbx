@@ -11,7 +11,7 @@ local function announce(target,kind,amount,attacker,attackKind,critical,knockout
  local humanoid=target:FindFirstChildOfClass("Humanoid")
  local payload={Target=target,Actor=actor,ActorName=actorName,
   TargetName=victim and (victim.DisplayName or victim.Name) or (target:GetAttribute("DisplayName") or target.Name),
-  Kind=kind,Damage=amount,AttackKind=attackKind,Critical=critical==true,
+  ActorUserId=attackerPlayer and attacker.UserId or nil,TargetUserId=victim and victim.UserId or nil,TargetIsCreature=victim==nil,ActorIsCreature=not attackerPlayer,Kind=kind,Damage=amount,AttackKind=attackKind,Critical=critical==true,
   Killed=humanoid and humanoid.Health<=0 or false,Knockout=knockout==true}
  local position=target:GetPivot().Position
  -- Bound network traffic; exact camera/sector/wall visibility is checked locally.

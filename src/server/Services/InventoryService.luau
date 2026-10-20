@@ -8,6 +8,12 @@ local Service = {}
 local states = {}
 local holstered = {}
 local Journal=require(script.Parent.JournalService)
+local function rememberedPresent(player,state)
+ local remembered=holstered[player]
+ if not remembered then return false end
+ for _,data in ipairs(state.Weapons[remembered.ID] or {}) do if data.UID==remembered.UID then return true end end
+ return false
+end
 local changed = Instance.new("BindableEvent")
 Service.Changed = changed.Event
 local function update(player)
@@ -36,25 +42,25 @@ function Service.ExtractAll(player)
  return state
 end
 function Service.RemovePlayer(player) states[player] = nil;holstered[player]=nil end
-function Service.Add(player, id, count, conditions)
+function Service.Add(player, id, count, conditions,weaponData)
  local state = states[player]
- if not state or not Rules.Add(state, ItemConfig.Items, id, count, conditions) then return false end
+ if not state or not Rules.Add(state, ItemConfig.Items, id, count, conditions,weaponData) then return false end
  update(player)
  return true
 end
-function Service.Remove(player, id, count)
+function Service.Remove(player, id, count,key)
  local state = states[player]
  if not state then return false end
- local ok, conditions = Rules.Remove(state, id, count)
+ local ok, conditions,data = Rules.Remove(state, id, count,key)
  if not ok then return false end
- if holstered[player]==id then holstered[player]=nil end
+ if holstered[player] and not rememberedPresent(player,state) then holstered[player]=nil end
  update(player)
- return true, conditions
+ return true, conditions,data
 end
-function Service.Equip(player, id)
+function Service.Equip(player, id,key,uid)
  if typeof(id) ~= "string" or not ItemConfig.Items[id] or not Visuals.Validate(id) then return false end
  local state = states[player]
- if not state or not Rules.Equip(state, ItemConfig.Items, ItemConfig.Slots, id) then return false end
+ if not state or not Rules.Equip(state, ItemConfig.Items, ItemConfig.Slots, id,key,uid) then return false end
  update(player)
  return true
 end
@@ -70,21 +76,28 @@ function Service.ToggleHolster(player)
  local held=state.Equipment.Hands
  if held then
   if not Service.Unequip(player,"Hands") then return false end
-  holstered[player]=held
+  holstered[player]={ID=held,UID=state.Weapons[held][#state.Weapons[held]].UID}
   return true
  end
- local id=holstered[player]
- if not id or (state.Items[id] or 0)<1 then holstered[player]=nil;return false end
- if Service.Equip(player,id) then holstered[player]=nil;return true end
+ local remembered=holstered[player]
+ if not remembered then return false end
+ local id=remembered.ID
+ for index,data in ipairs(state.Weapons[id] or {}) do
+  if data.UID==remembered.UID then
+   local key=Rules.StackKey(id,state.Conditions[id][index],data)
+   if Service.Equip(player,id,key,remembered.UID) then holstered[player]=nil;return true end
+  end
+ end
+ holstered[player]=nil
  return false
 end
-function Service.Transfer(player, storage, id, requested, intoStorage)
+function Service.Transfer(player, storage, id, requested, intoStorage,key)
  local own = states[player]
  if not own then return false end
  local source, target = own, storage
  if not intoStorage then source, target = storage, own end
- if not Rules.Transfer(source, target, ItemConfig.Items, id, requested) then return false end
- if intoStorage and holstered[player]==id then holstered[player]=nil end
+ if not Rules.Transfer(source, target, ItemConfig.Items, id, requested,key) then return false end
+ if intoStorage and holstered[player] and not rememberedPresent(player,own) then holstered[player]=nil end
  update(player)
  return true
 end
@@ -114,6 +127,32 @@ local function craftTools(state)
  end
  return tools
 end
+function Service.GetMagazine(player)
+ local state=states[player]
+ return state and state.EquipmentWeapon.Hands
+end
+function Service.SaveMagazine(player,loaded,kind,mode,ready)
+ local data=Service.GetMagazine(player)
+ if not data then return end
+ data.Loaded=loaded;data.Type=kind;data.Mode=mode
+ if ready then data.ReadyAt=ready end
+ update(player)
+end
+function Service.ReloadMagazine(player)
+ local state=states[player];local data=Service.GetMagazine(player)
+ local gun=state and ItemConfig.Items[state.Equipment.Hands].Firearm
+ if not data or not gun then return end
+ local ammo="Ammo"..gun.Caliber..data.Type
+ local count=math.min(gun.Magazine-data.Loaded,state.Items[ammo] or 0)
+ if count>0 then Rules.Remove(state,ammo,count);data.Loaded+=count;update(player) end
+end
+function Service.UnloadMagazine(player,kind)
+ local state=states[player];local data=Service.GetMagazine(player)
+ if not data then return end
+ local gun=ItemConfig.Items[state.Equipment.Hands].Firearm
+ if data.Loaded>0 then Rules.Add(state,ItemConfig.Items,"Ammo"..gun.Caliber..data.Type,data.Loaded) end
+ data.Loaded=0;data.Type=kind;update(player)
+end
 function Service.GetWeapon(player)
  local state = states[player]
  return state and CombatRules.GetWeapon(state,ItemConfig.Items)
@@ -132,7 +171,7 @@ end
 function Service.Snapshot(player)
  local state = states[player]
  if not state then return {Items = {}, Equipment = {}, Weight = 0, CraftTools = {}} end
- return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), Weight = Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1), CraftTools = craftTools(state)}
+ return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), Stacks=Rules.Stacks(state,ItemConfig.Items), Weight = Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1), CraftTools = craftTools(state)}
 end
 function Service.Start()
  if Service.Started then return end
