@@ -10,7 +10,7 @@ local Presentation=require(ReplicatedStorage.Shared.ProgressionPresentation)
 local TextService=game:GetService("TextService")
 local remotes=ReplicatedStorage:WaitForChild("ProgressionRemotes")
 local action=remotes:WaitForChild("Action")
-local palette={Background=Color3.fromRGB(22,28,33),Panel=Color3.fromRGB(22,28,33),Card=Color3.fromRGB(30,38,45),Button=Color3.fromRGB(42,53,62),Accent=Color3.fromRGB(235,240,244),Border=Color3.fromRGB(63,73,82),Text=Color3.fromRGB(235,240,244),Muted=Color3.fromRGB(160,174,184),Green=Color3.fromRGB(90,220,145)}
+local palette=require(ReplicatedStorage.Shared.UITheme)
 local function frame(parent,position,size,color)
  local object=Instance.new("Frame")
  object.Position=position; object.Size=size; object.BackgroundColor3=color or palette.Panel; object.BorderSizePixel=0; object.Parent=parent
@@ -19,30 +19,32 @@ end
 local function label(parent,text,position,size,fontSize,color)
  local object=Instance.new("TextLabel")
  object.Position=position; object.Size=size; object.BackgroundTransparency=1; object.Text=text; object.TextWrapped=true
- object.Font=Enum.Font.GothamMedium; object.TextSize=fontSize or 18; object.TextColor3=color or palette.Text; object.TextXAlignment=Enum.TextXAlignment.Left; object.Parent=parent
+ object.Font=palette.Font; object.TextSize=fontSize or 18; object.TextColor3=color or palette.Text; object.TextXAlignment=Enum.TextXAlignment.Left; object.Parent=parent
  return object
 end
 local function button(parent,text,position,size,callback)
  local object=Instance.new("TextButton")
  object.Position=position; object.Size=size; object.BackgroundColor3=palette.Button; object.BorderSizePixel=0
- object.Text=text; object.Font=Enum.Font.Gotham; object.TextSize=15; object.TextColor3=palette.Accent; object.Parent=parent
+ object.Text=text; object.Font=palette.Font; object.TextSize=15; object.TextColor3=palette.Accent; object.Parent=parent
+ palette.Bevel(object)
  object.Activated:Connect(callback)
  return object
 end
 local gui=Instance.new("ScreenGui")
 gui.Name="CharacterProgression"; gui.ResetOnSpawn=false; gui.IgnoreGuiInset=true; gui.DisplayOrder=20; gui.Parent=player:WaitForChild("PlayerGui")
 local panel=frame(gui,UDim2.fromScale(.5,.5),UDim2.fromOffset(1100,720),palette.Background)
+palette.Bevel(panel)
 panel.AnchorPoint=Vector2.new(.5,.5); panel.Visible=false
 local scale=Instance.new("UIScale"); scale.Parent=panel
 local title=label(panel,"Character",UDim2.fromOffset(26,12),UDim2.fromOffset(650,36),28,palette.Accent)
-title.Font=Enum.Font.GothamMedium; title.TextSize=18
-label(panel,"[P] Close",UDim2.new(1,-150,0,22),UDim2.fromOffset(90,20),12,palette.Muted)
+title.Font=palette.Font; title.TextSize=18
+label(panel,"[P] close",UDim2.new(1,-150,0,22),UDim2.fromOffset(90,20),12,palette.Muted)
 local left=frame(panel,UDim2.fromOffset(18,62),UDim2.fromOffset(462,640))
 local right=frame(panel,UDim2.fromOffset(494,62),UDim2.fromOffset(588,640))
 local leftHeading=label(left,"Attributes",UDim2.fromOffset(20,10),UDim2.fromOffset(420,35),25,palette.Accent)
-leftHeading.Font=Enum.Font.GothamMedium; leftHeading.TextSize=18
+leftHeading.Font=palette.Font; leftHeading.TextSize=18
 local rightHeading=label(right,"Talents",UDim2.fromOffset(20,10),UDim2.fromOffset(530,35),25,palette.Accent)
-rightHeading.Font=Enum.Font.GothamMedium; rightHeading.TextSize=18
+rightHeading.Font=palette.Font; rightHeading.TextSize=18
 local summary=label(left,"Level 0",UDim2.fromOffset(20,48),UDim2.fromOffset(420,24),17)
 local xp=label(left,"XP 0 / 100",UDim2.fromOffset(20,79),UDim2.fromOffset(420,20),12,palette.Muted)
 local xpTrack=frame(left,UDim2.fromOffset(20,104),UDim2.fromOffset(422,6),palette.Background)
@@ -67,15 +69,15 @@ end
 frame(panel,UDim2.fromOffset(487,62),UDim2.fromOffset(1,640),palette.Border)
 local tooltip=label(gui,"",UDim2.new(),UDim2.fromOffset(340,200),15)
 tooltip.Name="AttributeTooltip"; tooltip.BackgroundTransparency=.05
- tooltip.BackgroundColor3=Color3.fromRGB(20,26,31); tooltip.ZIndex=30; tooltip.Visible=false
+ tooltip.BackgroundColor3=palette.Card; tooltip.ZIndex=30; tooltip.Visible=false
  tooltip.TextXAlignment=Enum.TextXAlignment.Left
  tooltip.TextYAlignment=Enum.TextYAlignment.Top
 local tooltipPadding=Instance.new("UIPadding");tooltipPadding.PaddingTop=UDim.new(0,10);tooltipPadding.PaddingBottom=UDim.new(0,10);tooltipPadding.PaddingLeft=UDim.new(0,12);tooltipPadding.PaddingRight=UDim.new(0,12);tooltipPadding.Parent=tooltip
 local profession=label(right,"No profession selected",UDim2.fromOffset(20,48),UDim2.fromOffset(340,28),18)
 local permissions=label(right,"",UDim2.fromOffset(20,82),UDim2.fromOffset(340,30),12,palette.Muted)
-local choose=button(right,"Choose Cook",UDim2.fromOffset(378,46),UDim2.fromOffset(190,32),function() action:FireServer("Choose","Cook") end)
-local chooseWorker=button(right,"Choose Worker",UDim2.fromOffset(378,84),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Worker") end)
-local chooseHunter=button(right,"Choose Hunter",UDim2.fromOffset(378,122),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Hunter") end)
+local choose=button(right,"Choose cook",UDim2.fromOffset(378,46),UDim2.fromOffset(190,32),function() action:FireServer("Choose","Cook") end)
+local chooseWorker=button(right,"Choose worker",UDim2.fromOffset(378,84),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Worker") end)
+local chooseHunter=button(right,"Choose hunter",UDim2.fromOffset(378,122),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Hunter") end)
 local talentPoints=label(right,"Talent points: 0",UDim2.fromOffset(20,114),UDim2.fromOffset(340,18),13)
 local tree=Instance.new("ScrollingFrame")
 tree.Position=UDim2.fromOffset(20,134); tree.Size=UDim2.fromOffset(548,330); tree.BackgroundColor3=palette.Background
@@ -136,7 +138,7 @@ local function redraw()
  if hoveredTalent and not talents[hoveredTalent] then hoveredTalent=nil end
  if #ids==0 then
   local emptyTitle=label(tree,definition and string.upper(definition.Name) or "NO PROFESSION",UDim2.fromOffset(30,78),UDim2.fromOffset(480,44),28,palette.Accent)
-  emptyTitle.Font=Enum.Font.GothamMedium; emptyTitle.TextXAlignment=Enum.TextXAlignment.Center
+  emptyTitle.Font=palette.Font; emptyTitle.TextXAlignment=Enum.TextXAlignment.Center
   local emptyText=label(tree,definition and "No talents available yet.\nYour profession tree will appear here." or "Choose a profession to view its talent tree.",UDim2.fromOffset(60,140),UDim2.fromOffset(420,76),15,palette.Muted)
   emptyText.TextXAlignment=Enum.TextXAlignment.Center
  end
@@ -170,7 +172,8 @@ Run.RenderStepped:Connect(function()
   local natural=TextService:GetTextSize(text,15,tooltip.Font,Vector2.new(1000,1000))
   local width=math.min(hoveredAttribute and 300 or 340,math.max(180,natural.X+24),math.max(1,camera.ViewportSize.X-16))
   local measured=TextService:GetTextSize(text,15,tooltip.Font,Vector2.new(math.max(1,width-24),1000))
-  local height=measured.Y+20
+  local _,lineCount=text:gsub("\n", "")
+  local height=math.max(measured.Y+24,(lineCount+1)*20+24)
   tooltip.Size=UDim2.fromOffset(width,height)
   tooltip.Position=UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-width)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-height)))
   tooltip.Visible=true

@@ -54,7 +54,7 @@ return {
   Tool = "Knife", MaxBatch = 1, Duration = 10, RequiresPresence = true,
  },
  MashedPotatoesWithSausage = {
-  Name = "Mashed Potatoes with Sausage", Station = "CuttingBoard",
+  Name = "Mashed potatoes with sausage", Station = "CuttingBoard",
   Description = "Prepare mashed potatoes with sausage using either type of plate.",
   Ingredients = {BoiledPotato = 1, SausageSlice = 1},
   Variants = {

@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
+local Theme = require(ReplicatedStorage.Shared.UITheme)
 local ItemConfig = require(ReplicatedStorage.Shared:WaitForChild("ItemConfig"))
 local remotes = ReplicatedStorage:WaitForChild("InventoryRemotes")
 local action = remotes:WaitForChild("Action")
@@ -26,19 +27,22 @@ local window = Instance.new("Frame")
 window.Name = "Window"
 window.AnchorPoint = Vector2.new(0.5, 0.5)
 window.Position = UDim2.fromScale(0.5, 0.45)
-window.Size = UDim2.fromScale(0.84, 0.7)
-window.BackgroundColor3 = Color3.fromRGB(22, 28, 33)
+window.Size = UDim2.fromOffset(1060, 600)
+local windowScale = Instance.new("UIScale")
+windowScale.Parent = window
+window.BackgroundColor3 = Theme.Background
 window.BorderSizePixel = 0
 window.Parent = gui
 local constraint = Instance.new("UISizeConstraint")
-constraint.MaxSize = Vector2.new(900, 600)
+constraint.MaxSize = Vector2.new(1060, 600)
+Theme.Bevel(window)
 constraint.Parent = window
 local function text(parent, caption, position, size)
  local t = Instance.new("TextLabel")
  t.Text, t.Position, t.Size = caption, position, size
  t.BackgroundTransparency = 1
- t.TextColor3 = Color3.fromRGB(235, 240, 244)
- t.Font, t.TextSize = Enum.Font.GothamMedium, 18
+ t.TextColor3 = Theme.Text
+ t.Font, t.TextSize = Theme.Font, 18
  t.TextXAlignment = Enum.TextXAlignment.Left
  t.TextWrapped = true
  t.Parent = parent
@@ -47,21 +51,22 @@ end
 local function button(parent, caption, position, size)
  local b = Instance.new("TextButton")
  b.Text, b.Position, b.Size = caption, position, size
- b.BackgroundColor3 = Color3.fromRGB(42, 53, 62)
+ b.BackgroundColor3 = Theme.Button
  b.BorderSizePixel = 0
- b.TextColor3 = Color3.fromRGB(235, 240, 244)
- b.Font, b.TextSize, b.TextWrapped = Enum.Font.Gotham, 15, true
+ b.TextColor3 = Theme.Text
+ b.Font, b.TextSize, b.TextWrapped = Theme.Font, 15, true
+ Theme.Bevel(b)
  b.Parent = parent
  return b
 end
 text(window, "Inventory", UDim2.fromOffset(20, 12), UDim2.new(0.5, -30, 0, 32))
 local rightTitle = text(window, "Equipment", UDim2.new(0.5, 12, 0, 12), UDim2.new(0.5, -65, 0, 32))
 local close = button(window, "×", UDim2.new(1, -44, 0, 12), UDim2.fromOffset(28, 28))
-local weight = text(window, "Weight 0.0 kg", UDim2.new(0, 20, 1, -44), UDim2.new(0.5, -30, 0, 32))
-text(window, "Q — Close", UDim2.new(0.5, 12, 1, -44), UDim2.new(0.5, -30, 0, 32))
+text(window, "Pockets", UDim2.fromOffset(180, 12), UDim2.fromOffset(310, 32))
+text(window, "Q — close", UDim2.new(0.5, 12, 1, -44), UDim2.new(0.5, -30, 0, 32))
 local divider = Instance.new("Frame")
 divider.Position, divider.Size = UDim2.new(0.5, 0, 0, 52), UDim2.new(0, 1, 1, -108)
-divider.BorderSizePixel, divider.BackgroundColor3, divider.Parent = 0, Color3.fromRGB(63, 73, 82), window
+divider.BorderSizePixel, divider.BackgroundColor3, divider.Parent = 0, Theme.Border, window
 local function column(name, position)
  local frame = Instance.new("ScrollingFrame")
  frame.Name, frame.Position = name, position
@@ -74,8 +79,48 @@ local function column(name, position)
  layout.Padding, layout.SortOrder, layout.Parent = UDim.new(0, 8), Enum.SortOrder.LayoutOrder, frame
  return frame
 end
-local inventory = column("Items", UDim2.fromOffset(20, 56))
+local inventory = column("Items", UDim2.fromOffset(180, 56))
+inventory.Size = UDim2.new(.5, -192, 1, -108)
 local equipment = column("Slots", UDim2.new(0.5, 12, 0, 56))
+local status = Instance.new("Frame")
+status.Name = "SurvivalStatus"
+status.Position, status.Size = UDim2.fromOffset(20,56), UDim2.new(0,140,1,-108)
+status.BackgroundColor3 = Theme.Card
+status.Parent = window
+Theme.Bevel(status)
+local statusEntries = {}
+for index, entry in ipairs({{"Food","Food"},{"Water","Water"},{"Sickness","Sick"},{"Weight","LoadKg"}}) do
+ local y = 16 + (index-1)*88
+ local heading = text(status,entry[1],UDim2.fromOffset(12,y),UDim2.fromOffset(116,22))
+ heading.TextSize=15
+ local value = text(status,"—",UDim2.fromOffset(12,y+25),UDim2.fromOffset(116,24))
+ value.TextSize=14
+ local track=Instance.new("Frame")
+ track.Position,track.Size=UDim2.fromOffset(12,y+56),UDim2.fromOffset(116,6)
+ track.BackgroundColor3=Theme.Background;track.BorderSizePixel=0;track.Parent=status
+ local fill=Instance.new("Frame")
+ fill.Size=UDim2.fromScale(0,1);fill.BackgroundColor3=Theme.Green;fill.BorderSizePixel=0;fill.Parent=track
+ statusEntries[index]={Attribute=entry[2],Value=value,Fill=fill}
+end
+local statusElapsed=0
+RunService.RenderStepped:Connect(function(dt)
+ local camera=workspace.CurrentCamera
+ if camera then windowScale.Scale=math.min(1,camera.ViewportSize.X*.94/1060,camera.ViewportSize.Y*.85/600) end
+ if not gui.Enabled then return end
+ statusElapsed+=dt
+ if statusElapsed<.1 then return end
+ statusElapsed=0
+ local character=player.Character
+ for _,entry in ipairs(statusEntries) do
+  local value=character and character:GetAttribute(entry.Attribute)
+  local maximum=entry.Attribute=="LoadKg" and (player:GetAttribute("CarryLimitKg") or (character and character:GetAttribute("CarryLimitKg")) or 20) or 100
+  if typeof(value)=="number" then
+   entry.Value.Text=string.format(entry.Attribute=="LoadKg" and "%.1f / %.0f kg" or "%.0f / %.0f",value,maximum)
+   entry.Fill.Size=UDim2.fromScale(math.clamp(value/math.max(1,maximum),0,1),1)
+   entry.Fill.BackgroundColor3=(entry.Attribute=="Sick" or entry.Attribute=="LoadKg") and (value>(entry.Attribute=="Sick" and 0 or maximum) and Theme.Danger or Theme.Green) or Theme.Green
+  else entry.Value.Text="—";entry.Fill.Size=UDim2.fromScale(0,1) end
+ end
+end)
 local function clear(frame)
  for _, child in ipairs(frame:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
 end
@@ -86,7 +131,7 @@ local redraw
 local tooltip = text(gui, "", UDim2.new(), UDim2.fromOffset(270, 110))
 tooltip.Name = "ItemTooltip"
 tooltip.BackgroundTransparency = 0.05
-tooltip.BackgroundColor3 = Color3.fromRGB(20, 26, 31)
+tooltip.BackgroundColor3 = Theme.Card
 tooltip.TextSize = 15
 tooltip.TextXAlignment = Enum.TextXAlignment.Center
 tooltip.ZIndex = 20
@@ -133,7 +178,7 @@ local function renderItems(frame, items, side)
   local selected = math.clamp(dropAmounts[key] or 1, 1, available)
   local container = Instance.new("Frame")
   container.Size = UDim2.new(1, -8, 0, 68)
-  container.BackgroundColor3 = Color3.fromRGB(30, 38, 45)
+  container.BackgroundColor3 = Theme.Card
   container.BorderSizePixel = 0
   container.LayoutOrder = order
   container.Parent = frame
@@ -156,7 +201,7 @@ local function renderItems(frame, items, side)
   local function showActions(entry, expanded)
    entry.actions.Visible = expanded
    entry.container.Size = UDim2.new(1, -8, 0, expanded and entry.expandedHeight or 68)
-   entry.row.BackgroundColor3 = expanded and Color3.fromRGB(57, 78, 87) or Color3.fromRGB(42, 53, 62)
+   entry.row.BackgroundColor3 = expanded and Theme.Button or Theme.Button
   end
   showActions(card, selectedItem == key)
   row.Activated:Connect(function()
@@ -169,10 +214,10 @@ local function renderItems(frame, items, side)
   amount.Name = "DropQuantity"
   amount.Position = UDim2.fromOffset(44, 0)
   amount.Size = UDim2.new(1, -88, 0, 28)
-  amount.BackgroundColor3 = Color3.fromRGB(20, 26, 31)
+  amount.BackgroundColor3 = Theme.Card
   amount.BorderSizePixel = 0
-  amount.TextColor3 = Color3.fromRGB(235, 240, 244)
-  amount.Font, amount.TextSize = Enum.Font.GothamMedium, 15
+  amount.TextColor3 = Theme.Text
+  amount.Font, amount.TextSize = Theme.Font, 15
   amount.ClearTextOnFocus = false
   amount.PlaceholderText = "Quantity"
   amount.Text = tostring(selected)
@@ -216,13 +261,13 @@ local function renderRecipes()
   local card=Instance.new("Frame")
   local expanded=selectedRecipe==id
   card.Size=UDim2.new(1,-8,0,expanded and 370 or 56)
-  card.BackgroundColor3=Color3.fromRGB(30,38,45)
+  card.BackgroundColor3=Theme.Card
   card.BorderSizePixel=0
   card.LayoutOrder=order
   card.Parent=equipment
   local title=button(card,recipe.Name,UDim2.fromOffset(6,6),UDim2.new(1,-12,0,44))
   title.TextSize=16
-  title.BackgroundColor3=expanded and Color3.fromRGB(57,78,87) or Color3.fromRGB(42,53,62)
+  title.BackgroundColor3=expanded and Theme.Button or Theme.Button
   title.Activated:Connect(function()
    if selectedRecipe==id then selectedRecipe=nil else selectedRecipe=id end
    redraw()
@@ -249,9 +294,9 @@ local function renderRecipes()
   local amount=Instance.new("TextBox")
   amount.Size=UDim2.new(.4,-12,0,30)
   amount.Position=UDim2.new(.3,6,0,229)
-  amount.BackgroundColor3=Color3.fromRGB(22,28,33)
-  amount.TextColor3=Color3.fromRGB(235,240,244)
-  amount.Font=Enum.Font.Gotham
+  amount.BackgroundColor3=Theme.Background
+  amount.TextColor3=Theme.Text
+  amount.Font=Theme.Font
   amount.TextSize=16
   amount.ClearTextOnFocus=false
   amount.Text=tostring(craftAmounts[id] or 1)
@@ -302,7 +347,7 @@ redraw = function()
  if selectedId and not snapshot.Items[selectedId] then selectedItem,selectedId = nil,nil end
  clear(inventory)
  clear(equipment)
- weight.Text = string.format("Weight %.1f kg", snapshot.Weight)
+
  takeAll.Visible = chestOpen and chestReadOnly and not cookingOpen
  equipment.Size = UDim2.new(.5,-32,1,takeAll.Visible and -148 or -108)
  rightTitle.Text = cookingOpen and "Recipes" or chestOpen and (snapshot.ChestName or "Chest") or "Equipment"

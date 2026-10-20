@@ -5,12 +5,12 @@ ItemConfig.PickupDistance = 1
 ItemConfig.Slots = {"Head", "Body", "Hands", "Back", "Additional"}
 ItemConfig.Items = {
  ZombieHand = {
-  Name = "Zombie Hand", Weight = 0, Slot = "Hands", Lootable = false,
+  Name = "Zombie hand", Weight = 0, Slot = "Hands", Lootable = false,
   Description = "A zombie's right hand.",
   Weapon = {Damage = 5, AttacksPerMinute = 10, DamageType = "Blunt", MaxUses = 1000, CanDamageStructures = false, Range = 1, Width = 1, Animation = "SwingLeft"},
  },
  TreeLog = {
-  Name = "Tree Log", Weight = 2,
+  Name = "Tree log", Weight = 2,
   Description = "A heavy wooden log cut from a tree.",
   ResourceMaterial = "Wood",
  },
@@ -36,17 +36,17 @@ ItemConfig.Items = {
   Description = "Pieces of old fabric salvaged from scrap piles.",
  },
  EmptyBottle = {
-  Name = "Empty Bottle", Weight = 0.1,
+  Name = "Empty bottle", Weight = 0.1,
   Description = "An empty half-litre bottle.",
  },
  DirtyWater = {
-  Name = "Dirty Water", Weight = 0.6, ConsumeAction = "Drink",
+  Name = "Dirty water", Weight = 0.6, ConsumeAction = "Drink",
   Description = "A bottle of dirty water. Quenches thirst but increases sickness.",
   Consume = {Water = 30, Sick = 20},
   ReturnItems = {EmptyBottle = 1},
  },
  CleanWater = {
-  Name = "Clean Water", Weight = 0.6, ConsumeAction = "Drink",
+  Name = "Clean water", Weight = 0.6, ConsumeAction = "Drink",
   Description = "A bottle of clean water. Can be drunk or used to boil potatoes.",
   Consume = {Water = 50},
   ReturnItems = {EmptyBottle = 1},
@@ -56,7 +56,7 @@ ItemConfig.Items = {
   Description = "An ordinary plate for serving meals.",
  },
  WoodenPlate = {
-  Name = "Wooden Plate", Weight = 0.1,
+  Name = "Wooden plate", Weight = 0.1,
   Description = "A wooden plate for serving meals.",
  },
  Sausage = {
@@ -65,24 +65,24 @@ ItemConfig.Items = {
   Consume = {Food = 5, Water = -5, Sick = 0},
  },
  SausageSlice = {
-  Name = "Sausage Slice", Weight = 0.1,
+  Name = "Sausage slice", Weight = 0.1,
   Description = "One of five slices from a sausage.",
   Consume = {Food = 1, Water = -1, Sick = 0},
  },
  MashedPotatoesWithSausage_1 = {
-  Name = "Mashed Potatoes with Sausage (Wooden Plate)", Weight = 0.4,
+  Name = "Mashed potatoes with sausage (wooden plate)", Weight = 0.4,
   Description = "Mashed potatoes with sausage, served on a wooden plate.",
   Consume = {Food = 6, Water = -1, Sick = 0},
   ReturnItems = {WoodenPlate = 1},
  },
  MashedPotatoesWithSausage_2 = {
-  Name = "Mashed Potatoes with Sausage (Plate)", Weight = 0.5,
+  Name = "Mashed potatoes with sausage (plate)", Weight = 0.5,
   Description = "Mashed potatoes with sausage, served on an ordinary plate.",
   Consume = {Food = 6, Water = -1, Sick = 0},
   ReturnItems = {Plate = 1},
  },
  BoiledPotato = {
-  Name = "Boiled Potato", Weight = 0.2,
+  Name = "Boiled potato", Weight = 0.2,
   Description = "A tasty boiled potato. Maybe I could make something else with it?",
   Consume = {Food = 5, Sick = 0},
  },
@@ -92,7 +92,7 @@ ItemConfig.Items = {
   Consume = {Food = 1, Sick = 5},
  },
  -- Example (remove the comment when you have this item):
- -- SmallBackpack = {Name = "Small Backpack", Weight = 1.5, Slot = "Back"},
+ -- SmallBackpack = {Name = "Small backpack", Weight = 1.5, Slot = "Back"},
  -- Metal = {Name = "Metal", Weight = 0.2},
 }
 -- Tier is progression/access; HarvestMultiplier scales damage only to resource nodes.
@@ -100,7 +100,7 @@ for tier,material in ipairs({"Stone","Scrap","Iron"}) do
  for _,tool in ipairs({"Axe","Showel"}) do
   local axe=tool=="Axe"
   ItemConfig.Items[material..tool]={
-   Name=material..(axe and " Axe" or " Shovel"), Weight=axe and 1.5 or 2,
+   Name=material..(axe and " axe" or " shovel"), Weight=axe and 1.5 or 2,
    Slot="Hands", HarvestTool=axe and "Axe" or "Shovel", HarvestTier=tier, HarvestMultiplier=tier,
    Description=axe and "An axe for chopping trees into logs." or "A shovel for digging resource deposits.",
    Weapon={Damage=5, AttacksPerMinute=25, DamageType=axe and "Slashing" or "Blunt", MaxUses=1000,
@@ -110,7 +110,7 @@ for tier,material in ipairs({"Stone","Scrap","Iron"}) do
 end
 for _,material in ipairs({"Scrap","Iron"}) do
  ItemConfig.Items[material.."Knife"]={
-  Name=material.." Knife", Weight=.3, Slot="Hands", CraftTool="Knife", CraftSpeed=1,
+  Name=material.." knife", Weight=.3, Slot="Hands", CraftTool="Knife", CraftSpeed=1,
   Description="A sharp knife for combat and slicing food.",
   Weapon={Damage=material=="Iron" and 20 or 10, AttacksPerMinute=40, DamageType="Piercing", MaxUses=500,
    CanDamageStructures=false, Range=1.2, Width=.7, Thrust=.5},
@@ -120,12 +120,12 @@ end
 ItemConfig.Items.Axe=ItemConfig.Items.StoneAxe
 ItemConfig.Items.Showel=ItemConfig.Items.StoneShowel
 ItemConfig.Items.Knife=ItemConfig.Items.ScrapKnife
-ItemConfig.Items.Rifle223={Name=".223 Rifle",Weight=3.2,Slot="Hands",Description="Automatic rifle. R reloads; T selects FMJ/AP.",
+ItemConfig.Items.Rifle223={Name = ".223 rifle",Weight=3.2,Slot="Hands",Description="Automatic rifle. R reloads; T selects FMJ/AP.",
  Firearm={Category="Automatic",HoldHeightRatio=.4,Caliber="223",Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=600},
  Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=600}}
 for _,kind in ipairs({"FMJ","AP"}) do
- ItemConfig.Items["Ammo223"..kind]={Name=".223 "..kind,Weight=.012,Description="Loose rifle ammunition.",Ammo={Caliber="223",Type=kind}}
- ItemConfig.Items["AmmoBox223"..kind]={Name=".223 "..kind.." Ammo Box",Weight=.1,Description="Collect to unpack its ammunition.",AmmoBox={Caliber="223",Type=kind,Maximum=50}}
+ ItemConfig.Items["Ammo223"..kind]={Name = ".223 "..kind,Weight=.012,Description="Loose rifle ammunition.",Ammo={Caliber="223",Type=kind}}
+ ItemConfig.Items["AmmoBox223"..kind]={Name = ".223 "..kind.." ammo box",Weight=.1,Description="Collect to unpack its ammunition.",AmmoBox={Caliber="223",Type=kind,Maximum=50}}
 end
 return ItemConfig
 

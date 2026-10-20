@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Fallout-inspired inventory and compact HUD — 20 October
+
+- Shared UITheme: warm metal frames, muted olive phosphor text, RobotoMono, bevel gradients on main panels/buttons. Inventory, progression, town menus and HUD use it. Talent/item/recipe display names use sentence case; internal IDs unchanged.
+- Needs HUD now health only at bottom left. Inventory SurvivalStatus column left of Pockets shows Food/Water/Sickness/Weight and carry limit, updated while visible. Inventory fixed 1060x600 canvas scales to viewport; chest/cooking/equipment actions retained.
+- Weapon HUD bottom right now 150x96 model preview plus vertical condition and magazine gauges on its right; ammo hidden for melee. Hover reveals numeric condition/ammo/reserve/type/reload. No permanent name/damage/APM labels.
+- Both per-point benefits for Strength, Endurance, Attention already existed in shared presentation; tooltip minimum height now explicitly accounts for every newline plus padding to prevent losing lines. Rules unchanged.
+- Luau compile, progression presentation/rules tests and Rojo build; no Studio visual playtest available.
+
 ## Compact attributes and grouped click-to-upgrade talents — 20 October
 
 - Progression.client rebuilt right list: Requires level N headings,2columns compact58px name/rank cards; MouseEnter shows current/next rank cumulative numeric bonuses via new shared ProgressionPresentation; click sendsTalent directly ifCanLearn. Bottom details/Learn removed, list usesavailableheight484. Correct percent sign instead percentagepoints wording, English text maintained.

@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local player = Players.LocalPlayer
+local Theme=require(ReplicatedStorage.Shared.UITheme)
 local remotes = ReplicatedStorage:WaitForChild("TownRemotes")
 local action, state, notice = remotes:WaitForChild("Action"), remotes:WaitForChild("State"), remotes:WaitForChild("Notice")
 local Config = require(ReplicatedStorage.Shared.TownConfig)
@@ -13,14 +14,15 @@ gui.Name, gui.ResetOnSpawn, gui.DisplayOrder = "TownUI", false, 30
 gui.Parent = player:WaitForChild("PlayerGui")
 local panel = Instance.new("Frame")
 panel.AnchorPoint, panel.Position = Vector2.new(.5,.5), UDim2.fromScale(.5,.5)
-panel.Size, panel.BackgroundColor3 = UDim2.fromScale(.8,.78), Color3.fromRGB(24,29,33)
+panel.Size, panel.BackgroundColor3 = UDim2.fromScale(.8,.78), Theme.Panel
 local constraint = Instance.new("UISizeConstraint"); constraint.MaxSize = Vector2.new(640,640); constraint.Parent = panel
 panel.Parent = gui
+Theme.Bevel(panel)
 local title = Instance.new("TextLabel")
 title.Name = "Title"
 title.Size, title.Position = UDim2.new(1,-24,0,48), UDim2.fromOffset(12,10)
-title.BackgroundTransparency, title.TextColor3 = 1, Color3.fromRGB(239,239,229)
-title.Font, title.TextSize, title.TextXAlignment = Enum.Font.GothamBold, 26, Enum.TextXAlignment.Left
+title.BackgroundTransparency, title.TextColor3 = 1, Theme.Text
+title.Font, title.TextSize, title.TextXAlignment = Theme.Font, 26, Enum.TextXAlignment.Left
 title.Text, title.Parent = "Choose a town", panel
 local scroll = Instance.new("ScrollingFrame")
 scroll.Size, scroll.Position = UDim2.new(1,-24,1,-82), UDim2.fromOffset(12,70)
@@ -37,8 +39,8 @@ local function send(command, value, extra) action:FireServer(command,value,extra
 local function text(caption, size)
  local label = Instance.new("TextLabel")
  label.Size, label.AutomaticSize = UDim2.new(1,-8,0,0), Enum.AutomaticSize.Y
- label.BackgroundTransparency, label.TextColor3 = 1, Color3.fromRGB(239,239,229)
- label.Font, label.TextSize, label.TextWrapped, label.TextXAlignment = Enum.Font.Gotham, size or 16, true, Enum.TextXAlignment.Left
+ label.BackgroundTransparency, label.TextColor3 = 1, Theme.Text
+ label.Font, label.TextSize, label.TextWrapped, label.TextXAlignment = Theme.Font, size or 16, true, Enum.TextXAlignment.Left
  order += 1
  label.LayoutOrder = order
  label.Text, label.Parent = caption, content
@@ -47,11 +49,12 @@ end
 local function button(caption, callback)
  local item = Instance.new("TextButton")
  item.Size, item.AutomaticSize = UDim2.new(1,-8,0,38), Enum.AutomaticSize.Y
- item.BackgroundColor3, item.TextColor3 = Color3.fromRGB(48,59,64), Color3.fromRGB(244,244,233)
- item.Font, item.TextSize, item.TextWrapped = Enum.Font.GothamMedium, 16, true
+ item.BackgroundColor3, item.TextColor3 = Theme.Button, Theme.Text
+ item.Font, item.TextSize, item.TextWrapped = Theme.Font, 16, true
  order += 1
  item.LayoutOrder = order
  item.Text, item.Parent = caption, content
+ Theme.Bevel(item)
  item.Activated:Connect(callback)
  return item
 end
@@ -218,7 +221,7 @@ local noticeLayout = Instance.new("UIListLayout"); noticeLayout.SortOrder = Enum
 local caption = Instance.new("TextLabel")
 caption.Size, caption.AutomaticSize = UDim2.new(1,0,0,0), Enum.AutomaticSize.Y
 caption.BackgroundTransparency, caption.TextColor3, caption.TextWrapped = 1, Color3.fromRGB(255,239,184), true
-caption.Font, caption.TextSize, caption.LayoutOrder, caption.Parent = Enum.Font.GothamMedium, 17, 1, notifications
+caption.Font, caption.TextSize, caption.LayoutOrder, caption.Parent = Theme.Font, 17, 1, notifications
 local answers = Instance.new("Frame"); answers.BackgroundTransparency = 1; answers.LayoutOrder = 2; answers.Size = UDim2.new(1,0,0,38); answers.Parent = notifications
 local function reply(choice)
  local request = queue[1]
@@ -252,7 +255,7 @@ local function updateCandidates(election)
   local item = Instance.new("TextButton")
   item.LayoutOrder, item.Size = index, UDim2.new(1,-8,0,36)
   item.Text = candidate.Name .. (candidate.ID == player.UserId and " (you)" or "")
-  item.Font, item.TextSize = Enum.Font.GothamMedium, 15
+  item.Font, item.TextSize = Theme.Font, 15
   item.BackgroundColor3, item.TextColor3, item.Parent = Color3.fromRGB(58,75,76), Color3.new(1,1,1), candidateList
   item.Activated:Connect(function()
    send("VoteCandidate",election.ID,candidate.ID)
@@ -268,10 +271,10 @@ highlight.Enabled, highlight.Parent = false, workspace
 local hoverLabel = Instance.new("TextLabel")
 hoverLabel.Name = "TownHoverLabel"
 hoverLabel.Size = UDim2.fromOffset(200,44)
-hoverLabel.BackgroundColor3 = Color3.fromRGB(22,28,33)
+hoverLabel.BackgroundColor3 = Theme.Card
 hoverLabel.BackgroundTransparency, hoverLabel.BorderSizePixel = .1, 0
 hoverLabel.TextColor3 = Color3.fromRGB(240,240,235)
-hoverLabel.Font, hoverLabel.TextSize, hoverLabel.Visible = Enum.Font.GothamMedium, 15, false
+hoverLabel.Font, hoverLabel.TextSize, hoverLabel.Visible = Theme.Font, 15, false
 hoverLabel.Parent = gui
 RunService.RenderStepped:Connect(function()
  local time = workspace:GetServerTimeNow()
