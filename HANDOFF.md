@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Nested Items categories — 20 October
+
+- User organizes ServerStorage/Items into CookedFood,Materials,RawFood,Food,Tools,Weapons/Close,Weapons/Range; arbitrary Folder nesting now supported. EquipmentVisuals.Template performs category-Folder-only recursive lookup of valid Model/BasePart; does NOT descend into item models, so embedded Handle is not an item template. WorldItemService.makeItem shares resolver for drops/crafts. Existing nested equipment prevents duplicate root capture. Unique item names required; ItemConfig IDs unchanged. Tests run_equipment_templates covers nested weapons/materials/food, no duplicate capture, embedded Handle ignored.
+
 ## Door timing clarification — 20 October
 
 - Mayor-approved outsider passage is20seconds again (Admit + English prompts). Ordinary authorized E opening remains5seconds. Tests verify both durations. This supersedes the preceding all-five-second change.

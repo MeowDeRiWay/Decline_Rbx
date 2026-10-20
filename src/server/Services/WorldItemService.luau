@@ -88,8 +88,7 @@ function Service.Pickup(player, item)
  return true
 end
 local function makeItem(id)
- local templates = ServerStorage:FindFirstChild("Items")
- local source = templates and templates:FindFirstChild(id)
+ local source = EquipmentVisuals.Template(id)
  if source and (source:IsA("Model") or source:IsA("BasePart")) then
   local item = source:Clone()
   if item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart",true) then item:Destroy()

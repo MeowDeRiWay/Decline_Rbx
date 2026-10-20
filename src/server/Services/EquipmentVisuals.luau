@@ -2,13 +2,25 @@ local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
 local Visuals = {}
-local function templateFor(id)
- local items = ServerStorage:FindFirstChild("Items")
- local template = items and items:FindFirstChild(id)
- if not template or (not template:IsA("Model") and not template:IsA("BasePart")) then return nil end
- if template:IsA("Model") and not template:FindFirstChildWhichIsA("BasePart",true) then return nil end
- return template
+local function findTemplate(folder,id)
+ if not folder then return nil end
+ -- Recurse through category folders only, never into a different item's model.
+ -- For example Axe/Handle is a component, not the craftable Handle template.
+ for _,child in ipairs(folder:GetChildren()) do
+  if child.Name==id and (child:IsA("Model") or child:IsA("BasePart"))
+   and (child:IsA("BasePart") or child:FindFirstChildWhichIsA("BasePart",true)) then return child end
+ end
+ for _,child in ipairs(folder:GetChildren()) do
+  if child:IsA("Folder") then
+   local template=findTemplate(child,id)
+   if template then return template end
+  end
+ end
 end
+local function templateFor(id)
+ return findTemplate(ServerStorage:FindFirstChild("Items"),id)
+end
+Visuals.Template=templateFor
 -- Hand-authored world tools can supply their own reusable equipment template.
 -- Called by server registration before a world pickup is consumed.
 function Visuals.CaptureTemplate(item, id)
@@ -21,7 +33,7 @@ function Visuals.CaptureTemplate(item, id)
  local folder=ServerStorage:FindFirstChild("Items")
  if not folder then folder=Instance.new("Folder"); folder.Name="Items"; folder.Parent=ServerStorage end
  local invalid=folder:FindFirstChild(id)
- if invalid then invalid:Destroy() end
+ if invalid and not invalid:IsA("Folder") then invalid:Destroy() end
  clone.Name=id
  clone:SetAttribute("Quantity",nil)
  clone.Parent=folder
