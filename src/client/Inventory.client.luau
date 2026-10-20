@@ -380,6 +380,7 @@ redraw = function()
  end
 end
 local function setOpen(open)
+ if open and (player:GetAttribute("TownMenuOpen") or (player.Character and player.Character:GetAttribute("Knockout"))) then return end
  if open and player:GetAttribute("ProgressionOpen") then return end
  if not open then
   selectedRecipe = nil
@@ -411,6 +412,7 @@ local function setOpen(open)
   RunService:UnbindFromRenderStep("InventoryStopMovement")
  end
 end
+require(script.Parent.HUDLayout).Inventory.Event:Connect(function() setOpen(not gui.Enabled) end)
 close.Activated:Connect(function() setOpen(false) end)
 UserInputService.InputBegan:Connect(function(input, processed)
  if processed or UserInputService:GetFocusedTextBox() or player:GetAttribute("TownMenuOpen") then return end

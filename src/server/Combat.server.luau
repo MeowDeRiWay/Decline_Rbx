@@ -77,13 +77,13 @@ attack.OnServerEvent:Connect(function(player)
   if resourceTarget then Resources.Hit(player,nearest,weapon)
   else
    if not Damage.RollHit(player,nearest) then
-    Damage.Miss(nearest.Parent)
+    Damage.Miss(nearest.Parent,player)
     Inventory.UseWeapon(player)
     return
    end
    nearest.Parent:SetAttribute("LastDamagerID",player.UserId)
    nearest.Parent:SetAttribute("LastHitItem",character:GetAttribute("HandsItem"))
-   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true})
+   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player})
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
  end

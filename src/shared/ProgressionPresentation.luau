@@ -2,7 +2,7 @@ local Rules=require(script.Parent.ProgressionRules)
 local Presentation={}
 local attributes={
  Strength="Per point:\n+1 kg carry capacity\n+1 melee damage",
- Endurance="Per point:\n+0.2 running speed\n+5 maximum HP",
+ Endurance="Per point:\n+0.2 running speed\n+5 maximum HP\n+1 second sprint reserve",
  Attention="Per point:\n+2% accuracy\n+0.5 studs view",
  Luck="Per point:\n+3% bonus loot chance\n+1 bonus item per 3 points",
 }

@@ -98,3 +98,8 @@ GrandmasMethod,RamsayMethod removed from definitions AND cooking effects.
 Legacy stored ranks do not grant speed or extra servings. Stove/board use base
 recipe time and outputs; Worker Golden Hands and independent Luck are preserved.
 This supersedes earlier descriptions of those three retired talents.
+
+
+### Sprint reserve and console
+
+Sprint lasts 20 seconds plus 1 second per Endurance point. Walking/rest restores the full reserve in 10 seconds; exhaustion prevents another sprint until 20% has recovered. Existing Endurance speed and HP bonuses remain. The bottom console shows remaining sprint time, numeric HP and AC (current dodge percentage). Level/Cha opens character; Inv opens inventory; Holster returns the held item to inventory. V switches firearm Auto/Single.

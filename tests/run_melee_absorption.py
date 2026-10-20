@@ -5,8 +5,6 @@ import sys
 import tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/DamageService.luau').read_text().replace('local Life = require(script.Parent.PlayerLifeService)','')
-a=service.index('local function popup('); b=service.index('function Service.Miss',a)
-service=service[:a]+'local function popup() end\n'+service[b:]
 setup='''
 local hits=0
 local chance=.1
@@ -38,6 +36,17 @@ local state=InventoryRules.New()
 assert(InventoryRules.Add(state,Items.Items,"Apron",1))
 assert(InventoryRules.Equip(state,Items.Items,Items.Slots,"Apron"))
 assert(state.Equipment.Additional=="Apron")
+local report=ReplicatedStorage:FindFirstChild("CombatReport")
+assert(report and #report.sent>0,"incoming damage reaches victim journal")
+table.clear(report.sent)
+local target=make("Model","Zombie",workspace)
+Service.Miss(target,a)
+assert(#report.sent==1 and report.sent[1].player==a and report.sent[1].data=="Zombie: Miss","miss is private to attacker")
+table.clear(report.sent)
+Service.Miss(a.Character,b)
+assert(#report.sent==2 and report.sent[1].player==b and report.sent[2].player==a,"PvP report goes to attacker and victim only")
+assert(not target:FindFirstChild("DamagePopup",true),"no overhead popup")
+print("PASS: private attacker/victim reports, misses, and no overhead damage text")
 print("PASS: melee-only absorption, non-melee unchanged, zero-damage clamp and Apron Additional slot")
 '''
 cases=cases.replace('requirePlaceholder','(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)()').replace('inventoryPlaceholder','(function()\n'+(root/'src/shared/InventoryRules.luau').read_text()+'\nend)()')

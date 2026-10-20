@@ -1,34 +1,16 @@
 local Players = game:GetService("Players")
 local Life = require(script.Parent.PlayerLifeService)
-local TweenService = game:GetService("TweenService")
-local Debris = game:GetService("Debris")
+local ReplicatedStorage=game:GetService("ReplicatedStorage")
+local report=Instance.new("RemoteEvent");report.Name="CombatReport";report.Parent=ReplicatedStorage
 local Service = {}
-local function popup(target,amount)
- local part = target:FindFirstChild("Head") or target:FindFirstChild("HumanoidRootPart") or target:FindFirstChildWhichIsA("BasePart",true)
- if not part then return end
- local gui = Instance.new("BillboardGui")
- gui.Name = "DamagePopup"
- gui.Adornee = part
- gui.Size = UDim2.fromOffset(140,45)
- gui.StudsOffsetWorldSpace = Vector3.new(math.random(-15,15)/100,part.Size.Y/2+.35,0)
- gui.AlwaysOnTop = true
- gui.MaxDistance = 100
- gui.Parent = part
- local label = Instance.new("TextLabel")
- label.Size = UDim2.fromScale(1,1)
- label.BackgroundTransparency = 1
- label.Font = Enum.Font.GothamBold
- label.TextSize = 24
- label.TextColor3 = Color3.fromRGB(255,85,85)
- label.TextStrokeTransparency = .3
- label.Text = typeof(amount)=="string" and amount or string.format("-%g",amount)
- label.Parent = gui
- local info = TweenInfo.new(.85,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
- TweenService:Create(gui,info,{StudsOffsetWorldSpace=gui.StudsOffsetWorldSpace+Vector3.new(0,.7,0)}):Play()
- TweenService:Create(label,info,{TextTransparency=1,TextStrokeTransparency=1}):Play()
- Debris:AddItem(gui,1)
+local function popup(target,amount,attacker)
+ local victim=Players:GetPlayerFromCharacter(target)
+ local name=victim and (victim.DisplayName or victim.Name) or target.Name
+ local message=typeof(amount)=="string" and (name..": "..amount) or string.format("%s: hit for %g damage",name,amount)
+ if attacker and attacker.Parent==Players then report:FireClient(attacker,message) end
+ if victim and victim~=attacker then report:FireClient(victim,message) end
 end
-function Service.Miss(target) popup(target,"Miss") end
+function Service.Miss(target,attacker) popup(target,"Miss",attacker) end
 function Service.RollHit(attacker,humanoid,bonus)
  local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
  local dodge=defender and defender:GetAttribute("DodgeChance") or 0
@@ -48,7 +30,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  options=options or {}
  local dodge=player and (player:GetAttribute("DodgeChance") or 0) or 0
  if not options.HitChecked and dodge>0 and math.random()<dodge then
-  target:SetAttribute("LastDamage",0);target:SetAttribute("LastDamageDodged",true);popup(target,"Dodge");return 0
+  target:SetAttribute("LastDamage",0);target:SetAttribute("LastDamageDodged",true);popup(target,"Dodge",options.Attacker);return 0
  end
  target:SetAttribute("LastDamageDodged",false)
  local multiplier=options.CriticalMultiplier or 1
@@ -77,7 +59,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  target:SetAttribute("LastDamageType",damageType)
  target:SetAttribute("Health",humanoid.Health)
  target:SetAttribute("MaxHealth",humanoid.MaxHealth)
- popup(target,multiplier>1 and amount>0 and string.format("Critical -%g",amount) or amount)
+ popup(target,multiplier>1 and amount>0 and string.format("Critical -%g",amount) or amount,options.Attacker)
  return amount
 end
 return Service

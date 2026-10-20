@@ -16,6 +16,7 @@ Input.InputBegan:Connect(function(input,processed)
  if processed or blocked() then return end
  if input.UserInputType==Enum.UserInputType.MouseButton1 then firing=true
  elseif input.KeyCode==Enum.KeyCode.R then action:FireServer("Reload")
+ elseif input.KeyCode==Enum.KeyCode.V then action:FireServer("Mode")
  elseif input.KeyCode==Enum.KeyCode.T then action:FireServer("Type") end
 end)
 Input.InputEnded:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 then firing=false end end)
@@ -41,7 +42,10 @@ RunService.Heartbeat:Connect(function()
  ready=os.clock()+60/definition.Firearm.RPM
  if (character:GetAttribute("MagazineAmmo") or 0)<=0 then
   ready=os.clock()+.25;action:FireServer("Reload")
- else action:FireServer("Fire",direction.Unit) end
+ else
+  action:FireServer("Fire",direction.Unit)
+  if character:GetAttribute("FireMode")=="Single" then firing=false end
+ end
 end)
 local traces={}
 local colors={Brick=Color3.fromRGB(160,95,70),Wood=Color3.fromRGB(150,110,65),Glass=Color3.fromRGB(185,220,230),Metal=Color3.fromRGB(255,210,100),ArmorSteel=Color3.fromRGB(255,210,100),Concrete=Color3.fromRGB(160,160,155),Flesh=Color3.fromRGB(125,55,50)}

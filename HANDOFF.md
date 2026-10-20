@@ -4,6 +4,16 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Bottom console, chat journal, sprint and firing modes — 21 October
+
+- HUDLayout client module owns shared 1020x170 bottom console, viewport-scaled; WeaponHUD mounts in its center instead of separate screen. Left persistent 100-row bounded journal + input (/ or click); filtered TextChatService.MessageReceived Success messages, SendAsync via selected/RBXGeneral channel, permissions checked, default window/input/bubbles disabled. No custom server chat relay. Live multiplayer/chat Studio test remains user-side.
+- DamageService CombatReport RemoteEvent replaces ALL overhead damage text. Attacker/victim only receive damage/critical/miss/dodge; melee/projectiles pass actual server attacker. No broadcast exposing hidden targets to observers. Tests now exercise real report recipient routing.
+- Holster calls existing Unequip Hands, Inv and Cha/Level bind through local HUDLayout events to existing menus. Level visible whenever AttributePoints or TalentPoints >0; level-up journal entry. Skills shows profession specialty stations/buildings; Menu is a closable future settings placeholder (no audio/graphics controls yet).
+- HP numeric, AC shows existing DodgeChance percentage (zero without dodge talents), no duplicate damage calculation. Red combat square when zombie TargetName targets local player OR another player whose root projects onscreen; dark otherwise. Tracks TargetName changes/removed models, polls .25s, no raycasts or server AI changes.
+- Server SprintRules: capacity20+Endurance seconds; moving sprint drains1/s. Not sprinting restores max/10 per second (ten-second full recovery). Empty locks until20% recovered, stops speed bonus, holding shift cannot bypass. Replicated SprintRemaining rounded .1 +SprintMaximum drive green bar/time. Existing speed/HP Endurance bonuses retained. Respawn full. Server owns reserve/Running.
+- V toggles Auto/Single server state, .25s mode debounce; client releases firing after one accepted single trigger request, RPM authority unchanged. Weapon hover shows mode. Inventory switch resets mode with existing firearm session reset. No burst mode yet.
+- Checks full Luau compilation/Rojo, SprintRules depletion/recovery/locks, actual firearm service mode/no-ammo/no-condition side effects, projectile regression, real damage absorption/crit + private report tests. No Studio UI, input, chat or audio playtest.
+
 ## Fallout-inspired inventory and compact HUD — 20 October
 
 - Shared UITheme: warm metal frames, muted olive phosphor text, RobotoMono, bevel gradients on main panels/buttons. Inventory, progression, town menus and HUD use it. Talent/item/recipe display names use sentence case; internal IDs unchanged.

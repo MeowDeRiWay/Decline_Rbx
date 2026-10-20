@@ -84,8 +84,8 @@ RunService.Heartbeat:Connect(function(dt)
      victim.Parent:SetAttribute("LastHitItem",bullet.ItemID)
      local critical=random:NextNumber()<(bullet.Player:GetAttribute(bullet.Category.."CritChance") or 0)
      local multiplier=critical and random:NextInteger(2,4) or 1
-     Damage.Apply(victim,bullet.Damage*math.max(.1,bullet.Remaining/bullet.Initial),"Bullet",bullet.Position-bullet.Direction,"Ranged",{HitChecked=true,CriticalMultiplier=multiplier})
-    else Damage.Miss(victim.Parent) end
+     Damage.Apply(victim,bullet.Damage*math.max(.1,bullet.Remaining/bullet.Initial),"Bullet",bullet.Position-bullet.Direction,"Ranged",{HitChecked=true,CriticalMultiplier=multiplier,Attacker=bullet.Player})
+    else Damage.Miss(victim.Parent,bullet.Player) end
     emit("Impact",hit.Position,{Direction=hit.Normal,Material="Flesh"});stopped=true;break
    end
    local kind,thickness,parts=barrier(hit,bullet.Direction)

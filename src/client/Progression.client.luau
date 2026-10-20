@@ -145,6 +145,7 @@ local function redraw()
 
 end
 local function setOpen(open)
+ if open and player.Character and player.Character:GetAttribute("Knockout") then return end
  panel.Visible=open; tooltip.Visible=false; hoveredAttribute=nil; hoveredTalent=nil; player:SetAttribute("ProgressionOpen",open)
  if open then
   Context:BindActionAtPriority("ProgressionBlockMovement",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+2,Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump)
@@ -178,6 +179,9 @@ Run.RenderStepped:Connect(function()
   tooltip.Position=UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-width)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-height)))
   tooltip.Visible=true
  end
+end)
+require(script.Parent.HUDLayout).Character.Event:Connect(function()
+ if not player:GetAttribute("InventoryOpen") and not player:GetAttribute("TownMenuOpen") then setOpen(not panel.Visible) end
 end)
 Input.InputBegan:Connect(function(input,processed)
  if processed or Input:GetFocusedTextBox() then return end

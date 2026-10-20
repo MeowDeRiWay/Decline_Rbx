@@ -21,7 +21,7 @@ local function stateFor(player,character,id)
  local state=states[player]
  if not state or state.Character~=character or state.ID~=id then
   if state then Audio.Stop(state.ReloadSound) end
-  state={Character=character,ID=id,Type="FMJ",Loaded=0,Ready=0,Token=0};states[player]=state
+  state={Character=character,ID=id,Type="FMJ",Loaded=0,Ready=0,Token=0,Mode="Auto"};states[player]=state
  end
  return state
 end
@@ -33,6 +33,7 @@ local function sync(player,state,gun)
  c:SetAttribute("MagazineAmmo",state.Loaded)
  c:SetAttribute("ReserveAmmo",math.max(0,total-state.Loaded))
  c:SetAttribute("AmmoType",state.Type)
+ c:SetAttribute("FireMode",state.Mode)
  c:SetAttribute("Reloading",state.Reloading==true)
 end
 -- Ammunition remains counted in inventory until fired. Magazine is an allocation
@@ -48,7 +49,10 @@ action.OnServerEvent:Connect(function(player,command,direction)
  local state=stateFor(player,character,id)
  sync(player,state,gun)
  local now=os.clock()
- if command=="Type" then
+ if command=="Mode" then
+  if now<(state.NextMode or 0) then return end
+  state.NextMode=now+.25;state.Mode=state.Mode=="Auto" and "Single" or "Auto";sync(player,state,gun);return
+ elseif command=="Type" then
   if now<(state.NextType or 0) then return end
   Audio.Stop(state.ReloadSound);state.ReloadSound=nil
   state.NextType=now+.3;state.Token+=1;state.Reloading=false;state.Loaded=0

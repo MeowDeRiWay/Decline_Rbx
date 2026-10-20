@@ -3,17 +3,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local Theme = require(ReplicatedStorage.Shared.UITheme)
 local items = require(ReplicatedStorage.Shared.ItemConfig).Items
-local gui = Instance.new("ScreenGui")
-gui.Name,gui.ResetOnSpawn = "WeaponHUD",false
-gui.Parent = player:WaitForChild("PlayerGui")
+local layout=require(script.Parent.HUDLayout)
 local panel = Instance.new("Frame")
-panel.AnchorPoint = Vector2.new(1,1)
-panel.Position = UDim2.new(1,-16,1,-16)
+panel.AnchorPoint = Vector2.new(0,0)
+panel.Position = UDim2.fromOffset(442,26)
 panel.Size = UDim2.fromOffset(204,112)
 panel.BackgroundColor3 = Theme.Panel
 panel.BackgroundTransparency = .12
 panel.Visible = false
-panel.Parent = gui
+panel.Parent = layout.Bar
 Theme.Bevel(panel)
 local viewport = Instance.new("ViewportFrame")
 viewport.Position = UDim2.fromOffset(8,8)
@@ -73,8 +71,8 @@ local function refresh()
  local definition = id and items[id]
  local weapon = definition and definition.Weapon
  local currentHeld = character and character:FindFirstChild("HeldItem")
- panel.Visible = weapon ~= nil
- if not weapon then hint.Visible=false; held = nil; world:ClearAllChildren(); return end
+ panel.Visible = true
+ if not weapon then hint.Visible=false; held = nil; world:ClearAllChildren();conditionFill.Size=UDim2.fromScale(1,0);ammoTrack.Visible=false;return end
  if held ~= currentHeld then held = currentHeld; preview(held) end
  local uses = math.clamp(character:GetAttribute("WeaponCondition") or 0,0,weapon.MaxUses)
  local fraction = uses/math.max(1,weapon.MaxUses)
@@ -86,6 +84,7 @@ local function refresh()
   local loaded=character:GetAttribute("MagazineAmmo") or 0
   ammoFill.Size=UDim2.fromScale(1,math.clamp(loaded/math.max(1,definition.Firearm.Magazine),0,1))
   ammoFill.BackgroundColor3=character:GetAttribute("Reloading") and Theme.Danger or Theme.Accent
+  hint.Text..="\nMode: "..(character:GetAttribute("FireMode") or "Auto").." · V to switch"
   hint.Text..=string.format("\nAmmo %d / %d · %s · Reserve %d%s",loaded,definition.Firearm.Magazine,character:GetAttribute("AmmoType") or "FMJ",character:GetAttribute("ReserveAmmo") or 0,character:GetAttribute("Reloading") and " · Reloading" or "")
  end
 end
@@ -93,7 +92,7 @@ local function bind(model)
  for _,connection in ipairs(connections) do connection:Disconnect() end
  table.clear(connections)
  character,held = model,nil
- for _,attribute in ipairs({"HandsItem","WeaponCondition","MagazineAmmo","ReserveAmmo","AmmoType","Reloading"}) do table.insert(connections,model:GetAttributeChangedSignal(attribute):Connect(refresh)) end
+ for _,attribute in ipairs({"HandsItem","WeaponCondition","MagazineAmmo","ReserveAmmo","AmmoType","Reloading","FireMode"}) do table.insert(connections,model:GetAttributeChangedSignal(attribute):Connect(refresh)) end
  table.insert(connections,model.ChildAdded:Connect(refresh))
  table.insert(connections,model.ChildRemoved:Connect(refresh))
  refresh()

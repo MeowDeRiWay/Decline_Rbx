@@ -56,6 +56,11 @@ cases='''
 local fire=action.OnServerEvent.callback
 local direction=Vector3.new(0,0,-1)
 fire(player,"Fire",direction);assert(shots==0,"empty gun cannot fire")
+assert(character:GetAttribute("FireMode")=="Auto")
+fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single")
+fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single","mode toggle throttled")
+assert(rounds.Ammo223FMJ==50 and uses==0,"switching mode does not spend ammunition or durability")
+advance(.3);fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Auto")
 fire(player,"Reload");assert(character:GetAttribute("Reloading"))
 fire(player,"Fire",direction);assert(shots==0,"cannot fire while reloading")
 advance(2.5);assert(character:GetAttribute("MagazineAmmo")==30 and rounds.Ammo223FMJ==50,"reload allocates existing rounds without creating/losing stock")
