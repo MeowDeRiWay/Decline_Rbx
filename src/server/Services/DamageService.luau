@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local Life = require(script.Parent.PlayerLifeService)
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local report=Instance.new("RemoteEvent");report.Name="CombatReport";report.Parent=ReplicatedStorage
+local Defense=require(ReplicatedStorage.Shared.DefenseRules)
 local Service = {}
 local function announce(target,kind,amount,attacker,attackKind,critical,knockout)
  local victim=Players:GetPlayerFromCharacter(target)
@@ -52,8 +53,9 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  if player then
   if target:FindFirstChildOfClass("ForceField") then amount=0
   else
-   if attackKind=="Melee" then amount=math.max(0,amount-(player:GetAttribute("MeleeAbsorption") or 0)) end
-   amount=amount>0 and Life.Damage(player,humanoid,amount,true) or 0
+   local absorption=(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0)+(attackKind=="Melee" and (player:GetAttribute("MeleeAbsorption") or 0) or 0)
+   amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0),absorption)
+   amount=amount>0 and Life.Damage(player,humanoid,amount,true,true) or 0
   end
  elseif target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.

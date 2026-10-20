@@ -19,6 +19,12 @@ Service.Changed = changed.Event
 local function update(player)
  local state = states[player]
  if not state then return end
+ local absorption,resistance=0,0
+ for _,id in pairs(state.Equipment) do
+  local armor=ItemConfig.Items[id].Armor
+  if armor then absorption+=armor.Absorption or 0;resistance+=armor.Resistance or 0 end
+ end
+ player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,1))
  if player.Character then
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1))
   Visuals.Apply(player.Character, state.Equipment.Hands)

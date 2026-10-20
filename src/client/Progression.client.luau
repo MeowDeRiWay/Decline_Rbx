@@ -6,6 +6,8 @@ local Run=game:GetService("RunService")
 local player=Players.LocalPlayer
 local config=require(ReplicatedStorage.Shared.ProgressionConfig)
 local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
+local Sheet=require(ReplicatedStorage.Shared.CharacterStats)
+local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Presentation=require(ReplicatedStorage.Shared.ProgressionPresentation)
 local TextService=game:GetService("TextService")
 local remotes=ReplicatedStorage:WaitForChild("ProgressionRemotes")
@@ -73,15 +75,61 @@ tooltip.Name="AttributeTooltip"; tooltip.BackgroundTransparency=.05
  tooltip.TextXAlignment=Enum.TextXAlignment.Left
  tooltip.TextYAlignment=Enum.TextYAlignment.Top
 local tooltipPadding=Instance.new("UIPadding");tooltipPadding.PaddingTop=UDim.new(0,10);tooltipPadding.PaddingBottom=UDim.new(0,10);tooltipPadding.PaddingLeft=UDim.new(0,12);tooltipPadding.PaddingRight=UDim.new(0,12);tooltipPadding.Parent=tooltip
-local profession=label(right,"No profession selected",UDim2.fromOffset(20,48),UDim2.fromOffset(340,28),18)
-local permissions=label(right,"",UDim2.fromOffset(20,82),UDim2.fromOffset(340,30),12,palette.Muted)
-local choose=button(right,"Choose cook",UDim2.fromOffset(378,46),UDim2.fromOffset(190,32),function() action:FireServer("Choose","Cook") end)
-local chooseWorker=button(right,"Choose worker",UDim2.fromOffset(378,84),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Worker") end)
-local chooseHunter=button(right,"Choose hunter",UDim2.fromOffset(378,122),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Hunter") end)
-local talentPoints=label(right,"Talent points: 0",UDim2.fromOffset(20,114),UDim2.fromOffset(340,18),13)
+local talentPanel=frame(right,UDim2.new(),UDim2.fromScale(1,1))
+talentPanel.BackgroundTransparency=1
+local mode="Stats"
+local profession=label(talentPanel,"No profession selected",UDim2.fromOffset(20,48),UDim2.fromOffset(340,28),18)
+local permissions=label(talentPanel,"",UDim2.fromOffset(20,82),UDim2.fromOffset(340,30),12,palette.Muted)
+local choose=button(talentPanel,"Choose cook",UDim2.fromOffset(378,46),UDim2.fromOffset(190,32),function() action:FireServer("Choose","Cook") end)
+local chooseWorker=button(talentPanel,"Choose worker",UDim2.fromOffset(378,84),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Worker") end)
+local chooseHunter=button(talentPanel,"Choose hunter",UDim2.fromOffset(378,122),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Hunter") end)
+local talentPoints=label(talentPanel,"Talent points: 0",UDim2.fromOffset(20,114),UDim2.fromOffset(340,18),13)
 local tree=Instance.new("ScrollingFrame")
 tree.Position=UDim2.fromOffset(20,134); tree.Size=UDim2.fromOffset(548,330); tree.BackgroundColor3=palette.Background
- tree.BorderSizePixel=0; tree.ScrollBarThickness=4; tree.ScrollBarImageColor3=palette.Accent; tree.CanvasSize=UDim2.new(); tree.Parent=right
+ tree.BorderSizePixel=0; tree.ScrollBarThickness=4; tree.ScrollBarImageColor3=palette.Accent; tree.CanvasSize=UDim2.new(); tree.Parent=talentPanel
+local statsPanel=frame(right,UDim2.fromOffset(20,84),UDim2.fromOffset(548,532))
+local statRows={
+ {"Health","Health"},{"Absorption","Damage absorption"},{"Resistance","Damage resistance"},
+ {"Sprint","Sprint duration"},{"Accuracy","Accuracy"},{"Dodge","Dodge chance"},
+ {"MeleeDamage","Melee damage"},{"CriticalChance","Critical chance"},
+ {"CriticalMultiplier","Critical multiplier"},{"Luck","Luck chance"},
+}
+local values={}
+for index,row in ipairs(statRows) do
+ local y=(index-1)*44
+ local card=frame(statsPanel,UDim2.fromOffset(0,y),UDim2.fromOffset(548,38),palette.Card)
+ label(card,row[2],UDim2.fromOffset(10,0),UDim2.fromOffset(250,38),15)
+ values[row[1]]=label(card,"—",UDim2.fromOffset(260,0),UDim2.fromOffset(278,38),15,palette.Accent)
+end
+local context=label(statsPanel,"",UDim2.fromOffset(8,448),UDim2.fromOffset(532,72),12,palette.Muted)
+local function setMode(value)
+ mode=value;statsPanel.Visible=value=="Stats";talentPanel.Visible=value=="Talents"
+ rightHeading.Text=value=="Stats" and "Final stats" or "Talents"
+ hoveredTalent=nil
+end
+button(right,"Stats",UDim2.fromOffset(20,44),UDim2.fromOffset(112,28),function() setMode("Stats") end)
+button(right,"Talents",UDim2.fromOffset(144,44),UDim2.fromOffset(112,28),function() setMode("Talents") end)
+-- Reserve the upper strip for switching between the final sheet and the talent tree.
+for _,object in ipairs({profession,permissions,choose,chooseWorker,chooseHunter,talentPoints}) do object.Position+=UDim2.fromOffset(0,34) end
+setMode("Stats")
+local function refreshStats()
+ local character=player.Character
+ local attributes=player:GetAttributes()
+ local definition=character and Items[character:GetAttribute("HandsItem")]
+ local stats=Sheet.Calculate(attributes,definition,character and character:GetAttribute("WeaponCondition"),character and character:GetAttribute("Health"),character and character:GetAttribute("MaxHealth"))
+ local function percent(value) return string.format("%g%%",math.floor(value*10000+.5)/100) end
+ values.Health.Text=string.format("%.0f / %.0f HP",stats.Health,stats.MaxHealth)
+ values.Absorption.Text=string.format("%g melee · %g other",stats.MeleeAbsorption,stats.Absorption)
+ values.Resistance.Text=percent(stats.Resistance)
+ values.Sprint.Text=string.format("%g seconds",stats.Sprint)
+ values.Accuracy.Text=percent(stats.Accuracy)
+ values.Dodge.Text=percent(stats.Dodge)
+ values.MeleeDamage.Text=string.format("%g%s",stats.MeleeDamage,stats.MeleeEquipped and "" or " (unarmed bonus)")
+ values.CriticalChance.Text=percent(stats.CriticalChance)
+ values.CriticalMultiplier.Text=string.format("×%d–×%d",stats.CriticalMin,stats.CriticalMax)
+ values.Luck.Text=percent(stats.Luck)
+ context.Text=string.format("Equipped: %s\nArmor: %g / %s · Absorption / resistance\nWeapon accuracy before target dodge; critical chance uses this weapon.",definition and definition.Name or "None",attributes.ArmorAbsorption or 0,percent(attributes.ArmorResistance or 0))
+end
 local function canLearn(id,definition) return Rules.CanLearn(snapshot,id,definition) end
 local function redraw()
  if not snapshot then return end
@@ -97,8 +145,8 @@ local function redraw()
  end
  profession.Text=definition and definition.Name.." · Level "..snapshot.Level or "Choose a profession"
  choose.Visible=definition==nil; chooseWorker.Visible=definition==nil; chooseHunter.Visible=definition==nil
- tree.Position=UDim2.fromOffset(20,definition and 134 or 172)
- tree.Size=UDim2.fromOffset(548,definition and 484 or 446)
+ tree.Position=UDim2.fromOffset(20,definition and 168 or 206)
+ tree.Size=UDim2.fromOffset(548,definition and 450 or 412)
  talentPoints.Text="Talent points: "..snapshot.TalentPoints
  if definition then
   local stations,buildings={},{}
@@ -148,6 +196,7 @@ local function setOpen(open)
  if open and player.Character and player.Character:GetAttribute("Knockout") then return end
  panel.Visible=open; tooltip.Visible=false; hoveredAttribute=nil; hoveredTalent=nil; player:SetAttribute("ProgressionOpen",open)
  if open then
+  refreshStats()
   Context:BindActionAtPriority("ProgressionBlockMovement",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+2,Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump)
   action:FireServer("Request")
  else Context:UnbindAction("ProgressionBlockMovement") end
@@ -160,6 +209,7 @@ Run.RenderStepped:Connect(function()
  if not camera then return end
  scale.Scale=math.min(1,camera.ViewportSize.X*.95/1100,camera.ViewportSize.Y*.9/720)
  if not snapshot then return end
+ if mode=="Stats" then refreshStats() end
  local mouse=Input:GetMouseLocation()
  local text
  if hoveredAttribute then text=Presentation.Attribute(hoveredAttribute)
@@ -181,11 +231,20 @@ Run.RenderStepped:Connect(function()
  end
 end)
 require(script.Parent.HUDLayout).Character.Event:Connect(function()
- if not player:GetAttribute("InventoryOpen") and not player:GetAttribute("TownMenuOpen") then setOpen(not panel.Visible) end
+ if not player:GetAttribute("InventoryOpen") and not player:GetAttribute("TownMenuOpen") then
+  local opening=not panel.Visible or mode~="Stats"
+  setMode("Stats");setOpen(opening)
+ end
+end)
+require(script.Parent.HUDLayout).Skills.Event:Connect(function()
+ if not player:GetAttribute("InventoryOpen") and not player:GetAttribute("TownMenuOpen") then
+  local opening=not panel.Visible or mode~="Talents"
+  setMode("Talents");setOpen(opening)
+ end
 end)
 Input.InputBegan:Connect(function(input,processed)
  if processed or Input:GetFocusedTextBox() then return end
- if input.KeyCode==Enum.KeyCode.P and not player:GetAttribute("InventoryOpen") and not player:GetAttribute("TownMenuOpen") then setOpen(not panel.Visible) end
+ if input.KeyCode==Enum.KeyCode.P and not player:GetAttribute("InventoryOpen") and not player:GetAttribute("TownMenuOpen") then setMode("Stats");setOpen(not panel.Visible) end
  if input.KeyCode==Enum.KeyCode.Escape and panel.Visible then setOpen(false) end
 end)
 remotes:WaitForChild("State").OnClientEvent:Connect(function(value) snapshot=value; redraw() end)

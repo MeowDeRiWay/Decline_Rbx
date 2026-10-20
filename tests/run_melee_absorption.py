@@ -5,6 +5,7 @@ import sys
 import tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/DamageService.luau').read_text().replace('local Life = require(script.Parent.PlayerLifeService)','')
+service=service.replace('require(ReplicatedStorage.Shared.DefenseRules)','(function()\n'+(root/'src/shared/DefenseRules.luau').read_text()+'\nend)()')
 setup='''
 local hits=0
 local chance=.1
@@ -19,6 +20,10 @@ assert(Service.Apply(hp,5,"Blunt",nil,"Melee")==2 and hp.Health==98)
 assert(Service.Apply(hp,5,"Piercing",nil,"Projectile")==5 and hp.Health==93)
 a:SetAttribute("MeleeAbsorption",10)
 assert(Service.Apply(hp,5,"Blunt",nil,"Melee")==0 and hp.Health==93 and hits==2)
+a:SetAttribute("MeleeAbsorption",2);a:SetAttribute("ArmorAbsorption",3);a:SetAttribute("ArmorResistance",.2)
+assert(Service.Apply(hp,20,"Blunt",nil,"Melee")==11,"20 minus20% then5 flat =11, resistance before absorption")
+assert(Service.Apply(hp,20,"Bullet",nil,"Ranged")==13,"melee talent does not protect ranged hits")
+a:SetAttribute("ArmorAbsorption",0);a:SetAttribute("ArmorResistance",0)
 a:SetAttribute("MeleeAbsorption",0);a:SetAttribute("DodgeChance",.5)
 a:SetAttribute("Accuracy",.75)
 assert(Service.RollHit(a,hp)==true,"75%-50%=25%, roll10% hits")

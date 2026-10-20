@@ -147,6 +147,9 @@ local function returnText(definition)
 end
 local function effectText(definition)
  local effects = definition.Consume
+ if definition.Armor then
+  return string.format("Armor %g / %g%%\nAbsorption / resistance",definition.Armor.Absorption or 0,(definition.Armor.Resistance or 0)*100)
+ end
  if definition.Weapon then
   local w = definition.Weapon
   return string.format("Damage %d · %s\n%d attacks/min",w.Damage,w.DamageType,w.AttacksPerMinute) .. (definition.CraftTool and string.format("\nCraft speed ×%g",definition.CraftSpeed or 1) or "")
@@ -378,6 +381,7 @@ redraw = function()
   rightTitle.Text = "Item details"
   local stateText=definition.Weapon and string.format("\nCondition %d / %d",selectedStack.Condition or 0,definition.Weapon.MaxUses) or ""
   if definition.Firearm then stateText..=string.format("\nLoaded %d / %d · %s",selectedStack.Loaded or 0,definition.Firearm.Magazine,selectedStack.AmmoType or "FMJ") end
+  if definition.Armor then stateText..=string.format("\nArmor %g / %g%%",definition.Armor.Absorption or 0,(definition.Armor.Resistance or 0)*100) end
   local ammo=definition.Firearm and ItemConfig.Items["Ammo"..definition.Firearm.Caliber..(selectedStack.AmmoType or "FMJ")]
   local multiplier=player:GetAttribute("AmmoWeightMultiplier") or 1
   local itemWeight=(definition.Weight or 0)*(definition.Ammo and multiplier or 1)+(ammo and (selectedStack.Loaded or 0)*ammo.Weight*multiplier or 0)

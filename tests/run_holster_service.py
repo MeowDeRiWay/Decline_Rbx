@@ -105,6 +105,12 @@ local corpseInventory=Service.ExtractAll(a)
 local foundLoaded=false
 for _,stack in ipairs(Rules.Stacks(corpseInventory,ItemConfig.Items)) do if stack.ID=="Rifle223" and stack.Loaded==30 and stack.AmmoType=="AP" then foundLoaded=true end end
 assert(foundLoaded and not Service.GetMagazine(a),"death inventory extraction retains charged gun in corpse, clears player")
+ItemConfig.Items.Apron.Armor={Absorption=3,Resistance=.2}
+assert(Service.Add(a,"Apron",1) and Service.Equip(a,"Apron"))
+assert(a:GetAttribute("ArmorAbsorption")==3 and a:GetAttribute("ArmorResistance")==.2,"equipped armor feeds authoritative totals")
+Service.Unequip(a,"Additional")
+assert(a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==0,"removing armor removes its bonuses")
+print("PASS: equipped armor totals update and clear")
 print("PASS: actual world drop/pickup preserves condition, loaded rounds, ammo type and total mass without duplicate pickup")
 '''
 parts += [setup,'local Service=(function()\n'+service+'\nend)()',cases,world_setup,'local World=(function()\n'+world+'\nend)()',world_cases]

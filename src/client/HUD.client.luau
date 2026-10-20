@@ -97,19 +97,7 @@ staminaTrack.BackgroundColor3=Theme.Card;staminaTrack.BorderSizePixel=0;staminaT
 local stamina=Instance.new("Frame")
 stamina.Size=UDim2.fromScale(1,1);stamina.BackgroundColor3=Theme.Green;stamina.BorderSizePixel=0;stamina.Parent=staminaTrack
 
-button("Skills",792,48,88,function()
- menu.Visible=not menu.Visible
- if menu.Visible then
-  menuTitle.Text="Skills"
-  local id=player:GetAttribute("Profession") or ""
-  local profession=Professions[id]
-  local stations,buildings={},{}
-  for name in pairs(profession and profession.Stations or {}) do table.insert(stations,name=="CuttingBoard" and "cutting board" or name:lower()) end
-  for name in pairs(profession and profession.Buildings or {}) do table.insert(buildings,name:lower()) end
-  table.sort(stations);table.sort(buildings)
-  menuBody.Text="Profession: "..(profession and profession.Name or "None").."\nSpecialty stations: "..(#stations>0 and table.concat(stations,", ") or "none").."\nBuildings: "..(#buildings>0 and table.concat(buildings,", ") or "none")
- end
-end)
+button("Skills",792,48,88,function() Layout.Skills:Fire() end)
 button("Cha",792,94,88,function() Layout.Character:Fire() end)
 local combat=Instance.new("Frame")
 combat.Position=UDim2.fromOffset(918,60);combat.Size=UDim2.fromOffset(62,62);combat.BackgroundColor3=Theme.Card;combat.Parent=bar;Theme.Bevel(combat)

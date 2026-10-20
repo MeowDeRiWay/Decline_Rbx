@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Character final stats and defense formula — 21 October
+
+- Cha/P now defaults to Attributes(left unchanged) + Final stats(right). Skills opens existing grouped talent UI. Stats/Talents tabs keep both available; profession selection remains in talent view. HUDLayout Skills local event replaces old small specialty placeholder. Final stats read live player/character attributes/equipped item: HP current/max, melee/other absorption, resistance%, sprint capacity, category-adjusted capped accuracy, dodge%, melee/knife/Strength damage (no firearm damage), category crit chance, 2–4 multiplier, luck%. Accuracy explicitly before target dodge; no melee equipped => labeled unarmed bonus, broken melee=>0.
+- CharacterStats pure module and DefenseRules shared formula. Defense resolves incoming*(1-resistance) then flat absorption, floor0; DamageService includes armor/general plus melee-only absorption, calls Life with defenseChecked. Other Life damage gets general defense once. Existing critical multiplier occurs before defense. No double defense/dodge.
+- InventoryService.update sums optional item.Armor.Absorption/Resistance, replicates ArmorAbsorption/ArmorResistance on player. Resistance fractional0..1, e.g .2=20%; no armor items added. Inventory descriptions format Armor absorption / resistance%. General DamageAbsorption/DamageResistance attributes support future talents; existing Cook defense retained only for melee.
+- Tests sheet totals/ranged exclusion/knife/cap, realDamage formula20*.8-5=11, actualLife no double defense, holster/inventory regression, full compile/Rojo. No Studio visual playtest.
+
 ## Cleaner pocket item captions — 21 October
 
 - Inventory item rows show only name × count, including weapon variants; condition/weight/magazine removed from captions. Underlying state stacks/selectors unchanged. Hover and selected item details retain condition, loaded rounds/type and weight; weight now explicitly shown in selected right-side description too. Removed redundant Resource N hits from weapon effect description, retained Condition.

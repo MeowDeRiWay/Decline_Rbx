@@ -1,3 +1,4 @@
+local Defense=require(game:GetService("ReplicatedStorage").Shared.DefenseRules)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Inventory = require(script.Parent.InventoryService)
@@ -113,10 +114,13 @@ function Service.Knockout(player,character)
   if player.Parent==Players and player.Character==character and character:GetAttribute("Knockout") then Service.Finish(player,character) end
  end)
 end
-function Service.Damage(player,humanoid,amount,hitChecked)
+function Service.Damage(player,humanoid,amount,hitChecked,defenseChecked)
  local character=humanoid.Parent
  if humanoid.Health<=0 or character:GetAttribute("Knockout") or finished[character] then return 0 end
  if not hitChecked and amount>0 and math.random()<(player:GetAttribute("DodgeChance") or 0) then return 0 end
+ if not defenseChecked then
+  amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0),(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0))
+ end
  local actual=math.min(humanoid.Health,amount)
  if amount>=humanoid.Health then Service.Knockout(player,character)
  else humanoid.Health-=amount end
