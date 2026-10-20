@@ -79,7 +79,7 @@ part transparency/collision/query/touch/BlocksVision on closing. Opening disable
 collision/query/touch/vision. Activating an already open door restarts its 5-second timer.
 A player without a town can press E on a locked town gate to request passage.
 The current mayor receives an English Y/N approval on the right. Approval only
-opens that specific Door assembly for 5 seconds, then restores it; no membership
+opens that specific Door assembly for 20 seconds, then restores it; no membership
 is granted. The requester must still be alive, unaffiliated and at that gate when
 approved. Other factions cannot request passage. Missing/offline mayor, denial,
 expiry or invalidated leadership leave gates shut. This is passage authorization,

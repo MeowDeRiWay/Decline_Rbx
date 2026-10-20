@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Door timing clarification — 20 October
+
+- Mayor-approved outsider passage is20seconds again (Admit + English prompts). Ordinary authorized E opening remains5seconds. Tests verify both durations. This supersedes the preceding all-five-second change.
+
 ## Five-second automatic door closing — 20 October
 
 - All authorized E openings and mayor-approved gate passages now auto-close after5seconds. Authorized activation always opens/restarts timer; no invisible-door closing interaction required. English prompts updated. This supersedes prior20second/toggle behavior. run_town_doors covers both approval and member auto-close with authored-property restoration.

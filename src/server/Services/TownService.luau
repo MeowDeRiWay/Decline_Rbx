@@ -417,7 +417,7 @@ local function handle(player, command, value, extra)
     tell(request.player, "Construction approved. The building is complete.")
    else tell(request.player, reason or "Building template not found in ServerStorage/Buildings.") end
   elseif request.kind == "Gate" then
-   if Doors.Admit(request.player,request.door,request.town.id) then tell(request.player,"Passage approved. The gate is open for 5 seconds.")
+   if Doors.Admit(request.player,request.door,request.town.id) then tell(request.player,"Passage approved. The gate is open for 20 seconds.")
    else tell(request.player,"Passage cancelled. Return to the gate and request access again.") end
   elseif request.kind == "Alliance" and mayor(request.player, request.other) then
    request.town.relations[request.other.id], request.other.relations[request.town.id] = "Ally", "Ally"
@@ -561,7 +561,7 @@ function Service.Start()
   for _,request in pairs(pending) do
    if request.kind=="Gate" and request.player==player then tell(player,"Your passage request is already pending.");return end
   end
-  requestApproval(player,town,{kind="Gate",door=door,text=player.Name .. " requests passage into the town. Open this gate for 5 seconds?"})
+  requestApproval(player,town,{kind="Gate",door=door,text=player.Name .. " requests passage into the town. Open this gate for 20 seconds?"})
   Service.Publish()
  end,tell)
  local function added(player)

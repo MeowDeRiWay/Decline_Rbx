@@ -58,8 +58,8 @@ fire(player,gate);assert(requests==1 and not gate:GetAttribute("DoorOpen"),"gues
 assert(Service.Admit(player,gate,2)==false,"cannot approve a different town")
 assert(Service.Admit(player,gate,1)==true and gate:GetAttribute("DoorOpen"))
 assert(part.Transparency==1 and not part.CanCollide and not part.CanQuery and not part:GetAttribute("BlocksVision"))
-time=104;assert(coroutine.resume(ticker));assert(gate:GetAttribute("DoorOpen"),"still open before deadline")
-time=105;assert(coroutine.resume(ticker));assert(not gate:GetAttribute("DoorOpen") and part.CanCollide,"auto closes after exactly 5 seconds")
+time=119;assert(coroutine.resume(ticker));assert(gate:GetAttribute("DoorOpen"),"still open before deadline")
+time=120;assert(coroutine.resume(ticker));assert(not gate:GetAttribute("DoorOpen") and part.CanCollide,"auto closes after exactly 20 seconds")
 assert(Service.Admit(player,gate,1));player:SetAttribute("TownID",1);time+=1
 fire(player,gate)
 assert(gate:GetAttribute("DoorOpen"),"authorized activation opens door")

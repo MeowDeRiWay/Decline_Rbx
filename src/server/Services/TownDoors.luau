@@ -64,7 +64,7 @@ function Service.Admit(player, door, townID)
  local record = doors[door]
  if not record or not door:IsDescendantOf(workspace) or ancestorAttribute(door,"TownGate") ~= true
   or ancestorAttribute(door,"TownID") ~= townID or player:GetAttribute("TownID") ~= nil or not near(player,door) then return false end
- record.untilTime = workspace:GetServerTimeNow()+5
+ record.untilTime = workspace:GetServerTimeNow()+20
  setOpen(door,record,true)
  return true
 end
