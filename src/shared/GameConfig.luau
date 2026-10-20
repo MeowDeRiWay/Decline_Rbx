@@ -4,6 +4,10 @@ GameConfig.WalkSpeed = 1
 GameConfig.RunSpeedBonus = 2
 GameConfig.CarryLimitKg = 20
 GameConfig.OverloadPenaltyPerKg = 0.05
+-- Spatial player footsteps.
+GameConfig.FootstepVolume = 0.15
+GameConfig.FootstepMinDistance = 2
+GameConfig.FootstepMaxDistance = 12
 -- Almost overhead, slightly tilted. Distances are in studs.
 GameConfig.CameraHeight = 30
 GameConfig.CameraBack = 5

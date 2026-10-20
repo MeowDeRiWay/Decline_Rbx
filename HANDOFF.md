@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Quieter player footsteps — 20 October
+
+- Footsteps.client configures default Roblox Sound named Running on ALL player characters on EACH listener client, including respawns/late sound creation. GameConfig FootstepVolume=.15 ceiling, RollOffMinDistance2, MaxDistance12, InverseTapered. Volume watcher prevents default controller raising it, preserving quieter/silent values. Other sounds untouched. No per-frame work; old character listeners cleaned on respawn/removal.
+
 ## Shoulder-height rifle — 20 October
 
 - Rifle223.Firearm.HoldHeightRatio=.4 raises equipped pivot to root.Size.Y*.4 above root center, preserving gripX/Z/rotation and supporting customHandsGrip. Melee held positions unchanged. _ShotOrigin derives AFTER raised placement, so visual/shot/sound align.
