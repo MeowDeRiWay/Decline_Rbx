@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## City walls and doors — 20 October
+
+- TownDoors service starts from TownService after town/plot registration. WallPlace uses TownID + WallTemplate exact name under ServerStorage/Buildings/Wall, aligns WallYard pivot to marker pivot (rotation authored by user), anchors/hides marker, output GeneratedWall. No T2/cost/flag-upgrade UI yet because only T1 assets exist.
+- Door=true on ONE outer moving Model; group six GateDoor pieces together first. TownGate inferred from GateDoor descendant on generated gate wall. Owner/co-owner/mayor private-door access; town members gate access. Owner+mayor only manage coowners (server + UI corrected; coowner can no longer delegate).
+- Door client green/red hover, E toggle; invisible open door uses ray/bounds for closing. Server range/liveness/occlusion/rate checks, authored part properties restored. Unaffiliated requester at exact gate -> existing mayor approval Y/N, 20-second open on acceptance and auto-close; request does not join town. Existing pending prompt IDs/expiry/leadership cancellation reused. Current requester must still be at gate and unaffiliated on approval. Docs CITY_GENERATION.md.
+- New tests/run_town_doors.py exercises real service via mock; Studio visual playtest remains for user.
+
 ## Виправлення полиці за реальними rbxm — 19 жовтня
 
 - Користувач надавStore.rbxm/Shelf.rbxm. Прочитано черезrbxmkv0.9.1 в/tmp: FoodShelf(iron) фізично1.000021x2.000012x1.000064; Model.WorldPivotData нахил90°X, PrimaryPartnull. СтарийGetBoundingBoxміг рахуватиоснову1x2черезpivot, відхиляючиїївсіхзонахZ1.

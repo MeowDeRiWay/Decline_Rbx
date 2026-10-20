@@ -153,7 +153,8 @@ render = function()
    local isMayor = town.LeaderID == player.UserId
    local owners = require(ReplicatedStorage.Shared.TownRules).ParseOwners(plot.CoOwners)
    local owner = plot.OwnerID == player.UserId or owners[player.UserId] or isMayor
-   if (section == "Owner" and not isMayor) or (section == "CoOwner" and not owner) or not plot.BuildingID then section = nil end
+   local manageOwners = plot.OwnerID == player.UserId or isMayor
+   if (section == "Owner" and not isMayor) or (section == "CoOwner" and not manageOwners) or not plot.BuildingID then section = nil end
    local function back()
     section, confirmation = nil,nil
     scroll.CanvasPosition = Vector2.zero
@@ -197,8 +198,8 @@ render = function()
     end
     if plot.BuildingID then
      if isMayor then button("Owner",function() scroll.CanvasPosition=Vector2.zero; toggle("Owner") end) end
+     if manageOwners then button("Co-owners",function() scroll.CanvasPosition=Vector2.zero; toggle("CoOwner") end) end
      if owner then
-      button("Co-owners",function() scroll.CanvasPosition=Vector2.zero; toggle("CoOwner") end)
       button("Demolish building",function() confirm("Demolish this building?", "Destroy") end)
      end
     end

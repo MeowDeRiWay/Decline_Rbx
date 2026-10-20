@@ -8,6 +8,7 @@ local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Inventory = require(script.Parent.InventoryService)
 local BuildingStorage = require(script.Parent.BuildingStorage)
 local Progression = require(script.Parent.ProgressionService)
+local Doors = require(script.Parent.TownDoors)
 local Service = {}
 local towns, plots, sessions, pending, lastAction = {}, {}, {}, {}, {}
 local spawnedPlayers = setmetatable({}, {__mode = "k"})
@@ -415,6 +416,9 @@ local function handle(player, command, value, extra)
     if request.level == 1 then plot.owner = request.player.UserId; syncPlot(plot) end
     tell(request.player, "Construction approved. The building is complete.")
    else tell(request.player, reason or "Building template not found in ServerStorage/Buildings.") end
+  elseif request.kind == "Gate" then
+   if Doors.Admit(request.player,request.door,request.town.id) then tell(request.player,"Passage approved. The gate is open for 20 seconds.")
+   else tell(request.player,"Passage cancelled. Return to the gate and request access again.") end
   elseif request.kind == "Alliance" and mayor(request.player, request.other) then
    request.town.relations[request.other.id], request.other.relations[request.town.id] = "Ally", "Ally"
   end
@@ -495,7 +499,7 @@ local function handle(player, command, value, extra)
     local member = Rules.ValidID(value) and Players:GetPlayerByUserId(value)
     if member and townOf(member) == town then plot.owner = value; plot.coowners[value] = nil; syncPlot(plot) end
    end
-  elseif command == "CoOwner" and plot.kind and owns(player, plot) and Rules.ValidID(value) and typeof(extra) == "boolean" then
+  elseif command == "CoOwner" and plot.kind and (plot.owner == player.UserId or mayor(player,town)) and Rules.ValidID(value) and typeof(extra) == "boolean" then
    if not extra then plot.coowners[value] = nil; syncPlot(plot)
    else
     local member = Players:GetPlayerByUserId(value)
@@ -551,6 +555,15 @@ function Service.Start()
    else warn("[Decline] BuildingSpace needs Space and BuildingMenu") end
   end
  end
+ Doors.Start(function(player,door,townID)
+  local town=towns[townID]
+  if not town or townOf(player) then return end
+  for _,request in pairs(pending) do
+   if request.kind=="Gate" and request.player==player then tell(player,"Your passage request is already pending.");return end
+  end
+  requestApproval(player,town,{kind="Gate",door=door,text=player.Name .. " requests passage into the town. Open this gate for 20 seconds?"})
+  Service.Publish()
+ end,tell)
  local function added(player)
   player.Neutral = true
   if player.Character then task.defer(Service.PlaceCharacter, player, player.Character) end

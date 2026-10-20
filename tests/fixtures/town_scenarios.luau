@@ -12,6 +12,17 @@ assert(d.Character.Humanoid.Health==41,"repeated placement must not heal or redu
 Service.LoadCharacter(d)
 assert(d.Character:GetPivot().Position.X==33 and d.Character.Humanoid.Health==2,"respawn must also use final town placement")
 assert(flagA:GetAttribute("LeaderID")==101 and flagB:GetAttribute("LeaderID")==103)
+local guestGate={}
+d:SetAttribute("TownID",nil)
+Doors.request(d,guestGate,1)
+local gatePrompt=Service.Snapshot(a).Prompts[1]
+assert(gatePrompt,"mayor receives passage request")
+call(c,"Reply",gatePrompt,true);assert(not Doors.admitted,"another mayor cannot authorize gate")
+call(a,"Reply",gatePrompt,true)
+assert(Doors.admitted[1]==d and Doors.admitted[2]==guestGate and Doors.admitted[3]==1,"approval preserves exact requested gate and town")
+assert(d:GetAttribute("TownID")==nil,"passage must not grant town membership")
+d:SetAttribute("TownID",3)
+
 call(c,"Open",plot); call(c,"Build","Kitchen")
 assert(not plot:GetAttribute("BuildingID"),"foreign town must not build")
 call(b,"Open",plot); call(b,"Build","Kitchen")
@@ -28,6 +39,8 @@ assert(plot:GetAttribute("OwnerID")==102,"removed bulk ownership action must hav
 call(a,"Vote"); assert(not Service.Snapshot(a).Towns[1].VoteEndsAt,"mayor cannot start self-removal vote")
 call(a,"Open",plot); call(a,"Owner",101)
 call(a,"CoOwner",102,true); assert(plot:GetAttribute("Co-OwnerID")=="102")
+call(b,"Open",plot); call(b,"CoOwner",102,false)
+assert(plot:GetAttribute("Co-OwnerID")=="102","co-owners cannot manage the access list")
 call(a,"Open",flagA); call(a,"Relation",2,"Ally")
 local alliance
 for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==c then alliance=item.data.ID end end

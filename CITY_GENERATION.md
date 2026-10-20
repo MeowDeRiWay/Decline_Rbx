@@ -54,3 +54,33 @@ The filler tiles the named furniture's bounding-box footprint without overlap: a
 Marker Parts become invisible, anchored and non-colliding/non-queryable at runtime. Generated furniture retains authored collision and BlocksVision, and all its parts are anchored. It is parented into a reserved `AutoPlacer/GeneratedFurniture` folder; `FurnitureCount` records the number placed. A completed marker is not refilled, even when its contents are removed or its attributes change. Delete the generated group or restart Play to intentionally refill. Missing/oversized templates warn without placing invalid furniture; a missing template can be supplied before a later retry.
 
 AutoPlacer also works in house templates and on directly authored Workspace objects. This step only places models; no shelf loot, shop inventories or additional interior rules are added.
+
+## Town walls and doors
+
+Place wall templates in `ServerStorage/Buildings/Wall`. Each Model needs a direct
+`WallYard` Model or Part. Use unique names, for example `WallModelT1 (wood)`,
+`WallCornerT1 (wood)`, `WallGateT1 (wood)`.
+Each `WallPlace` Model/Part in Workspace needs `TownID` (number, matching Flag)
+and `WallTemplate` (string, exact template name). Its pivot position/rotation
+aligns with the template's WallYard pivot. All wall parts are anchored; markers
+are hidden and non-collidable. Result: WallPlace/GeneratedWall. Walls start at T1;
+no T2 upgrade or resource cost is implemented yet.
+
+Put boolean `Door=true` on one Model containing ALL moving gate pieces (group
+multiple GateDoor pieces first). Keep that assembly named `GateDoor`. The gate
+wall receives `TownGate=true`; manually placed gates need TownGate and TownID
+on their ancestor. On infrastructure, Door=true inherits TownID, OwnerID and
+Co-OwnerID from the live building/BuildingSpace. Public town members can operate
+town gates; private doors allow the owner, co-owners and mayor of the same town.
+Only the owner and mayor can manage co-owners at BuildingMenu.
+
+Hover: green allowed, red locked. E toggles authorized doors, preserving authored
+part transparency/collision/query/touch/BlocksVision on closing. Opening disables
+collision/query/touch/vision. Hovering the invisible open assembly allows closing.
+A player without a town can press E on a locked town gate to request passage.
+The current mayor receives an English Y/N approval on the right. Approval only
+opens that specific Door assembly for 20 seconds, then restores it; no membership
+is granted. The requester must still be alive, unaffiliated and at that gate when
+approved. Other factions cannot request passage. Missing/offline mayor, denial,
+expiry or invalidated leadership leave gates shut. This is passage authorization,
+not a barrier against another player following someone through an open gate.
