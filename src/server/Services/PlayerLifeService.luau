@@ -113,9 +113,10 @@ function Service.Knockout(player,character)
   if player.Parent==Players and player.Character==character and character:GetAttribute("Knockout") then Service.Finish(player,character) end
  end)
 end
-function Service.Damage(player,humanoid,amount)
+function Service.Damage(player,humanoid,amount,hitChecked)
  local character=humanoid.Parent
  if humanoid.Health<=0 or character:GetAttribute("Knockout") or finished[character] then return 0 end
+ if not hitChecked and amount>0 and math.random()<(player:GetAttribute("DodgeChance") or 0) then return 0 end
  local actual=math.min(humanoid.Health,amount)
  if amount>=humanoid.Health then Service.Knockout(player,character)
  else humanoid.Health-=amount end

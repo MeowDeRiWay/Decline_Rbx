@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Hunter profession and critical/dodge combat — 20 October
+
+- Hunter added to P choice and tree (English), max10ranks/1point each; talent levels1/5/10 per user. All exact descriptions/formula PROGRESSION_SETUP.md. Hunter no assigned buildings/stations yet, public Workstation retained. Rifle223 Category Automatic (not rifle talent); future Pistol/Rifle/MachineGun mapped by Firearm.Category.
+- ProgressionRules.CombatBonuses exports category AccuracyBonus/CritChance, CriticalNegation, PreserveDurabilityChance, AmmoWeightMultiplier, DodgeChance. Attention ViewBonus now.5/point (UI/docs/tests updated). Existing sync copies derived attrs player+character. Accuracy cap.9 total incl talents; hit probability=max(0,min(.9,Accuracy+bonus)-targetDodge), one roll via Damage.RollHit for player melee/projectiles. Zombie/no-accuracy attacks Apply rolls100%-dodge. Life.Damage handles environmental dodge and hitChecked avoids double rolls.
+- Projectile crit chance category, multiplier uniforminteger2..4. Damage.Apply options CriticalMultiplier/HitChecked, defenderUnbeliever cancels critmult nothit; popupCritical/LastDamageCritical. Careful per-shot condition-saving roll, ammo alwaysconsumed. NotSoHeavy -8%/rank affects looseammo including allocatedmag in inventory Weight/LoadKg/total; attributechange triggersliveweightrefresh. UI playerammo stack/tooltip displays reducedweight, chestweights normal.
+- Tests progressionrules/service Hunter gates/scalars, actualDamage hit subtraction/critnegation/no double dodge, actualLife environmental guard, firearm preservation/critcategory, ammo weight, cooking/zombieactivityregressions; compile/Rojo. Session-only profession choice still cannot change mid-session; user needs freshPlay tochooseHunter. Studio not tested.
+
 ## Character-position audio listener — 20 October
 
 - ReloadSound max25 vs overhead cameraheight30 meant even own reload could be inaudible; same issue affected new12stud footsteps. AudioListener.client now sets legacy SoundService listener CFrame each renderstep to character root position + camera rotation, so zoom/Attention do not alter perceived distances and stereo stays camera-relative. Falls back to camera without character/root, binds automatically afterrespawn. Spatial ranges unchanged. Official Roblox SetListener docs verified; no Studio audio audition.

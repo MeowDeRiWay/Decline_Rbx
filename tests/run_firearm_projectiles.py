@@ -10,14 +10,15 @@ local function signal() return {Connect=function(self,fn) self.fire=fn end} end
 local heartbeat=signal()
 local packets={}
 Instance={new=function() return {FireClient=function(_,player,events) local copy={} for _,e in ipairs(events) do table.insert(copy,table.clone(e)) end;table.insert(packets,copy) end} end}
-local player={UserId=7,GetAttribute=function() return 1 end,Character={FindFirstChild=function() return {Position=Vector3.zero} end}}
+local critChance=0
+local player={UserId=7,GetAttribute=function(_,key) return key=="Accuracy" and 1 or key=="AutomaticCritChance" and critChance or 0 end,Character={FindFirstChild=function() return {Position=Vector3.zero} end}}
 local Players={GetPlayers=function() return {player} end}
 game={GetService=function(_,name) return ({Players=Players,RunService={Heartbeat=heartbeat},ReplicatedStorage={}})[name] end}
-Random={new=function() return {NextNumber=function() return 0 end} end}
+Random={new=function() return {NextNumber=function() return 0 end,NextInteger=function() return 4 end} end}
 Enum={RaycastFilterType={Exclude=1},PartType={Block=1}}
 RaycastParams={new=function() return {} end}
 local dealt=0
-local Damage={Apply=function(_,amount) dealt+=amount end,Miss=function() error("unexpected miss") end}
+local Damage={RollHit=function() return true end,Apply=function(_,amount,_,_,_,options) dealt+=amount*(options and options.CriticalMultiplier or 1) end,Miss=function() error("unexpected miss") end}
 local parts={}
 workspace={}
 function workspace:Raycast(origin,delta,params)
@@ -53,7 +54,7 @@ local character=group(nil)
 local target=group(nil)
 local hp={Health=100,Parent=target}
 function target:FindFirstChildOfClass() return hp end
-local definition={Speed=750,Range=350,Damage=25}
+local definition={Category="Automatic",Speed=750,Range=350,Damage=25}
 '''
 cases='''
 local function run(kind,ammo)
@@ -84,6 +85,8 @@ Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","
 heartbeat.fire(1/60);assert(dealt==0)
 moving.CFrame=CFrame.new(Vector3.new(0,0,2))
 heartbeat.fire(1/60);assert(dealt>0,"world raycasts sample moved target during flight")
+critChance=.1
+assert(math.abs(run(nil,"FMJ")-clear*4)<1e-6,"weapon category critical bonus produces x2..x4 multiplier")
 print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, AP retention, metal/unknown stop and exact air range")
 '''
 with tempfile.TemporaryDirectory() as directory:

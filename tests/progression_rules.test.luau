@@ -15,7 +15,7 @@ local b=Rules.Bonuses(state.Stats)
 assert(b.CarryLimitKg==21 and b.MeleeBonus==1 and b.MaxHealth==100 and b.Accuracy==.25 and b.LuckChance==0)
 state.Stats.Endurance=2; state.Stats.Attention=100; state.Stats.Luck=100
 b=Rules.Bonuses(state.Stats)
-assert(b.MaxHealth==110 and b.RunBonus==.4 and b.Accuracy==.9 and b.ViewBonus==200 and b.LuckChance==.5)
+assert(b.MaxHealth==110 and b.RunBonus==.4 and b.Accuracy==.9 and b.ViewBonus==50 and b.LuckChance==.5)
 local items={Stone=2,Scrap=4}
 state.Stats.Luck=3
 local lucky=Rules.BonusLoot(items,state.Stats,function() return 0 end)
@@ -76,3 +76,28 @@ assert(Rules.ShovelLoot(ranked,false,function() return 0 end)==0)
 assert(math.abs(Rules.CraftEffects(ranked,"Workstation",1).DurationMultiplier-.6)<1e-6)
 assert(Rules.CraftEffects(ranked,"Stove",5).DurationMultiplier==1)
 print("PASS: one talent point per level, paid ranks 1–10, knife scaling, absorption, fixed-quantity shovel drops and Worker crafting speed")
+
+local hunter=Rules.New();hunter.Profession="Hunter";hunter.Level=0;hunter.TalentPoints=100
+local config=require("../src/shared/ProgressionConfig")
+local defs=config.Professions.Hunter.Talents
+assert(not Rules.Learn(hunter,"Automatics",defs.Automatics))
+hunter.Level=1;assert(Rules.Learn(hunter,"Automatics",defs.Automatics))
+assert(not Rules.Learn(hunter,"Careful",defs.Careful))
+hunter.Level=5;assert(Rules.Learn(hunter,"Careful",defs.Careful))
+assert(not Rules.Learn(hunter,"Bullseye",defs.Bullseye))
+hunter.Level=10
+for id,definition in pairs(defs) do while Rules.Rank(hunter,id)<10 do assert(Rules.Learn(hunter,id,definition)) end;assert(not Rules.Learn(hunter,id,definition)) end
+local hb=Rules.CombatBonuses(hunter)
+assert(hb.AutomaticAccuracyBonus==.5 and hb.AutomaticCritChance==.1)
+assert(hb.PistolAccuracyBonus==.5 and hb.PistolCritChance==.5)
+assert(hb.RifleAccuracyBonus==.5 and math.abs(hb.RifleCritChance-.7)<1e-6)
+assert(hb.MachineGunAccuracyBonus==.5 and hb.MachineGunCritChance==.1)
+assert(math.abs(hb.CriticalNegation-.9)<1e-6 and math.abs(hb.PreserveDurabilityChance-.9)<1e-6)
+assert(math.abs(hb.AmmoWeightMultiplier-.2)<1e-6 and hb.DodgeChance==.5)
+hunter.Profession="Cook";hb=Rules.CombatBonuses(hunter)
+assert(hb.DodgeChance==0 and hb.RifleCritChance==0 and hb.AmmoWeightMultiplier==1,"Hunter effects never leak to another profession")
+local inventory=require("../src/shared/InventoryRules")
+local items=require("../src/shared/ItemConfig").Items
+local weight=inventory.Weight({Items={Ammo223FMJ=100,TreeLog=1},Equipment={}},items,.2)
+assert(math.abs(weight-2.24)<1e-6,"only ammo weight reduced")
+print("PASS: Hunter levels1/5/10, ten paid ranks, all exact bonuses, rifle crit stacking, profession isolation and ammo-only weight")

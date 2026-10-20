@@ -121,7 +121,7 @@ ItemConfig.Items.Axe=ItemConfig.Items.StoneAxe
 ItemConfig.Items.Showel=ItemConfig.Items.StoneShowel
 ItemConfig.Items.Knife=ItemConfig.Items.ScrapKnife
 ItemConfig.Items.Rifle223={Name=".223 Rifle",Weight=3.2,Slot="Hands",Description="Automatic rifle. R reloads; T selects FMJ/AP.",
- Firearm={HoldHeightRatio=.4,Caliber="223",Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=600},
+ Firearm={Category="Automatic",HoldHeightRatio=.4,Caliber="223",Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=600},
  Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=600}}
 for _,kind in ipairs({"FMJ","AP"}) do
  ItemConfig.Items["Ammo223"..kind]={Name=".223 "..kind,Weight=.012,Description="Loose rifle ammunition.",Ammo={Caliber="223",Type=kind}}

@@ -18,7 +18,7 @@ end
 function Rules.Bonuses(stats)
  return {CarryLimitKg=20+stats.Strength, MeleeBonus=stats.Strength, RunBonus=.2*stats.Endurance,
   MaxHealth=100+5*stats.Endurance, Accuracy=math.min(.9,.25+.02*stats.Attention),
-  ViewBonus=2*stats.Attention, LuckChance=math.min(.5,.03*stats.Luck), LuckAmount=1+math.floor(stats.Luck/3)}
+  ViewBonus=.5*stats.Attention, LuckChance=math.min(.5,.03*stats.Luck), LuckAmount=1+math.floor(stats.Luck/3)}
 end
 function Rules.BonusLoot(items,stats,roll)
  local result=table.clone(items)
@@ -45,7 +45,16 @@ end
 function Rules.CombatBonuses(state)
  local cook=state.Profession=="Cook"
  local knife=cook and Rules.Rank(state,"KnifeMaster") or 0
- return {KnifeMultiplier=1+.05*knife,MeleeAbsorption=cook and Rules.Rank(state,"KevlarApron") or 0}
+ local hunter=state.Profession=="Hunter"
+ local function rank(id) return hunter and Rules.Rank(state,id) or 0 end
+ return {KnifeMultiplier=1+.05*knife,MeleeAbsorption=cook and Rules.Rank(state,"KevlarApron") or 0,
+  AutomaticAccuracyBonus=.05*rank("Automatics"),AutomaticCritChance=.01*rank("Automatics"),
+  PistolAccuracyBonus=.05*rank("Pistols"),PistolCritChance=.05*rank("Pistols"),
+  RifleAccuracyBonus=.05*rank("Rifles"),RifleCritChance=.02*rank("Rifles")+.05*rank("Bullseye"),
+  MachineGunAccuracyBonus=.05*rank("MachineGuns"),MachineGunCritChance=.01*rank("MachineGuns"),
+  CriticalNegation=.09*rank("Unbeliever"),PreserveDurabilityChance=.09*rank("Careful"),
+  AmmoWeightMultiplier=1-.08*rank("NotSoHeavy"),DodgeChance=.05*rank("LikeOnWater")}
+
 end
 function Rules.ShovelLoot(state,isShovel,roll)
  local chance=state.Profession=="Worker" and .07*Rules.Rank(state,"Redhead") or 0

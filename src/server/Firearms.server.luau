@@ -6,6 +6,7 @@ local Audio=require(script.Parent.Services.FirearmAudio)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
 local states={}
+local random=Random.new()
 local action=Instance.new("RemoteEvent");action.Name="FirearmAction";action.Parent=ReplicatedStorage
 local function context(player)
  local character=player.Character
@@ -84,7 +85,7 @@ action.OnServerEvent:Connect(function(player,command,direction)
  Audio.Play(character,"ShotSound")
  state.Ready=now+60/gun.RPM;state.Loaded-=1
  Inventory.Remove(player,Rules.AmmoID(gun.Caliber,state.Type),1)
- Inventory.UseWeapon(player)
+ if random:NextNumber()>=(player:GetAttribute("PreserveDurabilityChance") or 0) then Inventory.UseWeapon(player) end
  sync(player,state,gun)
 end)
 Players.PlayerRemoving:Connect(function(player) local state=states[player];if state then Audio.Stop(state.ReloadSound) end;states[player]=nil end)

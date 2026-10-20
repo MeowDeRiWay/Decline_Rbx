@@ -60,9 +60,9 @@ function Rules.Unequip(state, definitions, slots, slot)
  state.Equipment[slot] = nil
  return true
 end
-function Rules.Weight(state, definitions)
+function Rules.Weight(state, definitions, ammoMultiplier)
  local total = 0
- for id, count in pairs(state.Items) do total += (definitions[id].Weight or 0) * count end
+ for id, count in pairs(state.Items) do total += (definitions[id].Weight or 0) * count * (definitions[id].Ammo and (ammoMultiplier or 1) or 1) end
  for _, id in pairs(state.Equipment) do total += definitions[id].Weight or 0 end
  return total
 end

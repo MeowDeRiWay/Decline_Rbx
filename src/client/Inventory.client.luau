@@ -126,8 +126,9 @@ local function renderItems(frame, items, side)
  if #ids == 0 then text(frame, side == "Chest" and "Chest is empty" or "Inventory is empty", UDim2.new(), UDim2.new(1, -8, 0, 50)) end
  for order, id in ipairs(ids) do
   local definition = ItemConfig.Items[id]
+  local itemWeight=(definition.Weight or 0)*(definition.Ammo and side=="Player" and (player:GetAttribute("AmmoWeightMultiplier") or 1) or 1)
   local key = side .. ":" .. id
-  local caption = string.format("%s ×%d\n%.1f kg%s", definition.Name or id, items[id], (definition.Weight or 0) * items[id], "")
+  local caption = string.format("%s ×%d\n%.1f kg%s", definition.Name or id, items[id], itemWeight * items[id], "")
   local available = items[id]
   local selected = math.clamp(dropAmounts[key] or 1, 1, available)
   local container = Instance.new("Frame")
@@ -138,7 +139,7 @@ local function renderItems(frame, items, side)
   container.Parent = frame
   local row = button(container, caption, UDim2.fromOffset(6, 6), UDim2.new(1, -12, 0, 56))
   row.MouseEnter:Connect(function()
-   tooltip.Text = (definition.Name or id) .. "\n" .. effectText(definition) .. string.format("\nWeight %.1f kg", definition.Weight or 0)
+   tooltip.Text = (definition.Name or id) .. "\n" .. effectText(definition) .. string.format(definition.Ammo and "\nWeight %.3f kg" or "\nWeight %.1f kg", itemWeight)
    tooltip.Visible = true
   end)
   row.MouseLeave:Connect(function() tooltip.Visible = false end)

@@ -14,12 +14,12 @@ Resource destruction grants 10 XP after a successful loot spawn; zombie kills gr
 | --- | --- | --- |
 | Strength | +1 kg carry capacity, +1 living-target melee damage | None |
 | Endurance | +0.2 running speed only, +5 maximum HP | None |
-| Attention | +2 percentage points accuracy, +2 studs of additional view allowance | Accuracy 90% |
+| Attention | +2 percentage points accuracy, +0.5 studs of additional view allowance | Accuracy 90% |
 | Luck | +3 percentage points bonus loot chance | Chance 50% |
 
 Base carry capacity is 20 kg, HP 100, accuracy 25%, Luck 0%. Endurance changes max HP without healing. First spawn/hospital starts at the effective max HP; ordinary respawns remain at 2 HP. Living-target accuracy failures show Miss and spend one weapon durability use. Resource hits retain tool-tier damage and do not roll accuracy.
 
-**Mouse wheel controls zoom.** It changes target camera height by 2 per notch, smoothed toward the target. Camera orientation/height no longer changes when the character turns toward the mouse. Nearest height is 18; the base far height is 30. Attention expands the far limit by `ViewBonus / tan(verticalFOV/2)`, where ViewBonus is now 2 per invested point. This is a stable zoom allowance, not an automatic directional camera adjustment. Zoom is ignored while menus or a text field consume input.
+**Mouse wheel controls zoom.** It changes target camera height by 2 per notch, smoothed toward the target. Camera orientation/height no longer changes when the character turns toward the mouse. Nearest height is 18; the base far height is 30. Attention expands the far limit by `ViewBonus / tan(verticalFOV/2)`, where ViewBonus is now 0.5 per invested point. This is a stable zoom allowance, not an automatic directional camera adjustment. Zoom is ignored while menus or a text field consume input.
 
 Luck rolls independently for each positive output item type and adds `1 + floor(Luck / 3)` on success. It applies to newly harvested loot, zombie drops and completed crafting; pickup, transfer, chest opening and collecting finished crafts do not reroll existing items.
 
@@ -53,3 +53,33 @@ The killing hit's item ID is recorded before damage, so switching weapons after 
 ## Verification
 
 `tests/progression_rules.test.luau` covers XP, points, ranks, caps, recipes, stable zoom bounds, knife scaling, absorption totals and shovel drop probabilities. `tests/run_progression_service.py` checks real server permissions, allocation, Worker kill rewards and XP. `tests/run_cooking_progression.py` checks real cooking cancellation, serving bonuses and rank-ten Worker duration. `tests/run_melee_absorption.py` checks real damage routing and the Apron slot. Town/resource regressions, Luau compilation and Rojo build pass. These are engine mocks, not a Studio playtest.
+
+## Hunter
+
+Hunter is selectable at level0; existing1talentpoint/level and max10ranks apply.
+No buildings or specialized crafting stations are assigned yet (public Workstation
+access remains as before). All percentages below are per rank.
+
+| Talent | Required level | Effect |
+| --- | --- | --- |
+| Automatics | 1 | +5pp accuracy, +1pp critical chance |
+| Pistols | 1 | +5pp accuracy, +5pp critical chance |
+| Rifles | 1 | +5pp accuracy, +2pp critical chance |
+| Machine Guns | 1 | +5pp accuracy, +1pp critical chance |
+| Unbeliever | 5 | 9% chance to turn incoming critical into normal hit |
+| Careful | 5 | 9% chance to preserve condition on a shot; ammo still consumed |
+| Not So Heavy | 5 | -8% carried ammunition weight |
+| Like Walking on Water | 10 | subtract5pp incoming hit chance, all damage sources |
+| Bullseye | 10 | +5pp rifle critical chance, stacking with Rifles |
+
+Rifle223 is Automatic, not Rifle: "Rifle" here means the distinct rifle category.
+Future Firearm.Category values: Automatic,Pistol,Rifle,MachineGun. Hit probability
+is max(0,min(.9,baseAccuracy+categoryBonus)-defenderDodge). One roll, no second
+dodge roll in damage application. Environmental damage/no accuracy attacker uses
+100% minus dodge; existing player/zombie melee and ranged paths are covered.
+Crits uniformly roll integer x2,x3,x4 after hit. Unbeliever cancels multiplier,
+not the hit. Per-rank maximums:50%dodge,90%crit cancellation,90%condition saving,
+80%ammo weight reduction; rifle crit20%+50%=70%at full ranks. Bonuses are passive
+only for Hunter. Weight discount affects carried loose ammunition (including
+allocated magazine rounds), not guns/resources/chests. Inventory total and LoadKg
+refresh when the multiplier changes. Attention camera allowance is0.5stud/point.

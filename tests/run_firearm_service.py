@@ -24,7 +24,10 @@ local muzzle={GetPivot=function() return CFrame.new(Vector3.new(0,.8,-.5)) end,I
 local held={FindFirstChild=function() return muzzle end}
 function character:FindFirstChild(name) return name=="HeldItem" and held or root end
 function character:FindFirstChildOfClass() return hp end
-local player={Character=character}
+local player={Character=character,attributes={}}
+function player:GetAttribute(key) return self.attributes[key] end
+local wearRoll=1
+local Random={new=function() return {NextNumber=function() return wearRoll end} end}
 local rounds={Ammo223FMJ=50,Ammo223AP=3}
 local shots,uses=0,0
 local played,stopped={},0
@@ -72,6 +75,13 @@ rounds.Ammo223AP=3;fire(player,"Reload")
 character:SetAttribute("HandsItem","");changed.callback(player)
 character:SetAttribute("HandsItem","Rifle223");changed.callback(player);advance(2.5)
 assert(character:GetAttribute("MagazineAmmo")==0 and not character:GetAttribute("Reloading"),"weapon switch cancels delayed reload")
+fire(player,"Type");fire(player,"Reload");advance(2.5)
+player.attributes.PreserveDurabilityChance=.9;wearRoll=.1
+local previous=uses
+fire(player,"Fire",direction)
+assert(uses==previous and rounds.Ammo223AP==2,"Careful preserves durability, not the cartridge")
+advance(.1);wearRoll=.95;fire(player,"Fire",direction)
+assert(uses==previous+1 and rounds.Ammo223AP==1,"failed preservation still wears weapon")
 assert(table.find(played,"ShotSound") and table.find(played,"ReloadSound") and stopped>=3,"shot/reload start and completion/cancellation stop audio")
 print("PASS: empty/reloading/rate/invalid direction guards, partial reload, exact ammo and condition consumption, AP switch, drop conservation and switch cancellation")
 '''

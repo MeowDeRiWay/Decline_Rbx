@@ -12,7 +12,7 @@ local function update(player)
  local state = states[player]
  if not state then return end
  if player.Character then
-  player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items))
+  player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1))
   Visuals.Apply(player.Character, state.Equipment.Hands)
   player.Character:SetAttribute("WeaponCondition", state.EquipmentCondition.Hands or 0)
  end
@@ -109,12 +109,13 @@ end
 function Service.Snapshot(player)
  local state = states[player]
  if not state then return {Items = {}, Equipment = {}, Weight = 0, CraftTools = {}} end
- return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), Weight = Rules.Weight(state, ItemConfig.Items), CraftTools = craftTools(state)}
+ return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), Weight = Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1), CraftTools = craftTools(state)}
 end
 function Service.Start()
  if Service.Started then return end
  Service.Started = true
  local function added(player)
+  player:GetAttributeChangedSignal("AmmoWeightMultiplier"):Connect(function() update(player) end)
   player.CharacterAdded:Connect(function() Service.Reset(player) end)
   Service.Reset(player)
  end

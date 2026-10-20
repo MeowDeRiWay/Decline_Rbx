@@ -75,7 +75,7 @@ local function attributeText(stat)
  elseif stat=="Endurance" then
   return header..string.format("Per point: +0.2 running speed\n+5 maximum HP\n\nRun speed bonus: +%g\nMaximum health: %g HP\nWalking speed is unchanged · No limit",bonus.RunBonus,bonus.MaxHealth)
  elseif stat=="Attention" then
-  return header..string.format("Per point: +2%% accuracy\n+2 studs forward view\n\nAccuracy: %.0f%% · Maximum: 90%%\nForward view bonus: +%g studs\nFailed living-target attacks show Miss",bonus.Accuracy*100,bonus.ViewBonus)
+  return header..string.format("Per point: +2%% accuracy\n+0.5 studs forward view\n\nAccuracy: %.0f%% · Maximum: 90%%\nForward view bonus: +%g studs\nFailed living-target attacks show Miss",bonus.Accuracy*100,bonus.ViewBonus)
  end
  return header..string.format("Per point: +3%% bonus loot chance\n+1 bonus item per 3 invested points\n\nBonus chance: %.0f%% · Maximum: 50%%\nExtra items on success: %d\nApplies to newly generated loot",bonus.LuckChance*100,bonus.LuckAmount)
 end
@@ -83,6 +83,7 @@ local profession=label(right,"No profession selected",UDim2.fromOffset(20,48),UD
 local permissions=label(right,"",UDim2.fromOffset(20,82),UDim2.fromOffset(340,30),12,palette.Muted)
 local choose=button(right,"Choose Cook",UDim2.fromOffset(378,46),UDim2.fromOffset(190,32),function() action:FireServer("Choose","Cook") end)
 local chooseWorker=button(right,"Choose Worker",UDim2.fromOffset(378,84),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Worker") end)
+local chooseHunter=button(right,"Choose Hunter",UDim2.fromOffset(378,122),UDim2.fromOffset(190,30),function() action:FireServer("Choose","Hunter") end)
 local talentPoints=label(right,"Talent points: 0",UDim2.fromOffset(20,114),UDim2.fromOffset(340,18),13)
 local tree=Instance.new("ScrollingFrame")
 tree.Position=UDim2.fromOffset(20,134); tree.Size=UDim2.fromOffset(548,330); tree.BackgroundColor3=palette.Background
@@ -123,14 +124,16 @@ local function redraw()
   card.Plus.TextColor3=snapshot.Points>0 and palette.Accent or palette.Muted
  end
  profession.Text=definition and definition.Name.." · Level "..snapshot.Level or "Choose a profession"
- choose.Visible=definition==nil; chooseWorker.Visible=definition==nil
+ choose.Visible=definition==nil; chooseWorker.Visible=definition==nil; chooseHunter.Visible=definition==nil
+ tree.Position=UDim2.fromOffset(20,definition and 134 or 172)
+ tree.Size=UDim2.fromOffset(548,definition and 330 or 292)
  talentPoints.Text="Talent points: "..snapshot.TalentPoints
  if definition then
   local stations,buildings={},{}
   for station in pairs(definition.Stations) do table.insert(stations,station) end
   for building in pairs(definition.Buildings) do table.insert(buildings,building=="Workbench" and "Workshop" or building) end
   table.sort(stations); table.sort(buildings)
-  permissions.Text=table.concat(stations," / ").." · Build: "..table.concat(buildings,", ")
+  permissions.Text=snapshot.Profession=="Hunter" and "Weapon specialist" or table.concat(stations," / ").." · Build: "..table.concat(buildings,", ")
  else permissions.Text="Select a profession for this server session." end
  for _,child in ipairs(tree:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
  local talents=definition and definition.Talents or {}

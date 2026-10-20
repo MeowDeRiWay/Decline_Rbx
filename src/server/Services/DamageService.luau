@@ -29,7 +29,13 @@ local function popup(target,amount)
  Debris:AddItem(gui,1)
 end
 function Service.Miss(target) popup(target,"Miss") end
-function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind)
+function Service.RollHit(attacker,humanoid,bonus)
+ local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
+ local dodge=defender and defender:GetAttribute("DodgeChance") or 0
+ local chance=math.max(0,math.clamp((attacker:GetAttribute("Accuracy") or .25)+(bonus or 0),0,.9)-dodge)
+ return math.random()<chance
+end
+function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,options)
  local target = humanoid.Parent
  if not target or humanoid.Health <= 0 then return 0 end
  if sourcePosition then
@@ -39,11 +45,22 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind)
  end
  local before = humanoid.Health
  local player=Players:GetPlayerFromCharacter(target)
+ options=options or {}
+ local dodge=player and (player:GetAttribute("DodgeChance") or 0) or 0
+ if not options.HitChecked and dodge>0 and math.random()<dodge then
+  target:SetAttribute("LastDamage",0);target:SetAttribute("LastDamageDodged",true);popup(target,"Dodge");return 0
+ end
+ target:SetAttribute("LastDamageDodged",false)
+ local multiplier=options.CriticalMultiplier or 1
+ local negation=player and (player:GetAttribute("CriticalNegation") or 0) or 0
+ if multiplier>1 and negation>0 and math.random()<negation then multiplier=1 end
+ amount*=multiplier
+ target:SetAttribute("LastDamageCritical",multiplier>1)
  if player then
   if target:FindFirstChildOfClass("ForceField") then amount=0
   else
    if attackKind=="Melee" then amount=math.max(0,amount-(player:GetAttribute("MeleeAbsorption") or 0)) end
-   amount=amount>0 and Life.Damage(player,humanoid,amount) or 0
+   amount=amount>0 and Life.Damage(player,humanoid,amount,true) or 0
   end
  elseif target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.
@@ -60,7 +77,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind)
  target:SetAttribute("LastDamageType",damageType)
  target:SetAttribute("Health",humanoid.Health)
  target:SetAttribute("MaxHealth",humanoid.MaxHealth)
- popup(target,amount)
+ popup(target,multiplier>1 and amount>0 and string.format("Critical -%g",amount) or amount)
  return amount
 end
 return Service
