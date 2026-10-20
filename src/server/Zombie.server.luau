@@ -1,9 +1,9 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Sight = require(ReplicatedStorage.Shared.Sight)
 local Navigation = require(script.Parent.Services.ZombieNavigation)
+local Activity = require(script.Parent.Services.ZombieActivity)
 local Crowd = require(ReplicatedStorage.Shared.CrowdRules)
 local IdleRules = require(ReplicatedStorage.Shared.ZombieIdleRules)
 local Sector = require(ReplicatedStorage.Shared.VisibilityRules)
@@ -252,7 +252,7 @@ local function prepare(model)
  local searchStart,searchElapsed,searchBlocked
  local elapsed=0
  local movement
- movement=RunService.Heartbeat:Connect(function(dt)
+ movement=Activity.Register(model,root,function(dt)
   if not model:IsDescendantOf(workspace) then movement:Disconnect(); return end
   -- Custom anchored rigs may not enter Humanoid's Dead state. HP is authoritative.
   if humanoid.Health<=0 and not dead then die() end
@@ -332,7 +332,7 @@ local function prepare(model)
     local victimRoot=nearest
     Motion.Play(motor,weapon)
     task.delay(Motion.HitDelay(weapon),function()
-     if dead or humanoid.Health<=0 or not model.Parent or not victimRoot.Parent then return end
+     if dead or humanoid.Health<=0 or model:GetAttribute("ActivityMode")~="Active" or not model.Parent or not victimRoot.Parent then return end
      local victim=victimRoot.Parent:FindFirstChildOfClass("Humanoid")
      if not victim or victim.Health<=0 or victimRoot.Parent:GetAttribute("Knockout") then return end
      local offset=victimRoot.Position-root.Position
@@ -349,6 +349,20 @@ local function prepare(model)
   end
   -- Being close across a wall/window is not the same as arriving.
   navigate(nearest.Position,humanoid.WalkSpeed,dt,stoppingDistance,nearest.Parent)
+ end,function(mode)
+  -- Drop stale paths and targets when sleeping; wake starts with fresh detection.
+  nearest=nil
+  lastSeenPosition,lastSeenCharacter,searchStart=nil,nil,nil
+  searchElapsed,searchBlocked=0,0
+  navigation=Navigation.New(model,root)
+  idle=IdleRules.New();idlePhase=nil
+  elapsed=random:NextNumber(0,.1)
+  if mode~="Active" then
+   model:SetAttribute("AIState",mode)
+   model:SetAttribute("TargetName","")
+   model:SetAttribute("DetectionReason","Outside active screen buffer")
+   model:SetAttribute("NavigationStatus","Sleeping")
+  end
  end)
 end
 local function consider(object)

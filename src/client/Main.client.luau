@@ -8,6 +8,8 @@ local Input=game:GetService("UserInputService")
 local GuiService=game:GetService("GuiService")
 local targetHeight=Config.CameraHeight
 local currentHeight=targetHeight
+local activityView
+local nextViewReport=0
 local player = Players.LocalPlayer
 local function maximumHeight()
  local _,maximum=ProgressionRules.ZoomBounds(player:GetAttribute("ViewBonus") or 0,Config.CameraHeight,Config.CameraFieldOfView)
@@ -44,4 +46,9 @@ RunService:BindToRenderStep("DeclineCamera", Enum.RenderPriority.Camera.Value + 
  local position=target+Vector3.new(0,currentHeight,Config.CameraBack*currentHeight/Config.CameraHeight)
  camera.CFrame = CFrame.lookAt(position, target, Vector3.new(0, 0, -1))
  camera.Focus = CFrame.new(target)
+ if os.clock()>=nextViewReport and camera.ViewportSize.Y>0 then
+  nextViewReport=os.clock()+.5
+  activityView=activityView or ReplicatedStorage:FindFirstChild("ZombieActivityView")
+  if activityView then activityView:FireServer(currentHeight,camera.ViewportSize.X/camera.ViewportSize.Y) end
+ end
 end)

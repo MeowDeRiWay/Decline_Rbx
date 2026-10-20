@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Server zombie activity bands — 20 October
+
+- ZombieActivity service centralizes movement: Zombie.server registers AI callbacks instead of one Heartbeat per zombie. Active only executes AI; Minimal/AFK callbacks never run. Server reclassifies against ALL living players' screen ground footprints every~0.5s, yielding every32zombies. ActivityMode replicated for inspection.
+- Exact distance OUTSIDE nearest player's whole screen footprint (not facing cone/root): <=50 Active, >50..200 Minimal, >200 AFK. No living players => AFK. Existing active vision/chase/combat unchanged; transitions clear stale routes/targets and stagger detection. Delayed attacks guard ActivityMode.
+- Main camera reports actual smoothed height/aspect every0.5s via ZombieActivityView. Server trusts no position/CFrame, validates finite data/throttles, clamps height to server Progression.ZoomBounds and aspect0.5..4, builds fixed-camera screen quadrilateral itself. Before first report conservative maximumheight/aspect4 avoids premature sleep. Attention/zoom/resize affect footprint; facing does not.
+- Minimal: one nearby1..10stud candidate every120seconds, randomized initial timer. Only destination ground/slope/same-level support(including noncollidable ZombieHome) and full model bbox overlap, no route/sweep along travel. Reject if destination leaves Minimal band. Occupied/missing ground=>skip until next120s. AFK does no teleport physics. AFK timers re-stagger when overdue. Endpoint includes held-item bbox conservatively.
+- tests/zombie_activity_rules.test.luau exact bands/edge/corner/zoom/aspect. tests/run_zombie_activity.py runs real dispatcher with mocked engine:1000frames zero sleeping AI calls, timing/endpoint collision/wake/no-player/cleanup. Studio performance not measured. Setup ZOMBIE_ACTIVITY.md. No model changes needed.
+
 ## Screen-limited creature vision — 20 October
 
 - CreatureVisibility rejects targets whose root AND head project outside viewport (or behind camera) before sector/Sight checks. Hidden creatures no longer reapply all part modifiers every frame/check; visible creatures still reapply after camera. Debug part counts update only on visibility/descendant changes.
