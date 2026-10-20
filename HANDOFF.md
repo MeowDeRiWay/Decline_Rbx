@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Screen-limited creature vision — 20 October
+
+- CreatureVisibility rejects targets whose root AND head project outside viewport (or behind camera) before sector/Sight checks. Hidden creatures no longer reapply all part modifiers every frame/check; visible creatures still reapply after camera. Debug part counts update only on visibility/descendant changes.
+- VisionShade rays now clip individually to screen-corner ground quadrilateral, removing old farthest-corner +5 overshoot. Sector remains160 degrees; zoom/Attention unchanged. No claim of eliminating all Studio lag; shadow still casts angular rays and keeps existing screen mask.
+- tests/run_screen_visibility.py exercises actual visible function:1000offscreen checks->0Sight casts, onscreen still raytests, rear hidden; shared screen boundaries/camera depth and four-edge/diagonal ray clipping.
+
 ## City walls and doors — 20 October
 
 - TownDoors service starts from TownService after town/plot registration. WallPlace uses TownID + WallTemplate exact name under ServerStorage/Buildings/Wall, aligns WallYard pivot to marker pivot (rotation authored by user), anchors/hides marker, output GeneratedWall. No T2/cost/flag-upgrade UI yet because only T1 assets exist.

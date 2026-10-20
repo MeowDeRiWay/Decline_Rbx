@@ -4,6 +4,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.GameConfig)
 local Sight = require(ReplicatedStorage.Shared.Sight)
+local Rules = require(ReplicatedStorage.Shared.VisibilityRules)
 local player = Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
 gui.Name = "VisionShade"
@@ -66,9 +67,10 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
  end
  if masks[1] then masks[1].BackgroundTransparency=Config.UnseenShadeTransparency end
  local range = 10
+ local screenCorners = {}
  for _,corner in ipairs({Vector2.new(0,0),Vector2.new(width,0),Vector2.new(width,height),Vector2.new(0,height)}) do
   local point = planePoint(camera,corner.X,corner.Y,root.Position.Y)
-  if point then range = math.max(range,(point-root.Position).Magnitude+5) end
+  if point then table.insert(screenCorners,point);range = math.max(range,(point-root.Position).Magnitude) end
  end
  local head = character:FindFirstChild("Head")
  local origin = (head and head:IsA("BasePart") and head.Position or root.Position)+Vector3.new(0,.05,0)
@@ -80,8 +82,9 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
  for i=0,rays do
   local angle = math.rad(-Config.CreatureViewAngle/2+Config.CreatureViewAngle*i/rays)
   local direction = forward*math.cos(angle)+right*math.sin(angle)
-  local hit = Sight.Cast(origin,direction*range,character)
-  local distance = hit and math.min(range,creatureBehindHit(hit,origin,direction)) or range
+  local screenRange = #screenCorners==4 and Rules.ScreenRayDistance(root.Position.X,root.Position.Z,direction.X,direction.Z,screenCorners,range) or range
+  local hit = Sight.Cast(origin,direction*screenRange,character)
+  local distance = hit and math.min(screenRange,creatureBehindHit(hit,origin,direction)) or screenRange
   local projected = camera:WorldToViewportPoint(root.Position+direction*distance)
   table.insert(polygon,Vector2.new(projected.X,projected.Y))
  end

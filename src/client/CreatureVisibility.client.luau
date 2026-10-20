@@ -35,7 +35,8 @@ local function applyParts(model,record)
  end
 end
 local function setVisible(model,record,visible)
- if record.visible == visible then applyParts(model,record); return end
+ if record.visible == visible then return end
+ record.dirty = true
  record.visible = visible
  if visible then restore(record)
  else
@@ -68,13 +69,14 @@ local function register(model)
  for child,old in pairs(tracked) do
   if child:IsDescendantOf(model) then unregister(child,old) end
  end
- local record = {visible=true,saved={},parts={}}
+ local record = {visible=true,saved={},parts={},dirty=true}
  for _,object in ipairs(model:GetDescendants()) do
   if object:IsA("BasePart") then record.parts[object] = true end
   if object:IsA("Humanoid") then object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
  end
  tracked[model] = record
  record.added = model.DescendantAdded:Connect(function(object)
+  record.dirty = true
   if object:IsA("BasePart") then record.parts[object] = true end
   if object:IsA("Humanoid") then object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
   if not record.visible then hideObject(record,object) end
@@ -89,9 +91,17 @@ workspace.DescendantAdded:Connect(function(object)
  if object:IsA("Humanoid") then register(object.Parent)
  elseif object:IsA("Model") then register(object) end
 end)
-local function visible(model,root,character)
+local function visible(model,root,character,camera)
  local target = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Body",true) or model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart",true)
  if not target or not target:IsA("BasePart") then return false end
+ -- Reject off-screen creatures before sector checks and any line-of-sight rays.
+ local targetHead = model:FindFirstChild("Head",true)
+ local function onScreen(part)
+  if not camera or not part or not part:IsA("BasePart") then return false end
+  local point = camera:WorldToViewportPoint(part.Position)
+  return Rules.OnScreen(point.X,point.Y,point.Z,camera.ViewportSize.X,camera.ViewportSize.Y)
+ end
+ if not onScreen(target) and not onScreen(targetHead) then return false end
  local offset = target.Position-root.Position
  local forward = root.CFrame.LookVector
  if not Rules.InSector(forward.X,forward.Z,offset.X,offset.Z,Config.CreatureViewAngle) then return false end
@@ -102,7 +112,6 @@ local function visible(model,root,character)
   return not hit or hit.Instance:IsDescendantOf(model)
  end
  if clear(target) then return true end
- local targetHead = model:FindFirstChild("Head",true)
  return targetHead ~= nil and targetHead:IsA("BasePart") and clear(targetHead)
 end
 local elapsed = Config.VisibilityInterval
@@ -110,7 +119,7 @@ RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Last
  -- Apply every frame after the camera's transparency controller, even if the
  -- sector/line-of-sight decision has not changed.
  for model,record in pairs(tracked) do
-  if model ~= player.Character then applyParts(model,record) end
+  if model ~= player.Character and record.visible then applyParts(model,record) end
  end
  elapsed += dt
  if elapsed < Config.VisibilityInterval then return end
@@ -121,8 +130,10 @@ RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Last
   if not model:IsDescendantOf(workspace) then
    unregister(model,record)
   else
-   local canSee = model == character or (root ~= nil and not character:GetAttribute("Knockout") and visible(model,root,character))
+   local canSee = model == character or (root ~= nil and not character:GetAttribute("Knockout") and visible(model,root,character,workspace.CurrentCamera))
    setVisible(model,record,canSee)
+   if not record.dirty then continue end
+   record.dirty = false
    model:SetAttribute("ClientVisible",canSee == true)
    local total,renderable = 0,0
    for part in pairs(record.parts) do
