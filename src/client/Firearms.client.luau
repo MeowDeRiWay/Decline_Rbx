@@ -17,7 +17,7 @@ Input.InputBegan:Connect(function(input,processed)
  if input.UserInputType==Enum.UserInputType.MouseButton1 then firing=true
  elseif input.KeyCode==Enum.KeyCode.R then action:FireServer("Reload")
  elseif input.KeyCode==Enum.KeyCode.V then action:FireServer("Mode")
- elseif input.KeyCode==Enum.KeyCode.T then action:FireServer("Type") end
+ elseif input.KeyCode==Enum.KeyCode.B then action:FireServer("Type") end
 end)
 Input.InputEnded:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 then firing=false end end)
 Input.WindowFocusReleased:Connect(function() firing=false end)

@@ -17,7 +17,7 @@
 ## Controls and initial gameplay values
 
 Hold LMB for automatic fire; R reloads. Holding fire with an empty magazine
-requests reload automatically. T switches FMJ/AP and clears the magazine
+requests reload automatically. B switches FMJ/AP and clears the magazine
 allocation; reload to use the new type. English weapon HUD shows magazine,
 selected type, reserve, reload status and durability. Menus/text input block fire.
 Aim uses the mouse projected on the muzzle's horizontal plane (no vertical aiming
@@ -110,3 +110,6 @@ AudioListener.client positions the legacy Sound listener at the player root with
 camera orientation. Overhead camera height and zoom no longer attenuate the
 player's own reload/footsteps. Without a character it restores default camera
 listening. This affects spatial Sound instances; no new audio assets are required.
+
+
+Current controls: C character, T talents, I inventory, R reload, B ammunition type, V fire mode. R prefers the selected ammo type; if none is available, it automatically reloads the other available type. Existing cartridges are returned to inventory before changing types, without mixing types in one magazine.

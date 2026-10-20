@@ -104,7 +104,15 @@ local previous=uses;player.attributes.PreserveDurabilityChance=.9;wearRoll=.1
 fire(player,"Fire",direction);assert(uses==previous and magazine.Loaded==1)
 advance(.1);wearRoll=.95;fire(player,"Fire",direction);assert(uses==previous+1 and magazine.Loaded==0)
 advance(3);rounds.Ammo223AP=0;changed.callback(player)
-fire(player,"Reload");fire(player,"Reload");assert(#notices==1,"no-ammo notification throttled")
+fire(player,"Reload");assert(magazine.Type=="FMJ" and character:GetAttribute("Reloading"),"R automatically selects available alternative")
+advance(2.5);assert(magazine.Loaded==30 and rounds.Ammo223FMJ==19 and #notices==0)
+fire(player,"Type");rounds.Ammo223AP=4
+fire(player,"Reload");advance(2.5)
+assert(magazine.Type=="AP" and magazine.Loaded==4,"prefer selected type when both types are available")
+fire(player,"Reload");advance(2.5)
+assert(magazine.Type=="FMJ" and magazine.Loaded==30 and rounds.Ammo223AP==4,"partial magazine switches safely, returns old cartridges")
+Inventory.UnloadMagazine(player,"AP");rounds.Ammo223FMJ=0;rounds.Ammo223AP=0
+fire(player,"Reload");fire(player,"Reload");assert(#notices==1,"empty notification only when no type is available, throttled")
 assert(table.find(played,"ShotSound") and table.find(played,"ReloadSound") and stopped>=3)
 print("PASS: persistent per-weapon charge, independent identical guns, loose/loaded conservation, holster cooldown, reload cancellation, RPM/wall/direction guards, mode, sound, durability and empty notice")
 '''

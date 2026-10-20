@@ -1,6 +1,6 @@
 # Progression, professions and talents
 
-Press **P** for the two-column Character menu: attributes on the left, profession/talent tree on the right. The appearance matches Inventory. Attribute effects and caps appear only while hovering the relevant card. Choose Cook or Worker; selection lasts for the server session. Progression survives respawn, but has no DataStore persistence yet.
+Press **C** for the two-column Character menu: attributes on the left, final statistics on the right. Press **T** for talents. The appearance matches Inventory. Attribute effects and caps appear only while hovering the relevant card. Choose Cook or Worker; selection lasts for the server session. Progression survives respawn, but has no DataStore persistence yet.
 
 ## Levels and points
 
@@ -102,11 +102,14 @@ This supersedes earlier descriptions of those three retired talents.
 
 ### Sprint reserve and console
 
-Sprint lasts 20 seconds plus 1 second per Endurance point. Walking/rest restores the full reserve in 10 seconds; exhaustion prevents another sprint until 20% has recovered. Existing Endurance speed and HP bonuses remain. The bottom console shows remaining sprint time, numeric HP and AC (current dodge percentage). Level/Cha opens character; Inv opens inventory; Holster returns the held item to inventory. V switches firearm Auto/Single.
+Sprint lasts 20 seconds plus 1 second per Endurance point. Walking/rest restores the full reserve in 10 seconds; exhaustion prevents another sprint until 20% has recovered. Existing Endurance speed and HP bonuses remain. The bottom console shows the sprint reserve bar, numeric HP and AC (current dodge percentage). Level/Cha opens character; Inv opens inventory; Holster returns the held item to inventory. V switches firearm Auto/Single.
 
 
 ### Character final stats and defense
 
-Cha/P opens Attributes + Final stats. Skills opens the talent view; Stats/Talents tabs switch the right column. Final stats use replicated active equipment and talent bonuses, updating while open. Accuracy and critical chance use the equipped weapon category; displayed accuracy is before the opponent's dodge. Melee damage includes melee weapon damage, knife multiplier and Strength, never ranged weapon damage. With no usable melee weapon, the sheet labels the unarmed Strength bonus rather than treating firearm damage as melee. Critical multiplier remains 2–4.
+Cha/C opens Attributes + Final stats. Talents (T) opens the talent view; Stats/Talents tabs switch the right column. Final stats use replicated active equipment and talent bonuses, updating while open. Accuracy and critical chance use the equipped weapon category; displayed accuracy is before the opponent's dodge. Melee damage includes melee weapon damage, knife multiplier and Strength, never ranged weapon damage. With no usable melee weapon, the sheet labels the unarmed Strength bonus rather than treating firearm damage as melee. Critical multiplier remains 2–4.
 
 Damage defense: `max(0, incoming * (1 - clamp(resistance, 0, 1)) - absorption)`. Equipment may define `Armor = {Absorption = 3, Resistance = 0.2}` (3 / 20%). Equipped armor values sum; resistance caps at 100%. General talent attributes DamageAbsorption/DamageResistance add to armor; existing Kevlar apron MeleeAbsorption applies only to melee. The sheet distinguishes melee and other absorption, and shows armor in absorption / resistance format. No new armor items or balance values were added.
+
+
+Current menu hotkeys: C character, T talents, I inventory. The HUD buttons show the same keys. B changes ammunition type; R reloads any available type, preferring the current selection.

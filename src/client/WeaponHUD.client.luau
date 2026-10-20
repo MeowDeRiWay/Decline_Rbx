@@ -84,7 +84,7 @@ local function refresh()
   local loaded=character:GetAttribute("MagazineAmmo") or 0
   ammoFill.Size=UDim2.fromScale(1,math.clamp(loaded/math.max(1,definition.Firearm.Magazine),0,1))
   ammoFill.BackgroundColor3=character:GetAttribute("Reloading") and Theme.Danger or Theme.Accent
-  hint.Text..="\nMode: "..(character:GetAttribute("FireMode") or "Auto").." · V to switch"
+  hint.Text..="\nMode: "..(character:GetAttribute("FireMode") or "Auto").." · V to switch\nR reload · B ammo type"
   hint.Text..=string.format("\nAmmo %d / %d · %s · Reserve %d%s",loaded,definition.Firearm.Magazine,character:GetAttribute("AmmoType") or "FMJ",character:GetAttribute("ReserveAmmo") or 0,character:GetAttribute("Reloading") and " · Reloading" or "")
  end
 end

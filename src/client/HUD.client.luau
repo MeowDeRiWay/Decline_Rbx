@@ -77,7 +77,7 @@ end)
 local level=button("Level",12,-48,90,function() Layout.Character:Fire() end)
 level.Visible=false
 button("Holster",356,28,70,function() ReplicatedStorage.InventoryRemotes.Action:FireServer("Holster") end)
-button("Inv",356,72,70,function() Layout.Inventory:Fire() end)
+button("Inv [I]",356,72,70,function() Layout.Inventory:Fire() end)
 local menu=Instance.new("Frame")
 menu.AnchorPoint=Vector2.new(.5,.5);menu.Position=UDim2.fromScale(.5,.45);menu.Size=UDim2.fromOffset(330,150)
 menu.BackgroundColor3=Theme.Panel;menu.Visible=false;menu.Parent=Layout.Gui;Theme.Bevel(menu)
@@ -97,8 +97,8 @@ staminaTrack.BackgroundColor3=Theme.Card;staminaTrack.BorderSizePixel=0;staminaT
 local stamina=Instance.new("Frame")
 stamina.Size=UDim2.fromScale(1,1);stamina.BackgroundColor3=Theme.Green;stamina.BorderSizePixel=0;stamina.Parent=staminaTrack
 
-button("Skills",792,48,88,function() Layout.Skills:Fire() end)
-button("Cha",792,94,88,function() Layout.Character:Fire() end)
+button("Talents\n[T]",792,48,88,function() Layout.Skills:Fire() end)
+button("Cha [C]",792,94,88,function() Layout.Character:Fire() end)
 local combat=Instance.new("Frame")
 combat.Position=UDim2.fromOffset(918,60);combat.Size=UDim2.fromOffset(62,62);combat.BackgroundColor3=Theme.Card;combat.Parent=bar;Theme.Bevel(combat)
 label(bar,"Combat",894,128,110,20,12)

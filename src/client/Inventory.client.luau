@@ -63,7 +63,7 @@ text(window, "Inventory", UDim2.fromOffset(20, 12), UDim2.new(0.5, -30, 0, 32))
 local rightTitle = text(window, "Equipment", UDim2.new(0.5, 12, 0, 12), UDim2.new(0.5, -65, 0, 32))
 local close = button(window, "×", UDim2.new(1, -44, 0, 12), UDim2.fromOffset(28, 28))
 text(window, "Pockets", UDim2.fromOffset(180, 12), UDim2.fromOffset(310, 32))
-text(window, "Q — close", UDim2.new(0.5, 12, 1, -44), UDim2.new(0.5, -30, 0, 32))
+text(window, "I — close", UDim2.new(0.5, 12, 1, -44), UDim2.new(0.5, -30, 0, 32))
 local divider = Instance.new("Frame")
 divider.Position, divider.Size = UDim2.new(0.5, 0, 0, 52), UDim2.new(0, 1, 1, -108)
 divider.BorderSizePixel, divider.BackgroundColor3, divider.Parent = 0, Theme.Border, window
@@ -443,7 +443,7 @@ close.Activated:Connect(function() setOpen(false) end)
 UserInputService.InputBegan:Connect(function(input, processed)
  if processed or UserInputService:GetFocusedTextBox() or player:GetAttribute("TownMenuOpen") then return end
  if player.Character and player.Character:GetAttribute("Knockout") then return end
- if input.KeyCode == Enum.KeyCode.Q then setOpen(not gui.Enabled) end
+ if input.KeyCode == Enum.KeyCode.I then setOpen(not gui.Enabled) end
 end)
 player.CharacterAdded:Connect(function() setOpen(false) end)
 stateRemote.OnClientEvent:Connect(function(value)

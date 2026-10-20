@@ -63,8 +63,15 @@ action.OnServerEvent:Connect(function(player,command,direction)
   if state.Reloading or state.Loaded>=gun.Magazine then return end
   local total=Inventory.Snapshot(player).Items[Rules.AmmoID(gun.Caliber,state.Type)] or 0
   if total<=0 then
-   if total==0 and now>=(state.NextEmpty or 0) then state.NextEmpty=now+2;Journal.Send(player,"No ammunition for the selected ammo type.") end
-   return
+   local alternate=state.Type=="FMJ" and "AP" or "FMJ"
+   local available=Inventory.Snapshot(player).Items[Rules.AmmoID(gun.Caliber,alternate)] or 0
+   if available>0 then
+    Inventory.UnloadMagazine(player,alternate)
+    sync(player,state,gun)
+   else
+    if now>=(state.NextEmpty or 0) then state.NextEmpty=now+2;Journal.Send(player,"No ammunition available.") end
+    return
+   end
   end
   state.Token+=1;local token=state.Token;state.Reloading=true;sync(player,state,gun)
   state.ReloadSound=Audio.Play(character,"ReloadSound")

@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Updated controls and automatic available-ammo reload — 21 October
+
+- C opens/toggles Character stats, T opens/toggles Talents (HUD Skills button renamed Talents), I inventory; old P/Q bindings removed. Character/talent switching uses the same HUD events and keeps the current window open when switching. B replaces T for ammo type; V fire mode and R reload retained. HUD buttons, close hints, firearm hover and rifle item description updated.
+- R prefers selected type when loose stock exists. Otherwise automatically selects available FMJ/AP alternative, returning partial old magazine rounds to pockets before timed reload. No mixed magazine or duplicated/lost ammo. No-ammo notice only when neither type available. Full magazine still does not reload. Reload timing/cancellation/cooldown authority unchanged.
+- Actual firearm service tests cover fallback, preference with both stocks, partial-magazine conversion and no-ammo throttle, in addition to previous regression checks. Compile/Rojo; no Studio playtest.
+
 ## Character final stats and defense formula — 21 October
 
 - Cha/P now defaults to Attributes(left unchanged) + Final stats(right). Skills opens existing grouped talent UI. Stats/Talents tabs keep both available; profession selection remains in talent view. HUDLayout Skills local event replaces old small specialty placeholder. Final stats read live player/character attributes/equipped item: HP current/max, melee/other absorption, resistance%, sprint capacity, category-adjusted capped accuracy, dodge%, melee/knife/Strength damage (no firearm damage), category crit chance, 2–4 multiplier, luck%. Accuracy explicitly before target dodge; no melee equipped => labeled unarmed bonus, broken melee=>0.

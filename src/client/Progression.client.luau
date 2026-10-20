@@ -40,7 +40,7 @@ panel.AnchorPoint=Vector2.new(.5,.5); panel.Visible=false
 local scale=Instance.new("UIScale"); scale.Parent=panel
 local title=label(panel,"Character",UDim2.fromOffset(26,12),UDim2.fromOffset(650,36),28,palette.Accent)
 title.Font=palette.Font; title.TextSize=18
-label(panel,"[P] close",UDim2.new(1,-150,0,22),UDim2.fromOffset(90,20),12,palette.Muted)
+local closeHint=label(panel,"[C] close",UDim2.new(1,-150,0,22),UDim2.fromOffset(90,20),12,palette.Muted)
 local left=frame(panel,UDim2.fromOffset(18,62),UDim2.fromOffset(462,640))
 local right=frame(panel,UDim2.fromOffset(494,62),UDim2.fromOffset(588,640))
 local leftHeading=label(left,"Attributes",UDim2.fromOffset(20,10),UDim2.fromOffset(420,35),25,palette.Accent)
@@ -103,6 +103,7 @@ for index,row in ipairs(statRows) do
 end
 local context=label(statsPanel,"",UDim2.fromOffset(8,448),UDim2.fromOffset(532,72),12,palette.Muted)
 local function setMode(value)
+ closeHint.Text=value=="Stats" and "[C] close" or "[T] close"
  mode=value;statsPanel.Visible=value=="Stats";talentPanel.Visible=value=="Talents"
  rightHeading.Text=value=="Stats" and "Final stats" or "Talents"
  hoveredTalent=nil
@@ -244,7 +245,10 @@ require(script.Parent.HUDLayout).Skills.Event:Connect(function()
 end)
 Input.InputBegan:Connect(function(input,processed)
  if processed or Input:GetFocusedTextBox() then return end
- if input.KeyCode==Enum.KeyCode.P and not player:GetAttribute("InventoryOpen") and not player:GetAttribute("TownMenuOpen") then setMode("Stats");setOpen(not panel.Visible) end
+ if not player:GetAttribute("InventoryOpen") and not player:GetAttribute("TownMenuOpen") then
+  if input.KeyCode==Enum.KeyCode.C then require(script.Parent.HUDLayout).Character:Fire()
+  elseif input.KeyCode==Enum.KeyCode.T then require(script.Parent.HUDLayout).Skills:Fire() end
+ end
  if input.KeyCode==Enum.KeyCode.Escape and panel.Visible then setOpen(false) end
 end)
 remotes:WaitForChild("State").OnClientEvent:Connect(function(value) snapshot=value; redraw() end)
