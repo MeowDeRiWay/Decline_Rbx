@@ -64,6 +64,11 @@ function Visuals.Apply(character, id)
  local grip = root:FindFirstChild("HandsGrip")
  local offset = definition.HeldOffset or CFrame.new(root.Size.X / 2 + 0.1, root.Size.Y * 0.15, -root.Size.Z / 2 - 0.1)
  local target = grip and grip:IsA("Attachment") and grip.WorldCFrame or root.CFrame * offset
+ if definition.Firearm then
+  -- Preserve authored grip X/Z and rotation, but raise rifles to the shoulder.
+  local height=root.CFrame:PointToObjectSpace(target.Position).Y
+  target=target+root.CFrame.UpVector*(root.Size.Y*(definition.Firearm.HoldHeightRatio or .4)-height)
+ end
  -- The model pivot is the point held in the hand. Place it at the handle in Studio.
  held:PivotTo(target)
  local parts = {}

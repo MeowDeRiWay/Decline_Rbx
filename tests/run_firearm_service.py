@@ -20,7 +20,7 @@ function character:GetAttribute(k) return self.attributes[k] end
 function character:SetAttribute(k,v) self.attributes[k]=v end
 local hp={Health=100}
 local root={Position=Vector3.new(0,0,0)}
-local muzzle={GetPivot=function() return CFrame.new(Vector3.new(0,0,-.5)) end,IsA=function(_,kind) return kind=="Model" end}
+local muzzle={GetPivot=function() return CFrame.new(Vector3.new(0,.8,-.5)) end,IsA=function(_,kind) return kind=="Model" end}
 local held={FindFirstChild=function() return muzzle end}
 function character:FindFirstChild(name) return name=="HeldItem" and held or root end
 function character:FindFirstChildOfClass() return hp end
@@ -40,7 +40,12 @@ local ReplicatedStorage={}
 game={GetService=function(_,name) return name=="Players" and Players or ReplicatedStorage end}
 Enum={RaycastFilterType={Exclude=1}}
 RaycastParams={new=function() return {} end}
-workspace={Raycast=function() end}
+local rays={}
+local wall=false
+workspace={Raycast=function(_,origin,delta)
+ table.insert(rays,{Origin=origin,Delta=delta})
+ if wall and delta.Z<0 then return {} end
+end}
 local baseTypeof=typeof
 typeof=function(v) if type(v)=="table" and v.X then return "Vector3" end;return baseTypeof(v) end
 '''
@@ -52,7 +57,12 @@ fire(player,"Reload");assert(character:GetAttribute("Reloading"))
 fire(player,"Fire",direction);assert(shots==0,"cannot fire while reloading")
 advance(2.5);assert(character:GetAttribute("MagazineAmmo")==30 and rounds.Ammo223FMJ==50,"reload allocates existing rounds without creating/losing stock")
 fire(player,"Fire",direction);assert(shots==1 and rounds.Ammo223FMJ==49 and character:GetAttribute("MagazineAmmo")==29 and uses==1)
+assert(#rays==2 and rays[2].Origin.Y==.8 and rays[2].Delta.Y==0,"muzzle guard crosses window at raised gun height, not diagonally from waist")
+
 fire(player,"Fire",direction);assert(shots==1,"rate limit")
+advance(.1);wall=true;fire(player,"Fire",direction)
+assert(shots==1 and rounds.Ammo223FMJ==49,"solid wall still blocks muzzle and consumes no ammo")
+wall=false
 advance(.1);fire(player,"Fire",Vector3.new(0,0,-100));assert(shots==1,"reject invalid direction")
 fire(player,"Type");assert(character:GetAttribute("AmmoType")=="AP" and character:GetAttribute("MagazineAmmo")==0 and rounds.Ammo223FMJ==49)
 fire(player,"Reload");advance(2.5);assert(character:GetAttribute("MagazineAmmo")==3)

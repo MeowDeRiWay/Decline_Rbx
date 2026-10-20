@@ -76,7 +76,9 @@ action.OnServerEvent:Connect(function(player,command,direction)
  if (origin-root.Position).Magnitude>5 then return end
  -- A muzzle embedded through a nearby wall must not bypass that wall.
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}
- if workspace:Raycast(root.Position,origin-root.Position,params) then return end
+ local shoulder=Vector3.new(root.Position.X,origin.Y,root.Position.Z)
+ if workspace:Raycast(root.Position,shoulder-root.Position,params)
+  or workspace:Raycast(shoulder,origin-shoulder,params) then return end
  direction=direction.Unit
  if not Projectiles.Fire(player,character,origin,direction,gun,state.Type,id) then return end
  Audio.Play(character,"ShotSound")

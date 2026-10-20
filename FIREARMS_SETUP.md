@@ -91,3 +91,8 @@ not prevent shooting. Sounds use spatial rolloff: default3..150stud shot,
 Sound override those ranges. Volume/PlaybackSpeed remain authored. Clips clean up
 on Ended and have a15second safety expiry. Roblox asset access must allow the
 experience to play the chosen SoundIds; no audio IDs were supplied by the user.
+
+Rifle held height uses Firearm.HoldHeightRatio=.4 of root height above root center
+(shoulder). Existing grip X/Z and rotation are retained; melee tools keep their
+old positions. Muzzle safety ray follows a vertical-then-horizontal path through
+shoulder height, so a low window sill does not block a clear raised muzzle.

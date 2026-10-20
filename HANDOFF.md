@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Shoulder-height rifle — 20 October
+
+- Rifle223.Firearm.HoldHeightRatio=.4 raises equipped pivot to root.Size.Y*.4 above root center, preserving gripX/Z/rotation and supporting customHandsGrip. Melee held positions unchanged. _ShotOrigin derives AFTER raised placement, so visual/shot/sound align.
+- Muzzle anti-wall guard now checks root->vertical shoulder at origin.Y then horizontal shoulder->muzzle instead of waist->muzzle diagonal, allowing clear window openings while retaining wall/overhead obstruction checks. tests/run_firearm_service covers raised guard origin and solidwall no shot/noammo.
+
 ## Rifle sound templates — 20 October
 
 - FirearmAudio.Play reads held weapon/Sounds/ShotSound and ReloadSound Sound templates, clones onto _ShotOrigin Attachment or root for spatial replication. User has public Roblox audio but has not provided IDs; instruct them to set SoundId. Authored Volume/PlaybackSpeed retained, nonloop/PlayOnRemovefalse, default3..150shot/3..25reload; optionalMinDistance/MaxDistance attributes override. Ended cleanup +Debris15s.
