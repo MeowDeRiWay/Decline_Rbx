@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Cleaner pocket item captions — 21 October
+
+- Inventory item rows show only name × count, including weapon variants; condition/weight/magazine removed from captions. Underlying state stacks/selectors unchanged. Hover and selected item details retain condition, loaded rounds/type and weight; weight now explicitly shown in selected right-side description too. Removed redundant Resource N hits from weapon effect description, retained Condition.
+- Luau compile and Rojo build; no Studio visual playtest.
+
 ## Weapon-state stacks, persistent magazines and viewer narration — 21 October
 
 - InventoryRules keeps aggregate Items/Conditions for compatibility plus aligned Weapons records and EquipmentWeapon. Records carry UID, Loaded, Type, Mode, ReadyAt. Stacks groups by ID+condition+loaded+type; snapshot Stacks/ChestStacks, client actions use server-validated ID/Key selectors. Equip/drop/transfer/all target the selected variant; stale/forged keys rejected. Holster restores exact UID (not arbitrary same-ID gun).

@@ -149,7 +149,7 @@ local function effectText(definition)
  local effects = definition.Consume
  if definition.Weapon then
   local w = definition.Weapon
-  return string.format("Damage %d · %s\n%d attacks/min · Resource %d hits",w.Damage,w.DamageType,w.AttacksPerMinute,w.MaxUses) .. (definition.CraftTool and string.format("\nCraft speed ×%g",definition.CraftSpeed or 1) or "")
+  return string.format("Damage %d · %s\n%d attacks/min",w.Damage,w.DamageType,w.AttacksPerMinute) .. (definition.CraftTool and string.format("\nCraft speed ×%g",definition.CraftSpeed or 1) or "")
  end
  if not effects then return "Crafting material" end
  return string.format("Food %+.0f\nWater %+.0f\nSickness %+.0f", effects.Food or 0, effects.Water or 0, effects.Sick or 0) .. (definition.ReturnItems and ("\n"..returnText(definition)) or "")
@@ -184,9 +184,7 @@ local function renderItems(frame, items, side)
   if ammo then itemWeight+=(stack.Loaded or 0)*ammo.Weight*multiplier end
   local key=side..":"..stack.Key
   local selection=definition.Weapon and {ID=id,Key=stack.Key} or id
-  local stateText=definition.Weapon and string.format(" · %d/%d",stack.Condition or 0,definition.Weapon.MaxUses) or ""
-  local caption=string.format("%s ×%d%s\n%.1f kg",definition.Name or id,stack.Count,stateText,itemWeight*stack.Count)
-  if definition.Firearm then caption..=string.format(" · %d %s",stack.Loaded or 0,stack.AmmoType or "FMJ") end
+  local caption=string.format("%s ×%d",definition.Name or id,stack.Count)
   local available=stack.Count
   local selected = math.clamp(dropAmounts[key] or 1, 1, available)
   local container = Instance.new("Frame")
@@ -380,6 +378,10 @@ redraw = function()
   rightTitle.Text = "Item details"
   local stateText=definition.Weapon and string.format("\nCondition %d / %d",selectedStack.Condition or 0,definition.Weapon.MaxUses) or ""
   if definition.Firearm then stateText..=string.format("\nLoaded %d / %d · %s",selectedStack.Loaded or 0,definition.Firearm.Magazine,selectedStack.AmmoType or "FMJ") end
+  local ammo=definition.Firearm and ItemConfig.Items["Ammo"..definition.Firearm.Caliber..(selectedStack.AmmoType or "FMJ")]
+  local multiplier=player:GetAttribute("AmmoWeightMultiplier") or 1
+  local itemWeight=(definition.Weight or 0)*(definition.Ammo and multiplier or 1)+(ammo and (selectedStack.Loaded or 0)*ammo.Weight*multiplier or 0)
+  stateText..=string.format(definition.Ammo and "\nWeight %.3f kg" or "\nWeight %.1f kg",itemWeight)
   text(equipment,(definition.Name or selectedId)..stateText,UDim2.new(),UDim2.new(1,-8,0,90)).LayoutOrder=1
   local bonus = text(equipment, "Bonuses\n" .. foodDetails(definition,true), UDim2.new(), UDim2.new(1,-8,0,90))
   bonus.LayoutOrder,bonus.TextColor3 = 2,Color3.fromRGB(110,214,150)
