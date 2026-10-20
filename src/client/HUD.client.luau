@@ -77,7 +77,7 @@ end)
 local level=button("Level",12,-48,90,function() Layout.Character:Fire() end)
 level.Visible=false
 button("Holster",356,28,70,function() ReplicatedStorage.InventoryRemotes.Action:FireServer("Holster") end)
-button("Inv [I]",356,72,70,function() Layout.Inventory:Fire() end)
+button("Inv [Q]",356,72,70,function() Layout.Inventory:Fire() end)
 local menu=Instance.new("Frame")
 menu.AnchorPoint=Vector2.new(.5,.5);menu.Position=UDim2.fromScale(.5,.45);menu.Size=UDim2.fromOffset(330,150)
 menu.BackgroundColor3=Theme.Panel;menu.Visible=false;menu.Parent=Layout.Gui;Theme.Bevel(menu)

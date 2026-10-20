@@ -112,4 +112,4 @@ Cha/C opens Attributes + Final stats. Talents (T) opens the talent view; Stats/T
 Damage defense: `max(0, incoming * (1 - clamp(resistance, 0, 1)) - absorption)`. Equipment may define `Armor = {Absorption = 3, Resistance = 0.2}` (3 / 20%). Equipped armor values sum; resistance caps at 100%. General talent attributes DamageAbsorption/DamageResistance add to armor; existing Kevlar apron MeleeAbsorption applies only to melee. The sheet distinguishes melee and other absorption, and shows armor in absorption / resistance format. No new armor items or balance values were added.
 
 
-Current menu hotkeys: C character, T talents, I inventory. The HUD buttons show the same keys. B changes ammunition type; R reloads any available type, preferring the current selection.
+Current menu hotkeys: C character, T talents, Q inventory. The HUD buttons show the same keys. B changes ammunition type; R reloads any available type, preferring the current selection.

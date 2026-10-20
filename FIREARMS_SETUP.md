@@ -112,4 +112,4 @@ player's own reload/footsteps. Without a character it restores default camera
 listening. This affects spatial Sound instances; no new audio assets are required.
 
 
-Current controls: C character, T talents, I inventory, R reload, B ammunition type, V fire mode. R prefers the selected ammo type; if none is available, it automatically reloads the other available type. Existing cartridges are returned to inventory before changing types, without mixing types in one magazine.
+Current controls: C character, T talents, Q inventory, R reload, B ammunition type, V fire mode. R prefers the selected ammo type; if none is available, it automatically reloads the other available type. Existing cartridges are returned to inventory before changing types, without mixing types in one magazine.

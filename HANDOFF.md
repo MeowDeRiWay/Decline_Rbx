@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Inventory back to Q; next-session plan — 21 October
+
+- User reports Roblox captures I, so inventory returns to Q. HUD Inv [Q] and close hint Q updated; C character, T talents, B ammo type, V fire mode, R reload unchanged.
+- Next session starts with fixing positional audio: left/right orientation, listener position and camera/zoom interaction. User also wants standard Tab player list disabled and only nearby players in Roblox's own menu; verify platform support for the latter before promising implementation. Do not hide/remove actual Player objects to fake it.
+- Scheduled reminder for the plan separately. Compile/Rojo checked; no Studio playtest.
+
 ## Updated controls and automatic available-ammo reload — 21 October
 
 - C opens/toggles Character stats, T opens/toggles Talents (HUD Skills button renamed Talents), I inventory; old P/Q bindings removed. Character/talent switching uses the same HUD events and keeps the current window open when switching. B replaces T for ammo type; V fire mode and R reload retained. HUD buttons, close hints, firearm hover and rifle item description updated.
