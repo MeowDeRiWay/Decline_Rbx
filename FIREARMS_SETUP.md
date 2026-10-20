@@ -66,10 +66,28 @@ and LastDamagerID/LastHitItem tagging are preserved.
 
 Nearby clients (200studs) receive batched flash, moving short trail and material
 entry/exit particle events. Trace Parts are non-queryable client-only visuals and
-expire; impact particles are capped80events/s per client. No audio, ricochets,
+expire; impact particles are capped80events/s per client. No ricochets,
 wall destruction or persistent bullet holes in this first implementation.
 
 Validation: run_firearm_rules.py, run_firearm_service.py,
 run_firearm_projectiles.py, run_ammo_pickup.py, equipment regression, Luau compile
 and Rojo build. These use mocks; actual Studio visual/grip/performance testing
 remains necessary with the authored models.
+
+## Gun sounds
+
+Inside Rifle223 add a Folder named `Sounds` with two Sound instances:
+`ShotSound` and `ReloadSound`. Set each SoundId to the Roblox audio asset URI,
+e.g. rbxassetid://123456789; author Volume and PlaybackSpeed there. Keep the
+sound templates stopped. The same convention works for future firearm models.
+Do not put the templates in SoundService: the equipped copy supplies its own art.
+
+Server-confirmed shots clone ShotSound at the generated muzzle Attachment;
+rapid shots overlap without restarting the previous one. ReloadSound starts only
+when a valid reload begins and stops at completion, ammo-type change, weapon
+change, character reset or player removal. Missing sounds are optional and do
+not prevent shooting. Sounds use spatial rolloff: default3..150stud shot,
+3..25stud reload. Optional number attributes MinDistance/MaxDistance on each
+Sound override those ranges. Volume/PlaybackSpeed remain authored. Clips clean up
+on Ended and have a15second safety expiry. Roblox asset access must allow the
+experience to play the chosen SoundIds; no audio IDs were supplied by the user.

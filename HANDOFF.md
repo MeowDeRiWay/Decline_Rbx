@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Rifle sound templates — 20 October
+
+- FirearmAudio.Play reads held weapon/Sounds/ShotSound and ReloadSound Sound templates, clones onto _ShotOrigin Attachment or root for spatial replication. User has public Roblox audio but has not provided IDs; instruct them to set SoundId. Authored Volume/PlaybackSpeed retained, nonloop/PlayOnRemovefalse, default3..150shot/3..25reload; optionalMinDistance/MaxDistance attributes override. Ended cleanup +Debris15s.
+- Firearms server plays only accepted shots and valid reload starts; reload sound stops on completion/type/swap/reset/removal. Reload invalidation at delayed completion now clears Reloading and sound (fixes KO-at-completion stuck state). Missing sound optional. Testsrun_firearm_audio plus service audio lifecycle; compile/Rojo.
+
 ## Rifle223 firearms — 20 October
 
 - Implemented first firearm, not pistol yet. FIREARMS_SETUP.md authoritative. ItemConfig Rifle223 Firearm+Weapon, Ammo223FMJ/AP loose stacks and AmmoBox223FMJ/AP box definitions. World boxes rollAmmoCount1..MaxAmmo once, pickup converts to loose rounds; world ammo drops retain exactQuantity and can reuse box art. Caliber223 string, AmmoTypeFMJ/AP. User corrected screenshot FJM typo, retained Model Muzzle and set pivot.

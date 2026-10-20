@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Inventory=require(script.Parent.Services.InventoryService)
 local Projectiles=require(script.Parent.Services.FirearmProjectiles)
+local Audio=require(script.Parent.Services.FirearmAudio)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
 local states={}
@@ -18,6 +19,7 @@ end
 local function stateFor(player,character,id)
  local state=states[player]
  if not state or state.Character~=character or state.ID~=id then
+  if state then Audio.Stop(state.ReloadSound) end
   state={Character=character,ID=id,Type="FMJ",Loaded=0,Ready=0,Token=0};states[player]=state
  end
  return state
@@ -36,7 +38,7 @@ end
 -- of that stock, preventing loss/duplication across drops, transfers and death.
 Inventory.Changed:Connect(function(player)
  local character,_,id,gun=context(player)
- if not character then states[player]=nil;return end
+ if not character then local old=states[player];if old then Audio.Stop(old.ReloadSound) end;states[player]=nil;return end
  local state=stateFor(player,character,id);sync(player,state,gun)
 end)
 action.OnServerEvent:Connect(function(player,command,direction)
@@ -47,6 +49,7 @@ action.OnServerEvent:Connect(function(player,command,direction)
  local now=os.clock()
  if command=="Type" then
   if now<(state.NextType or 0) then return end
+  Audio.Stop(state.ReloadSound);state.ReloadSound=nil
   state.NextType=now+.3;state.Token+=1;state.Reloading=false;state.Loaded=0
   state.Type=state.Type=="FMJ" and "AP" or "FMJ";sync(player,state,gun);return
  elseif command=="Reload" then
@@ -54,10 +57,12 @@ action.OnServerEvent:Connect(function(player,command,direction)
   local total=Inventory.Snapshot(player).Items[Rules.AmmoID(gun.Caliber,state.Type)] or 0
   if total<=state.Loaded then return end
   state.Token+=1;local token=state.Token;state.Reloading=true;sync(player,state,gun)
+  state.ReloadSound=Audio.Play(character,"ReloadSound")
   task.delay(gun.ReloadTime,function()
    local current,_,currentID=context(player)
-   if states[player]~=state or token~=state.Token or current~=character or currentID~=id then return end
-   state.Reloading=false
+   if states[player]~=state or token~=state.Token then return end
+   Audio.Stop(state.ReloadSound);state.ReloadSound=nil;state.Reloading=false
+   if current~=character or currentID~=id then sync(player,state,gun);return end
    state.Loaded=math.min(gun.Magazine,Inventory.Snapshot(player).Items[Rules.AmmoID(gun.Caliber,state.Type)] or 0)
    sync(player,state,gun)
   end)
@@ -74,9 +79,10 @@ action.OnServerEvent:Connect(function(player,command,direction)
  if workspace:Raycast(root.Position,origin-root.Position,params) then return end
  direction=direction.Unit
  if not Projectiles.Fire(player,character,origin,direction,gun,state.Type,id) then return end
+ Audio.Play(character,"ShotSound")
  state.Ready=now+60/gun.RPM;state.Loaded-=1
  Inventory.Remove(player,Rules.AmmoID(gun.Caliber,state.Type),1)
  Inventory.UseWeapon(player)
  sync(player,state,gun)
 end)
-Players.PlayerRemoving:Connect(function(player) states[player]=nil end)
+Players.PlayerRemoving:Connect(function(player) local state=states[player];if state then Audio.Stop(state.ReloadSound) end;states[player]=nil end)

@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile,re
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Firearms.server.luau').read_text()
-service=re.sub(r'local (Inventory|Projectiles|Items|Rules)=require[^\n]+\n','',service)
+service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio)=require[^\n]+\n','',service)
 mock='''
 local function signal() return {Connect=function(self,fn) self.callback=fn end} end
 local changed=signal()
@@ -27,6 +27,8 @@ function character:FindFirstChildOfClass() return hp end
 local player={Character=character}
 local rounds={Ammo223FMJ=50,Ammo223AP=3}
 local shots,uses=0,0
+local played,stopped={},0
+local Audio={Play=function(_,name) table.insert(played,name);return {} end,Stop=function(sound) if sound then stopped+=1 end end}
 local Inventory={Changed=changed,Snapshot=function() return {Items=table.clone(rounds)} end,GetWeapon=function() return true end}
 function Inventory.Remove(_,id,count) assert(rounds[id]>=count);rounds[id]-=count;changed.callback(player);return true end
 function Inventory.UseWeapon() uses+=1;changed.callback(player);return true end
@@ -60,6 +62,7 @@ rounds.Ammo223AP=3;fire(player,"Reload")
 character:SetAttribute("HandsItem","");changed.callback(player)
 character:SetAttribute("HandsItem","Rifle223");changed.callback(player);advance(2.5)
 assert(character:GetAttribute("MagazineAmmo")==0 and not character:GetAttribute("Reloading"),"weapon switch cancels delayed reload")
+assert(table.find(played,"ShotSound") and table.find(played,"ReloadSound") and stopped>=3,"shot/reload start and completion/cancellation stop audio")
 print("PASS: empty/reloading/rate/invalid direction guards, partial reload, exact ammo and condition consumption, AP switch, drop conservation and switch cancellation")
 '''
 parts=[(root/'tests/city_geometry.fixture.luau').read_text(),
