@@ -13,7 +13,7 @@ local Life={Damage=function(_,hp,amount) hits+=1; hp.Health-=amount; return amou
 function Players:GetPlayerFromCharacter(character) if character==a.Character then return a end end
 '''
 cases='''
-a:LoadCharacterAsync(); a:SetAttribute("MeleeAbsorption",3)
+a:LoadCharacterAsync();a.Character:PivotTo(CFrame.new(Vector3.zero)); a:SetAttribute("MeleeAbsorption",3)
 local hp=a.Character.Humanoid
 assert(Service.Apply(hp,5,"Blunt",nil,"Melee")==2 and hp.Health==98)
 assert(Service.Apply(hp,5,"Piercing",nil,"Projectile")==5 and hp.Health==93)
@@ -37,16 +37,24 @@ assert(InventoryRules.Add(state,Items.Items,"Apron",1))
 assert(InventoryRules.Equip(state,Items.Items,Items.Slots,"Apron"))
 assert(state.Equipment.Additional=="Apron")
 local report=ReplicatedStorage:FindFirstChild("CombatReport")
-assert(report and #report.sent>0,"incoming damage reaches victim journal")
+assert(report and #report.sent>0,"nearby observers receive structured events for visual filtering")
 table.clear(report.sent)
 local target=make("Model","Zombie",workspace)
 Service.Miss(target,a)
-assert(#report.sent==1 and report.sent[1].player==a and report.sent[1].data=="Zombie: Miss","miss is private to attacker")
-table.clear(report.sent)
-Service.Miss(a.Character,b)
-assert(#report.sent==2 and report.sent[1].player==b and report.sent[2].player==a,"PvP report goes to attacker and victim only")
+assert(#report.sent>0 and report.sent[1].data.Kind=="Miss" and report.sent[1].data.Actor==a.Character and report.sent[1].data.Target==target)
 assert(not target:FindFirstChild("DamagePopup",true),"no overhead popup")
-print("PASS: private attacker/victim reports, misses, and no overhead damage text")
+table.clear(report.sent)
+local targetHP=make("Humanoid","Humanoid",target);targetHP.Health=7;targetHP.MaxHealth=7
+function targetHP:TakeDamage(amount) self.Health=math.max(0,self.Health-amount) end
+Service.Apply(targetHP,10,"Bullet",nil,"Ranged",{Attacker=a,HitChecked=true})
+assert(report.sent[1].data.Killed and report.sent[1].data.Damage==7,"lethal report records actual damage and death")
+table.clear(report.sent)
+local priorDamage=Life.Damage
+Life.Damage=function(_,hp,amount) hp.Parent:SetAttribute("Knockout",true);return math.min(hp.Health,amount) end
+Service.Apply(hp,10,"Blunt",nil,"Melee",{Attacker=target,HitChecked=true})
+assert(report.sent[1].data.Knockout and report.sent[1].data.Actor==target,"AI attacker and new knockout survive report formatting")
+Life.Damage=priorDamage
+print("PASS: structured actor/target reports for client visibility filtering, no overhead text")
 print("PASS: melee-only absorption, non-melee unchanged, zero-damage clamp and Apron Additional slot")
 '''
 cases=cases.replace('requirePlaceholder','(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)()').replace('inventoryPlaceholder','(function()\n'+(root/'src/shared/InventoryRules.luau').read_text()+'\nend)()')

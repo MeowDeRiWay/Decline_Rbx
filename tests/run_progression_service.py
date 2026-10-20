@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 import sys
 root=Path(__file__).resolve().parents[1]
-service=(root/'src/server/Services/ProgressionService.luau').read_text()
+service=(root/'src/server/Services/ProgressionService.luau').read_text().replace('local Journal=require(script.Parent.JournalService)', 'local Journal={Send=function() end}')
 for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig'),('ItemsConfig','ItemConfig')]:
  service=service.replace(f'local {name}=require(ReplicatedStorage.Shared.{module})','')
 service=service.replace('local Items=require(ReplicatedStorage.Shared.ItemConfig).Items','local Items=ItemsConfig.Items')

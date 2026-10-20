@@ -4,6 +4,15 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Witnessed journal, personal events, holster toggle — 21 October
+
+- CombatReport now sends structured actor/target refs, display names, attack kind, actual damage, critical, death and newly entered knockout. Nearby observers receive payload; HUD EventVisibility.Witnessed requires BOTH participants visible under the renderer's exact screen/sector/occlusion function (CreatureVisibility installs Check). Hidden attackers' identities are not revealed. Own knockout hit is allowed; later events while unconscious suppressed. 250+10*ViewBonus server distance bound. No client request/authoritative damage changes.
+- JournalPresentation renders English action sentences, rounded integer HP, kill/KO clauses, miss/dodge. Plain strips markup and decodes entities, so chat/system tags do not print literally. Damage over-head billboards remain removed.
+- New server JournalService PersonalNotice remote sends only to owner: XP awarded, completed crafting outputs, one weapon break notification when condition crosses zero, no ammunition on failed empty reload (2s throttle). Existing level-up notice remains.
+- Holster command toggles server InventoryService memory; un/equip through existing inventory rules preserves condition. Restores only from existing Items count, no grants. Drop/remove/transfer to storage/reset/extract invalidate remembered ID, even if another same-ID item is later acquired. Silent invalid restore.
+- Removed numeric Run20s text; sprint bar remains. Combat and personal message visibility are separate: personal notices always go to owner.
+- Tests actual visibility gate + screen/sector/wall function, structured death/KO report, holster condition/drop/replacement/transfer/reset, private actual notice remote and one break notice; no-ammo throttle, XP/crafting/projectile regressions; compile/Rojo. Studio screenshots supplied this turn were unavailable at provided local paths; no visual claim.
+
 ## Bottom console, chat journal, sprint and firing modes — 21 October
 
 - HUDLayout client module owns shared 1020x170 bottom console, viewport-scaled; WeaponHUD mounts in its center instead of separate screen. Left persistent 100-row bounded journal + input (/ or click); filtered TextChatService.MessageReceived Success messages, SendAsync via selected/RBXGeneral channel, permissions checked, default window/input/bubbles disabled. No custom server chat relay. Live multiplayer/chat Studio test remains user-side.

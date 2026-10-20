@@ -114,6 +114,7 @@ local function visible(model,root,character,camera)
  if clear(target) then return true end
  return targetHead ~= nil and targetHead:IsA("BasePart") and clear(targetHead)
 end
+require(script.Parent.EventVisibility).Check=visible
 local elapsed = Config.VisibilityInterval
 RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Last.Value+1,function(dt)
  -- Apply every frame after the camera's transparency controller, even if the

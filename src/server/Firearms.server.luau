@@ -5,6 +5,7 @@ local Projectiles=require(script.Parent.Services.FirearmProjectiles)
 local Audio=require(script.Parent.Services.FirearmAudio)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
+local Journal=require(script.Parent.Services.JournalService)
 local states={}
 local random=Random.new()
 local action=Instance.new("RemoteEvent");action.Name="FirearmAction";action.Parent=ReplicatedStorage
@@ -60,7 +61,10 @@ action.OnServerEvent:Connect(function(player,command,direction)
  elseif command=="Reload" then
   if state.Reloading or state.Loaded>=gun.Magazine then return end
   local total=Inventory.Snapshot(player).Items[Rules.AmmoID(gun.Caliber,state.Type)] or 0
-  if total<=state.Loaded then return end
+  if total<=state.Loaded then
+   if total==0 and now>=(state.NextEmpty or 0) then state.NextEmpty=now+2;Journal.Send(player,"No ammunition for the selected ammo type.") end
+   return
+  end
   state.Token+=1;local token=state.Token;state.Reloading=true;sync(player,state,gun)
   state.ReloadSound=Audio.Play(character,"ReloadSound")
   task.delay(gun.ReloadTime,function()

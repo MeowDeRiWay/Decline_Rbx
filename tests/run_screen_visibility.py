@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/client/CreatureVisibility.client.luau').read_text()
-visible=source[source.index('local function visible('):source.index('local elapsed =')]
+visible=source[source.index('local function visible('):source.index('require(script.Parent.EventVisibility)')]
 rules=(root/'src/shared/VisibilityRules.luau').read_text()
 cases='''
 assert(Rules.OnScreen(0,0,1,100,100))

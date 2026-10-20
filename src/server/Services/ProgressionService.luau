@@ -3,6 +3,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
 local Config=require(ReplicatedStorage.Shared.ProgressionConfig)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
+local Journal=require(script.Parent.JournalService)
 local Service={}
 local states={}
 local remote
@@ -37,6 +38,7 @@ function Service.Snapshot(player)
 end
 function Service.Award(player,amount)
  if not player or player.Parent~=Players then return end
+ if typeof(amount)=="number" and amount>0 then Journal.Send(player,string.format("You gained %d XP.",math.floor(amount+.5))) end
  if Rules.AddXP(stateFor(player),amount) then Service.Sync(player) end
 end
 function Service.CanStation(player,name)

@@ -6,6 +6,8 @@ local CombatRules = require(ReplicatedStorage.Shared.CombatRules)
 local Visuals = require(script.Parent.EquipmentVisuals)
 local Service = {}
 local states = {}
+local holstered = {}
+local Journal=require(script.Parent.JournalService)
 local changed = Instance.new("BindableEvent")
 Service.Changed = changed.Event
 local function update(player)
@@ -19,10 +21,12 @@ local function update(player)
  changed:Fire(player)
 end
 function Service.Reset(player)
+ holstered[player]=nil
  states[player] = Rules.New()
  update(player)
 end
 function Service.ExtractAll(player)
+ holstered[player]=nil
  local state=states[player] or Rules.New()
  for _,slot in ipairs(ItemConfig.Slots) do
   if state.Equipment[slot] then Rules.Unequip(state,ItemConfig.Items,ItemConfig.Slots,slot) end
@@ -31,7 +35,7 @@ function Service.ExtractAll(player)
  update(player)
  return state
 end
-function Service.RemovePlayer(player) states[player] = nil end
+function Service.RemovePlayer(player) states[player] = nil;holstered[player]=nil end
 function Service.Add(player, id, count, conditions)
  local state = states[player]
  if not state or not Rules.Add(state, ItemConfig.Items, id, count, conditions) then return false end
@@ -43,6 +47,7 @@ function Service.Remove(player, id, count)
  if not state then return false end
  local ok, conditions = Rules.Remove(state, id, count)
  if not ok then return false end
+ if holstered[player]==id then holstered[player]=nil end
  update(player)
  return true, conditions
 end
@@ -59,12 +64,27 @@ function Service.Unequip(player, slot)
  update(player)
  return true
 end
+function Service.ToggleHolster(player)
+ local state=states[player]
+ if not state then return false end
+ local held=state.Equipment.Hands
+ if held then
+  if not Service.Unequip(player,"Hands") then return false end
+  holstered[player]=held
+  return true
+ end
+ local id=holstered[player]
+ if not id or (state.Items[id] or 0)<1 then holstered[player]=nil;return false end
+ if Service.Equip(player,id) then holstered[player]=nil;return true end
+ return false
+end
 function Service.Transfer(player, storage, id, requested, intoStorage)
  local own = states[player]
  if not own then return false end
  local source, target = own, storage
  if not intoStorage then source, target = storage, own end
  if not Rules.Transfer(source, target, ItemConfig.Items, id, requested) then return false end
+ if intoStorage and holstered[player]==id then holstered[player]=nil end
  update(player)
  return true
 end
@@ -101,8 +121,11 @@ end
 function Service.UseWeapon(player)
  local state = states[player]
  if not state then return nil end
+ local id=state.Equipment.Hands
+ local before=state.EquipmentCondition.Hands or 0
  local weapon = CombatRules.Use(state,ItemConfig.Items)
  if not weapon then return nil end
+ if before>0 and (state.EquipmentCondition.Hands or 0)<=0 then Journal.Send(player,(ItemConfig.Items[id].Name or id).." broke.") end
  update(player)
  return weapon
 end

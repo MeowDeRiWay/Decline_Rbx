@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile,re
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Firearms.server.luau').read_text()
-service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio)=require[^\n]+\n','',service)
+service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal)=require[^\n]+\n','',service)
 mock='''
 local function signal() return {Connect=function(self,fn) self.callback=fn end} end
 local changed=signal()
@@ -29,6 +29,8 @@ function player:GetAttribute(key) return self.attributes[key] end
 local wearRoll=1
 local Random={new=function() return {NextNumber=function() return wearRoll end} end}
 local rounds={Ammo223FMJ=50,Ammo223AP=3}
+local notices={}
+local Journal={Send=function(_,message) table.insert(notices,message) end}
 local shots,uses=0,0
 local played,stopped={},0
 local Audio={Play=function(_,name) table.insert(played,name);return {} end,Stop=function(sound) if sound then stopped+=1 end end}
@@ -87,6 +89,9 @@ fire(player,"Fire",direction)
 assert(uses==previous and rounds.Ammo223AP==2,"Careful preserves durability, not the cartridge")
 advance(.1);wearRoll=.95;fire(player,"Fire",direction)
 assert(uses==previous+1 and rounds.Ammo223AP==1,"failed preservation still wears weapon")
+advance(3);rounds.Ammo223AP=0;changed.callback(player)
+fire(player,"Reload");assert(#notices==1 and notices[1]:find("No ammunition",1,true))
+fire(player,"Reload");assert(#notices==1,"empty notifications throttled")
 assert(table.find(played,"ShotSound") and table.find(played,"ReloadSound") and stopped>=3,"shot/reload start and completion/cancellation stop audio")
 print("PASS: empty/reloading/rate/invalid direction guards, partial reload, exact ammo and condition consumption, AP switch, drop conservation and switch cancellation")
 '''

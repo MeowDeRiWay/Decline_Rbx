@@ -1,3 +1,4 @@
+local Journal=require(script.Parent.JournalService)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Inventory=require(script.Parent.InventoryService)
@@ -102,6 +103,10 @@ function Service.Cook(player,id,requested)
   unlock(job)
   local outputs=Progression.Loot(player,ProgressionRules.CraftOutputs(plan.Outputs,recipe,effects))
   for output,amount in pairs(outputs) do state.Ready[output]=(state.Ready[output] or 0)+amount end
+  local completed={}
+  for id,amount in pairs(outputs) do table.insert(completed,string.format("%d × %s",amount,Items.Items[id].Name or id)) end
+  table.sort(completed)
+  Journal.Send(player,"You crafted "..table.concat(completed,", ")..".")
   state.Job=nil
   Progression.CraftXP(player,stove.Name)
   notify(stove)

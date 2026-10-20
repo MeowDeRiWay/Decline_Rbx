@@ -6,6 +6,8 @@ local Chat=game:GetService("TextChatService")
 local Theme=require(ReplicatedStorage.Shared.UITheme)
 local Professions=require(ReplicatedStorage.Shared.ProgressionConfig).Professions
 local Layout=require(script.Parent.HUDLayout)
+local Visibility=require(script.Parent.EventVisibility)
+local Presentation=require(ReplicatedStorage.Shared.JournalPresentation)
 local player=Players.LocalPlayer
 local bar=Layout.Bar
 local function label(parent,text,x,y,w,h,size)
@@ -28,14 +30,18 @@ journal.AutomaticCanvasSize=Enum.AutomaticSize.Y;journal.CanvasSize=UDim2.new();
 local list=Instance.new("UIListLayout");list.Padding=UDim.new(0,3);list.Parent=journal
 local rows={}
 local function log(message)
- local row=label(journal,tostring(message),0,0,320,0,12)
+ local row=label(journal,Presentation.Plain(message),0,0,320,0,12)
  row.AutomaticSize=Enum.AutomaticSize.Y;row.TextXAlignment=Enum.TextXAlignment.Left
  table.insert(rows,row)
  if #rows>100 then table.remove(rows,1):Destroy() end
  task.defer(function() journal.CanvasPosition=Vector2.new(0,math.max(0,journal.AbsoluteCanvasSize.Y-journal.AbsoluteSize.Y)) end)
 end
 Layout.Log.Event:Connect(log)
-ReplicatedStorage:WaitForChild("CombatReport").OnClientEvent:Connect(log)
+ReplicatedStorage:WaitForChild("CombatReport").OnClientEvent:Connect(function(event)
+ if typeof(event)~="table" then return end
+ if Visibility.Witnessed(event,player.Character,workspace.CurrentCamera) then log(Presentation.Combat(event)) end
+end)
+ReplicatedStorage:WaitForChild("PersonalNotice").OnClientEvent:Connect(log)
 label(bar,"Events / chat",12,4,220,20,12)
 local entry=Instance.new("TextBox")
 entry.Position=UDim2.fromOffset(12,132);entry.Size=UDim2.fromOffset(330,26)
@@ -70,7 +76,7 @@ Input.InputBegan:Connect(function(key,processed)
 end)
 local level=button("Level",12,-48,90,function() Layout.Character:Fire() end)
 level.Visible=false
-button("Holster",356,28,70,function() ReplicatedStorage.InventoryRemotes.Action:FireServer("Unequip","Hands") end)
+button("Holster",356,28,70,function() ReplicatedStorage.InventoryRemotes.Action:FireServer("Holster") end)
 button("Inv",356,72,70,function() Layout.Inventory:Fire() end)
 local menu=Instance.new("Frame")
 menu.AnchorPoint=Vector2.new(.5,.5);menu.Position=UDim2.fromScale(.5,.45);menu.Size=UDim2.fromOffset(330,150)
@@ -90,7 +96,7 @@ staminaTrack.Position=UDim2.fromOffset(442,10);staminaTrack.Size=UDim2.fromOffse
 staminaTrack.BackgroundColor3=Theme.Card;staminaTrack.BorderSizePixel=0;staminaTrack.Parent=bar
 local stamina=Instance.new("Frame")
 stamina.Size=UDim2.fromScale(1,1);stamina.BackgroundColor3=Theme.Green;stamina.BorderSizePixel=0;stamina.Parent=staminaTrack
-local sprint=label(bar,"Run 20s",442,142,204,22,12)
+
 button("Skills",792,48,88,function()
  menu.Visible=not menu.Visible
  if menu.Visible then
@@ -130,7 +136,7 @@ Run.Heartbeat:Connect(function(dt)
  local remaining=character and character:GetAttribute("SprintRemaining") or 20
  local maximum=character and character:GetAttribute("SprintMaximum") or 20
  stamina.Size=UDim2.fromScale(math.clamp(remaining/math.max(1,maximum),0,1),1)
- sprint.Text=string.format("Run %.0fs",remaining)
+
  local fighting=false
  local camera=workspace.CurrentCamera
  for zombie in pairs(zombies) do
