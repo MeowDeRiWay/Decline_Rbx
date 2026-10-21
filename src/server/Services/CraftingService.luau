@@ -109,7 +109,7 @@ function Service.Cook(player,id,requested)
   table.sort(completed)
   Journal.Send(player,"You crafted "..table.concat(completed,", ")..".")
   state.Job=nil
-  Progression.CraftXP(player,stove.Name)
+  Progression.CraftXP(player,recipe,count)
   notify(stove)
  end)
  return true

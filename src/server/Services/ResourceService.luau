@@ -193,7 +193,8 @@ function Service.Hit(player,model,weapon)
   end
   -- Invalidate before granting loot so a second strike cannot harvest twice.
   nodes[model] = nil
-  Progression.Harvest(player,node.Kind)
+  local resourceID=({Tree="TreeLog",StoneVein="Stone",ScrapPile="Scrap"})[node.Kind]
+  Progression.Harvest(player,node.Kind,loot[resourceID] or 0)
   if node.Zone and zones[node.Zone] then
    local state = zones[node.Zone]
    state.Nodes[model] = nil

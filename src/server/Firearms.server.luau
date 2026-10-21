@@ -103,8 +103,8 @@ action.OnServerEvent:Connect(function(player,command,direction)
   or workspace:Raycast(shoulder,origin-shoulder,params) then return end
  direction=direction.Unit
  if not Projectiles.Fire(player,character,origin,direction,gun,state.Type,id) then return end
- local shot=Audio.Play(character,"ShotSound")
- Noise.Emit(origin,shot and shot.RollOffMaxDistance or 150,"Shot")
+ local shot=Audio.Play(character,"ShotSound",gun.ShotDistance)
+ Noise.Emit(origin,gun.ShotDistance or (shot and shot.RollOffMaxDistance or 150),"Shot")
  state.Ready=now+60/gun.RPM;state.Loaded-=1
  Inventory.SaveMagazine(player,state.Loaded,state.Type,state.Mode,state.Ready)
  if random:NextNumber()>=(player:GetAttribute("PreserveDurabilityChance") or 0) then Inventory.UseWeapon(player) end

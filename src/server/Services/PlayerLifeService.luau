@@ -5,6 +5,7 @@ local Inventory = require(script.Parent.InventoryService)
 local Chests = require(script.Parent.ChestService)
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Service = {}
+local knocked=setmetatable({},{__mode="k"})
 local finished = setmetatable({},{__mode="k"})
 local function freeze(character)
  local held=character:FindFirstChild("HeldItem")
@@ -98,6 +99,11 @@ function Service.Finish(player,character)
 end
 function Service.Knockout(player,character)
  if character:GetAttribute("Knockout") or finished[character] then return end
+ local record={Pivot=character:GetPivot(),Parts={},BlocksVision=character:GetAttribute("BlocksVision")}
+ for _,part in ipairs(character:GetDescendants()) do
+  if part:IsA("BasePart") then record.Parts[part]={Anchored=part.Anchored,CanCollide=part.CanCollide,CanQuery=part.CanQuery} end
+ end
+ knocked[character]=record
  character:SetAttribute("Knockout",true)
  character:SetAttribute("Running",false)
  character:SetAttribute("BlocksVision",false)
@@ -111,8 +117,26 @@ function Service.Knockout(player,character)
  freeze(character)
  fall(character)
  task.delay(120,function()
-  if player.Parent==Players and player.Character==character and character:GetAttribute("Knockout") then Service.Finish(player,character) end
+  if player.Parent==Players and player.Character==character and knocked[character]==record and character:GetAttribute("Knockout") then Service.Finish(player,character) end
  end)
+end
+function Service.Revive(player,lockSeconds)
+ local character=player.Character
+ local record=character and knocked[character]
+ local hp=character and character:FindFirstChildOfClass("Humanoid")
+ if not record or not hp or hp.Health<=0 or finished[character] or not character:GetAttribute("Knockout") then return false end
+ if workspace:GetServerTimeNow()<(player:GetAttribute("ReviveLockedUntil") or 0) then return false end
+ knocked[character]=nil
+ character:PivotTo(record.Pivot)
+ for part,flags in pairs(record.Parts) do
+  if part.Parent then part.Anchored=flags.Anchored;part.CanCollide=flags.CanCollide;part.CanQuery=flags.CanQuery end
+ end
+ hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,2)
+ hp:ChangeState(Enum.HumanoidStateType.GettingUp)
+ character:SetAttribute("Knockout",false);character:SetAttribute("KnockoutEndsAt",nil)
+ character:SetAttribute("Health",hp.Health);character:SetAttribute("BlocksVision",record.BlocksVision)
+ player:SetAttribute("ReviveLockedUntil",workspace:GetServerTimeNow()+lockSeconds)
+ return true
 end
 function Service.Damage(player,humanoid,amount,hitChecked,defenseChecked)
  if player:GetAttribute("AttributesConfirmed")==false then return 0 end

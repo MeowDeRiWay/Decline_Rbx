@@ -33,7 +33,8 @@ local notices={}
 local Journal={Send=function(_,message) table.insert(notices,message) end}
 local magazine={UID=1,Type="FMJ",Loaded=0,Mode="Auto"}
 local noises=0
-local Noise={Emit=function() noises+=1 end}
+local noiseRadius
+local Noise={Emit=function(_,radius) noises+=1;noiseRadius=radius end}
 local shots,uses=0,0
 local played,stopped={},0
 local Audio={Play=function(_,name) table.insert(played,name);return {} end,Stop=function(sound) if sound then stopped+=1 end end}
@@ -125,6 +126,7 @@ player.attributes.AttributesConfirmed=true
 fire(player,"Fire",direction);assert(magazine.Loaded==before-1)
 advance(.1);fire(player,"Fire",direction);assert(magazine.Loaded==before-1,"bolt cycle blocks rapid fire")
 advance(1.4);fire(player,"Fire",direction);assert(magazine.Loaded==before-2)
+assert(noiseRadius==100,".223 shot noise is100studs even without an audio asset")
 print("PASS: persistent per-weapon charge, independent identical guns, loose/loaded conservation, holster cooldown, reload cancellation, RPM/wall/direction guards, mode, sound, durability and empty notice")
 '''
 parts=[(root/'tests/city_geometry.fixture.luau').read_text(),

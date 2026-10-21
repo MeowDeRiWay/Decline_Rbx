@@ -10,7 +10,7 @@ for name in ['Config', 'Rules', 'Area', 'Inventory', 'WorldItems', 'Items', 'Pro
     service = re.sub(rf'local {name} = require\([^\n]+\)\n', '', service)
 setup = '''
 local xp=0
-local Progression={Loot=function(_,items) return items end,Harvest=function() xp+=10 end}
+local Progression={Loot=function(_,items) return items end,Harvest=function(_,kind,count) assert(kind=="StoneVein" and count==1);xp+=count end}
 
 function CFrame.Angles(_,y,_) return cf(Vector3.zero,y) end
 local originalIndex=cm.__index
@@ -74,7 +74,7 @@ assert(scrapTarget.destroyed and lootCalls==2,"scrap multiplier mines in ten hit
 local ironTarget=generated[3]
 player.Character:SetAttribute("HandsItem","IronShowel")
 for _=1,7 do assert(Service.Hit(player,ironTarget,weapon)) end
-assert(xp==30,"ten XP per successfully harvested deposit, no XP per hit")
+assert(xp==3,"one XP per actual resource, no XP per hit")
 assert(ironTarget.destroyed and lootCalls==3,"iron multiplier mines in seven hits")
 print("PASS: real resource service generates StoneYard by cells, skips duplicate markers, anchors veins, requires shovel and drops stone once")
 '''

@@ -1,6 +1,6 @@
 local Debris=game:GetService("Debris")
 local Audio={}
-function Audio.Play(character,name)
+function Audio.Play(character,name,maxDistance)
  local held=character and character:FindFirstChild("HeldItem")
  local sounds=held and held:FindFirstChild("Sounds")
  local source=sounds and sounds:FindFirstChild(name)
@@ -14,6 +14,7 @@ function Audio.Play(character,name)
  sound.RollOffMode=Enum.RollOffMode.InverseTapered
  sound.RollOffMinDistance=source:GetAttribute("MinDistance") or 3
  sound.RollOffMaxDistance=source:GetAttribute("MaxDistance") or (name=="ShotSound" and 150 or 25)
+ if maxDistance then sound.RollOffMaxDistance=maxDistance end
  sound.Parent=origin
  sound.Ended:Once(function() sound:Destroy() end)
  Debris:AddItem(sound,15)

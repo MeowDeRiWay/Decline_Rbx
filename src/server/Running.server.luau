@@ -36,7 +36,7 @@ RunService.Heartbeat:Connect(function(dt)
   if character:GetAttribute("SprintRemaining")~=value then character:SetAttribute("SprintRemaining",value) end
   if character:GetAttribute("SprintMaximum")~=maximum then character:SetAttribute("SprintMaximum",maximum) end
   local multiplier = Rules.LoadMultiplier(character:GetAttribute("LoadKg"),Config,player:GetAttribute("CarryLimitKg"))
-  local speed = (player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or character:GetAttribute("CraftingLocked")) and 0 or (running and (player:GetAttribute("RunBonus") or 1) or (player:GetAttribute("WalkBonus") or .3))*multiplier
+  local speed = (player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or character:GetAttribute("CraftingLocked")) and 0 or (running and (player:GetAttribute("RunBonus") or .8) or (player:GetAttribute("WalkBonus") or .2))*multiplier
   if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
   if character:GetAttribute("Running") ~= running then character:SetAttribute("Running",running) end
  end

@@ -113,6 +113,17 @@ assert(a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance"
 print("PASS: equipped armor totals update and clear")
 print("PASS: actual world drop/pickup preserves condition, loaded rounds, ammo type and total mass without duplicate pickup")
 '''
+world_cases+='''
+Service.Reset(a)
+assert(Service.Add(a,"Bandage",3) and Service.Equip(a,"Bandage"))
+assert(Service.Snapshot(a).Equipment.Medicine=="Bandage" and a.Character:GetAttribute("MedicineCount")==3)
+local medWeight=Service.Snapshot(a).Weight
+assert(Service.UseMedicine(a) and Service.Snapshot(a).Items.Bandage==1 and Service.Snapshot(a).Equipment.Medicine=="Bandage")
+assert(math.abs(Service.Snapshot(a).Weight-(medWeight-.1))<1e-9,"one bandage consumed, next automatically equipped")
+assert(Service.UseMedicine(a) and Service.UseMedicine(a) and not Service.UseMedicine(a))
+assert(Service.Snapshot(a).Equipment.Medicine==nil and a.Character:GetAttribute("MedicineCount")==0)
+print("PASS: medicine slot, exact consumption, automatic pocket refill and empty-state synchronization")
+'''
 parts += [setup,'local Service=(function()\n'+service+'\nend)()',cases,world_setup,'local World=(function()\n'+world+'\nend)()',world_cases]
 with tempfile.TemporaryDirectory() as folder:
  path=Path(folder)/'holster.luau';path.write_text('\n'.join(parts));subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

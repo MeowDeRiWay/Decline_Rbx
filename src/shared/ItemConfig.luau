@@ -2,7 +2,7 @@
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
 ItemConfig.PickupDistance = 1
-ItemConfig.Slots = {"Head", "Body", "Hands", "Back", "Additional"}
+ItemConfig.Slots = {"Head", "Body", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
  ZombieHand = {
   Name = "Zombie hand", Weight = 0, Slot = "Hands", Lootable = false,
@@ -121,13 +121,13 @@ ItemConfig.Items.Axe=ItemConfig.Items.StoneAxe
 ItemConfig.Items.Showel=ItemConfig.Items.StoneShowel
 ItemConfig.Items.Knife=ItemConfig.Items.ScrapKnife
 ItemConfig.Items.AssaultRifle223={Name = ".223 assault rifle",Weight=3.2,Slot="Hands",Description="Automatic rifle. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
- Firearm={Category="Automatic",HoldHeightRatio=.4,Caliber="223",Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=600},
+ Firearm={Category="Automatic",HoldHeightRatio=.4,Caliber="223",ShotDistance=100,Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=600},
  Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=600}}
 ItemConfig.Items.Rifle223={Name=".223 bolt-action rifle",Weight=3.2,Slot="Hands",
  Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
- Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="223",Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=40},
+ Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="223",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=40},
  Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
-ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Description="A medical bandage."}
+ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Equip in Medicine. H, then click yourself or a nearby player to apply first aid."}
 for _,kind in ipairs({"FMJ","AP"}) do
  ItemConfig.Items["Ammo223"..kind]={Name = ".223 "..kind,Weight=.012,Description="Loose rifle ammunition.",Ammo={Caliber="223",Type=kind}}
  ItemConfig.Items["AmmoBox223"..kind]={Name = ".223 "..kind.." ammo box",Weight=.1,Description="Collect to unpack its ammunition.",AmmoBox={Caliber="223",Type=kind,Maximum=50}}

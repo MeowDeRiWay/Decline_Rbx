@@ -33,6 +33,7 @@ Audio.Stop(reload);assert(reload.stopped and reload.destroyed)
 shot.finish();assert(shot.destroyed)
 sound.attributes.MaxDistance=90
 assert(Audio.Play(character,"ShotSound").RollOffMaxDistance==90)
+assert(Audio.Play(character,"ShotSound",100).RollOffMaxDistance==100,"caliber range overrides authored sound")
 assert(Audio.Play(character,"Missing")==nil)
 sound.SoundId="";assert(Audio.Play(character,"ShotSound")==nil)
 Audio.Stop(nil)

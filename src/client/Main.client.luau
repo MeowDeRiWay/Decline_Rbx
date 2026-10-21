@@ -12,7 +12,7 @@ local activityView
 local nextViewReport=0
 local player = Players.LocalPlayer
 local function maximumHeight()
- local _,maximum=ProgressionRules.ZoomBounds(player:GetAttribute("ViewRange") or 25,Config.CameraHeight,Config.CameraFieldOfView)
+ local _,maximum=ProgressionRules.ZoomBounds(player:GetAttribute("ViewRange") or 15,Config.CameraHeight,Config.CameraFieldOfView)
  return maximum
 end
 Input.InputChanged:Connect(function(input,processed)

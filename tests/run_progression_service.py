@@ -21,10 +21,10 @@ assert(a:GetAttribute("SkillUnarmed")==65 and a:GetAttribute("SkillRepair")==50)
 send("Spend","Strength");send("Choose","Hunter");send("Talent","Automatics")
 assert(a:GetAttribute("Strength")==5 and a:GetAttribute("CriticalChance")==.05 and a:GetAttribute("AutomaticAccuracyBonus")==0)
 draft.Strength=10;send("Confirm",draft);assert(a:GetAttribute("Strength")==5)
-Service.Award(a,100);assert(a:GetAttribute("CharacterLevel")==1 and a:GetAttribute("SkillPoints")==15)
-send("Skill","Repair");assert(a:GetAttribute("SkillRepair")==51 and a:GetAttribute("SkillPoints")==14)
-send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==14)
-for _=1,10 do Service.Harvest(a,"StoneVein") end
+Service.Award(a,1000);assert(a:GetAttribute("CharacterLevel")==1 and a:GetAttribute("SkillPoints")==30)
+send("Skill","Repair");assert(a:GetAttribute("SkillRepair")==51 and a:GetAttribute("SkillPoints")==29)
+send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==29)
+for _=1,10 do Service.Harvest(a,"StoneVein",1) end
 assert(Service.Snapshot(a).Practice.Miner.Value==1 and Service.Snapshot(a).Practice.Lumberjack.Value==0)
 assert(Service.CanBuild(a,"Kitchen") and Service.CanStation(a,"Stove"))
 Config.StationRequirements.Stove={Skills={Repair=52}}
@@ -37,6 +37,17 @@ a.Character:SetAttribute("Knockout",false);hp.Health=59;assert(coroutine.resume(
 hp.Health=0;assert(coroutine.resume(loops[1]));assert(hp.Health==0,"cannot revive dead")
 a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("Strength")==5 and a.Character.Humanoid.MaxHealth==60,"immutable creation survives respawn")
 assert(Service.Loot(a,{Rags=1}).Rags==1)
+b:LoadCharacterAsync()
+local bd=table.clone(Service.Snapshot(b).Stats);bd.Strength=7;bd.Attention=7;bd.Luck=7
+clock+=.2;action.OnServerEvent:Fire(b,"Confirm",bd)
+assert(Service.Snapshot(b).SkillPoints==10 and Service.Snapshot(b).PerkPoints==1)
+clock+=.2;action.OnServerEvent:Fire(b,"Perk","RangedDamage")
+assert(b:GetAttribute("RangedDamageBonus")==2 and b.Character:GetAttribute("RangedDamageBonus")==2 and Service.Snapshot(b).PerkPoints==0)
+clock+=.2;action.OnServerEvent:Fire(b,"Perk","RangedDamage")
+assert(Service.Snapshot(b).Perks.RangedDamage==1,"cannot spend an absent perk point")
+local zombie=make("Model","Zombie",workspace,{LastDamagerID=a.UserId});local zhp=make("Humanoid","Humanoid",zombie);zhp.MaxHealth=60
+local oldXP=Service.Snapshot(a).XP;Service.ZombieDied(zombie,{})
+assert(Service.Snapshot(a).XP==oldXP+150,"kill XP derives from max HP, not health remaining")
 print("PASS: actual immutable creation, forbidden legacy commands, INT skill points, derived stats, requirements, passive practice, minute regeneration, no revival, and respawn")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]

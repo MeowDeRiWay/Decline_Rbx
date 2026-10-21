@@ -5,7 +5,7 @@ local SoundService=game:GetService("SoundService")
 local Config=require(ReplicatedStorage.Shared.GameConfig)
 local R=require(ReplicatedStorage.Shared.SensesRules)
 local player=Players.LocalPlayer
-local gain=R.Hearing(player:GetAttribute("Attention"))
+local gain=R.Hearing(player:GetAttribute("HearingAttention") or player:GetAttribute("Attention"))
 local sounds,emitters,wires={},{},{}
 local changingWire=setmetatable({},{__mode="k"})
 local watchedWire=setmetatable({},{__mode="k"})
@@ -86,11 +86,12 @@ end
 for _,object in ipairs(game:GetDescendants()) do register(object) end
 game.DescendantAdded:Connect(function(object) task.defer(register,object) end)
 local function refresh()
- gain=R.Hearing(player:GetAttribute("Attention"))
+ gain=R.Hearing(player:GetAttribute("HearingAttention") or player:GetAttribute("Attention"))
  for sound,r in pairs(sounds) do applySound(sound,r) end
  for emitter,r in pairs(emitters) do applyEmitter(emitter,r) end
  for wire,r in pairs(wires) do r.Fader.Volume=gain;wireChanged(wire) end
 end
 player:GetAttributeChangedSignal("Attention"):Connect(refresh)
+player:GetAttributeChangedSignal("HearingAttention"):Connect(refresh)
 workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(refresh)
 player.CharacterAdded:Connect(refresh)

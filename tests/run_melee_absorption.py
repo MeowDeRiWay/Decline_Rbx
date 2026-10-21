@@ -62,6 +62,7 @@ Life.Damage=function(_,hp,amount) hp.Parent:SetAttribute("Knockout",true);return
 Service.Apply(hp,10,"Blunt",nil,"Melee",{Attacker=target,HitChecked=true})
 assert(report.sent[1].data.Knockout and report.sent[1].data.Actor==target,"AI attacker and new knockout survive report formatting")
 Life.Damage=priorDamage
+a.Character:SetAttribute("Knockout",false)
 b:SetAttribute("Accuracy",100);a:SetAttribute("DodgeChance",50)
 a.Character.HumanoidRootPart.Position=Vector3.new(40,0,0)
 chance=.299;assert(Service.RollHit(b,hp),"100 skill -20 distance -50 dodge =30%, below threshold hits")
@@ -82,6 +83,12 @@ b:SetAttribute("TeamID",20);a:SetAttribute("GroupID",7);b:SetAttribute("GroupID"
 assert(Service.Apply(hp,999,"Blunt",nil,"Melee",{Attacker=b})==0 and hp.Health==oldHP,"same group protected")
 a:SetAttribute("TeamID",nil);b:SetAttribute("TeamID",nil);a:SetAttribute("GroupID",0);b:SetAttribute("GroupID",0)
 chance=.1;assert(Service.RollHit(b,hp),"unaffiliated players are not allies")
+hp.Health=100;a:SetAttribute("ArmorResistance",.5);a:SetAttribute("ArmorAbsorption",100)
+assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{HitChecked=true,PostDefenseDamage=2,CriticalMultiplier=4})==2,"post-defense bonus bypasses absorption and is not critical-multiplied")
+assert(Service.Apply(hp,10,"Blunt",nil,"Melee",{HitChecked=true,PostDefenseDamage=2})==0,"ranged perk never affects melee")
+local shield=make("ForceField","Shield",a.Character)
+assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{HitChecked=true,PostDefenseDamage=2})==0,"perk cannot bypass immunity")
+shield:Destroy()
 print("PASS: structured actor/target reports for client visibility filtering, no overhead text")
 print("PASS: melee-only absorption, non-melee unchanged, zero-damage clamp and Apron Additional slot")
 '''

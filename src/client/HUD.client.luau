@@ -105,6 +105,12 @@ stamina.Size=UDim2.fromScale(1,1);stamina.BackgroundColor3=Theme.Green;stamina.B
 
 button("Skills\n[T]",792,48,88,function() Layout.Skills:Fire() end)
 button("Cha [C]",792,94,88,function() Layout.Character:Fire() end)
+local medicine=button("Medicine [H]",792,4,110,function()
+ local c=player.Character
+ if player:GetAttribute("MedicalMode") then player:SetAttribute("MedicalMode",nil)
+ elseif c and c:GetAttribute("MedicineItem")=="Bandage" then player:SetAttribute("MedicalMode","Bandage")
+ else Layout.Log:Fire("Equip a bandage in the Medicine slot first.") end
+end)
 local combat=Instance.new("Frame")
 combat.Position=UDim2.fromOffset(918,60);combat.Size=UDim2.fromOffset(62,62);combat.BackgroundColor3=Theme.Card;combat.Parent=bar;Theme.Bevel(combat)
 label(bar,"Combat",894,128,110,20,12)
@@ -123,8 +129,10 @@ workspace.DescendantAdded:Connect(function(object) if object:IsA("Model") then t
 local elapsed=0
 Run.Heartbeat:Connect(function(dt)
  elapsed+=dt;if elapsed<.25 then return end;elapsed=0
- level.Visible=(player:GetAttribute("AttributePoints") or 0)>0 or (player:GetAttribute("SkillPoints") or 0)>0
+ level.Visible=(player:GetAttribute("AttributePoints") or 0)>0 or (player:GetAttribute("SkillPoints") or 0)>0 or (player:GetAttribute("PerkPoints") or 0)>0
  local character=player.Character
+ medicine.Text=character and character:GetAttribute("MedicineItem")=="Bandage" and ("Med [H] ×"..(character:GetAttribute("MedicineCount") or 0)) or "Med [H] —"
+ medicine.TextColor3=player:GetAttribute("MedicalMode")=="Bandage" and Theme.Green or Theme.Text
  health.Text=string.format("HP %03d",character and character:GetAttribute("Health") or 0)
  armor.Text=string.format("AC %02d",math.floor((player:GetAttribute("DodgeChance") or 0)+.5))
  local remaining=character and character:GetAttribute("SprintRemaining") or 20

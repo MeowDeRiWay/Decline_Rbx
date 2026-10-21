@@ -83,6 +83,8 @@ assert(sound.Volume==.15,"quiet source multiplier and listener hearing compose")
 sound.attrs.FootstepNoiseMultiplier=1/6;sound:GetAttributeChangedSignal("FootstepNoiseMultiplier"):Fire()
 sound.RollOffMaxDistance=2
 assert(math.abs(sound.Volume-.05)<1e-9 and sound.RollOffMaxDistance==4,"Sneak100 at Attention10 stays quiet and reaches4")
+player.attrs.HearingAttention=12;player:GetAttributeChangedSignal("HearingAttention"):Fire();flush()
+assert(math.abs(sound.RollOffMaxDistance-4.8)<1e-9,"hearing perk exceeds10 without changing vision Attention")
 print("PASS: actual hearing20/100/200%, legacy volume/range, voice emitter curves, output gain, owner/template separation, no compounding and wire cleanup")
 '''
 with tempfile.TemporaryDirectory() as d:

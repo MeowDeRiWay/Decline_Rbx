@@ -1,6 +1,6 @@
 local R={}
-function R.Range(attention) return 5*math.clamp(attention or 5,1,10) end
-function R.Hearing(attention) return math.clamp(attention or 5,1,10)/5 end
+function R.Range(attention) return 3*math.clamp(attention or 5,1,10) end
+function R.Hearing(attention) return math.clamp(attention or 5,1,12)/5 end
 function R.Curve(curve,gain)
  local result={};for distance,volume in pairs(curve) do result[distance*gain]=volume end;return result
 end

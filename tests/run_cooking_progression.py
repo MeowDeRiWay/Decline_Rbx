@@ -22,7 +22,7 @@ local cookState={Profession="Cook",Talents={}}
 local allowed=false
 local xp,bonuses=0,0
 local Progression={CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
- CraftXP=function(_,name) if name=="Stove" or name=="CuttingBoard" then xp+=10 end end,
+ CraftXP=function(_,recipe,count) xp+=ProgressionRules.CraftExperience(recipe,count) end,
  Loot=function(_,items) bonuses+=1; return items end}
 local stock={Potato=10,CleanWater=10,TreeLog=5}
 function Inventory.Snapshot() return {Items=table.clone(stock),CraftTools={Knife=1}} end
@@ -50,7 +50,7 @@ assert(Service.Cook(a,"BoilPotatoes",5))
 assert(not Service.Cook(a,"BoilPotatoes",1),"station remains single-job")
 callbacks[2]()
 assert(Service.Snapshot(a).CookingReady.BoiledPotato==5 and stock.Potato==5 and stock.CleanWater==5)
-assert(xp==10 and bonuses==1,"one specialty XP award and loot roll at successful completion")
+assert(xp==250 and bonuses==1,"one specialty XP award and loot roll at successful completion")
 cookState.Talents={SurpriseServing=true,GrandmasMethod=true,RamsayMethod=true}
 assert(Service.Cook(a,"BoilPotatoes",5))
 assert(durations[3]==60,"retired talent cannot speed stove")
@@ -65,12 +65,12 @@ assert(Service.Open(a,board) and Service.Cook(a,"SliceSausage",1))
 assert(durations[5]==10,"retired talent cannot speed cutting board")
 callbacks[5]()
 assert(Service.Snapshot(a).CookingReady.SausageSlice==5,"stove serving talent must not affect board")
-assert(xp==40 and bonuses==4)
+assert(xp==600 and bonuses==4)
 cookState.Profession="Worker"; cookState.Talents={GoldenHands=10}
 assert(Service.Open(a,bench) and Service.Cook(a,"MakePlanks",1))
 assert(math.abs(durations[6]-10)<1e-6,"retired crafting perks have no effect")
 callbacks[6]()
-assert(Service.Snapshot(a).CookingReady.Plank==3)
+assert(Service.Snapshot(a).CookingReady.Plank==3 and xp==650,"one log to three boards awards one craft operation")
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]

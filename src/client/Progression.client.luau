@@ -44,7 +44,10 @@ local summary=label(left,"",UDim2.fromOffset(20,46),UDim2.fromOffset(420,26),16)
 local points=label(left,"",UDim2.fromOffset(20,80),UDim2.fromOffset(420,50),14,palette.Accent)
 local snapshot,draft,hovered,closeControl
 local mode="Stats"
-local tips={Strength="Per point:\n+5 kg carrying capacity\n+5 heavy weapons, unarmed and melee\n+3 throwing\n+1 melee / unarmed damage",Attention="Per point:\n+5 light weapons and traps\n+3 heavy weapons and unarmed\n+5 studs view\n+20% hearing volume and range",Endurance="Per point:\n+10 HP\n+2 HP regeneration per minute",Intelligence="Per point:\n+5 first aid, doctor and repair\n+1 skill point per level",Agility="Per point:\n+5 armor class, unarmed, throwing and sneak\n+0.3 walk speed\n+1 sprint speed bonus",Luck="Per point:\n+1% critical chance",Sneak="Always active while walking.\nEvery 10 Sneak reduces footstep range by 1 stud.\nSprinting has no Sneak bonus yet.\nVision detection is unchanged."}
+local Presentation=require(ReplicatedStorage.Shared.ProgressionPresentation)
+local tips={Sneak="Always active while walking.\nEvery 10 Sneak reduces footstep range by 1 stud.\nSprinting has no Sneak bonus yet.",Doctor="Use on a nearby knocked-out player.\nChance: Doctor / 2%.\n10-second cooldown per attempt.",FirstAid="Bandages restore 10 HP + 1 per 10 First aid.\nEquip Medicine, press H, then click a patient."}
+for _,id in ipairs(config.Stats) do tips[id]=Presentation.Attribute(id) end
+local setOpen
 local cards={}
 local function remaining()
  local sum=0;for _,value in pairs(draft or {}) do sum+=value end
@@ -73,8 +76,16 @@ local confirmButton=button(left,"Confirm attributes",UDim2.fromOffset(20,554),UD
 end)
 local statPanel=frame(right,UDim2.fromOffset(20,94),UDim2.fromOffset(548,526))
 local skillPanel=Instance.new("ScrollingFrame");skillPanel.Position=UDim2.fromOffset(20,94);skillPanel.Size=UDim2.fromOffset(548,526);skillPanel.BackgroundTransparency=1;skillPanel.BorderSizePixel=0;skillPanel.ScrollBarThickness=4;skillPanel.CanvasSize=UDim2.fromOffset(0,560);skillPanel.Parent=right
-local perkPanel=frame(right,UDim2.fromOffset(20,94),UDim2.fromOffset(548,526))
-label(perkPanel,"No perks available yet.",UDim2.fromOffset(16,30),UDim2.fromOffset(510,60),18,palette.Muted)
+local perkPanel=Instance.new("ScrollingFrame");perkPanel.Position=UDim2.fromOffset(20,94);perkPanel.Size=UDim2.fromOffset(548,526);perkPanel.BackgroundTransparency=1;perkPanel.BorderSizePixel=0;perkPanel.ScrollBarThickness=4;perkPanel.Parent=right
+local perkRows={}
+for _,perk in ipairs(Rules.Perks) do
+ local row=button(perkPanel,"",UDim2.new(),UDim2.fromOffset(532,48),function() action:FireServer("Perk",perk.ID) end)
+ row.TextXAlignment=Enum.TextXAlignment.Left
+ tips[perk.ID]=perk.Description
+ row.MouseEnter:Connect(function() hovered=perk.ID end);row.MouseLeave:Connect(function() if hovered==perk.ID then hovered=nil end end)
+ perkRows[perk.ID]=row
+end
+local noPerks=label(perkPanel,"No eligible perks.",UDim2.fromOffset(12,10),UDim2.fromOffset(510,48),16,palette.Muted)
 local function setMode(value) mode=value;statPanel.Visible=value=="Stats";skillPanel.Visible=value=="Skills";perkPanel.Visible=value=="Perks" end
 for index,value in ipairs({"Stats","Skills","Perks"}) do button(right,value,UDim2.fromOffset(20+(index-1)*180,24),UDim2.fromOffset(166,38),function() setMode(value) end) end
 local values={}
@@ -89,15 +100,22 @@ local function skillRow(id,index,passive)
  local card=frame(skillPanel,UDim2.fromOffset(0,y),UDim2.fromOffset(532,34),palette.Card)
  label(card,config.Names[id],UDim2.fromOffset(8,0),UDim2.fromOffset(238,34),15)
  local value=label(card,"0",UDim2.fromOffset(250,0),UDim2.fromOffset(220,34),14,palette.Accent)
- if id=="Sneak" then card.MouseEnter:Connect(function() hovered="Sneak" end);card.MouseLeave:Connect(function() if hovered=="Sneak" then hovered=nil end end) end
+ if tips[id] then card.MouseEnter:Connect(function() hovered=id end);card.MouseLeave:Connect(function() if hovered==id then hovered=nil end end) end
+ if id=="Doctor" or id=="FirstAid" then
+  value.Size=UDim2.fromOffset(110,34)
+  button(card,"Use",UDim2.fromOffset(420,2),UDim2.fromOffset(58,30),function()
+   if not snapshot or not snapshot.Confirmed then return end
+   setOpen(false);player:SetAttribute("MedicalMode",id=="Doctor" and "Doctor" or "Bandage")
+  end)
+ end
  local plus
  if not passive then plus=button(card,"+",UDim2.fromOffset(486,2),UDim2.fromOffset(34,30),function() action:FireServer("Skill",id) end) end
  skillRows[id]={Value=value,Plus=plus}
 end
 for index,id in ipairs(config.Skills) do skillRow(id,index,false) end
-label(skillPanel,"Practice skills · improve through harvesting",UDim2.fromOffset(8,400),UDim2.fromOffset(516,30),14,palette.Muted)
-for index,id in ipairs(config.PassiveSkills) do skillRow(id,index+12,true) end
-skillPanel.CanvasSize=UDim2.fromOffset(0,600)
+label(skillPanel,"Practice skills · improve through harvesting",UDim2.fromOffset(8,#config.Skills*40),UDim2.fromOffset(516,30),14,palette.Muted)
+for index,id in ipairs(config.PassiveSkills) do skillRow(id,index+#config.Skills+1,true) end
+skillPanel.CanvasSize=UDim2.fromOffset(0,(#config.Skills+#config.PassiveSkills+1)*40)
 local tooltip=label(gui,"",UDim2.new(),UDim2.fromOffset(350,180),14)
 tooltip.BackgroundColor3=palette.Card;tooltip.BackgroundTransparency=.05;tooltip.Visible=false;tooltip.ZIndex=30
 local padding=Instance.new("UIPadding");padding.PaddingLeft=UDim.new(0,10);padding.PaddingTop=UDim.new(0,8);padding.Parent=tooltip
@@ -119,8 +137,8 @@ local function refreshStats()
 end
 redraw=function()
  if not snapshot then return end
- summary.Text=string.format("Level %d · XP %d / %d",snapshot.Level,snapshot.XP,snapshot.NextXP)
- points.Text="Skill points: "..snapshot.SkillPoints..(snapshot.Confirmed and "" or "\nAttribute points remaining: "..remaining())
+ summary.Text=string.format("Level %d · XP %g / %g",snapshot.Level,snapshot.XP,snapshot.NextXP)
+ points.Text="Skill points: "..snapshot.SkillPoints.." · Perk points: "..(snapshot.PerkPoints or 0)..(snapshot.Confirmed and "" or "\nAttribute points remaining: "..remaining())
  for id,card in pairs(cards) do
   card.Value.Text=tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id])
   card.Minus.Visible=not snapshot.Confirmed;card.Plus.Visible=not snapshot.Confirmed
@@ -131,11 +149,26 @@ redraw=function()
  for id,row in pairs(skillRows) do
   local preview=not snapshot.Confirmed and Rules.SkillValues(draft) or snapshot.Skills
   local value=preview[id] or 0;local practice=snapshot.Practice[id]
-  row.Value.Text=practice and string.format("%d · XP %d / %d",value,practice.XP,100*(value+1)) or tostring(value)
+  row.Value.Text=practice and string.format("%d · XP %d / %d",value,practice.XP,10*(value+1)) or tostring(value)
   if row.Plus then row.Plus.Visible=snapshot.Confirmed and snapshot.SkillPoints>0 and value<300 end
  end
+ local count=0
+ -- Eligibility uses already-computed total skills, including allocated points.
+ for _,perk in ipairs(Rules.Perks) do
+  local eligible=snapshot.Confirmed
+  for id,required in pairs(perk.Attributes or {}) do if (snapshot.Stats[id] or 0)<required then eligible=false end end
+  for id,required in pairs(perk.Skills or {}) do if (snapshot.Skills[id] or 0)<required then eligible=false end end
+  local row=perkRows[perk.ID];row.Visible=eligible
+  if eligible then
+   local rank=(snapshot.Perks or {})[perk.ID] or 0
+   row.Position=UDim2.fromOffset(0,count*56);count+=1
+   row.Text="  "..perk.Name.." · "..rank.." / "..perk.Max
+   row.TextColor3=rank<perk.Max and (snapshot.PerkPoints or 0)>0 and palette.Accent or palette.Muted
+  end
+ end
+ noPerks.Visible=count==0;perkPanel.CanvasSize=UDim2.fromOffset(0,count*56)
 end
-local function setOpen(value,force)
+setOpen=function(value,force)
  if not force and not value and snapshot and not snapshot.Confirmed and player.Character then return end
  if value and (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("GroupOpen") or (player.Character and player.Character:GetAttribute("Knockout"))) then return end
  panel.Visible=value;player:SetAttribute("ProgressionOpen",value)

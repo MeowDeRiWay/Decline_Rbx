@@ -28,6 +28,8 @@ local function update(player)
  if player.Character then
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1))
   Visuals.Apply(player.Character, state.Equipment.Hands)
+  player.Character:SetAttribute("MedicineItem",state.Equipment.Medicine or "")
+  player.Character:SetAttribute("MedicineCount",(state.Items.Bandage or 0)+(state.Equipment.Medicine=="Bandage" and 1 or 0))
   player.Character:SetAttribute("WeaponCondition", state.EquipmentCondition.Hands or 0)
  end
  changed:Fire(player)
@@ -75,6 +77,14 @@ end
 function Service.Unequip(player, slot)
  local state = states[player]
  if not state or not Rules.Unequip(state, ItemConfig.Items, ItemConfig.Slots, slot) then return false end
+ update(player)
+ return true
+end
+function Service.UseMedicine(player)
+ local state=states[player]
+ if not state or state.Equipment.Medicine~="Bandage" then return false end
+ state.Equipment.Medicine=nil;state.EquipmentCondition.Medicine=nil
+ if (state.Items.Bandage or 0)>0 then Rules.Equip(state,ItemConfig.Items,ItemConfig.Slots,"Bandage") end
  update(player)
  return true
 end

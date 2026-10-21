@@ -36,14 +36,15 @@ end
 function Service.Snapshot(player)
  local s=stateFor(player)
  local practice={};for id,data in pairs(s.Practice) do practice[id]=table.clone(data) end
- return {Level=s.Level,XP=s.XP,NextXP=100*(s.Level+1),Points=s.Points,SkillPoints=s.SkillPoints,
- Confirmed=s.Confirmed,Stats=table.clone(s.Stats),Skills=Rules.TotalSkills(s),Practice=practice,Perks={}}
+ return {Level=s.Level,XP=s.XP,NextXP=1000*(s.Level+1),Points=s.Points,SkillPoints=s.SkillPoints,
+ Confirmed=s.Confirmed,Stats=table.clone(s.Stats),Skills=Rules.TotalSkills(s),Practice=practice,Perks=table.clone(s.Perks),PerkPoints=s.PerkPoints}
 end
 function Service.Sync(player)
- local state=stateFor(player);local bonus=Rules.Bonuses(state.Stats);local totals=Rules.TotalSkills(state)
+ local state=stateFor(player);local bonus=Rules.Bonuses(state.Stats,state.Perks);local totals=Rules.TotalSkills(state)
  player:SetAttribute("CharacterLevel",state.Level);player:SetAttribute("CharacterXP",state.XP)
  player:SetAttribute("AttributePoints",state.Points);player:SetAttribute("SkillPoints",state.SkillPoints)
  player:SetAttribute("AttributesConfirmed",state.Confirmed)
+ player:SetAttribute("PerkPoints",state.PerkPoints)
  player:SetAttribute("Profession",nil);player:SetAttribute("TalentPoints",nil)
  for id,value in pairs(state.Stats) do player:SetAttribute(id,value) end
  for id,value in pairs(totals) do player:SetAttribute("Skill"..id,value) end
@@ -63,22 +64,22 @@ function Service.Sync(player)
 end
 function Service.Award(player,amount)
  if not player or player.Parent~=Players then return end
- if Rules.AddXP(stateFor(player),amount) then Journal.Send(player,string.format("You gained %d XP.",amount));Service.Sync(player) end
+ if Rules.AddXP(stateFor(player),amount) then Journal.Send(player,string.format("You gained %g XP.",amount));Service.Sync(player) end
 end
 function Service.Meets(player,requirements) return Rules.Meets(stateFor(player),requirements) end
 function Service.CanStation(player,name) return Service.Meets(player,Config.StationRequirements[name]) end
 function Service.CanBuild(player,kind) return Service.Meets(player,Config.BuildingRequirements[kind]) end
 function Service.CraftEffects() return Rules.CraftEffects() end
-function Service.CraftXP(player) Service.Award(player,Config.CraftXP) end
+function Service.CraftXP(player,recipe,count) Service.Award(player,Rules.CraftExperience(recipe,count)) end
 function Service.Loot(_,items) return items end
-function Service.Harvest(player,kind)
+function Service.Harvest(player,kind,count)
  if not player or player.Parent~=Players then return end
  local id=({Tree="Lumberjack",StoneVein="Miner",ScrapPile="Scavenger"})[kind]
- if id then Rules.Practice(stateFor(player),id,Config.ResourceXP) end
- Service.Award(player,Config.ResourceXP)
+ if id then Rules.Practice(stateFor(player),id,count) end
+ Service.Award(player,count)
 end
 function Service.ZombieDied(model,items)
- Service.Award(Players:GetPlayerByUserId(model:GetAttribute("LastDamagerID") or 0),Config.ZombieXP)
+ Service.Award(Players:GetPlayerByUserId(model:GetAttribute("LastDamagerID") or 0),Rules.KillExperience((model:FindFirstChildOfClass("Humanoid") or {}).MaxHealth))
  return items
 end
 function Service.Start()
@@ -91,6 +92,7 @@ function Service.Start()
   local now=os.clock();if now-(last[player] or -math.huge)<.1 then return end;last[player]=now
   local state=stateFor(player)
   if command=="Confirm" then Rules.Confirm(state,value)
+  elseif command=="Perk" and typeof(value)=="string" then Rules.SpendPerk(state,value)
   elseif command=="Skill" and typeof(value)=="string" then Rules.SpendSkill(state,value)
   elseif command~="Request" then return end
   Service.Sync(player)
@@ -108,7 +110,7 @@ function Service.Start()
    for player,state in pairs(states) do
     local character=player.Character;local hp=character and character:FindFirstChildOfClass("Humanoid")
     if state.Confirmed and hp and hp.Health>0 and not character:GetAttribute("Knockout") and not character:GetAttribute("IsDead") then
-     hp.Health=math.min(hp.MaxHealth,hp.Health+Rules.Bonuses(state.Stats).Regeneration)
+     hp.Health=math.min(hp.MaxHealth,hp.Health+Rules.Bonuses(state.Stats,state.Perks).Regeneration)
      character:SetAttribute("Health",hp.Health)
     end
    end

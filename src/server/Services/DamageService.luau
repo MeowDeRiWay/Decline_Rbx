@@ -45,7 +45,7 @@ function Service.RollHit(attacker,humanoid,bonus,skill)
 end
 function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,options)
  local target = humanoid.Parent
- if not target or humanoid.Health <= 0 then return 0 end
+ if not target or humanoid.Health <= 0 or target:GetAttribute("Knockout") then return 0 end
  options=options or {}
  if friendly(options.Attacker,target) then return 0 end
  local victim=Players:GetPlayerFromCharacter(target)
@@ -68,23 +68,26 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  local multiplier=options.CriticalMultiplier or 1
  local negation=player and (player:GetAttribute("CriticalNegation") or 0) or 0
  if multiplier>1 and negation>0 and math.random()<negation then multiplier=1 end
+ local postDefense=attackKind=="Ranged" and math.max(0,options.PostDefenseDamage or 0) or 0
  amount*=multiplier
  target:SetAttribute("LastDamageCritical",multiplier>1)
  if player then
   if target:FindFirstChildOfClass("ForceField") then amount=0
   else
    local absorption=(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0)+(attackKind=="Melee" and (player:GetAttribute("MeleeAbsorption") or 0) or 0)
-   amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0),absorption)
+   amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0),absorption)+postDefense
    amount=amount>0 and Life.Damage(player,humanoid,amount,true,true) or 0
   end
  elseif target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.
   if not target:FindFirstChildOfClass("ForceField") then
+   amount=Defense.Resolve(amount,target:GetAttribute("DamageResistance") or 0,target:GetAttribute("DamageAbsorption") or 0)+postDefense
    local remaining = math.max(0,before-amount)
    humanoid.Health = remaining > 0 and remaining or humanoid.MaxHealth
    amount = math.min(before,amount)
   else amount = 0 end
  else
+  amount=Defense.Resolve(amount,target:GetAttribute("DamageResistance") or 0,target:GetAttribute("DamageAbsorption") or 0)+postDefense
   humanoid:TakeDamage(amount)
   amount = math.max(0,before-humanoid.Health)
  end

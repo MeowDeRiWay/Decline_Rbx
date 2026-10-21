@@ -66,7 +66,7 @@ RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Valu
  gui.Enabled = false
  local camera = workspace.CurrentCamera
  local character = player.Character
- if not camera or not character or player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen") or GuiService.MenuIsOpen or Input:GetFocusedTextBox() then return end
+ if not camera or not character or player:GetAttribute("MedicalMode") or player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen") or GuiService.MenuIsOpen or Input:GetFocusedTextBox() then return end
  local mouse = Input:GetMouseLocation()
  local size = camera.ViewportSize
  if mouse.X < 0 or mouse.Y < 0 or mouse.X > size.X or mouse.Y > size.Y then return end

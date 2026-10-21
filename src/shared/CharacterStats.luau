@@ -13,7 +13,7 @@ function Stats.Calculate(attributes,definition,condition,health,maxHealth)
   Absorption=math.max(0,(a.ArmorAbsorption or 0)+(a.DamageAbsorption or 0)),
   MeleeAbsorption=math.max(0,(a.ArmorAbsorption or 0)+(a.DamageAbsorption or 0)+(a.MeleeAbsorption or 0)),
   Resistance=math.clamp((a.ArmorResistance or 0)+(a.DamageResistance or 0),0,.9),
-  Carry=a.CarryLimitKg or 5,WalkSpeed=a.WalkBonus or .3,RunSpeed=a.RunBonus or 1,Regeneration=a.Regeneration or 0,Sprint=20,Accuracy=math.clamp((a.Accuracy or 25)+(a[category.."AccuracyBonus"] or 0)+(gun and (a.WeaponAccuracyBonus or 0) or 0),0,300),
+  Carry=a.CarryLimitKg or 5,WalkSpeed=a.WalkBonus or .2,RunSpeed=a.RunBonus or .8,Regeneration=a.Regeneration or 0,Sprint=20,Accuracy=math.clamp((a.Accuracy or 25)+(a[category.."AccuracyBonus"] or 0)+(gun and (a.WeaponAccuracyBonus or 0) or 0),0,300),
   Dodge=a.DodgeChance or 0,MeleeDamage=damage,MeleeEquipped=melee~=nil and melee~=false,
   CriticalChance=a.CriticalChance or 0,
   CriticalMin=2,CriticalMax=4,Luck=a.LuckChance or 0,
