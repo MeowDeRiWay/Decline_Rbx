@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Upright head-height audio and hidden Tab player list — 21 October
+
+- Previous legacy listener copied full overhead camera pitch. AudioListenerRules.Frame now uses projected camera RIGHT vector to build a horizontal, world-up listening frame at character HEAD (root fallback). Screen left/right/yaw retained; camera pitch/roll/zoom and character-facing changes do not tilt/move hearing away from character. No new sound assets/range/volume changes. This corrects a plausible orientation cause, not an acoustically verified diagnosis; actual Studio headphone check remains needed.
+- AudioListener.client applies the same frame to legacy SoundService:SetListener and existing modern AudioListeners under ONLY local camera/character via a local root Attachment + PositionType.Instance/PositionInstance. Reuses existing listeners/wires/output, no duplicate mixing, no remote listeners modified. Handles late creation, missing root/camera fallback, camera swaps, respawn and restores original modern properties on rebind. Frame runs after camera+5.
+- PlayerList.client disables only CoreGuiType.PlayerList, retries core startup twelve times .25s, reapplies on respawn, sinks Tab outside text input/Roblox menu. Standard Esc/People list has no supported per-distance filter in exposed API; explained to user, no unsafe Player removal or CoreGui modification attempted. Custom nearby list not added without a separate design request.
+- Tests actual listener script geometry/lifecycle (screen left/right/front/back, horizontal orientation, yaw/tilt, zoom unchanged head position, both APIs, late listeners/fallback/respawn/camera replacement); PlayerList init retry/respawn/tab/input pass; firearm audio regression. Full compile/Rojo. No Studio/audio audition. Buildings/generation untouched while user remodels templates.
+
 ## Inventory back to Q; next-session plan — 21 October
 
 - User reports Roblox captures I, so inventory returns to Q. HUD Inv [Q] and close hint Q updated; C character, T talents, B ammo type, V fire mode, R reload unchanged.
