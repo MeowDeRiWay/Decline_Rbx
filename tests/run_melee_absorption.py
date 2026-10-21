@@ -7,6 +7,7 @@ root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/DamageService.luau').read_text().replace('local Life = require(script.Parent.PlayerLifeService)','')
 service=service.replace('require(ReplicatedStorage.Shared.DefenseRules)','(function()\n'+(root/'src/shared/DefenseRules.luau').read_text()+'\nend)()')
 service=service.replace('require(ReplicatedStorage.Shared.AffiliationRules)','(function()\n'+(root/'src/shared/AffiliationRules.luau').read_text()+'\nend)()')
+service=service.replace('require(ReplicatedStorage.Shared.AccuracyRules)','(function()\n'+(root/'src/shared/AccuracyRules.luau').read_text()+'\nend)()')
 setup='''
 local hits=0
 local chance=.1
@@ -15,7 +16,7 @@ local Life={Damage=function(_,hp,amount) hits+=1; hp.Health-=amount; return amou
 function Players:GetPlayerFromCharacter(character) if character==a.Character then return a end end
 '''
 cases='''
-a:LoadCharacterAsync();a.Character:PivotTo(CFrame.new(Vector3.zero)); a:SetAttribute("MeleeAbsorption",3)
+b:LoadCharacterAsync();a:LoadCharacterAsync();a.Character:PivotTo(CFrame.new(Vector3.zero)); a:SetAttribute("MeleeAbsorption",3)
 local hp=a.Character.Humanoid
 assert(Service.Apply(hp,5,"Blunt",nil,"Melee")==2 and hp.Health==98)
 assert(Service.Apply(hp,5,"Piercing",nil,"Projectile")==5 and hp.Health==93)
@@ -25,8 +26,8 @@ a:SetAttribute("MeleeAbsorption",2);a:SetAttribute("ArmorAbsorption",3);a:SetAtt
 assert(Service.Apply(hp,20,"Blunt",nil,"Melee")==11,"20 minus20% then5 flat =11, resistance before absorption")
 assert(Service.Apply(hp,20,"Bullet",nil,"Ranged")==13,"melee talent does not protect ranged hits")
 a:SetAttribute("ArmorAbsorption",0);a:SetAttribute("ArmorResistance",0)
-a:SetAttribute("MeleeAbsorption",0);a:SetAttribute("DodgeChance",.5)
-a:SetAttribute("Accuracy",.75)
+a:SetAttribute("MeleeAbsorption",0);a:SetAttribute("DodgeChance",50)
+a:SetAttribute("Accuracy",75)
 assert(Service.RollHit(a,hp)==true,"75%-50%=25%, roll10% hits")
 chance=.3;assert(Service.RollHit(a,hp)==false,"one subtraction, not independent dodge rolls")
 chance=.1
@@ -60,6 +61,16 @@ Life.Damage=function(_,hp,amount) hp.Parent:SetAttribute("Knockout",true);return
 Service.Apply(hp,10,"Blunt",nil,"Melee",{Attacker=target,HitChecked=true})
 assert(report.sent[1].data.Knockout and report.sent[1].data.Actor==target,"AI attacker and new knockout survive report formatting")
 Life.Damage=priorDamage
+b:SetAttribute("Accuracy",100);a:SetAttribute("DodgeChance",50)
+a.Character.HumanoidRootPart.Position=Vector3.new(40,0,0)
+chance=.299;assert(Service.RollHit(b,hp),"100 skill -20 distance -50 dodge =30%, below threshold hits")
+chance=.3;assert(not Service.RollHit(b,hp),"at30% threshold misses")
+a:SetAttribute("DodgeChance",0)
+chance=.799;assert(Service.RollHit(b,hp));chance=.8;assert(not Service.RollHit(b,hp),"40 studs gives80%")
+a.Character.HumanoidRootPart.Position=Vector3.new(20,0,0)
+chance=.899;assert(Service.RollHit(b,hp));chance=.9;assert(not Service.RollHit(b,hp),"20 studs capped90%")
+a.Character.HumanoidRootPart.Position=Vector3.zero
+chance=.1
 a:SetAttribute("TeamID",10);b:SetAttribute("TeamID",10)
 local oldHP=hp.Health;local oldReports=#report.sent
 assert(Service.Apply(hp,999,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0 and hp.Health==oldHP)

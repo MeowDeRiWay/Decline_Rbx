@@ -4,6 +4,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local report=Instance.new("RemoteEvent");report.Name="CombatReport";report.Parent=ReplicatedStorage
 local Defense=require(ReplicatedStorage.Shared.DefenseRules)
 local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
+local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
 local Service = {}
 local function friendly(attacker,target)
  if not attacker then return false end
@@ -32,7 +33,11 @@ function Service.RollHit(attacker,humanoid,bonus)
  if friendly(attacker,humanoid.Parent) then return false end
  local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
  local dodge=defender and defender:GetAttribute("DodgeChance") or 0
- local chance=math.max(0,math.clamp((attacker:GetAttribute("Accuracy") or .25)+(bonus or 0),0,.9)-dodge)
+ local character=attacker:IsA("Player") and attacker.Character or attacker
+ local root=character and character:FindFirstChild("HumanoidRootPart")
+ local target=humanoid.Parent:FindFirstChild("HumanoidRootPart",true) or humanoid.Parent:FindFirstChildWhichIsA("BasePart",true)
+ if not root or not target then return false end
+ local chance=Accuracy.Chance(attacker:GetAttribute("Accuracy"),bonus,(target.Position-root.Position).Magnitude,dodge)/100
  return math.random()<chance
 end
 function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,options)
@@ -50,7 +55,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  local player=Players:GetPlayerFromCharacter(target)
  options=options or {}
  local dodge=player and (player:GetAttribute("DodgeChance") or 0) or 0
- if not options.HitChecked and dodge>0 and math.random()<dodge then
+ if not options.HitChecked and dodge>0 and math.random()<math.clamp(dodge/100,0,1) then
   target:SetAttribute("LastDamage",0);target:SetAttribute("LastDamageDodged",true);announce(target,"Dodge",0,options.Attacker,attackKind);return 0
  end
  target:SetAttribute("LastDamageDodged",false)

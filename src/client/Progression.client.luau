@@ -90,7 +90,7 @@ tree.Position=UDim2.fromOffset(20,134); tree.Size=UDim2.fromOffset(548,330); tre
 local statsPanel=frame(right,UDim2.fromOffset(20,84),UDim2.fromOffset(548,532))
 local statRows={
  {"Health","Health"},{"Absorption","Damage absorption"},{"Resistance","Damage resistance"},
- {"Sprint","Sprint duration"},{"Accuracy","Accuracy"},{"Dodge","Dodge chance"},
+ {"Sprint","Sprint duration"},{"Accuracy","Accuracy"},{"Dodge","Dodge"},
  {"MeleeDamage","Melee damage"},{"CriticalChance","Critical chance"},
  {"CriticalMultiplier","Critical multiplier"},{"Luck","Luck chance"},
 }
@@ -123,13 +123,13 @@ local function refreshStats()
  values.Absorption.Text=string.format("%g melee · %g other",stats.MeleeAbsorption,stats.Absorption)
  values.Resistance.Text=percent(stats.Resistance)
  values.Sprint.Text=string.format("%g seconds",stats.Sprint)
- values.Accuracy.Text=percent(stats.Accuracy)
- values.Dodge.Text=percent(stats.Dodge)
+ values.Accuracy.Text=string.format("%g / 300",stats.Accuracy)
+ values.Dodge.Text=string.format("%g",stats.Dodge)
  values.MeleeDamage.Text=string.format("%g%s",stats.MeleeDamage,stats.MeleeEquipped and "" or " (unarmed bonus)")
  values.CriticalChance.Text=percent(stats.CriticalChance)
  values.CriticalMultiplier.Text=string.format("×%d–×%d",stats.CriticalMin,stats.CriticalMax)
  values.Luck.Text=percent(stats.Luck)
- context.Text=string.format("Equipped: %s\nArmor: %g / %s · Absorption / resistance\nWeapon accuracy before target dodge; critical chance uses this weapon.",definition and definition.Name or "None",attributes.ArmorAbsorption or 0,percent(attributes.ArmorResistance or 0))
+ context.Text=string.format("Equipped: %s\nArmor: %g / %s · Absorption / resistance\nAccuracy includes weapon talents. Hit chance: skill minus distance beyond 20 studs minus target dodge; maximum 90%%.",definition and definition.Name or "None",attributes.ArmorAbsorption or 0,percent(attributes.ArmorResistance or 0))
 end
 local function canLearn(id,definition) return Rules.CanLearn(snapshot,id,definition) end
 local function redraw()

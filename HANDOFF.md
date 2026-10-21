@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Numeric accuracy skill and distance-based hit chance — 21 October
+
+- Accuracy now numeric25 +2/Attention, capped300; firearm category talents +5/rank, combined skill capped300. DodgeChance now numeric5/rank. Other fractional crit/resistance/luck values unchanged. Character sheet displays accuracy /300 and plain dodge; HUD AC no longer multiplies dodge by100. Tooltips/config describe numeric bonuses.
+- Shared AccuracyRules.Chance = clamp(clamp(base+categoryBonus,0,300) - max(0,rootDistance-20) - max(0,targetDodge),0,90). Server RollHit divides result by100 once; final90 cap AFTER penalties. Current 3D root-to-root distance at hit resolution. Missing roots fail closed. Same-faction/group protection retained. Melee uses same rule (normally within20); environmental/NPC damage keeps existing separate dodge check, now dividing numeric dodge by100. No double dodge for checked player attacks.
+- CreatureHover adds target-specific Hit chance line, same module/category bonus/root distance as server; players still have no HP display. Friendly players no chance; group permanent names unchanged. Existing screen/cone visibility still required. Actual projectile collision/barriers remain prerequisites; displayed chance is conditional on a physical hit, not wall penetration/spread prediction.
+- Pure rules cover agreed100skill examples90/80/30, zero floor,300cap, bonuses/fractional distance. Actual damage server threshold tests cover20/40studs and50dodge; progression/sheet/environment tests migrated. Full compile/Rojo; no Studio playtest.
+
 ## Local level-up audio — 21 October
 
 - User authored ReplicatedStorage/Sounds/LevelUpSound (Sound). HUD plays a local non-positional SoundService clone on an increase in ProfessionLevel alongside existing journal notice. Preserves authored SoundId/Volume/PlaybackSpeed; Looped and PlayOnRemove forced false. Existing level on client initialization does not play; a multi-level attribute jump plays once. Missing template safely skips audio. Ended destroys copy; Debris120s fallback. No server broadcast. Compile/Rojo checked, no Studio audition.

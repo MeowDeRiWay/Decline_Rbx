@@ -9,10 +9,10 @@ local state=Rules.New();state.Profession="Hunter";state.Level=1;state.TalentPoin
 local talent=Config.Professions.Hunter.Talents.Automatics
 local text=Presentation.Talent(state,"Automatics",talent)
 assert(string.find(text,"Current · 0 / 10",1,true) and string.find(text,"Next · 1 / 10",1,true))
-assert(string.find(text,"+5% automatic accuracy",1,true) and string.find(text,"+1% critical chance",1,true))
+assert(string.find(text,"+5 automatic accuracy",1,true) and string.find(text,"+1% critical chance",1,true))
 assert(Rules.Learn(state,"Automatics",talent))
 text=Presentation.Talent(state,"Automatics",talent)
-assert(string.find(text,"Current · 1 / 10",1,true) and string.find(text,"+10% automatic accuracy",1,true))
+assert(string.find(text,"Current · 1 / 10",1,true) and string.find(text,"+10 automatic accuracy",1,true))
 assert(string.find(text,"No talent points",1,true))
 state.Talents.Automatics=10
 assert(not string.find(Presentation.Talent(state,"Automatics",talent),"Next",1,true))

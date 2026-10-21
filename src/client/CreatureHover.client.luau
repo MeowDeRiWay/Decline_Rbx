@@ -4,6 +4,9 @@ local Input = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Theme=require(ReplicatedStorage.Shared.UITheme)
+local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
+local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
+local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local View=require(script.Parent.EventVisibility)
 local player = Players.LocalPlayer
 local gui = Instance.new("BillboardGui")
@@ -31,6 +34,7 @@ local function label(y,size,color)
  return text
 end
 local name = label(4,16,Color3.fromRGB(238,241,245))
+local chanceText=label(27,14,Theme.Accent)
 local health = label(27,14,Color3.fromRGB(215,225,219))
 local track = Instance.new("Frame")
 track.Position = UDim2.fromOffset(10,55)
@@ -90,7 +94,18 @@ RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Valu
  if owner and (player:GetAttribute("GroupID") or 0)~=0 and owner:GetAttribute("GroupID")==player:GetAttribute("GroupID") then return end
  name.Text=owner and (owner.DisplayName or owner.Name) or display
  health.Visible=owner==nil;track.Visible=owner==nil
- gui.Size=UDim2.fromOffset(190,owner and 30 or 66)
+ local root=character:FindFirstChild("HumanoidRootPart")
+ local target=model:FindFirstChild("HumanoidRootPart",true) or anchor
+ local definition=Items[character:GetAttribute("HandsItem")]
+ local category=definition and definition.Firearm and (definition.Firearm.Category or "Rifle") or ""
+ local friendly=Affiliation.Friendly(player,owner)
+ chanceText.Visible=root~=nil and not friendly
+ chanceText.Position=UDim2.fromOffset(8,owner and 27 or 65)
+ if chanceText.Visible then
+  local chance=Accuracy.Chance(player:GetAttribute("Accuracy"),player:GetAttribute(category.."AccuracyBonus"),(target.Position-root.Position).Magnitude,owner and owner:GetAttribute("DodgeChance") or 0)
+  chanceText.Text=string.format("Hit chance: %d%%",math.floor(chance))
+ end
+ gui.Size=UDim2.fromOffset(190,owner and (friendly and 30 or 54) or 90)
  local current,maximum = humanoid.Health,humanoid.MaxHealth
  health.Text = string.format("%.0f / %.0f HP",current,maximum)
  local ratio = maximum > 0 and math.clamp(current/maximum,0,1) or 0

@@ -127,7 +127,7 @@ Run.Heartbeat:Connect(function(dt)
  level.Visible=(player:GetAttribute("AttributePoints") or 0)>0 or (player:GetAttribute("TalentPoints") or 0)>0
  local character=player.Character
  health.Text=string.format("HP %03d",character and character:GetAttribute("Health") or 0)
- armor.Text=string.format("AC %02d",math.floor((player:GetAttribute("DodgeChance") or 0)*100+.5))
+ armor.Text=string.format("AC %02d",math.floor((player:GetAttribute("DodgeChance") or 0)+.5))
  local remaining=character and character:GetAttribute("SprintRemaining") or 20
  local maximum=character and character:GetAttribute("SprintMaximum") or 20
  stamina.Size=UDim2.fromScale(math.clamp(remaining/math.max(1,maximum),0,1),1)

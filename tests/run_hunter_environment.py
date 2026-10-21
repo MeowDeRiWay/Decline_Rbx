@@ -9,7 +9,7 @@ local finished={}
 local Service={}
 local roll=.1
 local math=table.clone(math);math.random=function() return roll end
-local player={GetAttribute=function(_,key) return key=="DodgeChance" and .5 or 0 end}
+local player={GetAttribute=function(_,key) return key=="DodgeChance" and 50 or 0 end}
 local character={GetAttribute=function() return nil end}
 local hp={Health=100,Parent=character}
 '''
