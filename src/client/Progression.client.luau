@@ -45,7 +45,7 @@ local points=label(left,"",UDim2.fromOffset(20,80),UDim2.fromOffset(420,50),14,p
 local snapshot,draft,hovered,closeControl
 local mode="Stats"
 local Presentation=require(ReplicatedStorage.Shared.ProgressionPresentation)
-local tips={Sneak="Always active while walking.\nEvery 10 Sneak reduces footstep range by 1 stud.\nSprinting has no Sneak bonus yet.",Doctor="Use on a nearby knocked-out player.\nChance: Doctor / 2%.\n10-second cooldown per attempt.",FirstAid="Bandages restore 10 HP + 1 per 10 First aid.\nEquip Medicine, press H, then click a patient."}
+local tips={Sneak="Always active while walking.\nEvery 10 Sneak reduces footstep range by 1 stud.\nSprinting has no Sneak bonus yet.",Doctor="Press 4, then click a nearby knocked-out player.\nChance: Doctor / 2.\n10-second cooldown per attempt."}
 for _,id in ipairs(config.Stats) do tips[id]=Presentation.Attribute(id) end
 local setOpen
 local cards={}
@@ -101,13 +101,6 @@ local function skillRow(id,index,passive)
  label(card,config.Names[id],UDim2.fromOffset(8,0),UDim2.fromOffset(238,34),15)
  local value=label(card,"0",UDim2.fromOffset(250,0),UDim2.fromOffset(220,34),14,palette.Accent)
  if tips[id] then card.MouseEnter:Connect(function() hovered=id end);card.MouseLeave:Connect(function() if hovered==id then hovered=nil end end) end
- if id=="Doctor" or id=="FirstAid" then
-  value.Size=UDim2.fromOffset(110,34)
-  button(card,"Use",UDim2.fromOffset(420,2),UDim2.fromOffset(58,30),function()
-   if not snapshot or not snapshot.Confirmed then return end
-   setOpen(false);player:SetAttribute("MedicalMode",id=="Doctor" and "Doctor" or "Bandage")
-  end)
- end
  local plus
  if not passive then plus=button(card,"+",UDim2.fromOffset(486,2),UDim2.fromOffset(34,30),function() action:FireServer("Skill",id) end) end
  skillRows[id]={Value=value,Plus=plus}

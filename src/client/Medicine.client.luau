@@ -21,10 +21,14 @@ local function cancel() player:SetAttribute("MedicalMode",nil);selected=nil;high
 Input.InputBegan:Connect(function(key,processed)
  if processed or Input:GetFocusedTextBox() then return end
  if key.KeyCode==Enum.KeyCode.H and not blocked() then
-  if player:GetAttribute("MedicalMode") then cancel();return end
+  if player:GetAttribute("MedicalMode")=="Bandage" then cancel();return end
   local c=player.Character
   if not c or c:GetAttribute("MedicineItem")~="Bandage" then Layout.Log:Fire("Equip a bandage in the Medicine slot first.");return end
   player:SetAttribute("MedicalMode","Bandage")
+ elseif (key.KeyCode==Enum.KeyCode.Four or key.KeyCode==Enum.KeyCode.KeypadFour) and not blocked() then
+  if player:GetAttribute("MedicalMode")=="Doctor" then cancel();return end
+  if player:GetAttribute("AttributesConfirmed")~=true then return end
+  player:SetAttribute("MedicalMode","Doctor")
  elseif key.KeyCode==Enum.KeyCode.Escape then cancel()
  elseif key.UserInputType==Enum.UserInputType.MouseButton1 and not blocked() then
   local mode=player:GetAttribute("MedicalMode")
@@ -60,7 +64,7 @@ Run.RenderStepped:Connect(function()
  local text
  if mode=="Doctor" then
   local cooldown=math.max(0,math.ceil((player:GetAttribute("DoctorReadyAt") or 0)-workspace:GetServerTimeNow()))
-  text=cooldown>0 and ("Doctor · ready in "..cooldown.."s") or string.format("Doctor · %g%% chance\nClick a nearby knocked-out player",Rules.ReviveChance(player:GetAttribute("SkillDoctor"))*100)
+  text=cooldown>0 and ("Doctor · ready in "..cooldown.."s") or string.format("Doctor · %g%% chance · 4 to cancel\nClick a nearby knocked-out player",Rules.ReviveChance(player:GetAttribute("SkillDoctor"))*100)
  else text=string.format("First aid · %g HP · H to cancel\nClick yourself or a nearby player",Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"))) end
  if selected then
   local body=selected.Character:FindFirstChild("HumanoidRootPart")
