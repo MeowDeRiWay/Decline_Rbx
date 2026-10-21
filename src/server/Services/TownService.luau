@@ -192,7 +192,7 @@ end
 local function build(plot, kind, level, player)
  local template = templateFor(kind, level)
  if not template then return false end
- if not Progression.CanBuild(player,kind) then return false,"Your profession cannot construct this building." end
+ if not Progression.CanBuild(player,kind) then return false,"Your skills or attributes do not meet the requirements for this building." end
  local clone = template:Clone()
  local sourceSpace=clone:FindFirstChild("Space")
  local alignment=sourceSpace and sourceSpace:GetPivot():ToObjectSpace(clone:GetPivot()) or CFrame.new()
@@ -503,7 +503,7 @@ local function handle(player, command, value, extra)
   local town = plotTown(plot)
   if not town or townOf(player) ~= town then return end
   if command == "Build" then
-   if not Progression.CanBuild(player,value) then tell(player,"Your profession cannot construct this building."); return end
+   if not Progression.CanBuild(player,value) then tell(player,"Your skills or attributes do not meet the requirements for this building."); return end
    local definition = typeof(value) == "string" and Config.Buildings[value]
    local level = plot.kind and plot.level + 1 or 1
    if not definition or not definition.Levels[level] or (plot.kind and (plot.kind ~= value or not owns(player, plot))) or plot.pending then return end

@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile,re
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Firearms.server.luau').read_text()
-service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal)=require[^\n]+\n','',service)
+service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression)=require[^\n]+\n','',service)
 mock='''
 local function signal() return {Connect=function(self,fn) self.callback=fn end} end
 local changed=signal()

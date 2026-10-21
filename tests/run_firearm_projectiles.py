@@ -5,14 +5,14 @@ root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/FirearmProjectiles.luau').read_text()
 service=re.sub(r'local (Rules|Damage|Accuracy)=require[^\n]+\n','',service)
 mock='''
-local Accuracy={SightBonus=function() return 0 end}
+local Accuracy={SightBonus=function() return 0 end,ForWeapon=function() return 25 end}
 function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
 local function signal() return {Connect=function(self,fn) self.fire=fn end} end
 local heartbeat=signal()
 local packets={}
 Instance={new=function() return {FireClient=function(_,player,events) local copy={} for _,e in ipairs(events) do table.insert(copy,table.clone(e)) end;table.insert(packets,copy) end} end}
 local critChance=0
-local player={UserId=7,GetAttribute=function(_,key) return key=="Accuracy" and 1 or key=="AutomaticCritChance" and critChance or 0 end,Character={FindFirstChild=function() return {Position=Vector3.zero} end}}
+local player={UserId=7,GetAttribute=function(_,key) return key=="Accuracy" and 1 or key=="CriticalChance" and critChance or 0 end,Character={FindFirstChild=function() return {Position=Vector3.zero} end}}
 local Players={GetPlayers=function() return {player} end}
 game={GetService=function(_,name) return ({Players=Players,RunService={Heartbeat=heartbeat},ReplicatedStorage={}})[name] end}
 Random={new=function() return {NextNumber=function() return 0 end,NextInteger=function() return 4 end} end}

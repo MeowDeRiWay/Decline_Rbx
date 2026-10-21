@@ -1,4 +1,4 @@
-"""Exercise the real crafting service's profession checks, completion XP and luck hook."""
+"""Exercise the real crafting service's station permissions, completion XP and output hooks."""
 from pathlib import Path
 import re
 import subprocess
@@ -37,7 +37,7 @@ cases='''
 a:LoadCharacterAsync()
 local stove=make("Model","Stove",workspace); make("Part","Part",stove)
 local bench=make("Model","Workstation",workspace); make("Part","Part",bench)
-assert(not Service.Open(a,stove),"no Cook means no cooking station access")
+assert(not Service.Open(a,stove),"station requirements block cooking access")
 assert(Service.Open(a,bench))
 assert(Service.Cook(a,"MakePlanks",1))
 Service.Close(a)
@@ -68,10 +68,10 @@ assert(Service.Snapshot(a).CookingReady.SausageSlice==5,"stove serving talent mu
 assert(xp==40 and bonuses==4)
 cookState.Profession="Worker"; cookState.Talents={GoldenHands=10}
 assert(Service.Open(a,bench) and Service.Cook(a,"MakePlanks",1))
-assert(math.abs(durations[6]-6)<1e-6,"rank ten Golden Hands saves forty percent crafting time")
+assert(math.abs(durations[6]-10)<1e-6,"retired crafting perks have no effect")
 callbacks[6]()
 assert(Service.Snapshot(a).CookingReady.Plank==3)
-print("PASS: cook talents, correct station timing, full/partial batches, profession-gated cooking, general workstation, cancellation refunds, no cancellation rewards, batch five and specialty XP")
+print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]
 for variable,file in [('Items','ItemConfig'),('Recipes','CraftConfig'),('Rules','CraftRules'),('Amounts','InventoryRules')]:

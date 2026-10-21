@@ -65,6 +65,8 @@ function Service.Remove(player, id, count,key)
 end
 function Service.Equip(player, id,key,uid)
  if typeof(id) ~= "string" or not ItemConfig.Items[id] or not Visuals.Validate(id) then return false end
+ local requirements=ItemConfig.Items[id].Requirements
+ if requirements and not require(script.Parent.ProgressionService).Meets(player,requirements) then return false end
  local state = states[player]
  if not state or not Rules.Equip(state, ItemConfig.Items, ItemConfig.Slots, id,key,uid) then return false end
  update(player)

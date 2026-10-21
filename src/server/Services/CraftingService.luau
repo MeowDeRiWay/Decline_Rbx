@@ -76,6 +76,7 @@ function Service.Cook(player,id,requested)
  if not reachable(player,stove) then Service.Close(player); return false end
  local recipe=typeof(id)=="string" and Recipes[id]
  local state=states[stove]
+ if recipe and recipe.Requirements and not Progression.Meets(player,recipe.Requirements) then return false end
  if not recipe or recipe.Station~=stove.Name or state.Job or not Progression.CanStation(player,stove.Name) then return false end
  local own=Inventory.Snapshot(player)
  local speed=Rules.Speed(own.CraftTools or {},recipe)

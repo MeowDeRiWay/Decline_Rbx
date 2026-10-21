@@ -4,6 +4,7 @@ local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Damage = require(script.Parent.Services.DamageService)
 local Inventory = require(script.Parent.Services.InventoryService)
 local Resources = require(script.Parent.Services.ResourceService)
+local Progression=require(script.Parent.Services.ProgressionService)
 local Items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local attack = Instance.new("RemoteEvent")
 attack.Name = "WeaponAttack"
@@ -23,7 +24,8 @@ attack.OnServerEvent:Connect(function(player)
  if not weapon then return end
  local definition=Items[character:GetAttribute("HandsItem")]
  if definition and definition.Firearm then return end
- local knifeMultiplier=definition and definition.CraftTool=="Knife" and (player:GetAttribute("KnifeMultiplier") or 1) or 1
+ if definition and definition.Requirements and not Progression.Meets(player,definition.Requirements) then return end
+ local knifeMultiplier=1
  local motionWeapon=weapon
  if knifeMultiplier~=1 then motionWeapon=table.clone(weapon); motionWeapon.AttacksPerMinute*=knifeMultiplier end
  local cooldown = 60 / motionWeapon.AttacksPerMinute
@@ -83,7 +85,7 @@ attack.OnServerEvent:Connect(function(player)
    end
    nearest.Parent:SetAttribute("LastDamagerID",player.UserId)
    nearest.Parent:SetAttribute("LastHitItem",character:GetAttribute("HandsItem"))
-   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player})
+   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextInteger(2,4) or 1})
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
  end

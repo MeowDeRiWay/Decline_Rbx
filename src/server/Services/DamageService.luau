@@ -5,6 +5,7 @@ local report=Instance.new("RemoteEvent");report.Name="CombatReport";report.Paren
 local Defense=require(ReplicatedStorage.Shared.DefenseRules)
 local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
 local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
+local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Service = {}
 local function friendly(attacker,target)
  if not attacker then return false end
@@ -29,7 +30,7 @@ local function announce(target,kind,amount,attacker,attackKind,critical,knockout
  end
 end
 function Service.Miss(target,attacker) if friendly(attacker,target) then return end;announce(target,"Miss",0,attacker) end
-function Service.RollHit(attacker,humanoid,bonus)
+function Service.RollHit(attacker,humanoid,bonus,skill)
  if friendly(attacker,humanoid.Parent) then return false end
  local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
  local dodge=defender and defender:GetAttribute("DodgeChance") or 0
@@ -37,7 +38,7 @@ function Service.RollHit(attacker,humanoid,bonus)
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local target=humanoid.Parent:FindFirstChild("HumanoidRootPart",true) or humanoid.Parent:FindFirstChildWhichIsA("BasePart",true)
  if not root or not target then return false end
- local chance=Accuracy.Chance(attacker:GetAttribute("Accuracy"),bonus,(target.Position-root.Position).Magnitude,dodge)/100
+ local chance=Accuracy.Chance(skill or Accuracy.ForWeapon(attacker,Items[character:GetAttribute("HandsItem")]),bonus,(target.Position-root.Position).Magnitude,dodge)/100
  return math.random()<chance
 end
 function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,options)

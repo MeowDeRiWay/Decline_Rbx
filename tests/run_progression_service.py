@@ -1,70 +1,43 @@
-"""Exercise server-owned progression and permissions with mock Players/remotes."""
+"""Exercise actual progression authority, regeneration and session lifecycle."""
 from pathlib import Path
-import subprocess
-import tempfile
-import sys
+import re,subprocess,tempfile,sys
 root=Path(__file__).resolve().parents[1]
-service=(root/'src/server/Services/ProgressionService.luau').read_text().replace('local Journal=require(script.Parent.JournalService)', 'local Journal={Send=function() end}')
-for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig'),('ItemsConfig','ItemConfig')]:
- service=service.replace(f'local {name}=require(ReplicatedStorage.Shared.{module})','')
-service=service.replace('local Items=require(ReplicatedStorage.Shared.ItemConfig).Items','local Items=ItemsConfig.Items')
+s=(root/'src/server/Services/ProgressionService.luau').read_text()
+s=re.sub(r'local (Rules|Config|Journal)=require[^\n]+\n','',s)
 cases='''
-Service.Start()
-a:LoadCharacterAsync()
+local notices={};local Journal={Send=function(p,text) table.insert(notices,{p,text}) end}
+SERVICE
+Service.Start();a:LoadCharacterAsync()
 local action=ReplicatedStorage.ProgressionRemotes.Action
-local function call(command,value) clock+=.2; action.OnServerEvent:Fire(a,command,value) end
-assert(Service.Snapshot(a).Level==0 and Service.Snapshot(a).Points==5)
-assert(not Service.CanStation(a,"Stove") and Service.CanStation(a,"Workstation"))
-Service.Award(a,100)
-call("Spend","Strength"); call("Spend","Endurance")
-assert(a:GetAttribute("CarryLimitKg")==21 and a:GetAttribute("RunBonus")==.2 and a.Character.Humanoid.MaxHealth==105)
-call("Choose","Cook")
-assert(Service.CanStation(a,"Stove") and Service.CanStation(a,"CuttingBoard"))
-assert(Service.CanBuild(a,"Kitchen") and not Service.CanBuild(a,"Workbench"))
-Service.CraftXP(a,"Workstation"); assert(Service.Snapshot(a).XP==0)
-Service.CraftXP(a,"Stove"); assert(Service.Snapshot(a).XP==10)
-call("Choose","Other"); assert(Service.Snapshot(a).Profession=="Cook")
-call("Spend","Forged"); assert(Service.Snapshot(a).Points==8)
-call("Talent","Forged"); assert(Service.Snapshot(a).Points==8)
-Service.Award(a,500)
-local points=Service.Snapshot(a).Points
-call("Talent","SurpriseServing"); call("Talent","GrandmasMethod"); call("Talent","RamsayMethod")
-assert(Service.Snapshot(a).Points==points,"talents do not spend attribute points")
-assert(Service.CraftEffects(a,"Stove",5).BonusServing==0 and Service.CraftEffects(a,"Stove",5).DurationMultiplier==1)
-assert(Service.CraftEffects(a,"CuttingBoard",1).DurationMultiplier==1)
-local zombie=make("Model","Zombie",workspace,{LastDamagerID=a.UserId})
-Service.ZombieDied(zombie,{Scrap=1}); assert(Service.Snapshot(a).XP==20)
-local worker=ReplicatedStorage.ProgressionRemotes.Action
-clock+=.2; worker.OnServerEvent:Fire(b,"Choose","Worker")
-assert(Service.CanBuild(b,"Workbench") and not Service.CanBuild(b,"Kitchen"))
-Service.Award(b,100)
-clock+=.2; worker.OnServerEvent:Fire(b,"Talent","Redhead")
-local killed=make("Model","Zombie",workspace,{LastDamagerID=b.UserId,LastHitItem="StoneShowel"})
-assert(Service.ZombieDied(killed,{}).Rags==1)
-killed:SetAttribute("LastHitItem","StoneAxe")
-assert(Service.ZombieDied(killed,{}).Rags==nil)
-Service.CraftXP(b,"Workstation"); assert(Service.Snapshot(b).XP==30)
-clock+=.2; action.OnServerEvent:Fire(c,"Choose","Hunter")
-assert(Service.Snapshot(c).Profession=="Hunter")
-clock+=.2;action.OnServerEvent:Fire(c,"Talent","Careful")
-assert(Service.Snapshot(c).Talents.Careful==nil)
-Service.Award(c,1500)
-clock+=.2;action.OnServerEvent:Fire(c,"Talent","Careful")
-assert(c:GetAttribute("PreserveDurabilityChance")==.09)
-clock+=.2;action.OnServerEvent:Fire(c,"Talent","Automatics")
-assert(c:GetAttribute("AutomaticAccuracyBonus")==.05 and c:GetAttribute("AutomaticCritChance")==.01)
-local old=a.Character
-local fresh=make("Model","Character",workspace); local hp=make("Humanoid","Humanoid",fresh)
-a.Character=fresh; a.CharacterAdded:Fire(fresh)
-assert(hp.MaxHealth==105 and a:GetAttribute("Strength")==1,"progression survives respawn")
-Players.PlayerRemoving:Fire(a)
-assert(Service.Snapshot(a).Level==0,"state is session only")
-print("PASS: server XP, stat allocation, Cook station/build permissions, specialty XP, invalid commands and respawn restoration")
+local function send(command,value) clock+=.2;action.OnServerEvent:Fire(a,command,value) end
+assert(not Service.Snapshot(a).Confirmed and not Service.CanStation(a,"Stove"))
+Service.Award(a,100);assert(Service.Snapshot(a).Level==0 and #notices==0)
+local draft=table.clone(Service.Snapshot(a).Stats);draft.Intelligence=10;draft.Endurance=6
+send("Confirm",draft)
+assert(a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CarryLimitKg")==45 and a.Character.Humanoid.MaxHealth==160)
+assert(a:GetAttribute("SkillUnarmed")==65 and a:GetAttribute("SkillRepair")==50)
+send("Spend","Strength");send("Choose","Hunter");send("Talent","Automatics")
+assert(a:GetAttribute("Strength")==5 and a:GetAttribute("CriticalChance")==.05 and a:GetAttribute("AutomaticAccuracyBonus")==0)
+draft.Strength=10;send("Confirm",draft);assert(a:GetAttribute("Strength")==5)
+Service.Award(a,100);assert(a:GetAttribute("CharacterLevel")==1 and a:GetAttribute("SkillPoints")==15)
+send("Skill","Repair");assert(a:GetAttribute("SkillRepair")==51 and a:GetAttribute("SkillPoints")==14)
+send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==14)
+for _=1,10 do Service.Harvest(a,"StoneVein") end
+assert(Service.Snapshot(a).Practice.Miner.Value==1 and Service.Snapshot(a).Practice.Lumberjack.Value==0)
+assert(Service.CanBuild(a,"Kitchen") and Service.CanStation(a,"Stove"))
+Config.StationRequirements.Stove={Skills={Repair=52}}
+assert(not Service.CanStation(a,"Stove"));send("Skill","Repair");assert(Service.CanStation(a,"Stove"))
+local hp=a.Character.Humanoid;hp.Health=100
+clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==112,"END6 heals12 per minute")
+a.Character:SetAttribute("Knockout",true);clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==112,"regeneration cannot revive knockout")
+a.Character:SetAttribute("Knockout",false);hp.Health=159;assert(coroutine.resume(loops[1]));assert(hp.Health==160,"heal capped at max")
+hp.Health=0;assert(coroutine.resume(loops[1]));assert(hp.Health==0,"cannot revive dead")
+a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("Strength")==5 and a.Character.Humanoid.MaxHealth==160,"immutable creation survives respawn")
+assert(Service.Loot(a,{Rags=1}).Rags==1)
+print("PASS: actual immutable creation, forbidden legacy commands, INT skill points, derived stats, requirements, passive practice, minute regeneration, no revival, and respawn")
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Random={new=function() return {NextNumber=function() return 0 end} end}']
-for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig'),('ItemsConfig','ItemConfig')]:
- parts.append('local '+name+'=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
-parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])
-with tempfile.TemporaryDirectory(prefix='decline-progression-') as directory:
- path=Path(directory)/'test.luau';path.write_text('\n'.join(parts))
- subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)
+parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
+for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig')]:parts.append('local '+name+'=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
+parts.append(cases.replace('SERVICE','local Service=(function()\n'+s+'\nend)()'))
+with tempfile.TemporaryDirectory() as d:
+ p=Path(d)/'test.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)

@@ -26,7 +26,7 @@ RunService.Heartbeat:Connect(function(dt)
   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
   if not humanoid then continue end
   local allowed = humanoid.Health > 0 and not humanoid.Sit and not humanoid.PlatformStand and not character:GetAttribute("Knockout") and not character:GetAttribute("CraftingLocked")
-  local maximum=Sprint.Maximum(player:GetAttribute("Endurance"))
+  local maximum=Sprint.Maximum()
   local reserve=reserves[player]
   if not reserve or reserve.Character~=character then reserve={Character=character,Value=maximum,Exhausted=false};reserves[player]=reserve end
   local moving=humanoid.MoveDirection.Magnitude>.01
@@ -36,7 +36,7 @@ RunService.Heartbeat:Connect(function(dt)
   if character:GetAttribute("SprintRemaining")~=value then character:SetAttribute("SprintRemaining",value) end
   if character:GetAttribute("SprintMaximum")~=maximum then character:SetAttribute("SprintMaximum",maximum) end
   local multiplier = Rules.LoadMultiplier(character:GetAttribute("LoadKg"),Config,player:GetAttribute("CarryLimitKg"))
-  local speed = (character:GetAttribute("Knockout") or character:GetAttribute("CraftingLocked")) and 0 or (Config.WalkSpeed + (running and (Config.RunSpeedBonus+(player:GetAttribute("RunBonus") or 0)) or 0))*multiplier
+  local speed = (character:GetAttribute("Knockout") or character:GetAttribute("CraftingLocked")) and 0 or (Config.WalkSpeed+(player:GetAttribute("WalkBonus") or 0) + (running and (Config.RunSpeedBonus+(player:GetAttribute("RunBonus") or 0)) or 0))*multiplier
   if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
   if character:GetAttribute("Running") ~= running then character:SetAttribute("Running",running) end
  end

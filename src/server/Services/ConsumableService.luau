@@ -6,6 +6,7 @@ local Service = {}
 function Service.Eat(player, id)
  local definition = typeof(id) == "string" and Items.Items[id]
  if not definition or not definition.Consume then return false end
+ if definition.Requirements and not require(script.Parent.ProgressionService).Meets(player,definition.Requirements) then return false end
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  if not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return false end

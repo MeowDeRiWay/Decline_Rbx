@@ -62,7 +62,6 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
   label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and (chest.Name=="CuttingBoard" and "Cutting Board" or chest.Name=="Workstation" and "Workstation" or "Stove") or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
-  if stoveHovered and chest.Name~="Workstation" and player:GetAttribute("Profession")~="Cook" then label.Text=chest.Name.."\nCook profession required" end
   label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-44)))
   label.Visible = true
   return

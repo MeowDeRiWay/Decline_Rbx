@@ -3,6 +3,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Inventory=require(script.Parent.Services.InventoryService)
 local Projectiles=require(script.Parent.Services.FirearmProjectiles)
 local Audio=require(script.Parent.Services.FirearmAudio)
+local Progression=require(script.Parent.Services.ProgressionService)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
 local Journal=require(script.Parent.Services.JournalService)
@@ -16,6 +17,7 @@ local function context(player)
  local id=character and character:GetAttribute("HandsItem")
  local definition=id and Items[id]
  if not root or not hp or hp.Health<=0 or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or not definition or not definition.Firearm then return end
+ if definition.Requirements and not Progression.Meets(player,definition.Requirements) then return end
  return character,root,id,definition.Firearm
 end
 local function stateFor(player,character,id)

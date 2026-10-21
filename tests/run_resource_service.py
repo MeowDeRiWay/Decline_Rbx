@@ -10,7 +10,7 @@ for name in ['Config', 'Rules', 'Area', 'Inventory', 'WorldItems', 'Items', 'Pro
     service = re.sub(rf'local {name} = require\([^\n]+\)\n', '', service)
 setup = '''
 local xp=0
-local Progression={Loot=function(_,items) return items end,Award=function(_,amount) xp+=amount end}
+local Progression={Loot=function(_,items) return items end,Harvest=function() xp+=10 end}
 
 function CFrame.Angles(_,y,_) return cf(Vector3.zero,y) end
 local originalIndex=cm.__index

@@ -8,6 +8,7 @@ service=(root/'src/server/Services/DamageService.luau').read_text().replace('loc
 service=service.replace('require(ReplicatedStorage.Shared.DefenseRules)','(function()\n'+(root/'src/shared/DefenseRules.luau').read_text()+'\nend)()')
 service=service.replace('require(ReplicatedStorage.Shared.AffiliationRules)','(function()\n'+(root/'src/shared/AffiliationRules.luau').read_text()+'\nend)()')
 service=service.replace('require(ReplicatedStorage.Shared.AccuracyRules)','(function()\n'+(root/'src/shared/AccuracyRules.luau').read_text()+'\nend)()')
+service=service.replace('require(ReplicatedStorage.Shared.ItemConfig).Items','{}')
 setup='''
 local hits=0
 local chance=.1
