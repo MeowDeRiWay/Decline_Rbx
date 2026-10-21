@@ -72,6 +72,7 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
   local point = planePoint(camera,corner.X,corner.Y,root.Position.Y)
   if point then table.insert(screenCorners,point);range = math.max(range,(point-root.Position).Magnitude) end
  end
+ range=math.min(range,player:GetAttribute("ViewRange") or 5*(player:GetAttribute("Attention") or 5))
  local head = character:FindFirstChild("Head")
  local origin = (head and head:IsA("BasePart") and head.Position or root.Position)+Vector3.new(0,.05,0)
  local forward = Vector3.new(root.CFrame.LookVector.X,0,root.CFrame.LookVector.Z).Unit

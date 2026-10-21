@@ -19,7 +19,7 @@ viewRemote.OnServerEvent:Connect(function(player,height,aspect)
  if now-(reportTimes[player] or -math.huge)<.4 then return end
  reportTimes[player]=now
  if not finite(height) or not finite(aspect) then return end
- local _,maximum=Progression.ZoomBounds(player:GetAttribute("ViewBonus") or 0,Config.CameraHeight,Config.CameraFieldOfView)
+ local _,maximum=Progression.ZoomBounds(player:GetAttribute("ViewRange") or 25,Config.CameraHeight,Config.CameraFieldOfView)
  views[player]={Height=math.clamp(height,18,maximum),Aspect=math.clamp(aspect,.5,4)}
 end)
 Players.PlayerRemoving:Connect(function(player) views[player]=nil;reportTimes[player]=nil end)
@@ -30,7 +30,7 @@ local function playerFootprints()
   local root=character and character:FindFirstChild("HumanoidRootPart")
   local hp=character and character:FindFirstChildOfClass("Humanoid")
   if not root or not hp or hp.Health<=0 or character:GetAttribute("IsDead") then continue end
-  local _,maximum=Progression.ZoomBounds(player:GetAttribute("ViewBonus") or 0,Config.CameraHeight,Config.CameraFieldOfView)
+  local _,maximum=Progression.ZoomBounds(player:GetAttribute("ViewRange") or 25,Config.CameraHeight,Config.CameraFieldOfView)
   local view=views[player]
   -- Before the first report, keep a conservative maximum screen active.
   local height=view and math.clamp(view.Height,18,maximum) or maximum
@@ -39,6 +39,7 @@ local function playerFootprints()
   for _,offset in ipairs(Rules.ScreenOffsets(height,Config.CameraBack*height/Config.CameraHeight,Config.CameraFieldOfView,aspect)) do
    table.insert(corners,{X=root.Position.X+offset.X,Z=root.Position.Z+offset.Z})
   end
+  corners.Center=root.Position;corners.Range=player:GetAttribute("ViewRange") or 5*(player:GetAttribute("Attention") or 5)
   table.insert(result,corners)
  end
  return result
@@ -46,7 +47,8 @@ end
 local function gapAt(position)
  local gap=math.huge
  for _,corners in ipairs(footprints) do
-  gap=math.min(gap,Rules.EdgeDistance(position.X,position.Z,corners))
+  local radial=math.max(0,math.sqrt((position.X-corners.Center.X)^2+(position.Z-corners.Center.Z)^2)-corners.Range)
+  gap=math.min(gap,math.max(radial,Rules.EdgeDistance(position.X,position.Z,corners)))
   if gap==0 then break end
  end
  return gap

@@ -56,7 +56,7 @@ function Rules.Bonuses(stats)
  return {CarryLimitKg=5*stats.Strength,MeleeBonus=stats.Strength,MaxHealth=10*stats.Endurance,
   WalkBonus=.3*stats.Agility,RunBonus=stats.Agility,Regeneration=2*stats.Endurance,
   DodgeChance=5*stats.Agility,CriticalChance=.01*stats.Luck,
-  ViewBonus=0,LuckChance=0,LuckAmount=0}
+  ViewRange=5*stats.Attention,HearingMultiplier=stats.Attention/5,ViewBonus=0,LuckChance=0,LuckAmount=0}
 end
 function Rules.Meets(state,requirements)
  if not state.Confirmed then return false end

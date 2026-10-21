@@ -23,6 +23,14 @@
         "$className": "StarterCharacterScripts",
         "$path": "src/character"
       }
+    },
+    "VoiceChatService": {
+      "$className": "VoiceChatService",
+      "$properties": {
+        "UseAudioApi": "Enabled",
+        "EnableDefaultVoice": true
+      },
+      "$ignoreUnknownInstances": true
     }
   }
 }

@@ -106,6 +106,7 @@ local function visible(model,root,character,camera)
  end
  if not onScreen(target) and not onScreen(targetHead) then return false end
  local offset = target.Position-root.Position
+ if offset.Magnitude>(player:GetAttribute("ViewRange") or 5*(player:GetAttribute("Attention") or 5)) then return false end
  local forward = root.CFrame.LookVector
  if not Rules.InSector(forward.X,forward.Z,offset.X,offset.Z,Config.CreatureViewAngle) then return false end
  local head = character:FindFirstChild("Head")

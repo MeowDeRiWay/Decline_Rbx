@@ -35,7 +35,7 @@ function Service.RollHit(attacker,humanoid,bonus,skill)
  if friendly(attacker,humanoid.Parent) then return false end
  local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
  if defender and defender:GetAttribute("AttributesConfirmed")==false then return false end
- local dodge=defender and defender:GetAttribute("DodgeChance") or 0
+ local dodge=defender and defender:GetAttribute("DodgeChance") or humanoid.Parent:GetAttribute("DodgeChance") or 0
  local character=attacker:IsA("Player") and attacker.Character or attacker
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local target=humanoid.Parent:FindFirstChild("HumanoidRootPart",true) or humanoid.Parent:FindFirstChildWhichIsA("BasePart",true)

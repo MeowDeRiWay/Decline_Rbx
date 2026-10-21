@@ -24,7 +24,7 @@ local function update(player)
   local armor=ItemConfig.Items[id].Armor
   if armor then absorption+=armor.Absorption or 0;resistance+=armor.Resistance or 0 end
  end
- player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,1))
+ player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,.9))
  if player.Character then
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1))
   Visuals.Apply(player.Character, state.Equipment.Hands)

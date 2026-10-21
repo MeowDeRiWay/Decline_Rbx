@@ -22,6 +22,8 @@ assert(Rules.ScreenRayDistance(0,0,1,0,corners,3)==3)
 local calls=0
 local Sight={Cast=function() calls+=1;return nil end}
 local Config={CreatureViewAngle=160}
+local viewRange=25
+local player={GetAttribute=function(_,key) if key=="ViewRange" then return viewRange end end}
 local target={Position=Vector3.new(200,0,5),IsA=function() return true end}
 local model={FindFirstChild=function(_,name) return name=="HumanoidRootPart" and target or nil end}
 local character={FindFirstChild=function() end}
@@ -32,8 +34,10 @@ for i=1,1000 do assert(not visible(model,root,character,camera)) end
 assert(calls==0,"off-screen creatures must not cast any visibility rays")
 target.Position=Vector3.new(0,0,5)
 assert(visible(model,root,character,camera) and calls==1,"visible creature still tests line of sight")
+viewRange=4;assert(not visible(model,root,character,camera) and calls==1,"outside Attention range casts no rays")
+viewRange=5;assert(visible(model,root,character,camera) and calls==2,"at5 studs visible with1 attention")
 target.Position=Vector3.new(0,0,-5)
-assert(not visible(model,root,character,camera) and calls==1,"rear sector still hidden")
+assert(not visible(model,root,character,camera) and calls==2,"rear sector still hidden")
 print("PASS: viewport edges, behind camera, four ground edges, diagonal and max range; 1000 off-screen checks cast zero rays; on-screen sector/occlusion preserved")
 '''.replace('VISIBLE',visible)
 with tempfile.TemporaryDirectory() as directory:

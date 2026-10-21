@@ -14,6 +14,9 @@ local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Visuals = require(script.Parent.Services.EquipmentVisuals)
 local Damage = require(script.Parent.Services.DamageService)
 local Chests = require(script.Parent.Services.ChestService)
+local Progression=require(ReplicatedStorage.Shared.ProgressionRules)
+local ZombieStats=require(ReplicatedStorage.Shared.ZombieStats)
+local statRandom=Random.new()
 local registered = setmetatable({},{__mode="k"})
 local function positive(value)
  return typeof(value)=="number" and value==value and value>0 and value<math.huge
@@ -34,12 +37,17 @@ local function prepare(model)
  humanoid.JumpPower=0
  humanoid.JumpHeight=0
  humanoid.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None
- local maximum=model:GetAttribute("MaxHealth")
- if not positive(maximum) then maximum=humanoid.MaxHealth~=100 and humanoid.MaxHealth or 20 end
- humanoid.MaxHealth=maximum
- humanoid.Health=maximum
- local speed=model:GetAttribute("MoveSpeed")
- humanoid.WalkSpeed=positive(speed) and speed or (humanoid.WalkSpeed>0 and humanoid.WalkSpeed~=16 and humanoid.WalkSpeed or 3)
+ local stats=ZombieStats.Roll(statRandom)
+ local derived=Progression.Bonuses(stats)
+ local skills=Progression.SkillValues(stats)
+ for id,value in pairs(stats) do model:SetAttribute(id,value) end
+ for id,value in pairs(derived) do model:SetAttribute(id,value) end
+ model:SetAttribute("SkillUnarmed",skills.Unarmed)
+ model:SetAttribute("Accuracy",skills.Unarmed)
+ model:SetAttribute("SightRange",derived.ViewRange)
+ model:SetAttribute("MoveSpeed",derived.RunBonus)
+ humanoid.MaxHealth=derived.MaxHealth;humanoid.Health=derived.MaxHealth
+ humanoid.WalkSpeed=derived.RunBonus
  humanoid.Parent=model
  root.Name="HumanoidRootPart"
  model.PrimaryPart=root
@@ -243,7 +251,7 @@ local function prepare(model)
    local desiredRoot = lookStart*CFrame.Angles(0,math.sin(progress*2*math.pi)*math.rad(60),0)
    model:PivotTo(desiredRoot*root.CFrame:Inverse()*model:GetPivot())
   elseif phase == "Wandering" then
-   local arrived,blocked=navigate(wanderTarget,humanoid.WalkSpeed*.5,dt,.1,nil)
+   local arrived,blocked=navigate(wanderTarget,model:GetAttribute("WalkBonus"),dt,.1,nil)
    if arrived or blocked then IdleRules.FinishWalk(idle) end
   end
  end
@@ -251,12 +259,14 @@ local function prepare(model)
  local lastSeenPosition,lastSeenCharacter
  local searchStart,searchElapsed,searchBlocked
  local elapsed=0
+ local regenAt=os.clock()+60
  local movement
  movement=Activity.Register(model,root,function(dt)
   if not model:IsDescendantOf(workspace) then movement:Disconnect(); return end
   -- Custom anchored rigs may not enter Humanoid's Dead state. HP is authoritative.
   if humanoid.Health<=0 and not dead then die() end
   if dead then movement:Disconnect(); return end
+  if os.clock()>=regenAt then regenAt=os.clock()+60;humanoid.Health=math.min(humanoid.MaxHealth,humanoid.Health+(model:GetAttribute("Regeneration") or 0)) end
   elapsed+=dt
   if elapsed>=.1 then
    elapsed%=.1
@@ -341,7 +351,9 @@ local function prepare(model)
      if not Sector.InSector(facing.X,facing.Z,offset.X,offset.Z,160) then return end
      local hit=Sight.Cast(head.Position,victimRoot.Position-head.Position,model)
      if hit and not hit.Instance:IsDescendantOf(victimRoot.Parent) then return end
-     if Damage.Apply(victim,weapon.Damage,weapon.DamageType,root.Position,"Melee",{Attacker=model})>0 then
+     if not Damage.RollHit(model,victim,0,model:GetAttribute("SkillUnarmed")) then Damage.Miss(victim.Parent,model);return end
+     local critical=statRandom:NextNumber()<(model:GetAttribute("CriticalChance") or 0)
+     if Damage.Apply(victim,model:GetAttribute("MeleeBonus"),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextInteger(2,4) or 1})>0 then
       model:SetAttribute("WeaponCondition",math.max(0,(model:GetAttribute("WeaponCondition") or 0)-1))
      end
     end)
