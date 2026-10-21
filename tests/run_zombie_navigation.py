@@ -112,6 +112,30 @@ assert(nav:Plan(closeTarget),"target beside wall must produce reachable nearby e
 local endpoint=nav.Route[#nav.Route]
 assert(endpoint.Z>.5,"endpoint must stay on player's side of window wall")
 assert(not workspace:Raycast(endpoint,closeTarget-endpoint,{}),"endpoint must have no wall separating it from target")
+-- A horde must enqueue work without doing physics in the movement callback.
+local calls=0
+local originalBlockcast=workspace.Blockcast
+function workspace:Blockcast(...) calls+=1; return originalBlockcast(self,...) end
+local queued={}
+for i=1,100 do
+ local agent=Navigation.New(model,body)
+ assert(agent:Waypoint(closeTarget)==nil)
+ assert(agent.Pending,"search should be queued")
+ table.insert(queued,agent)
+end
+assert(calls==0,"Waypoint must never synchronously plan the horde")
+local steps=Navigation.Update()
+assert(steps<=128,"one global budget, not a budget per zombie")
+assert(queued[100].Pending,"horde must not finish in a single frame")
+for _,agent in ipairs(queued) do agent:Cancel() end
+assert(Navigation.Update()==0,"cancelled searches must not consume planning work")
+local agent=Navigation.New(model,body)
+agent:Waypoint(closeTarget)
+for _=1,10000 do
+ Navigation.Update()
+ if not agent.Pending then break end
+end
+assert(not agent.Pending and #agent.Route>0,"cooperative search must eventually produce the same reachable route")
 print("PASS: wall-hugging target and reachable endpoint on correct side; window-to-side-door detour, collision-safe portal route; real body-sized doorway clearance, fine-grid centering, collision-checked route segments, undersized door rejection")
 '''
 with tempfile.TemporaryDirectory(prefix='decline-door-') as directory:

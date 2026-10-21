@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Shot freeze mitigation — 21 October
+
+- Likely spike identified in shot noise waking many zombies: movement called synchronous pathfinding (door graph plus up to2000 grid expansions and fine-grid retries per agent) in one Heartbeat. Runtime Waypoint now only queues; one shared Navigation.Update Heartbeat spends a soft2ms budget / hard128 coroutine resumes across ALL searches per frame, round-robin. Ground/corridor queries, descendant loops and A* iterations yield; one individual Roblox physics call/cache rebuild cannot be preempted. Direct Plan remains synchronous for geometry tests only.
+- Runtime shares a1second filtered humanoid/door snapshot instead of scanning the entire world separately per agent/plan. No-route retries wait3seconds; successful routes1second. Planning status does not accrue the3second blocked-sound timeout. Sleeping/reset/dead/removed agents cancel pending jobs. Newest goal is checked again after completed plan; existing route can keep moving while replacement queues.
+- Actual planner tests cover100 simultaneous enqueue calls with zero synchronous physics, global128-step ceiling, cancellation and eventual route completion, plus narrow-door/window geometry regression. Noise/activity tests, all Luau compilation and Rojo build pass. No Studio profiler/live shot test; user should re-test firing near a populated town. This bounds route-search spikes, not all AI/physics/rendering costs.
+
 ## Passive walking Sneak and zombie footstep audio — 21 October
 
 - Replaces previous Ctrl toggle entirely: deleted Sneaking.client and SetSneaking remote/half-speed/sprint blocking. Walking automatically uses base radius max(0,12-floor(SkillSneak/10)); running always12 until user supplies a sprint perk. Source volume/min distance scale by radius/12; listener ATT/5 then scales source range+gain through existing hearing. InverseTapered fades softly near edge. Sneak100=>radius2 atATT5,4 atATT10, quieter than ordinary steps. Sneak120+ walking fully silent (radius/volume0); NoiseService skips zero-radius events and Audible excludes them. Whole10-point thresholds, no fractional deductions.

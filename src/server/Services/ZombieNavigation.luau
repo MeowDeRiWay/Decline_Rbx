@@ -1,14 +1,61 @@
 -- A local ground grid supports the custom small rigs and non-collidable homes.
 local Navigation = {}
 Navigation.__index = Navigation
+-- All zombies share one cooperative planner budget, including failed fine-grid searches.
+local jobs={}
+local worldObjects,worldAt=nil,-math.huge
+local function checkpoint(self)
+ if self.Cooperative then coroutine.yield() end
+end
+local function descendants(self)
+ if not self.Cooperative and not self.CachedWorld then return workspace:GetDescendants() end
+ if not worldObjects or os.clock()-worldAt>=1 then
+  worldObjects={}
+  for _,object in ipairs(workspace:GetDescendants()) do
+   if object:IsA("Humanoid") or (object:IsA("Model") and (object:GetAttribute("NavigationDoor")==true or string.match(string.lower(object.Name),"^doorway"))) then
+    table.insert(worldObjects,object)
+   end
+  end
+  worldAt=os.clock()
+ end
+ return worldObjects
+end
+function Navigation.Update()
+ local deadline=os.clock()+.002
+ local steps=0
+ while #jobs>0 and steps<128 and os.clock()<deadline do
+  local job=table.remove(jobs,1)
+  if job.Owner.Pending~=job then continue end
+  local ok,result=coroutine.resume(job.Thread)
+  steps+=1
+  if not ok or coroutine.status(job.Thread)=="dead" then
+   job.Owner.Pending=nil
+   job.Owner.NextPlan=os.clock()+(ok and result and 1 or 3)
+   if ok then
+    job.Owner.Route=job.Work.Route
+    job.Owner.Index=1
+    job.Owner.Ray=job.Work.Ray
+   else
+    warn("Zombie route search failed: "..tostring(result))
+   end
+  else
+   table.insert(jobs,job)
+  end
+ end
+ return steps
+end
+function Navigation:Cancel()
+ self.Pending=nil
+end
 function Navigation.New(model,root)
  return setmetatable({Model=model,Root=root,Cell=math.clamp(math.min(root.Size.X,root.Size.Z)*.2,.1,.25),Route={},Index=1,NextPlan=0},Navigation)
 end
 function Navigation:Parameters(ignored)
  local excluded={self.Model}
  if ignored then table.insert(excluded,ignored) end
- for _,object in ipairs(workspace:GetDescendants()) do
-  if object:IsA("Humanoid") and object.Parent:IsA("Model") then table.insert(excluded,object.Parent) end
+ for _,object in ipairs(descendants(self)) do
+  checkpoint(self)
+  if object:IsA("Humanoid") and object.Parent and object.Parent:IsA("Model") then table.insert(excluded,object.Parent) end
  end
  local ray=RaycastParams.new()
  ray.FilterType=Enum.RaycastFilterType.Exclude
@@ -21,6 +68,7 @@ function Navigation:Parameters(ignored)
  return ray,overlap
 end
 function Navigation:Ground(point,ray)
+ checkpoint(self)
  local root=self.Root
  local step=math.max(.15,root.Size.Y*.5)
  local origin=point+Vector3.new(0,step,0)
@@ -50,6 +98,7 @@ function Navigation:BodySize()
  return Vector3.new(math.max(.01,self.Root.Size.X-.02),self.Root.Size.Y*.9,math.max(.01,self.Root.Size.Z-.02))
 end
 function Navigation:Clear(a,b,ray)
+ checkpoint(self)
  local delta=b-a
  if delta.Magnitude<.001 then return true end
  return workspace:Blockcast(self:BodyFrame(a,b),self:BodySize(),delta,ray)==nil
@@ -83,7 +132,8 @@ function Navigation:DoorRoute(target,ray,overlap)
  local start=self.Root.Position
  local nodes={{Position=start},{Position=target}}
  local doors={}
- for _, object in ipairs(workspace:GetDescendants()) do
+ for _, object in ipairs(descendants(self)) do
+  checkpoint(self)
   if object:IsA("Model") and (object:GetAttribute("NavigationDoor")==true or string.match(string.lower(object.Name),"^doorway"))
    and object:FindFirstChildWhichIsA("BasePart",true) then
    local frame,size=object:GetBoundingBox()
@@ -158,6 +208,7 @@ function Navigation:Plan(goal,ignored,cellOverride)
  local found
  local limit=math.min(40,heuristic(start)+12)
  for _=1,2000 do
+  checkpoint(self)
   if #open==0 then break end
   local index=1
   for i=2,#open do if open[i].Score<open[index].Score then index=i end end
@@ -211,10 +262,14 @@ function Navigation:Waypoint(goal,ignored)
  if waypoint and Vector3.new(waypoint.X-self.Root.Position.X,0,waypoint.Z-self.Root.Position.Z).Magnitude<.12 then
   self.Index+=1; waypoint=self.Route[self.Index]
  end
- if now>=self.NextPlan and (changed or not waypoint or (self.Ray and not self:Clear(self.Root.Position,waypoint,self.Ray))) then
-  self:Plan(goal,ignored)
-  self.NextPlan=now+1
-  waypoint=self.Route[self.Index]
+ if not self.Pending and now>=self.NextPlan and (changed or not waypoint or (self.Ray and not self:Clear(self.Root.Position,waypoint,self.Ray))) then
+  local worker=Navigation.New(self.Model,self.Root)
+  worker.Cooperative=true
+  local job={Owner=self,Work=worker}
+  job.Thread=coroutine.create(function() return worker:Plan(goal,ignored) end)
+  self.Goal=goal
+  self.Pending=job
+  table.insert(jobs,job)
  end
  return waypoint
 end

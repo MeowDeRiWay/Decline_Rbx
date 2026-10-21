@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Sight = require(ReplicatedStorage.Shared.Sight)
 local Navigation = require(script.Parent.Services.ZombieNavigation)
+game:GetService("RunService").Heartbeat:Connect(function() Navigation.Update() end)
 local Activity = require(script.Parent.Services.ZombieActivity)
 local Crowd = require(ReplicatedStorage.Shared.CrowdRules)
 local IdleRules = require(ReplicatedStorage.Shared.ZombieIdleRules)
@@ -218,6 +219,7 @@ local function prepare(model)
   return false,obstruction ~= nil
  end
  local navigation=Navigation.New(model,root)
+ navigation.CachedWorld=true
  local function navigate(destination,speed,dt,stoppingDistance,ignored)
   local delta=destination-root.Position
   if Vector3.new(delta.X,0,delta.Z).Magnitude<=stoppingDistance then
@@ -225,7 +227,10 @@ local function prepare(model)
    if navigation:Clear(root.Position,destination,ray) then return true,false end
   end
   local waypoint=navigation:Waypoint(destination,ignored)
-  if not waypoint then model:SetAttribute("NavigationStatus","NoRoute"); return false,true end
+  if not waypoint then
+   model:SetAttribute("NavigationStatus",navigation.Pending and "Planning" or "NoRoute")
+   return false,not navigation.Pending
+  end
   model:SetAttribute("NavigationStatus","FollowingRoute")
   local arrived,blocked=moveToward(waypoint,speed,dt,.08,ignored)
   if blocked then navigation:Blocked() end
@@ -264,10 +269,10 @@ local function prepare(model)
  local regenAt=os.clock()+60
  local movement
  movement=Activity.Register(model,root,function(dt)
-  if not model:IsDescendantOf(workspace) then movement:Disconnect(); return end
+  if not model:IsDescendantOf(workspace) then navigation:Cancel(); movement:Disconnect(); return end
   -- Custom anchored rigs may not enter Humanoid's Dead state. HP is authoritative.
   if humanoid.Health<=0 and not dead then die() end
-  if dead then movement:Disconnect(); return end
+  if dead then navigation:Cancel(); movement:Disconnect(); return end
   if os.clock()>=regenAt then regenAt=os.clock()+60;humanoid.Health=math.min(humanoid.MaxHealth,humanoid.Health+(model:GetAttribute("Regeneration") or 0)) end
   elapsed+=dt
   if elapsed>=.1 then
@@ -382,7 +387,9 @@ local function prepare(model)
   nearest=nil
   lastSeenPosition,lastSeenCharacter,searchStart=nil,nil,nil
   searchElapsed,searchBlocked=0,0
+  navigation:Cancel()
   navigation=Navigation.New(model,root)
+  navigation.CachedWorld=true
   idle=IdleRules.New();idlePhase=nil
   elapsed=random:NextNumber(0,.1)
   if mode~="Active" then
