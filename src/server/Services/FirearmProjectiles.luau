@@ -3,6 +3,7 @@ local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
 local Damage=require(script.Parent.DamageService)
+local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
 local Service={}
 local bullets,fx={},{}
 local count,sequence=0,0
@@ -59,7 +60,7 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  if count>=256 then return false end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
-  Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=definition.Damage,
+  SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=definition.Damage,
   AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",Ignored={character},Impacts=0}
  emit("Muzzle",origin)
  return true
@@ -79,7 +80,7 @@ RunService.Heartbeat:Connect(function(dt)
    if bullet.Impacts>64 then stopped=true;break end
    local victim=victimOf(hit.Instance)
    if victim and victim.Health>0 then
-    if Damage.RollHit(bullet.Player,victim,bullet.Player:GetAttribute(bullet.Category.."AccuracyBonus") or 0) then
+    if Damage.RollHit(bullet.Player,victim,(bullet.Player:GetAttribute(bullet.Category.."AccuracyBonus") or 0)+bullet.SightBonus) then
      victim.Parent:SetAttribute("LastDamagerID",bullet.Player.UserId)
      victim.Parent:SetAttribute("LastHitItem",bullet.ItemID)
      local critical=random:NextNumber()<(bullet.Player:GetAttribute(bullet.Category.."CritChance") or 0)

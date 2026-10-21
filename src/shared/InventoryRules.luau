@@ -66,6 +66,7 @@ function Rules.Add(state, definitions, id, amount, conditions, weaponData)
   for i=1,amount do
    serial+=1
    local data=weaponData and table.clone(weaponData[i]) or {Loaded=0,Type="FMJ",Mode="Auto"}
+   if definitions[id].Firearm and definitions[id].Firearm.SingleOnly then data.Mode="Single" end
    data.UID=data.UID or serial
    table.insert(state.Weapons[id],data)
    table.insert(state.Conditions[id], conditions and conditions[i] or weapon.MaxUses)

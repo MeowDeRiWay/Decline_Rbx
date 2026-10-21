@@ -29,7 +29,7 @@ local function stateFor(player,character,id)
 end
 local function sync(player,state,gun)
  local data=Inventory.GetMagazine(player)
- if data and data.UID==state.UID then state.Loaded=data.Loaded;state.Type=data.Type;state.Mode=data.Mode or "Auto" end
+ if data and data.UID==state.UID then state.Loaded=data.Loaded;state.Type=data.Type;state.Mode=gun.SingleOnly and "Single" or data.Mode or "Auto" end
  local ammo=Rules.AmmoID(gun.Caliber,state.Type)
  local total=Inventory.Snapshot(player).Items[ammo] or 0
  local c=state.Character
@@ -52,6 +52,7 @@ action.OnServerEvent:Connect(function(player,command,direction)
  sync(player,state,gun)
  local now=os.clock()
  if command=="Mode" then
+  if gun.SingleOnly then return end
   if now<(state.NextMode or 0) then return end
   state.NextMode=now+.25;state.Mode=state.Mode=="Auto" and "Single" or "Auto";Inventory.SaveMagazine(player,state.Loaded,state.Type,state.Mode);sync(player,state,gun);return
  elseif command=="Type" then

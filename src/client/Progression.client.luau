@@ -1,3 +1,4 @@
+local Accuracy=require(game:GetService("ReplicatedStorage").Shared.AccuracyRules)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Input=game:GetService("UserInputService")
@@ -116,6 +117,7 @@ local function refreshStats()
  local character=player.Character
  local attributes=player:GetAttributes()
  local definition=character and Items[character:GetAttribute("HandsItem")]
+ attributes.WeaponAccuracyBonus=definition and definition.Firearm and Accuracy.SightBonus(character:FindFirstChild("HeldItem")) or 0
  local stats=Sheet.Calculate(attributes,definition,character and character:GetAttribute("WeaponCondition"),character and character:GetAttribute("Health"),character and character:GetAttribute("MaxHealth"))
  local function percent(value) return string.format("%g%%",math.floor(value*10000+.5)/100) end
  values.Health.Text=string.format("%.0f / %.0f HP",stats.Health,stats.MaxHealth)

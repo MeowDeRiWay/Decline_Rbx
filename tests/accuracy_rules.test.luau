@@ -10,3 +10,14 @@ assert(Rules.Chance(90,10,40,50)==30,"weapon skill bonus before penalties")
 assert(Rules.Chance(100,0,40.5,0)==79.5,"no rounding in probability")
 assert(Rules.Chance(nil,nil,0,nil)==25)
 print("PASS: skill cap, distance grace, category bonus, dodge, final chance cap and examples")
+
+local bonus=20
+local sight={IsA=function(_,kind) return kind=="Model" end,GetAttribute=function(_,key) return key=="AccuracyBonus" and bonus end}
+local held={FindFirstChild=function(_,name) return name=="Sight" and sight end}
+assert(Rules.SightBonus(nil)==0 and Rules.SightBonus(held)==20)
+assert(Rules.Chance(100,Rules.SightBonus(held),60,0)==80)
+bonus=0/0;assert(Rules.SightBonus(held)==0)
+bonus=math.huge;assert(Rules.SightBonus(held)==0)
+bonus=-10;assert(Rules.SightBonus(held)==0)
+bonus=400;assert(Rules.SightBonus(held)==300)
+print("PASS: Sight model bonus, absent sight, finite validation and cap")

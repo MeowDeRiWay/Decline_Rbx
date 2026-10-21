@@ -15,7 +15,7 @@ local function advance(seconds)
  time+=seconds
  for index=#tasks,1,-1 do if tasks[index].At<=time then local fn=tasks[index].Run;table.remove(tasks,index);fn() end end
 end
-local character={attributes={HandsItem="Rifle223",WeaponCondition=3000}}
+local character={attributes={HandsItem="AssaultRifle223",WeaponCondition=3000}}
 function character:GetAttribute(k) return self.attributes[k] end
 function character:SetAttribute(k,v) self.attributes[k]=v end
 local hp={Health=100}
@@ -88,12 +88,12 @@ fire(player,"Fire",direction);assert(magazine.Loaded==2 and shots==2)
 rounds.Ammo223AP=0;changed.callback(player)
 assert(character:GetAttribute("MagazineAmmo")==2,"dropping loose stock cannot erase loaded rounds")
 character:SetAttribute("HandsItem","");changed.callback(player)
-character:SetAttribute("HandsItem","Rifle223");changed.callback(player)
+character:SetAttribute("HandsItem","AssaultRifle223");changed.callback(player)
 assert(character:GetAttribute("MagazineAmmo")==2 and character:GetAttribute("AmmoType")=="AP","holster restores charge/type")
 fire(player,"Fire",direction);assert(shots==2,"holster cannot bypass cooldown")
 rounds.Ammo223AP=3;fire(player,"Reload")
 character:SetAttribute("HandsItem","");changed.callback(player)
-character:SetAttribute("HandsItem","Rifle223");changed.callback(player);advance(2.5)
+character:SetAttribute("HandsItem","AssaultRifle223");changed.callback(player);advance(2.5)
 assert(magazine.Loaded==2 and rounds.Ammo223AP==3 and not character:GetAttribute("Reloading"),"switch cancels pending reload without losing charge")
 local original=magazine
 magazine={UID=2,Type="FMJ",Loaded=0,Mode="Auto"};changed.callback(player)
@@ -114,6 +114,13 @@ assert(magazine.Type=="FMJ" and magazine.Loaded==30 and rounds.Ammo223AP==4,"par
 Inventory.UnloadMagazine(player,"AP");rounds.Ammo223FMJ=0;rounds.Ammo223AP=0
 fire(player,"Reload");fire(player,"Reload");assert(#notices==1,"empty notification only when no type is available, throttled")
 assert(table.find(played,"ShotSound") and table.find(played,"ReloadSound") and stopped>=3)
+character:SetAttribute("HandsItem","Rifle223");magazine={UID=99,Type="FMJ",Loaded=5,Mode="Auto"}
+changed.callback(player);assert(character:GetAttribute("FireMode")=="Single","bolt action normalizes old auto state")
+fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single","V cannot enable automatic mode")
+local before=magazine.Loaded
+fire(player,"Fire",direction);assert(magazine.Loaded==before-1)
+advance(.1);fire(player,"Fire",direction);assert(magazine.Loaded==before-1,"bolt cycle blocks rapid fire")
+advance(1.4);fire(player,"Fire",direction);assert(magazine.Loaded==before-2)
 print("PASS: persistent per-weapon charge, independent identical guns, loose/loaded conservation, holster cooldown, reload cancellation, RPM/wall/direction guards, mode, sound, durability and empty notice")
 '''
 parts=[(root/'tests/city_geometry.fixture.luau').read_text(),

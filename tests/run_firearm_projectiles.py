@@ -3,8 +3,9 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/FirearmProjectiles.luau').read_text()
-service=re.sub(r'local (Rules|Damage)=require[^\n]+\n','',service)
+service=re.sub(r'local (Rules|Damage|Accuracy)=require[^\n]+\n','',service)
 mock='''
+local Accuracy={SightBonus=function() return 0 end}
 function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
 local function signal() return {Connect=function(self,fn) self.fire=fn end} end
 local heartbeat=signal()
@@ -51,6 +52,7 @@ local function part(parent,z,depth)
  table.insert(parent.children,p);table.insert(parts,p);return p
 end
 local character=group(nil)
+function character:FindFirstChild() end
 local target=group(nil)
 local hp={Health=100,Parent=target}
 function target:FindFirstChildOfClass() return hp end
@@ -61,7 +63,7 @@ local function run(kind,ammo)
  parts={};packets={};dealt=0
  if kind then local wall=group(kind);part(wall,3-.025,.05);part(wall,3+.025,.05) end
  part(target,5,.5)
- assert(Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,ammo,"Rifle223"))
+ assert(Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,ammo,"AssaultRifle223"))
  for i=1,60 do heartbeat.fire(1/60) end
  return dealt
 end
@@ -74,14 +76,14 @@ local ap=run("Brick","AP");assert(ap>fmj,"AP retains more range/damage through h
 assert(run("Metal","FMJ")==0,"insufficient budget stops projectile before target")
 assert(run("Unknown","AP")==0,"unknown material stops safely")
 parts={};packets={};definition.Range=10
-Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","Rifle223")
+Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AssaultRifle223")
 heartbeat.fire(1/60)
 local stopped=false
 for _,packet in ipairs(packets) do for _,e in ipairs(packet) do if e.Kind=="Stop" then assert(math.abs(e.Point.Z-10)<1e-6);stopped=true end end end
 assert(stopped,"air travel consumes range 1:1")
 parts={};packets={};dealt=0;definition.Range=350;definition.Speed=60
 local moving=part(target,5,.5)
-Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","Rifle223")
+Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AssaultRifle223")
 heartbeat.fire(1/60);assert(dealt==0)
 moving.CFrame=CFrame.new(Vector3.new(0,0,2))
 heartbeat.fire(1/60);assert(dealt>0,"world raycasts sample moved target during flight")

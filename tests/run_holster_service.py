@@ -18,32 +18,32 @@ end
 setup=setup.replace('journalPlaceholder','(function()\n'+(root/'src/server/Services/JournalService.luau').read_text()+'\nend)()')
 cases='''
 a:LoadCharacterAsync();Service.Reset(a)
-assert(Service.Add(a,"Rifle223",1,{17}))
-assert(Service.Equip(a,"Rifle223"))
+assert(Service.Add(a,"AssaultRifle223",1,{17}))
+assert(Service.Equip(a,"AssaultRifle223"))
 assert(Service.ToggleHolster(a) and Service.Snapshot(a).Equipment.Hands==nil)
-assert(Service.Snapshot(a).Items.Rifle223==1)
-assert(Service.ToggleHolster(a) and Service.Snapshot(a).Equipment.Hands=="Rifle223")
+assert(Service.Snapshot(a).Items.AssaultRifle223==1)
+assert(Service.ToggleHolster(a) and Service.Snapshot(a).Equipment.Hands=="AssaultRifle223")
 assert(a.Character:GetAttribute("WeaponCondition")==17,"condition preserved")
-assert(Service.ToggleHolster(a));assert(Service.Remove(a,"Rifle223",1))
-assert(Service.Add(a,"Rifle223",1,{99}))
+assert(Service.ToggleHolster(a));assert(Service.Remove(a,"AssaultRifle223",1))
+assert(Service.Add(a,"AssaultRifle223",1,{99}))
 assert(not Service.ToggleHolster(a),"dropping original invalidates memory, new same-ID weapon cannot restore it")
-assert(Service.Equip(a,"Rifle223"));assert(Service.ToggleHolster(a))
+assert(Service.Equip(a,"AssaultRifle223"));assert(Service.ToggleHolster(a))
 local storage=Rules.New()
-assert(Service.Transfer(a,storage,"Rifle223",1,true))
+assert(Service.Transfer(a,storage,"AssaultRifle223",1,true))
 assert(not Service.ToggleHolster(a),"transfer invalidates holster memory")
-assert(Service.Add(a,"Rifle223",1,{1}));assert(Service.Equip(a,"Rifle223"))
+assert(Service.Add(a,"AssaultRifle223",1,{1}));assert(Service.Equip(a,"AssaultRifle223"))
 Service.UseWeapon(a);assert(#notices==1 and notices[1].data:find("broke",1,true))
 Service.UseWeapon(a);assert(#notices==1,"broken item does not repeat notification")
 assert(notices[1].player==a,"personal notices are sent only to their owner")
 Service.Reset(a);assert(not Service.ToggleHolster(a),"reset clears memory")
 Service.Reset(a)
-assert(Service.Add(a,"Rifle223",2))
-assert(Service.Add(a,"Rifle223",1,{2999}))
+assert(Service.Add(a,"AssaultRifle223",2))
+assert(Service.Add(a,"AssaultRifle223",1,{2999}))
 local stacks=Service.Snapshot(a).Stacks
 assert(#stacks==2 and (stacks[1].Count==2 or stacks[2].Count==2),"identical pristine weapons stack, used gun separate")
 local pristine
 for _,stack in ipairs(stacks) do if stack.Condition==3000 then pristine=stack end end
-assert(Service.Equip(a,"Rifle223",pristine.Key))
+assert(Service.Equip(a,"AssaultRifle223",pristine.Key))
 Service.Add(a,"Ammo223AP",50)
 Service.UnloadMagazine(a,"AP");Service.ReloadMagazine(a)
 local data=Service.GetMagazine(a);local uid=data.UID
@@ -56,11 +56,11 @@ assert(Service.GetMagazine(a).UID==uid and Service.GetMagazine(a).Loaded==30 and
 Service.ToggleHolster(a)
 local loaded
 for _,stack in ipairs(Service.Snapshot(a).Stacks) do if stack.Loaded==30 then loaded=stack end end
-assert(loaded and Service.Transfer(a,storage,"Rifle223",1,true,loaded.Key))
-assert(storage.Weapons.Rifle223[#storage.Weapons.Rifle223].Loaded==30,"chest retains loaded rounds")
-assert(Service.Transfer(a,storage,"Rifle223",1,false,loaded.Key))
-assert(Service.Equip(a,"Rifle223",loaded.Key) and Service.GetMagazine(a).Loaded==30)
-assert(not Service.Equip(a,"Rifle223","forged variant"),"reject stale/forged selection")
+assert(loaded and Service.Transfer(a,storage,"AssaultRifle223",1,true,loaded.Key))
+assert(storage.Weapons.AssaultRifle223[#storage.Weapons.AssaultRifle223].Loaded==30,"chest retains loaded rounds")
+assert(Service.Transfer(a,storage,"AssaultRifle223",1,false,loaded.Key))
+assert(Service.Equip(a,"AssaultRifle223",loaded.Key) and Service.GetMagazine(a).Loaded==30)
+assert(not Service.Equip(a,"AssaultRifle223","forged variant"),"reject stale/forged selection")
 print("PASS: state-based stacks, selected equipment/chest transfer, magazine/type persistence and weight conservation")
 print("PASS: holster toggle preserves condition, drop/replacement/transfer cannot restore missing weapon, reset and one break notice")
 '''
@@ -77,7 +77,7 @@ function game:GetService(name) if name=="HttpService" then return HttpService en
 workspace.DescendantAdded=event()
 local worldFolder=make("Folder","WorldItems",workspace);worldFolder.ChildAdded=event()
 local Inventory=Service
-local template=make("Model","Rifle223",ServerStorage);make("Part","Part",template)
+local template=make("Model","AssaultRifle223",ServerStorage);make("Part","Part",template)
 local EquipmentVisuals={Template=function() return template end,CaptureTemplate=function() end}
 local Random={new=function() return {NextNumber=function() return .5 end} end}
 local originalPivot=methods.GetPivot
@@ -92,18 +92,18 @@ Service.ToggleHolster(a)
 local charged
 for _,stack in ipairs(Service.Snapshot(a).Stacks) do if stack.Loaded==30 then charged=stack end end
 local beforeDrop=Service.Snapshot(a).Weight
-assert(World.Drop(a,"Rifle223",1,charged.Key))
+assert(World.Drop(a,"AssaultRifle223",1,charged.Key))
 local dropped=worldFolder:GetChildren()[1]
 assert(dropped and dropped:GetAttribute("WeaponData") and dropped:GetAttribute("Conditions"))
 assert(not Service.ToggleHolster(a),"dropped loaded weapon cannot be remotely restored")
 ground=false
 assert(World.Pickup(a,dropped))
 assert(math.abs(Service.Snapshot(a).Weight-beforeDrop)<.00001,"drop/pickup conserves weapon plus ammunition weight")
-assert(Service.Equip(a,"Rifle223",charged.Key) and Service.GetMagazine(a).Loaded==30 and Service.GetMagazine(a).Type=="AP")
+assert(Service.Equip(a,"AssaultRifle223",charged.Key) and Service.GetMagazine(a).Loaded==30 and Service.GetMagazine(a).Type=="AP")
 assert(not World.Pickup(a,dropped),"pickup cannot duplicate a loaded weapon")
 local corpseInventory=Service.ExtractAll(a)
 local foundLoaded=false
-for _,stack in ipairs(Rules.Stacks(corpseInventory,ItemConfig.Items)) do if stack.ID=="Rifle223" and stack.Loaded==30 and stack.AmmoType=="AP" then foundLoaded=true end end
+for _,stack in ipairs(Rules.Stacks(corpseInventory,ItemConfig.Items)) do if stack.ID=="AssaultRifle223" and stack.Loaded==30 and stack.AmmoType=="AP" then foundLoaded=true end end
 assert(foundLoaded and not Service.GetMagazine(a),"death inventory extraction retains charged gun in corpse, clears player")
 ItemConfig.Items.Apron.Armor={Absorption=3,Resistance=.2}
 assert(Service.Add(a,"Apron",1) and Service.Equip(a,"Apron"))

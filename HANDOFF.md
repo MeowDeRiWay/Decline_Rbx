@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Bandage, renamed assault rifle and bolt-action sight — 21 October
+
+- Registered Bandage (0.1kg), model can live under Items/Medecine through existing recursive item lookup. Item only: no healing/bleeding effect or recipe invented before user defines it.
+- Original automatic Rifle223 definition renamed AssaultRifle223 (same existing parameters/category Automatic). Rifle223 now separate bolt-action, category Rifle, SingleOnly=true,5-round magazine,40RPM; other ballistic stats unchanged. Server rejects mode switch and normalizes emitted mode; client stops after one trigger and HUD omits V switch hint. Inventory newly created/transferred SingleOnly records normalize mode Single. Existing automatic service/holster fixtures renamed to AssaultRifle223.
+- AccuracyRules.SightBonus reads AccuracyBonus from first descendant MODEL named Sight on HeldItem, finite nonnegative clamped300, missing=>0. Projectile snapshots server-authored held sight bonus at launch and adds to category skill bonus during hit roll. Hover and Character stats include same local held model bonus; no melee bonus leakage. User authored Rifle223/Sight AccuracyBonus20. Base+category+sight total still capped300 before penalties, final hit chance max90.
+- Tests bolt mode/1.5s cycle, actual firearm/holster/drop state conservation, Sight validation and character sheet totals; full compile/Rojo. No Studio models/audio/playtest.
+
 ## Cleaner character stat display — 21 October
 
 - Removed /300 from displayed accuracy (plain numeric value). Removed the entire under-stat equipment/armor/formula context label. Calculations, caps and target chance preview unchanged. Small UI text removal; no gameplay tests needed.

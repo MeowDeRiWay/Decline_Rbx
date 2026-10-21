@@ -16,3 +16,7 @@ assert(Stats.Calculate(a,knife,0).MeleeDamage==0,"broken melee weapon cannot dea
 assert(Defense.Resolve(20,.2,5)==11,"resistance first then absorption")
 assert(Defense.Resolve(5,0,10)==0 and Defense.Resolve(10,2,0)==0,"defense cannot heal")
 print("PASS: actual totals, weapon/category talents, melee-only damage, health/sprint, defenses and accuracy cap")
+
+a.Accuracy=100;a.WeaponAccuracyBonus=20;a.AutomaticAccuracyBonus=5
+assert(Stats.Calculate(a,rifle,1).Accuracy==125)
+assert(Stats.Calculate(a,knife,1).Accuracy==100,"sight bonus does not affect melee")

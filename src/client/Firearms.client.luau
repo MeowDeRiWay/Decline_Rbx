@@ -44,7 +44,7 @@ RunService.Heartbeat:Connect(function()
   ready=os.clock()+.25;action:FireServer("Reload")
  else
   action:FireServer("Fire",direction.Unit)
-  if character:GetAttribute("FireMode")=="Single" then firing=false end
+  if definition.Firearm.SingleOnly or character:GetAttribute("FireMode")=="Single" then firing=false end
  end
 end)
 local traces={}
