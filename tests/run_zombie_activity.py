@@ -39,6 +39,7 @@ local function actor(x)
  function model:FindFirstChildOfClass() return hp end
  function model:FindFirstChild() end
  function model:SetAttribute(key,value) self.attributes[key]=value end
+ function model:GetAttribute(key) return self.attributes[key] end
  function model:GetBoundingBox() return root.CFrame,Vector3.new(1,2,1) end
  function model:GetPivot() return root.CFrame end
  function model:PivotTo(frame) pivots+=1;root.CFrame=frame;root.Position=frame.Position end
@@ -68,6 +69,11 @@ assert(afk.attributes.ActivityMode=="Active" and steps[3]==1,"nearby player wake
 assert(active.attributes.ActivityMode=="AFK")
 hpPlayer.Health=0;tick();local before=steps[3];heartbeat.fire(.016)
 assert(steps[3]==before and afk.attributes.ActivityMode=="AFK","no living observers sleeps all")
+afk:SetAttribute("Attention",3)
+Service.Alert(afk:GetPivot().Position+Vector3.new(8,0,0),12);assert(afk.attributes.ActivityMode=="AFK","outside hearing does not wake")
+Service.Alert(afk:GetPivot().Position+Vector3.new(7,0,0),12);assert(afk.attributes.ActivityMode=="Active","actual noise wakes sleeping AI")
+local heardSteps=steps[3];tick();heartbeat.fire(.016);assert(steps[3]==heardSteps+1,"noise wake survives sleep dispatcher")
+time+=61;tick();assert(afk.attributes.ActivityMode=="AFK","noise interest expires")
 active.Parent=nil;tick()
 print("PASS: 1000 dispatcher frames -> zero sleeping AI calls; randomized first deadline, 120-second interval, endpoint-only checks, occupied destination rejected, nearest-player wake, no-player AFK, removed model cleanup")
 '''

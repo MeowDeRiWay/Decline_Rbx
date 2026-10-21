@@ -98,6 +98,16 @@ local function change(record,mode)
  record.Model:SetAttribute("ActivityMode",mode)
  if record.OnMode then record.OnMode(mode) end
 end
+-- Only actual emitted noise wakes sleepers; no extra idle AI polling.
+function Service.Alert(position,radius)
+ for model,record in pairs(records) do
+  local hp=model:FindFirstChildOfClass("Humanoid")
+  if hp and hp.Health>0 and (record.Root.Position-position).Magnitude<=radius*math.clamp(model:GetAttribute("Attention") or 5,1,10)/5 then
+   record.NoiseUntil=os.clock()+60
+   change(record,"Active")
+  end
+ end
+end
 RunService.Heartbeat:Connect(function(dt)
  for model,record in pairs(active) do
   if not model:IsDescendantOf(workspace) then records[model]=nil;active[model]=nil
@@ -112,6 +122,7 @@ task.spawn(function()
    local hp=model:FindFirstChildOfClass("Humanoid")
    if not model:IsDescendantOf(workspace) or not hp or hp.Health<=0 then records[model]=nil;active[model]=nil;continue end
    local mode=Rules.Mode(gapAt(record.Root.Position))
+   if (record.NoiseUntil or 0)>os.clock() then mode="Active" end
    change(record,mode)
    local now=os.clock()
    if mode=="Minimal" and now>=record.NextTeleport then

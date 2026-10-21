@@ -12,6 +12,7 @@ local LootRules = require(ReplicatedStorage.Shared.LootRules)
 local Items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Visuals = require(script.Parent.Services.EquipmentVisuals)
+local Noise=require(script.Parent.Services.NoiseService)
 local Damage = require(script.Parent.Services.DamageService)
 local Chests = require(script.Parent.Services.ChestService)
 local Progression=require(ReplicatedStorage.Shared.ProgressionRules)
@@ -259,6 +260,7 @@ local function prepare(model)
  local lastSeenPosition,lastSeenCharacter
  local searchStart,searchElapsed,searchBlocked
  local elapsed=0
+ local heardPosition,heardUntil,heardBlocked,noiseCursor=nil,0,0,0
  local regenAt=os.clock()+60
  local movement
  movement=Activity.Register(model,root,function(dt)
@@ -293,7 +295,14 @@ local function prepare(model)
      end
     end
    end
+   local heard,cursor=Noise.Listen(root.Position,model:GetAttribute("Attention"),noiseCursor)
+   noiseCursor=cursor
+   if not nearest and heard then
+    heardPosition=heard.Position;heardUntil=os.clock()+60;heardBlocked=0
+    model:SetAttribute("LastHeardPosition",heardPosition);model:SetAttribute("LastHeardKind",heard.Kind)
+   end
    if nearest then
+    heardPosition=nil
     lastSeenPosition,lastSeenCharacter=nearest.Position,nearest.Parent
     model:SetAttribute("LastSeenPosition",lastSeenPosition)
     searchStart,searchElapsed,searchBlocked=nil,0,0
@@ -305,6 +314,13 @@ local function prepare(model)
   if not nearest or not nearest.Parent then
    local targetHumanoid=lastSeenCharacter and lastSeenCharacter:FindFirstChildOfClass("Humanoid")
    if not targetHumanoid or targetHumanoid.Health<=0 or lastSeenCharacter:GetAttribute("Knockout") then lastSeenPosition=nil end
+   if not lastSeenPosition and heardPosition then
+    model:SetAttribute("AIState","InvestigatingSound")
+    local arrived,blocked=navigate(heardPosition,humanoid.WalkSpeed,dt,.4,nil)
+    heardBlocked=blocked and heardBlocked+dt or 0
+    if arrived or heardBlocked>=3 or os.clock()>=heardUntil then heardPosition=nil;idle=IdleRules.New();idlePhase=nil end
+    return
+   end
    if lastSeenPosition then
     if not searchStart then
      model:SetAttribute("AIState","SearchingLastPosition")

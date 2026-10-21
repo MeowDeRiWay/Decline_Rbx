@@ -17,6 +17,6 @@ player.CharacterAdded:Connect(function() last = false; remote:FireServer(false) 
 RunService.RenderStepped:Connect(function()
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
- local allowed = focused and humanoid ~= nil and humanoid.Health > 0 and not humanoid.Sit and not humanoid.PlatformStand and not character:GetAttribute("Knockout") and not (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) and not GuiService.MenuIsOpen and Input:GetFocusedTextBox() == nil
+ local allowed = focused and humanoid ~= nil and humanoid.Health > 0 and not character:GetAttribute("Sneaking") and not humanoid.Sit and not humanoid.PlatformStand and not character:GetAttribute("Knockout") and not (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) and not GuiService.MenuIsOpen and Input:GetFocusedTextBox() == nil
  send(allowed and (Input:IsKeyDown(Enum.KeyCode.LeftShift) or Input:IsKeyDown(Enum.KeyCode.RightShift)))
 end)

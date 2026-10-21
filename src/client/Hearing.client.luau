@@ -2,6 +2,7 @@
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local SoundService=game:GetService("SoundService")
+local Config=require(ReplicatedStorage.Shared.GameConfig)
 local R=require(ReplicatedStorage.Shared.SensesRules)
 local player=Players.LocalPlayer
 local gain=R.Hearing(player:GetAttribute("Attention"))
@@ -16,7 +17,9 @@ end
 local function applySound(sound,r)
  if r.Busy then return end;r.Busy=true
  local active=soundEligible(sound) and sound.Playing
- sound.Volume=math.clamp(r.Volume*(active and gain or 1),0,10)
+ local volume=r.Volume
+ if sound.Name=="Running" then volume=math.min(volume,Config.FootstepVolume*(sound:GetAttribute("FootstepNoiseMultiplier") or 1)) end
+ sound.Volume=math.clamp(volume*(active and gain or 1),0,10)
  sound.RollOffMinDistance=r.Min*(active and gain or 1)
  sound.RollOffMaxDistance=r.Max*(active and gain or 1)
  r.Busy=false
@@ -58,6 +61,7 @@ local function register(object)
   for property,key in pairs({Volume="Volume",RollOffMinDistance="Min",RollOffMaxDistance="Max"}) do
    object:GetPropertyChangedSignal(property):Connect(function() if not r.Busy then r[key]=object[property];applySound(object,r) end end)
   end
+  object:GetAttributeChangedSignal("FootstepNoiseMultiplier"):Connect(function() applySound(object,r) end)
   object:GetPropertyChangedSignal("Playing"):Connect(function() applySound(object,r) end)
   object.AncestryChanged:Connect(function() applySound(object,r) end)
   object.Destroying:Once(function() sounds[object]=nil end)

@@ -2,8 +2,9 @@
 from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-s=(root/'src/client/Hearing.client.luau').read_text();s=re.sub(r'local R=require[^\n]+\n','',s)
+s=(root/'src/client/Hearing.client.luau').read_text();s=re.sub(r'local (R|Config)=require[^\n]+\n','',s)
 mock='''
+local Config={FootstepVolume=.15}
 local function signal()
  local handlers={};local e={}
  function e:Connect(fn) local r={fn=fn};table.insert(handlers,r);return {Disconnect=function() r.fn=nil end} end
@@ -75,6 +76,10 @@ sound.Playing=true;assert(sound.Volume==.1)
 sound.Volume=1;assert(sound.Volume==.2,"authored runtime volume remains hearing scaled")
 wire:Destroy();assert(fader.Destroyed and wire.SourceInstance==listener,"wire cleanup restores source and deletes local mix nodes")
 attention(5);assert(sound.Volume==1 and sound.RollOffMaxDistance==100)
+sound.Name="Running";sound.Volume=.65;attention(10)
+assert(sound.Volume==.3,"footstep cap does not cancel200% hearing")
+sound.attrs.FootstepNoiseMultiplier=.5;sound:GetAttributeChangedSignal("FootstepNoiseMultiplier"):Fire()
+assert(sound.Volume==.15,"quiet source multiplier and listener hearing compose")
 print("PASS: actual hearing20/100/200%, legacy volume/range, voice emitter curves, output gain, owner/template separation, no compounding and wire cleanup")
 '''
 with tempfile.TemporaryDirectory() as d:

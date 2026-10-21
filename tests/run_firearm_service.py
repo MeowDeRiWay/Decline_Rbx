@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile,re
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Firearms.server.luau').read_text()
-service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression)=require[^\n]+\n','',service)
+service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression|Noise)=require[^\n]+\n','',service)
 mock='''
 local function signal() return {Connect=function(self,fn) self.callback=fn end} end
 local changed=signal()
@@ -32,6 +32,8 @@ local rounds={Ammo223FMJ=50,Ammo223AP=3}
 local notices={}
 local Journal={Send=function(_,message) table.insert(notices,message) end}
 local magazine={UID=1,Type="FMJ",Loaded=0,Mode="Auto"}
+local noises=0
+local Noise={Emit=function() noises+=1 end}
 local shots,uses=0,0
 local played,stopped={},0
 local Audio={Play=function(_,name) table.insert(played,name);return {} end,Stop=function(sound) if sound then stopped+=1 end end}
@@ -79,7 +81,7 @@ fire(player,"Reload");fire(player,"Fire",direction);assert(shots==0)
 advance(2.5);assert(magazine.Loaded==30 and rounds.Ammo223FMJ==20,"reload moves loose cartridges into weapon")
 fire(player,"Fire",direction);assert(shots==1 and magazine.Loaded==29 and rounds.Ammo223FMJ==20 and uses==1)
 assert(#rays==2 and rays[2].Origin.Y==.8 and rays[2].Delta.Y==0)
-fire(player,"Fire",direction);assert(shots==1,"RPM limit")
+fire(player,"Fire",direction);assert(shots==1 and noises==1,"RPM limit emits no noise")
 advance(.1);wall=true;fire(player,"Fire",direction);assert(shots==1 and magazine.Loaded==29,"wall guards consume nothing")
 wall=false;advance(.1);fire(player,"Fire",Vector3.new(0,0,-100));assert(shots==1)
 fire(player,"Type");assert(magazine.Type=="AP" and magazine.Loaded==0 and rounds.Ammo223FMJ==49,"type switch returns previous rounds")
