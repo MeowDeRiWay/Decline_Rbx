@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Centered owner's shot/reload audio — 21 October
+
+- User clarified apparent left/right issue was OWN shot/reload source moving with the muzzle when turning, not fixed external sound. New OwnerFirearmAudio.client watches only local character's server-created PlayingShotSound/PlayingReloadSound clones. Creates an authored-volume/speed 2D copy under SoundService, locally mutes only that original spatial Sound. Others retain untouched server spatial playback/ranges. No predicted/invalid-action sounds, extra remotes or changed assets.
+- Shot copies overlap; reload cancellation/source Destroying/Ended/descendant removal, copy end/destroy, holster and respawn clean up copies and connections. Volume watcher prevents later replication unmuting owner source. Authoring templates, footsteps, other players untouched. Earlier upright listener still applies to external sounds.
+- tests/run_owner_firearm_audio.py actual client script covers owner-only centered routing, preserved volume/speed, no double play, overlap, untouched foreign/templates/footsteps, cancellation/cleanup/respawn; server firearm audio regression, compile/Rojo. No Studio audition.
+
 ## Upright head-height audio and hidden Tab player list — 21 October
 
 - Previous legacy listener copied full overhead camera pitch. AudioListenerRules.Frame now uses projected camera RIGHT vector to build a horizontal, world-up listening frame at character HEAD (root fallback). Screen left/right/yaw retained; camera pitch/roll/zoom and character-facing changes do not tilt/move hearing away from character. No new sound assets/range/volume changes. This corrects a plausible orientation cause, not an acoustically verified diagnosis; actual Studio headphone check remains needed.

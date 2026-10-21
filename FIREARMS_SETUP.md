@@ -113,3 +113,8 @@ listening. This affects spatial Sound instances; no new audio assets are require
 
 
 Current controls: C character, T talents, Q inventory, R reload, B ammunition type, V fire mode. R prefers the selected ammo type; if none is available, it automatically reloads the other available type. Existing cartridges are returned to inventory before changing types, without mixing types in one magazine.
+
+
+### Own weapon audio
+
+The shooter hears shot/reload through a local non-positional copy, preserving the authored Sound volume and playback speed. The original muzzle source is muted only on that shooter's client, so other listeners keep the normal spatial sound and distance attenuation. Cancelling reload, holstering or respawning stops the local copy. No new audio assets or model changes are required.
