@@ -12,9 +12,11 @@ local action=ReplicatedStorage.ProgressionRemotes.Action
 local function send(command,value) clock+=.2;action.OnServerEvent:Fire(a,command,value) end
 assert(not Service.Snapshot(a).Confirmed and not Service.CanStation(a,"Stove"))
 Service.Award(a,100);assert(Service.Snapshot(a).Level==0 and #notices==0)
+assert(a.Character.HumanoidRootPart.Anchored and a.Character.CreationProtection and a.Character:GetAttribute("CreatingCharacter"),"server creation lock and shield")
 local draft=table.clone(Service.Snapshot(a).Stats);draft.Intelligence=10;draft.Endurance=6
 send("Confirm",draft)
-assert(a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CarryLimitKg")==45 and a.Character.Humanoid.MaxHealth==160)
+assert(a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CarryLimitKg")==25 and a.Character.Humanoid.MaxHealth==60)
+assert(not a.Character.HumanoidRootPart.Anchored and not a.Character:FindFirstChild("CreationProtection") and a.Character.Humanoid.Health==60,"confirmation releases and fills health")
 assert(a:GetAttribute("SkillUnarmed")==65 and a:GetAttribute("SkillRepair")==50)
 send("Spend","Strength");send("Choose","Hunter");send("Talent","Automatics")
 assert(a:GetAttribute("Strength")==5 and a:GetAttribute("CriticalChance")==.05 and a:GetAttribute("AutomaticAccuracyBonus")==0)
@@ -27,12 +29,13 @@ assert(Service.Snapshot(a).Practice.Miner.Value==1 and Service.Snapshot(a).Pract
 assert(Service.CanBuild(a,"Kitchen") and Service.CanStation(a,"Stove"))
 Config.StationRequirements.Stove={Skills={Repair=52}}
 assert(not Service.CanStation(a,"Stove"));send("Skill","Repair");assert(Service.CanStation(a,"Stove"))
-local hp=a.Character.Humanoid;hp.Health=100
-clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==112,"END6 heals12 per minute")
-a.Character:SetAttribute("Knockout",true);clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==112,"regeneration cannot revive knockout")
-a.Character:SetAttribute("Knockout",false);hp.Health=159;assert(coroutine.resume(loops[1]));assert(hp.Health==160,"heal capped at max")
+local hp=a.Character.Humanoid;hp.Health=22;send("Request");assert(hp.Health==22,"request cannot repeat confirmation heal")
+hp.Health=10
+clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==22,"END6 heals12 per minute")
+a.Character:SetAttribute("Knockout",true);clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==22,"regeneration cannot revive knockout")
+a.Character:SetAttribute("Knockout",false);hp.Health=59;assert(coroutine.resume(loops[1]));assert(hp.Health==60,"heal capped at max")
 hp.Health=0;assert(coroutine.resume(loops[1]));assert(hp.Health==0,"cannot revive dead")
-a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("Strength")==5 and a.Character.Humanoid.MaxHealth==160,"immutable creation survives respawn")
+a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("Strength")==5 and a.Character.Humanoid.MaxHealth==60,"immutable creation survives respawn")
 assert(Service.Loot(a,{Rags=1}).Rags==1)
 print("PASS: actual immutable creation, forbidden legacy commands, INT skill points, derived stats, requirements, passive practice, minute regeneration, no revival, and respawn")
 '''

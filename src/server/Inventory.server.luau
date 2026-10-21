@@ -33,6 +33,7 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  if now - (lastAction[player] or -math.huge) < 0.1 then return end
  lastAction[player] = now
  if command == "Request" then publish(player); return end
+ if player:GetAttribute("AttributesConfirmed")~=true then return end
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  if not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return end

@@ -24,6 +24,9 @@ function player:GetAttribute(key)
 end
 assert(Service.Damage(player,hp,20,true)==13,"unprocessed incoming damage gets defense once")
 assert(Service.Damage(player,hp,20,true,true)==20,"combat-preprocessed defense is not applied twice")
+local baseGet=player.GetAttribute
+function player:GetAttribute(key) if key=="AttributesConfirmed" then return false end return baseGet(self,key) end
+local before=hp.Health;assert(Service.Damage(player,hp,999,true,true)==0 and hp.Health==before,"creation immunity also covers direct survival damage")
 print("PASS: actual PlayerLife environmental dodge, defense order and no double defense/dodge")
 '''
 with tempfile.TemporaryDirectory() as d:

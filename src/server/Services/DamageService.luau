@@ -29,10 +29,12 @@ local function announce(target,kind,amount,attacker,attackKind,critical,knockout
   if root and (root.Position-position).Magnitude<=250+(observer:GetAttribute("ViewBonus") or 0)*10 then report:FireClient(observer,payload) end
  end
 end
-function Service.Miss(target,attacker) if friendly(attacker,target) then return end;announce(target,"Miss",0,attacker) end
+function Service.Miss(target,attacker) local victim=Players:GetPlayerFromCharacter(target);if victim and victim:GetAttribute("AttributesConfirmed")==false then return end;if friendly(attacker,target) then return end;announce(target,"Miss",0,attacker) end
 function Service.RollHit(attacker,humanoid,bonus,skill)
+ if attacker:IsA("Player") and attacker:GetAttribute("AttributesConfirmed")==false then return false end
  if friendly(attacker,humanoid.Parent) then return false end
  local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
+ if defender and defender:GetAttribute("AttributesConfirmed")==false then return false end
  local dodge=defender and defender:GetAttribute("DodgeChance") or 0
  local character=attacker:IsA("Player") and attacker.Character or attacker
  local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -46,6 +48,9 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  if not target or humanoid.Health <= 0 then return 0 end
  options=options or {}
  if friendly(options.Attacker,target) then return 0 end
+ local victim=Players:GetPlayerFromCharacter(target)
+ if victim and victim:GetAttribute("AttributesConfirmed")==false then return 0 end
+ if options.Attacker and options.Attacker:IsA("Player") and options.Attacker:GetAttribute("AttributesConfirmed")==false then return 0 end
  if sourcePosition then
   local delta = target:GetPivot().Position-sourcePosition
   delta = Vector3.new(delta.X,0,delta.Z)

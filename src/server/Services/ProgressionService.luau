@@ -6,6 +6,29 @@ local Journal=require(script.Parent.JournalService)
 local Service={}
 local states={}
 local remote
+local locked=setmetatable({},{__mode="k"})
+local function creationLock(player,character,confirmed)
+ local root=character:FindFirstChild("HumanoidRootPart")
+ local hp=character:FindFirstChildOfClass("Humanoid")
+ if not confirmed then
+  character:SetAttribute("CreatingCharacter",true)
+  if root and not locked[character] then locked[character]={Root=root,Anchored=root.Anchored} end
+  if root then root.Anchored=true;root.AssemblyLinearVelocity=Vector3.zero;root.AssemblyAngularVelocity=Vector3.zero end
+  if hp then hp.WalkSpeed=0;hp.Jump=false end
+  if not character:FindFirstChild("CreationProtection") then
+   local field=Instance.new("ForceField");field.Name="CreationProtection";field.Visible=false;field.Parent=character
+  end
+ else
+  local record=locked[character]
+  if record then
+   if record.Root.Parent then record.Root.Anchored=record.Anchored end
+   locked[character]=nil
+   if hp and hp.Health>0 then hp.Health=hp.MaxHealth;character:SetAttribute("Health",hp.Health) end
+  end
+  local field=character:FindFirstChild("CreationProtection");if field then field:Destroy() end
+  character:SetAttribute("CreatingCharacter",false)
+ end
+end
 local function stateFor(player)
  if not states[player] then states[player]=Rules.New() end
  return states[player]
@@ -33,7 +56,8 @@ function Service.Sync(player)
  if character then
   for id,value in pairs(bonus) do character:SetAttribute(id,value) end
   local hp=character:FindFirstChildOfClass("Humanoid")
-  if hp then hp.MaxHealth=bonus.MaxHealth;character:SetAttribute("MaxHealth",hp.MaxHealth) end
+  if hp then hp.MaxHealth=bonus.MaxHealth;hp.Health=math.min(hp.Health,hp.MaxHealth);character:SetAttribute("MaxHealth",hp.MaxHealth);character:SetAttribute("Health",hp.Health) end
+  creationLock(player,character,state.Confirmed)
  end
  if remote and player.Parent==Players then remote:FireClient(player,Service.Snapshot(player)) end
 end
@@ -73,7 +97,7 @@ function Service.Start()
  end)
  local function added(player)
   stateFor(player);Service.Sync(player)
-  player.CharacterAdded:Connect(function(character) character:WaitForChild("Humanoid",10);if player.Character==character then Service.Sync(player) end end)
+  player.CharacterAdded:Connect(function(character) character:WaitForChild("Humanoid",10);character:WaitForChild("HumanoidRootPart",10);if player.Character==character then Service.Sync(player) end end)
  end
  Players.PlayerAdded:Connect(added)
  Players.PlayerRemoving:Connect(function(player) states[player]=nil;last[player]=nil end)

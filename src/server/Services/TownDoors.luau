@@ -112,6 +112,7 @@ function Service.Start(requestPassage, tell)
  local folder=Instance.new("Folder");folder.Name="DoorRemotes";folder.Parent=ReplicatedStorage
  local action=Instance.new("RemoteEvent");action.Name="Action";action.Parent=folder
  action.OnServerEvent:Connect(function(player,door)
+  if player:GetAttribute("AttributesConfirmed")~=true then return end
   if typeof(door)~="Instance" or not doors[door] or not door:IsDescendantOf(workspace) then return end
   local time=workspace:GetServerTimeNow()
   if time-(lastAction[player] or -math.huge)<.5 then return end

@@ -136,7 +136,7 @@ local kitchenSpace=make("Model","Space",kitchen); make("Part","Part",kitchenSpac
 local kitchenMenu=make("Model","BuildingMenu",kitchen); make("Part","Sign",kitchenMenu)
 make("Model","Stove",kitchen)
 local function player(id)
- local p=make("Player","User"..id,Players); p.UserId=id; p.CharacterAdded=event()
+ local p=make("Player","User"..id,Players); p.UserId=id; p.CharacterAdded=event();p:SetAttribute("AttributesConfirmed",true)
  function p:LoadCharacterAsync()
   self.Character=make("Model",self.Name,workspace)
   local hp=make("Humanoid","Humanoid",self.Character); hp.Health=100; hp.MaxHealth=100; hp.HipHeight=0

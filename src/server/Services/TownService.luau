@@ -384,6 +384,7 @@ local function leaveTown(player,town)
    sessions[player] = nil
 end
 local function handle(player, command, value, extra)
+ if player:GetAttribute("AttributesConfirmed")~=true and command~="Join" and command~="Request" and command~="Close" then return end
  if command == "Request" then remote:FireClient(player, Service.Snapshot(player)); return end
  if command == "Close" then sessions[player] = nil; return end
  if command == "Join" then local town = towns[value]; if town then join(player, town) end; return end

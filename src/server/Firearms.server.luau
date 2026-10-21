@@ -48,6 +48,7 @@ Inventory.Changed:Connect(function(player)
  local state=stateFor(player,character,id);sync(player,state,gun)
 end)
 action.OnServerEvent:Connect(function(player,command,direction)
+ if player:GetAttribute("AttributesConfirmed")~=true then return end
  local character,root,id,gun=context(player)
  if not character or not Inventory.GetWeapon(player) then return end
  local state=stateFor(player,character,id)

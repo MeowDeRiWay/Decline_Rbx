@@ -34,6 +34,7 @@ local function publish()
 end
 local recent={}
 action.OnServerEvent:Connect(function(player,command,value)
+ if player:GetAttribute("AttributesConfirmed")~=true then return end
  local now=os.clock()
  if now-(recent[player] or -math.huge)<.2 then return end
  recent[player]=now

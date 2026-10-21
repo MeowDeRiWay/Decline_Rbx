@@ -74,6 +74,7 @@ a.Character.HumanoidRootPart.Position=Vector3.zero
 chance=.1
 a:SetAttribute("TeamID",10);b:SetAttribute("TeamID",10)
 local oldHP=hp.Health;local oldReports=#report.sent
+a:SetAttribute("AttributesConfirmed",false);assert(Service.Apply(hp,999,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0 and hp.Health==oldHP);a:SetAttribute("AttributesConfirmed",true)
 assert(Service.Apply(hp,999,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0 and hp.Health==oldHP)
 assert(not Service.RollHit(b,hp));Service.Miss(a.Character,b)
 assert(#report.sent==oldReports,"friendly damage and misses emit no combat report")

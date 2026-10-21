@@ -53,7 +53,7 @@ function Rules.Practice(state,id,amount)
  return true
 end
 function Rules.Bonuses(stats)
- return {CarryLimitKg=20+5*stats.Strength,MeleeBonus=stats.Strength,MaxHealth=100+10*stats.Endurance,
+ return {CarryLimitKg=5*stats.Strength,MeleeBonus=stats.Strength,MaxHealth=10*stats.Endurance,
   WalkBonus=.3*stats.Agility,RunBonus=stats.Agility,Regeneration=2*stats.Endurance,
   DodgeChance=5*stats.Agility,CriticalChance=.01*stats.Luck,
   ViewBonus=0,LuckChance=0,LuckAmount=0}

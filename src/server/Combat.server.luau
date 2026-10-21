@@ -12,6 +12,7 @@ attack.Parent = ReplicatedStorage
 local random = Random.new()
 local ready = {}
 attack.OnServerEvent:Connect(function(player)
+ if player:GetAttribute("AttributesConfirmed")~=true then return end
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  local root = character and character:FindFirstChild("HumanoidRootPart")

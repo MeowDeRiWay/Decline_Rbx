@@ -24,7 +24,7 @@ local muzzle={GetPivot=function() return CFrame.new(Vector3.new(0,.8,-.5)) end,I
 local held={FindFirstChild=function() return muzzle end}
 function character:FindFirstChild(name) return name=="HeldItem" and held or root end
 function character:FindFirstChildOfClass() return hp end
-local player={Character=character,attributes={}}
+local player={Character=character,attributes={AttributesConfirmed=true}}
 function player:GetAttribute(key) return self.attributes[key] end
 local wearRoll=1
 local Random={new=function() return {NextNumber=function() return wearRoll end} end}
@@ -118,6 +118,8 @@ character:SetAttribute("HandsItem","Rifle223");magazine={UID=99,Type="FMJ",Loade
 changed.callback(player);assert(character:GetAttribute("FireMode")=="Single","bolt action normalizes old auto state")
 fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single","V cannot enable automatic mode")
 local before=magazine.Loaded
+player.attributes.AttributesConfirmed=false;fire(player,"Fire",direction);assert(magazine.Loaded==before,"creation cannot shoot")
+player.attributes.AttributesConfirmed=true
 fire(player,"Fire",direction);assert(magazine.Loaded==before-1)
 advance(.1);fire(player,"Fire",direction);assert(magazine.Loaded==before-1,"bolt cycle blocks rapid fire")
 advance(1.4);fire(player,"Fire",direction);assert(magazine.Loaded==before-2)

@@ -42,7 +42,7 @@ local right=frame(panel,UDim2.fromOffset(494,62),UDim2.fromOffset(588,640))
 label(left,"Attributes",UDim2.fromOffset(20,10),UDim2.fromOffset(420,30),20,palette.Accent)
 local summary=label(left,"",UDim2.fromOffset(20,46),UDim2.fromOffset(420,26),16)
 local points=label(left,"",UDim2.fromOffset(20,80),UDim2.fromOffset(420,50),14,palette.Accent)
-local snapshot,draft,hovered
+local snapshot,draft,hovered,closeControl
 local mode="Stats"
 local tips={Strength="Per point:\n+5 kg carrying capacity\n+5 heavy weapons, unarmed and melee\n+3 throwing\n+1 melee / unarmed damage",Attention="Per point:\n+5 light weapons and traps\n+3 heavy weapons and unarmed",Endurance="Per point:\n+10 HP\n+2 HP regeneration per minute",Intelligence="Per point:\n+5 first aid, doctor and repair\n+1 skill point per level",Agility="Per point:\n+5 armor class, unarmed, throwing and sneak\n+0.3 walk speed\n+1 sprint speed bonus",Luck="Per point:\n+1% critical chance"}
 local cards={}
@@ -104,7 +104,7 @@ local function refreshStats()
  local character=player.Character;local a=player:GetAttributes()
  local definition=character and Items[character:GetAttribute("HandsItem")]
  if snapshot and not snapshot.Confirmed and draft then for id,value in pairs(Rules.Bonuses(draft)) do a[id]=value end end
- local stats=Sheet.Calculate(a,definition,character and character:GetAttribute("WeaponCondition"),character and character:GetAttribute("Health"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("MaxHealth"))
+ local stats=Sheet.Calculate(a,definition,character and character:GetAttribute("WeaponCondition"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("Health"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("MaxHealth"))
  values.Health.Text=string.format("%.0f / %.0f HP",stats.Health,stats.MaxHealth)
  values.ArmorClass.Text=tostring(stats.Dodge)
  values.Carry.Text=string.format("%g kg",stats.Carry)
@@ -134,13 +134,14 @@ redraw=function()
   if row.Plus then row.Plus.Visible=snapshot.Confirmed and snapshot.SkillPoints>0 and value<300 end
  end
 end
-local function setOpen(value)
+local function setOpen(value,force)
+ if not force and not value and snapshot and not snapshot.Confirmed and player.Character then return end
  if value and (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("GroupOpen") or (player.Character and player.Character:GetAttribute("Knockout"))) then return end
  panel.Visible=value;player:SetAttribute("ProgressionOpen",value)
  if value then Context:BindActionAtPriority("ProgressionBlockMovement",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+2,Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump)
  else hovered=nil;tooltip.Visible=false;Context:UnbindAction("ProgressionBlockMovement") end
 end
-button(panel,"X",UDim2.new(1,-48,0,17),UDim2.fromOffset(30,28),function() setOpen(false) end)
+closeControl=button(panel,"X",UDim2.new(1,-48,0,17),UDim2.fromOffset(30,28),function() setOpen(false) end)
 setMode("Stats")
 Layout.Character.Event:Connect(function() local value=not panel.Visible or mode~="Stats";setMode("Stats");setOpen(value) end)
 Layout.Skills.Event:Connect(function() local value=not panel.Visible or mode~="Skills";setMode("Skills");setOpen(value) end)
@@ -150,10 +151,10 @@ Input.InputBegan:Connect(function(key,processed)
  elseif key.KeyCode==Enum.KeyCode.T then Layout.Skills:Fire()
  elseif key.KeyCode==Enum.KeyCode.Escape then setOpen(false) end
 end)
-local creationShown=false
 Run.RenderStepped:Connect(function()
- if snapshot and not snapshot.Confirmed and not creationShown and not player:GetAttribute("TownMenuOpen") and player.Character then setOpen(true);creationShown=panel.Visible end
+ if snapshot and not snapshot.Confirmed and not panel.Visible and not player:GetAttribute("TownMenuOpen") and player.Character then setOpen(true) end
  tooltip.Visible=false
+ if closeControl and snapshot then closeControl.Visible=snapshot.Confirmed end
  if not panel.Visible then return end
  local character=player.Character
  if not character or character:GetAttribute("Knockout") then setOpen(false);return end
@@ -171,5 +172,5 @@ remotes:WaitForChild("State").OnClientEvent:Connect(function(value)
  snapshot=value;if not draft or value.Confirmed then draft=table.clone(value.Stats) end
  redraw()
 end)
-player.CharacterRemoving:Connect(function() setOpen(false) end)
+player.CharacterRemoving:Connect(function() setOpen(false,true) end)
 action:FireServer("Request")

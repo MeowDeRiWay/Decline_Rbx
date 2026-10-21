@@ -48,7 +48,7 @@ RunService.Heartbeat:Connect(function(dt)
  elapsed = 0
  for player, state in pairs(active) do
   local character, humanoid, root = state.character, state.humanoid, state.root
-  if player.Character ~= character or not character.Parent or humanoid.Health <= 0 then continue end
+  if player:GetAttribute("AttributesConfirmed")~=true or player.Character ~= character or not character.Parent or humanoid.Health <= 0 then continue end
   local velocity = root.AssemblyLinearVelocity
   local moving = Vector3.new(velocity.X, 0, velocity.Z).Magnitude > 0.1
   local rate = Config.IdleConsumption

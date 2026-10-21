@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Attribute-only minimum stats and protected character creation — 21 October
+
+- Removed legacy20kg/100HP and1walk/+2run baselines. Pure bonuses: MaxHealth=10*END, Carry=5*STR, MeleeBonus=STR, AC=5*AGI, walk=.3*AGI, total sprint=1*AGI (NOT added to walking), regeneration=2*END/minute, crit=.01*LCK. All1 =>10HP/5AC/5kg/1melee bonus/0unarmored absorption+resistance/.3walk/1sprint/2regen/1%crit. Default5 =>50HP/25kg/25AC/1.5walk/5sprint/10regen/5%crit. Weapon/armor contributions still apply when equipped.
+- Before AttributesConfirmed=true server records original root anchoring and freezes root, sets WalkSpeed0, adds invisible ForceField CreationProtection and CreatingCharacter attr. PlayerLife and DamageService explicitly reject damage; needs consumption paused. Inventory, attacks/firearms, doors and group mutations blocked; town only Request/Join/Close allowed so initial town choice can spawn character. Server controls all gates, not merely UI.
+- Creation menu cannot close until confirm; auto-reopens if needed, respawn removal can force-close UI. Confirm releases only own recorded anchor state/removes own shield and fills HP once to chosen maximum. Repeated sync/request cannot heal again. Subsequent respawns retain existing2HP town behavior and no creation shield. Invalid allocations remain locked and shielded.
+- Screenshot path supplied by user was unavailable; text requirements sufficient. Pure minimum stats tests, actual progression anchor/shield/release/no-repeat-heal, friendly/creation damage and direct life immunity, firearm creation gate plus group/town regressions. Compile/Rojo; no Studio playtest.
+
 ## Classless attributes, skills and future perks — 21 October
 
 - Replaces prior professions/talent progression entirely. Config.Professions removed; old Choose/Spend/Talent requests ignored, all old effects neutralized (knife multiplier1, absorption0, crit negation0, durability preservation0, ammo weight1, category accuracy/crit0, loot luck0). No Cook/Worker/Hunter UI or station label. T/HUD Skills now opens skill page; Character has Stats/Skills/Perks tabs. Perks empty, no old talent ranks copied.
