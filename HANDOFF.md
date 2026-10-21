@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Stable group menu refresh — 21 October
+
+- Group menu no longer destroys/recreates every row on its one-second candidate refresh or server snapshot. Controls keyed by role/player ID are reused; only changed text/order is written, and only absent rows are destroyed. Activated connections are created once and dispatch the current callback. Nearby eligibility still refreshes, invitations still expire, leader permissions still update. No server/visibility/AI changes. Compile/Rojo checked; no Studio visual test.
+
 ## Faction/group protection and mayor expulsion — 21 October
 
 - AffiliationRules: same positive TeamID => same faction; same positive GroupID => friendly too. Unaffiliated nil/zero values do not make strangers allies. DamageService rejects friendly player damage before direction, dodge, critical, HP or journal changes, including direct Apply with HitChecked; RollHit and Miss suppress friendly combat messages. NPC/environment damage unchanged.

@@ -23,12 +23,24 @@ local list=Instance.new("ScrollingFrame")
 list.Position=UDim2.fromOffset(18,56);list.Size=UDim2.new(1,-36,1,-74);list.BackgroundTransparency=1;list.BorderSizePixel=0
 list.ScrollBarThickness=4;list.AutomaticCanvasSize=Enum.AutomaticSize.Y;list.CanvasSize=UDim2.new();list.Parent=panel
 local layout=Instance.new("UIListLayout");layout.Padding=UDim.new(0,8);layout.SortOrder=Enum.SortOrder.LayoutOrder;layout.Parent=list
-local function row(text,callback)
- local item=Instance.new(callback and "TextButton" or "TextLabel")
- item.Size=UDim2.new(1,-8,0,44);item.Text=text;item.TextWrapped=true;item.TextSize=14;item.Font=Theme.Font
- item.BackgroundColor3=callback and Theme.Button or Theme.Card;item.TextColor3=Theme.Text;item.BorderSizePixel=0;item.Parent=list
- if callback then Theme.Bevel(item);item.Activated:Connect(callback) end
- return item
+-- Keep existing controls alive across refreshes so hover, clicks and scroll stay stable.
+local rows={}
+local rowOrder=0
+local function row(key,text,callback)
+ rowOrder+=1
+ local entry=rows[key]
+ if not entry then
+  local item=Instance.new(callback and "TextButton" or "TextLabel")
+  item.Size=UDim2.new(1,-8,0,44);item.TextWrapped=true;item.TextSize=14;item.Font=Theme.Font
+  item.BackgroundColor3=callback and Theme.Button or Theme.Card;item.TextColor3=Theme.Text;item.BorderSizePixel=0
+  entry={Item=item};rows[key]=entry
+  if callback then Theme.Bevel(item);item.Activated:Connect(function() if entry.Callback then entry.Callback() end end) end
+  item.Parent=list
+ end
+ entry.Seen=true;entry.Callback=callback
+ if entry.Item.Text~=text then entry.Item.Text=text end
+ if entry.Item.LayoutOrder~=rowOrder then entry.Item.LayoutOrder=rowOrder end
+ return entry.Item
 end
 local function open(value)
  if value and (player:GetAttribute("InventoryOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("TownMenuOpen") or GuiService.MenuIsOpen or not player.Character or player.Character:GetAttribute("Knockout")) then return end
@@ -39,25 +51,26 @@ local function open(value)
  else Context:UnbindAction("GroupBlockMovement") end
 end
 local function redraw()
- for _,child in ipairs(list:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
+ rowOrder=0
+ for _,entry in pairs(rows) do entry.Seen=false end
  local invite=state.Invite
  if invite and invite.Expires>workspace:GetServerTimeNow() then
-  row(invite.Name.." invited you to a group.")
-  row("Accept invitation",function() action:FireServer("Reply",true) end)
-  row("Decline invitation",function() action:FireServer("Reply",false) end)
+  row("invitation",invite.Name.." invited you to a group.")
+  row("accept","Accept invitation",function() action:FireServer("Reply",true) end)
+  row("decline","Decline invitation",function() action:FireServer("Reply",false) end)
  end
  if state.ID~=0 then
-  row(string.format("Members: %d / %d",#state.Members,state.Maximum))
+  row("count",string.format("Members: %d / %d",#state.Members,state.Maximum))
   for _,member in ipairs(state.Members) do
    local caption=member.Name..(member.ID==state.Leader and " · Leader" or "")
    if state.Leader==player.UserId and member.ID~=player.UserId then
-    row(caption.." · Remove",function() action:FireServer("Kick",member.ID) end)
-   else row(caption) end
+    row("kick:"..member.ID,caption.." · Remove",function() action:FireServer("Kick",member.ID) end)
+   else row("member:"..member.ID,caption) end
   end
-  row("Leave group",function() action:FireServer("Leave") end)
- else row("No group. Invite a nearby faction member to start one.") end
+  row("leave","Leave group",function() action:FireServer("Leave") end)
+ else row("empty","No group. Invite a nearby faction member to start one.") end
  if state.ID==0 or state.Leader==player.UserId then
-  row("Nearby faction members · Invite")
+  row("nearby","Nearby faction members · Invite")
   local camera=workspace.CurrentCamera
   local character=player.Character
   local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -68,10 +81,13 @@ local function redraw()
    local hp=target and target:FindFirstChildOfClass("Humanoid")
    if other~=player and Affiliation.SameFaction(player,other) and (other:GetAttribute("GroupID") or 0)==0 and root and camera and part and hp and hp.Health>0 and not target:GetAttribute("Knockout") and (part.Position-root.Position).Magnitude<=40 and View.Check(target,root,character,camera) then
     found=true
-    row("Invite "..(other.DisplayName or other.Name),function() action:FireServer("Invite",other.UserId) end)
+    row("invite:"..other.UserId,"Invite "..(other.DisplayName or other.Name),function() action:FireServer("Invite",other.UserId) end)
    end
   end
-  if not found then row("No available players in sight.") end
+  if not found then row("none","No available players in sight.") end
+ end
+ for key,entry in pairs(rows) do
+  if not entry.Seen then entry.Item:Destroy();rows[key]=nil end
  end
 end
 local function toggle() if panel.Visible then open(false) else redraw();open(true) end end
