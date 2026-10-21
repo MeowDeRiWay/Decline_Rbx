@@ -7,6 +7,7 @@ local Activity=require(script.Parent.ZombieActivity)
 local Service={}
 local events,sequence={},0
 function Service.Emit(position,radius,kind)
+ if radius<=0 then return end
  sequence+=1
  table.insert(events,{ID=sequence,Position=position,Radius=math.clamp(radius,0,500),Kind=kind,At=os.clock()})
  while #events>256 or (#events>0 and os.clock()-events[1].At>3) do table.remove(events,1) end
@@ -42,7 +43,7 @@ function Service.Start()
    if moved>=.15 then
     positions[p]={Root=root,Position=root.Position}
     if moved>8 then continue end
-    Service.Emit(root.Position,Config.FootstepMaxDistance*Rules.StepMultiplier(p:GetAttribute("SkillSneak"),c:GetAttribute("Sneaking")),"Footsteps")
+    Service.Emit(root.Position,Config.FootstepMaxDistance*Rules.StepMultiplier(p:GetAttribute("SkillSneak"),c:GetAttribute("Running")),"Footsteps")
    end
   end
  end)

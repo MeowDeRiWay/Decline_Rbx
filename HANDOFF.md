@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Passive walking Sneak and zombie footstep audio — 21 October
+
+- Replaces previous Ctrl toggle entirely: deleted Sneaking.client and SetSneaking remote/half-speed/sprint blocking. Walking automatically uses base radius max(0,12-floor(SkillSneak/10)); running always12 until user supplies a sprint perk. Source volume/min distance scale by radius/12; listener ATT/5 then scales source range+gain through existing hearing. InverseTapered fades softly near edge. Sneak100=>radius2 atATT5,4 atATT10, quieter than ordinary steps. Sneak120+ walking fully silent (radius/volume0); NoiseService skips zero-radius events and Audible excludes them. Whole10-point thresholds, no fractional deductions.
+- Footsteps watches character Running and player's SkillSneak so real audio and server footstep noise use same automatic rule. Movement speed unchanged; no manual stealth state. Skill tooltip updated.
+- User should add Sound ReplicatedStorage/Sounds/ZombieFootstepSound, set SoundId and authored Volume (loopable walking clip recommended). New ZombieFootsteps.client observes actual PivotTo displacement10Hz (not Humanoid.Running), creates/reuses a root-local looping Sound only near listener while Active/alive/moving. Idle/death/missing template/minimal-AFK teleport and large teleports silent; model removal cleans up. Template can be added late. Default base2/12min/max distances, optional template MinDistance/MaxDistance attrs, normal Hearing gain applies. Zombie footstep audio does not create AI-noise feedback loops.
+- Pure and actual NoiseService tests verify10-point thresholds, quiet2/4 example, running unaffected, zero noise; actual Hearing verifies quiet source gain plus listener range; actual zombie audio loop tests moving/idle/dead/teleport/reuse/cleanup; compile/Rojo. No Studio audition; sound asset still user-authored.
+
 ## Zombie noise investigation and first sneak mode — 21 October
 
 - Current normal footsteps base cutoff12studs (MinDistance2), listener multiplier ATT/5 gives ATT1=2.4,ATT5=12,ATT10=24. Current zombies ATT3–6 =>7.2–14.4. Normal walking/running same source cutoff; actual movement produces steps more often when faster.

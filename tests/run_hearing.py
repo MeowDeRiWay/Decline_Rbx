@@ -80,6 +80,9 @@ sound.Name="Running";sound.Volume=.65;attention(10)
 assert(sound.Volume==.3,"footstep cap does not cancel200% hearing")
 sound.attrs.FootstepNoiseMultiplier=.5;sound:GetAttributeChangedSignal("FootstepNoiseMultiplier"):Fire()
 assert(sound.Volume==.15,"quiet source multiplier and listener hearing compose")
+sound.attrs.FootstepNoiseMultiplier=1/6;sound:GetAttributeChangedSignal("FootstepNoiseMultiplier"):Fire()
+sound.RollOffMaxDistance=2
+assert(math.abs(sound.Volume-.05)<1e-9 and sound.RollOffMaxDistance==4,"Sneak100 at Attention10 stays quiet and reaches4")
 print("PASS: actual hearing20/100/200%, legacy volume/range, voice emitter curves, output gain, owner/template separation, no compounding and wire cleanup")
 '''
 with tempfile.TemporaryDirectory() as d:

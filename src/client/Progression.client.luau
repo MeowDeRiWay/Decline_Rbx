@@ -44,7 +44,7 @@ local summary=label(left,"",UDim2.fromOffset(20,46),UDim2.fromOffset(420,26),16)
 local points=label(left,"",UDim2.fromOffset(20,80),UDim2.fromOffset(420,50),14,palette.Accent)
 local snapshot,draft,hovered,closeControl
 local mode="Stats"
-local tips={Strength="Per point:\n+5 kg carrying capacity\n+5 heavy weapons, unarmed and melee\n+3 throwing\n+1 melee / unarmed damage",Attention="Per point:\n+5 light weapons and traps\n+3 heavy weapons and unarmed\n+5 studs view\n+20% hearing volume and range",Endurance="Per point:\n+10 HP\n+2 HP regeneration per minute",Intelligence="Per point:\n+5 first aid, doctor and repair\n+1 skill point per level",Agility="Per point:\n+5 armor class, unarmed, throwing and sneak\n+0.3 walk speed\n+1 sprint speed bonus",Luck="Per point:\n+1% critical chance",Sneak="Ctrl toggles sneaking.\nHalf walking speed; no sprinting.\nQuieter footsteps improve with Sneak.\nVision detection is unchanged."}
+local tips={Strength="Per point:\n+5 kg carrying capacity\n+5 heavy weapons, unarmed and melee\n+3 throwing\n+1 melee / unarmed damage",Attention="Per point:\n+5 light weapons and traps\n+3 heavy weapons and unarmed\n+5 studs view\n+20% hearing volume and range",Endurance="Per point:\n+10 HP\n+2 HP regeneration per minute",Intelligence="Per point:\n+5 first aid, doctor and repair\n+1 skill point per level",Agility="Per point:\n+5 armor class, unarmed, throwing and sneak\n+0.3 walk speed\n+1 sprint speed bonus",Luck="Per point:\n+1% critical chance",Sneak="Always active while walking.\nEvery 10 Sneak reduces footstep range by 1 stud.\nSprinting has no Sneak bonus yet.\nVision detection is unchanged."}
 local cards={}
 local function remaining()
  local sum=0;for _,value in pairs(draft or {}) do sum+=value end

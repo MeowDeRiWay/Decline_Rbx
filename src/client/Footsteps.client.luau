@@ -8,14 +8,14 @@ local function configure(sound,player,character)
  if not sound:IsA("Sound") or sound.Name~="Running" or watched[sound] then return end
  watched[sound]=true
  local function apply()
-  local quiet=Noise.StepMultiplier(player:GetAttribute("SkillSneak"),character:GetAttribute("Sneaking"))
+  local quiet=Noise.StepMultiplier(player:GetAttribute("SkillSneak"),character:GetAttribute("Running"))
   sound:SetAttribute("FootstepNoiseMultiplier",quiet)
   sound.RollOffMode=Enum.RollOffMode.InverseTapered
   sound.RollOffMinDistance=Config.FootstepMinDistance*quiet
   sound.RollOffMaxDistance=Config.FootstepMaxDistance*quiet
   sound.Volume=Config.FootstepVolume*quiet
  end
- local a=character:GetAttributeChangedSignal("Sneaking"):Connect(apply)
+ local a=character:GetAttributeChangedSignal("Running"):Connect(apply)
  local b=player:GetAttributeChangedSignal("SkillSneak"):Connect(apply)
  sound.Destroying:Once(function() a:Disconnect();b:Disconnect() end)
  apply()
