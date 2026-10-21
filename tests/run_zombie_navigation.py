@@ -129,6 +129,13 @@ assert(steps<=128,"one global budget, not a budget per zombie")
 assert(queued[100].Pending,"horde must not finish in a single frame")
 for _,agent in ipairs(queued) do agent:Cancel() end
 assert(Navigation.Update()==0,"cancelled searches must not consume planning work")
+local hunter=Navigation.New(model,body)
+hunter:Waypoint(closeTarget)
+assert(hunter.Pending)
+local victim={}
+local clearGoal=body.Position+Vector3.new(0,0,-1)
+assert(hunter:Waypoint(clearGoal,victim),"visible prey in clear corridor must move without waiting for queue")
+assert(not hunter.Pending,"direct pursuit cancels stale investigation search")
 local agent=Navigation.New(model,body)
 agent:Waypoint(closeTarget)
 for _=1,10000 do

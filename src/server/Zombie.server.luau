@@ -277,6 +277,7 @@ local function prepare(model)
   elapsed+=dt
   if elapsed>=.1 then
    elapsed%=.1
+   local previousTarget=nearest
    nearest=nil
    local range=model:GetAttribute("SightRange")
    local forward=root.CFrame.LookVector
@@ -300,13 +301,19 @@ local function prepare(model)
      end
     end
    end
+   if previousTarget and not nearest then
+    navigation:Cancel();navigation.Route={};navigation.Index=1;navigation.NextPlan=0
+   end
    local heard,cursor=Noise.Listen(root.Position,model:GetAttribute("Attention"),noiseCursor)
    noiseCursor=cursor
-   if not nearest and heard then
+   if not nearest and not lastSeenPosition and heard then
     heardPosition=heard.Position;heardUntil=os.clock()+60;heardBlocked=0
     model:SetAttribute("LastHeardPosition",heardPosition);model:SetAttribute("LastHeardKind",heard.Kind)
    end
    if nearest then
+    if nearest~=previousTarget then
+     navigation:Cancel();navigation.Route={};navigation.Index=1;navigation.NextPlan=0
+    end
     heardPosition=nil
     lastSeenPosition,lastSeenCharacter=nearest.Position,nearest.Parent
     model:SetAttribute("LastSeenPosition",lastSeenPosition)
@@ -340,6 +347,8 @@ local function prepare(model)
      model:PivotTo(desired*root.CFrame:Inverse()*model:GetPivot())
      if progress>=1 then
       lastSeenPosition,lastSeenCharacter,searchStart=nil,nil,nil
+      heardPosition=nil
+      navigation:Cancel();navigation.Route={};navigation.Index=1;navigation.NextPlan=0
       idle=IdleRules.New(); idlePhase=nil
      end
     end

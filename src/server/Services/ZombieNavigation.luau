@@ -257,6 +257,18 @@ function Navigation:Plan(goal,ignored,cellOverride)
 end
 function Navigation:Waypoint(goal,ignored)
  local now=os.clock()
+ -- Visible prey in an open corridor must not wait behind expensive detours.
+ -- Only this bounded direct test runs inline; all searches stay budgeted.
+ if ignored and now>=(self.NextDirect or 0) then
+  self.NextDirect=now+.1
+  local ray=self:Parameters(ignored)
+  local point=self:Ground(Vector3.new(goal.X,self.Root.Position.Y,goal.Z),ray)
+  if point and self:Clear(self.Root.Position,point,ray) then
+   self:Cancel()
+   self.Route={point};self.Index=1;self.Ray=ray;self.Goal=goal
+   self.NextPlan=now+1
+  end
+ end
  local changed=not self.Goal or (Vector3.new(goal.X,0,goal.Z)-Vector3.new(self.Goal.X,0,self.Goal.Z)).Magnitude>self.Cell
  local waypoint=self.Route[self.Index]
  if waypoint and Vector3.new(waypoint.X-self.Root.Position.X,0,waypoint.Z-self.Root.Position.Z).Magnitude<.12 then

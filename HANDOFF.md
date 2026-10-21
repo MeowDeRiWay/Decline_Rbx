@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Zombie sensory priority and responsive pursuit — 22 October
+
+- User reports freeze resolved but zombies stall after investigating shots. Visual acquisition now cancels stale queued sound routes; loss of visual contact cancels moving-target route so search uses last SEEN position. Sound events still consumed but ignored while visible target OR visual memory exists; only complete search/invalid target permits listening again. Visual search completion clears old sound memory and queued path.
+- Waypoint for a VISIBLE character (ignored collision target supplied) performs at most one direct Ground+Clear corridor test per100ms. A clear corridor immediately replaces/cancels queued detour and moves toward prey; blocked corridors still use shared cooperative budget. This bounded shortcut avoids queue starvation causing zombies to stand looking at reachable visible prey. No synchronous A*/door graph restored.
+- New actual sensory transition test checks sound->visual->memory->listening and route cancellation; navigation test covers pending investigation preempted by direct chase. Existing noise, geometry tests, all compile and Rojo build pass; no Studio live verification.
+
 ## Shot freeze mitigation — 21 October
 
 - Likely spike identified in shot noise waking many zombies: movement called synchronous pathfinding (door graph plus up to2000 grid expansions and fine-grid retries per agent) in one Heartbeat. Runtime Waypoint now only queues; one shared Navigation.Update Heartbeat spends a soft2ms budget / hard128 coroutine resumes across ALL searches per frame, round-robin. Ground/corridor queries, descendant loops and A* iterations yield; one individual Roblox physics call/cache rebuild cannot be preempted. Direct Plan remains synchronous for geometry tests only.
