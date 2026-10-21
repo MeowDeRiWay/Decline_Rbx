@@ -1,5 +1,5 @@
 -- The creature renderer installs its screen/sector/occlusion test here.
-local Visibility={Check=function() return false end}
+local Visibility={Targets={},Check=function() return false end}
 function Visibility.Witnessed(event,character,camera)
  local root=character and character:FindFirstChild("HumanoidRootPart")
  if not root or not camera then return false end

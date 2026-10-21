@@ -50,7 +50,7 @@ RunService.RenderStepped:Connect(function()
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local camera=workspace.CurrentCamera
- if not root or not camera or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") then return end
+ if player:GetAttribute("GroupOpen") or not root or not camera or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") then return end
  local mouse=Input:GetMouseLocation()
  local ray=camera:ViewportPointToRay(mouse.X,mouse.Y)
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}

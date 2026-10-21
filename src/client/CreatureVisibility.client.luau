@@ -5,6 +5,7 @@ local player = Players.LocalPlayer
 local Config = require(ReplicatedStorage.Shared.GameConfig)
 local Rules = require(ReplicatedStorage.Shared.VisibilityRules)
 local Sight = require(ReplicatedStorage.Shared.Sight)
+local View=require(script.Parent.EventVisibility)
 local tracked = {}
 local function property(object)
  if object:IsA("BasePart") then return "LocalTransparencyModifier",1 end
@@ -58,6 +59,7 @@ local function unregister(model,record)
  restore(record)
  record.added:Disconnect()
  tracked[model] = nil
+ View.Targets[model]=nil
 end
 local function register(model)
  if not model or not model:IsA("Model") then return end
@@ -75,6 +77,7 @@ local function register(model)
   if object:IsA("Humanoid") then object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
  end
  tracked[model] = record
+ View.Targets[model]=true
  record.added = model.DescendantAdded:Connect(function(object)
   record.dirty = true
   if object:IsA("BasePart") then record.parts[object] = true end
@@ -114,7 +117,7 @@ local function visible(model,root,character,camera)
  if clear(target) then return true end
  return targetHead ~= nil and targetHead:IsA("BasePart") and clear(targetHead)
 end
-require(script.Parent.EventVisibility).Check=visible
+View.Check=visible
 local elapsed = Config.VisibilityInterval
 RunService:BindToRenderStep("DeclineCreatureVisibility",Enum.RenderPriority.Last.Value+1,function(dt)
  -- Apply every frame after the camera's transparency controller, even if the

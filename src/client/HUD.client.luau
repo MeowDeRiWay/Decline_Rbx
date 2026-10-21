@@ -89,6 +89,11 @@ end)
 local dismiss=Instance.new("TextButton")
 dismiss.Position=UDim2.new(1,-34,0,8);dismiss.Size=UDim2.fromOffset(26,26);dismiss.Text="×";dismiss.BackgroundColor3=Theme.Button;dismiss.TextColor3=Theme.Text;dismiss.Parent=menu
 dismiss.Activated:Connect(function() menu.Visible=false end)
+local groupButton=Instance.new("TextButton")
+groupButton.Position=UDim2.fromOffset(20,118);groupButton.Size=UDim2.fromOffset(290,26)
+groupButton.BackgroundColor3=Theme.Button;groupButton.TextColor3=Theme.Text;groupButton.Font=Theme.Font;groupButton.TextSize=13;groupButton.Text="Group [G]";groupButton.Parent=menu
+Theme.Bevel(groupButton)
+groupButton.Activated:Connect(function() menu.Visible=false;Layout.Group:Fire() end)
 local health=label(bar,"HP —",658,42,116,35,23)
 local armor=label(bar,"AC 0",658,88,116,35,23)
 local staminaTrack=Instance.new("Frame")

@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Creature hover and player groups — 21 October
+
+- CreatureHover ray includes only canonical models tracked by CreatureVisibility with ClientVisible=true, preventing invisible world markers intercepting mouse targeting. Zombies show name and integer HP; players show name only. Group member hover is suppressed to avoid duplicate labels. Visibility/AI/damage unchanged.
+- G or Menu > Group opens themed group window. Invite visible nearby players (40 studs), accept/decline, leave; leader can remove members. Server validates living state, distance, wall occlusion, consent, leader authority and maximum eight members. Invitations expire in 30 seconds; group membership is server-session only. Leader departure transfers leadership to lowest remaining UserId; fewer than two dissolves group.
+- Own group member names use separate PlayerGui billboards, always visible without hover, including outside facing cone/behind walls when their character is streamed. Characters themselves remain subject to existing visibility mask; no HP or enemy identity exposure added. No off-screen arrows or persistence across servers. G blocks movement/combat/aim/world actions while open.
+- GroupRules and actual server tests cover consent, expiry, capacity, spoofing, leader authority, private roster/invitation delivery, distance/occlusion and departure. Existing screen visibility checks, full Luau compile and Rojo build pass. No Studio UI/multiplayer playtest; user will verify.
+
 ## Centered owner's shot/reload audio — 21 October
 
 - User clarified apparent left/right issue was OWN shot/reload source moving with the muzzle when turning, not fixed external sound. New OwnerFirearmAudio.client watches only local character's server-created PlayingShotSound/PlayingReloadSound clones. Creates an authored-volume/speed 2D copy under SoundService, locally mutes only that original spatial Sound. Others retain untouched server spatial playback/ranges. No predicted/invalid-action sounds, extra remotes or changed assets.

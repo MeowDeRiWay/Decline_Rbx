@@ -1,0 +1,20 @@
+local Rules=require("../src/shared/GroupRules")
+local s=Rules.New();local connected=function() return true end
+assert(not Rules.Invite(s,1,1,0))
+assert(Rules.Invite(s,1,2,0) and not Rules.Invite(s,3,2,1),"one pending invitation per recipient")
+assert(Rules.Reply(s,2,true,1,connected))
+local id=s.Membership[1];assert(id==s.Membership[2] and s.Groups[id].Leader==1)
+assert(not Rules.Invite(s,2,3,2),"only leader invites")
+assert(not Rules.Kick(s,2,1),"member cannot kick leader")
+for user=3,8 do assert(Rules.Invite(s,1,user,2));assert(Rules.Reply(s,user,true,3,connected)) end
+assert(not Rules.Invite(s,1,9,4),"eight-member cap")
+assert(Rules.Kick(s,1,8) and not s.Membership[8])
+Rules.Leave(s,1);assert(s.Groups[id].Leader==2 and not s.Membership[1],"leader succession")
+for user=3,7 do Rules.Leave(s,user) end
+assert(not s.Groups[id] and not s.Membership[2],"last pair dissolves cleanly")
+assert(Rules.Invite(s,10,11,0));assert(not Rules.Reply(s,11,true,31,connected))
+assert(Rules.Invite(s,10,11,32));assert(not Rules.Reply(s,11,false,33,connected))
+assert(not s.Membership[10] and not s.Membership[11])
+assert(Rules.Invite(s,10,11,34));assert(not Rules.Reply(s,11,true,35,function() return false end),"disconnected inviter rejected")
+assert(Rules.Invite(s,10,11,36));Rules.Leave(s,10);assert(not s.Invites[11],"departing sender cancels invites")
+print("PASS: invitation consent/expiry, no spoofed/self membership, leader permissions, capacity, succession and dissolution")

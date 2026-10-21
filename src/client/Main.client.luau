@@ -17,7 +17,7 @@ local function maximumHeight()
 end
 Input.InputChanged:Connect(function(input,processed)
  if processed or input.UserInputType~=Enum.UserInputType.MouseWheel or Input:GetFocusedTextBox() or GuiService.MenuIsOpen then return end
- if player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") then return end
+ if player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen")) then return end
  targetHeight=math.clamp(targetHeight-input.Position.Z*2,18,maximumHeight())
 end)
 -- Default Roblox controls handle walking relative to the camera.
