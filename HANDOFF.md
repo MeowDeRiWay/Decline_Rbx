@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Local level-up audio — 21 October
+
+- User authored ReplicatedStorage/Sounds/LevelUpSound (Sound). HUD plays a local non-positional SoundService clone on an increase in ProfessionLevel alongside existing journal notice. Preserves authored SoundId/Volume/PlaybackSpeed; Looped and PlayOnRemove forced false. Existing level on client initialization does not play; a multi-level attribute jump plays once. Missing template safely skips audio. Ended destroys copy; Debris120s fallback. No server broadcast. Compile/Rojo checked, no Studio audition.
+
 ## Stable group menu refresh — 21 October
 
 - Group menu no longer destroys/recreates every row on its one-second candidate refresh or server snapshot. Controls keyed by role/player ID are reused; only changed text/order is written, and only absent rows are destroyed. Activated connections are created once and dispatch the current callback. Nearby eligibility still refreshes, invitations still expire, leader permissions still update. No server/visibility/AI changes. Compile/Rojo checked; no Studio visual test.

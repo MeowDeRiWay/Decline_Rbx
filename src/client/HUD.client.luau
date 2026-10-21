@@ -3,6 +3,8 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Run=game:GetService("RunService")
 local Input=game:GetService("UserInputService")
 local Chat=game:GetService("TextChatService")
+local SoundService=game:GetService("SoundService")
+local Debris=game:GetService("Debris")
 local Theme=require(ReplicatedStorage.Shared.UITheme)
 local Professions=require(ReplicatedStorage.Shared.ProgressionConfig).Professions
 local Layout=require(script.Parent.HUDLayout)
@@ -148,10 +150,21 @@ Run.Heartbeat:Connect(function(dt)
  end
  combat.BackgroundColor3=fighting and Theme.Danger or Theme.Card
 end)
+local function playLevelUp()
+ local sounds=ReplicatedStorage:FindFirstChild("Sounds")
+ local source=sounds and sounds:FindFirstChild("LevelUpSound")
+ if not source or not source:IsA("Sound") then return end
+ local sound=source:Clone()
+ sound.Name="PlayingLevelUpSound";sound.Looped=false;sound.PlayOnRemove=false
+ sound.Parent=SoundService -- Local, centered playback; other players cannot hear it.
+ sound.Ended:Once(function() sound:Destroy() end)
+ Debris:AddItem(sound,120)
+ sound:Play()
+end
 local lastLevel=player:GetAttribute("ProfessionLevel") or 0
 player:GetAttributeChangedSignal("ProfessionLevel"):Connect(function()
  local value=player:GetAttribute("ProfessionLevel") or 0
- if value>lastLevel then log("Level up! Open character to spend your points.") end
+ if value>lastLevel then log("Level up! Open character to spend your points.");playLevelUp() end
  lastLevel=value
 end)
 task.spawn(function()
