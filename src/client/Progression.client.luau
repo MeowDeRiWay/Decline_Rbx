@@ -101,7 +101,6 @@ for index,row in ipairs(statRows) do
  label(card,row[2],UDim2.fromOffset(10,0),UDim2.fromOffset(250,38),15)
  values[row[1]]=label(card,"—",UDim2.fromOffset(260,0),UDim2.fromOffset(278,38),15,palette.Accent)
 end
-local context=label(statsPanel,"",UDim2.fromOffset(8,448),UDim2.fromOffset(532,72),12,palette.Muted)
 local function setMode(value)
  closeHint.Text=value=="Stats" and "[C] close" or "[T] close"
  mode=value;statsPanel.Visible=value=="Stats";talentPanel.Visible=value=="Talents"
@@ -123,13 +122,12 @@ local function refreshStats()
  values.Absorption.Text=string.format("%g melee · %g other",stats.MeleeAbsorption,stats.Absorption)
  values.Resistance.Text=percent(stats.Resistance)
  values.Sprint.Text=string.format("%g seconds",stats.Sprint)
- values.Accuracy.Text=string.format("%g / 300",stats.Accuracy)
+ values.Accuracy.Text=string.format("%g",stats.Accuracy)
  values.Dodge.Text=string.format("%g",stats.Dodge)
  values.MeleeDamage.Text=string.format("%g%s",stats.MeleeDamage,stats.MeleeEquipped and "" or " (unarmed bonus)")
  values.CriticalChance.Text=percent(stats.CriticalChance)
  values.CriticalMultiplier.Text=string.format("×%d–×%d",stats.CriticalMin,stats.CriticalMax)
  values.Luck.Text=percent(stats.Luck)
- context.Text=string.format("Equipped: %s\nArmor: %g / %s · Absorption / resistance\nAccuracy includes weapon talents. Hit chance: skill minus distance beyond 20 studs minus target dodge; maximum 90%%.",definition and definition.Name or "None",attributes.ArmorAbsorption or 0,percent(attributes.ArmorResistance or 0))
 end
 local function canLearn(id,definition) return Rules.CanLearn(snapshot,id,definition) end
 local function redraw()

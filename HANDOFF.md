@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Cleaner character stat display — 21 October
+
+- Removed /300 from displayed accuracy (plain numeric value). Removed the entire under-stat equipment/armor/formula context label. Calculations, caps and target chance preview unchanged. Small UI text removal; no gameplay tests needed.
+
 ## Numeric accuracy skill and distance-based hit chance — 21 October
 
 - Accuracy now numeric25 +2/Attention, capped300; firearm category talents +5/rank, combined skill capped300. DodgeChance now numeric5/rank. Other fractional crit/resistance/luck values unchanged. Character sheet displays accuracy /300 and plain dodge; HUD AC no longer multiplies dodge by100. Tooltips/config describe numeric bonuses.
