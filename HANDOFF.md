@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Faction/group protection and mayor expulsion — 21 October
+
+- AffiliationRules: same positive TeamID => same faction; same positive GroupID => friendly too. Unaffiliated nil/zero values do not make strangers allies. DamageService rejects friendly player damage before direction, dodge, critical, HP or journal changes, including direct Apply with HitChecked; RollHit and Miss suppress friendly combat messages. NPC/environment damage unchanged.
+- Group invites require same positive TeamID server-side and in candidate UI. Reply rechecks faction. Any TownID/TeamID change removes membership and pending sent/received invitations, republishes roster/leader labels; handles both leaving and forced expulsion. Groups remain server-local.
+- Flag > Citizens (mayor only): choose citizen, enter mandatory reason up to 200 Unicode characters, confirm expulsion. Server checks mayor, physical flag session, same-town target and prohibits self-expulsion. TextService FilterStringAsync/GetNonChatStringForBroadcastAsync filters reason; errors fail closed. Revalidates after filter yields. Reuses voluntary departure cleanup for votes, pending requests, Team/Neutral, town/team attrs and session. Does not confiscate buildings.
+- JournalService sends filtered expulsion announcement (target, mayor, town, reason) to every original town member including expelled citizen regardless of visibility/distance. Other factions do not receive it. This is a session journal event, not persistent ban/history; rejoining is not prohibited.
+- Actual group, damage, town tests verify faction gates/change removal, friendly damage/report suppression, mayor-only expulsion, reason/filter failure and broadcast scope. Luau compile/Rojo build; no Studio multiplayer/UI test.
+
 ## Creature hover and player groups — 21 October
 
 - CreatureHover ray includes only canonical models tracked by CreatureVisibility with ClientVisible=true, preventing invisible world markers intercepting mouse targeting. Zombies show name and integer HP; players show name only. Group member hover is suppressed to avoid duplicate labels. Visibility/AI/damage unchanged.

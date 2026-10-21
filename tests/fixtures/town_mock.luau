@@ -58,7 +58,13 @@ function Instance.new(class)
  return object
 end
 function methods:IsA(class) return self.ClassName==class or (class=="BasePart" and self.ClassName=="Part") end
-function methods:SetAttribute(key,value) self.attrs[key]=value end
+function methods:GetAttributeChangedSignal(key)
+ self.attributeSignals=self.attributeSignals or {};self.attributeSignals[key]=self.attributeSignals[key] or event();return self.attributeSignals[key]
+end
+function methods:SetAttribute(key,value)
+ local changed=self.attrs[key]~=value;self.attrs[key]=value
+ if changed and self.attributeSignals and self.attributeSignals[key] then self.attributeSignals[key]:Fire() end
+end
 function methods:GetAttribute(key) return self.attrs[key] end
 function methods:GetChildren() return table.clone(self.children) end
 function methods:GetDescendants()

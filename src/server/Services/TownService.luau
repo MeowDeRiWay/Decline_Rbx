@@ -9,6 +9,8 @@ local Inventory = require(script.Parent.InventoryService)
 local BuildingStorage = require(script.Parent.BuildingStorage)
 local Progression = require(script.Parent.ProgressionService)
 local Doors = require(script.Parent.TownDoors)
+local TextService=game:GetService("TextService")
+local Journal=require(script.Parent.JournalService)
 local Service = {}
 local towns, plots, sessions, pending, lastAction = {}, {}, {}, {}, {}
 local spawnedPlayers = setmetatable({}, {__mode = "k"})
@@ -366,6 +368,21 @@ local function startVote(player, town, resignation)
    "A vote to remove you from office has started." or "A vote to remove the mayor has started.", EndsAt = vote.endsAt})
  end
 end
+local function leaveTown(player,town)
+   if mayor(player, town) then cancelRequests(town); setLeader(town, 0) end
+   if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil
+    if town.vote.kind == "Election" then
+     town.vote.candidates[player.UserId] = nil
+     for id, choice in pairs(town.vote.votes) do if choice == player.UserId then town.vote.votes[id] = nil end end
+    end
+    completeVote(town) end
+   for id, request in pairs(pending) do
+    if request.player == player then if request.plot then request.plot.pending = nil end; pending[id] = nil end
+   end
+   player.Team, player.Neutral = nil, true
+   player:SetAttribute("TownID", nil); player:SetAttribute("TeamID", nil)
+   sessions[player] = nil
+end
 local function handle(player, command, value, extra)
  if command == "Request" then remote:FireClient(player, Service.Snapshot(player)); return end
  if command == "Close" then sessions[player] = nil; return end
@@ -445,19 +462,23 @@ local function handle(player, command, value, extra)
   if command == "JoinFlag" then join(player, town); return end
   if townOf(player) ~= town then return end
   if command == "Leave" then
-   if mayor(player, town) then cancelRequests(town); setLeader(town, 0) end
-   if town.vote then town.vote.eligible[player.UserId] = nil; town.vote.votes[player.UserId] = nil
-    if town.vote.kind == "Election" then
-     town.vote.candidates[player.UserId] = nil
-     for id, choice in pairs(town.vote.votes) do if choice == player.UserId then town.vote.votes[id] = nil end end
-    end
-    completeVote(town) end
-   for id, request in pairs(pending) do
-    if request.player == player then if request.plot then request.plot.pending = nil end; pending[id] = nil end
-   end
-   player.Team, player.Neutral = nil, true
-   player:SetAttribute("TownID", nil); player:SetAttribute("TeamID", nil)
-   sessions[player] = nil
+   leaveTown(player,town)
+  elseif command == "Expel" and mayor(player,town) then
+   if not Rules.ValidID(value) or value==player.UserId or typeof(extra)~="string" or #extra>800 then return end
+   local reason=extra:match("^%s*(.-)%s*$")
+   if reason=="" or not utf8.len(reason) or utf8.len(reason)>200 then tell(player,"Enter a reason (1–200 characters).");return end
+   local target=Players:GetPlayerByUserId(value)
+   if not target or townOf(target)~=town then return end
+   local ok,filtered=pcall(function()
+    return TextService:FilterStringAsync(reason,player.UserId):GetNonChatStringForBroadcastAsync()
+   end)
+   if not ok or typeof(filtered)~="string" or not filtered:find("%S") then tell(player,"Unable to filter the reason. Please try again.");return end
+   -- Filtering yields: recheck authority, membership and physical flag access.
+   if not mayor(player,town) or sessions[player]~=session or not near(player,session.target) or target.Parent~=Players or townOf(target)~=town then return end
+   local recipients=members(town)
+   leaveTown(target,town)
+   local message=target.Name.." was expelled from "..town.name.." by "..player.Name..". Reason: "..filtered
+   for _,member in ipairs(recipients) do Journal.Send(member,message) end
   elseif command == "Vote" then startVote(player, town, false)
   elseif command == "Resign" then startVote(player, town, true)
   elseif command == "Election" and town.leader == 0 and not town.vote then startElection(town)

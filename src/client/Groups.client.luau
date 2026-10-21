@@ -5,6 +5,7 @@ local Run=game:GetService("RunService")
 local Context=game:GetService("ContextActionService")
 local GuiService=game:GetService("GuiService")
 local Theme=require(ReplicatedStorage.Shared.UITheme)
+local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
 local Layout=require(script.Parent.HUDLayout)
 local View=require(script.Parent.EventVisibility)
 local player=Players.LocalPlayer
@@ -54,9 +55,9 @@ local function redraw()
    else row(caption) end
   end
   row("Leave group",function() action:FireServer("Leave") end)
- else row("No group. Invite a nearby player to start one.") end
+ else row("No group. Invite a nearby faction member to start one.") end
  if state.ID==0 or state.Leader==player.UserId then
-  row("Nearby visible players · Invite")
+  row("Nearby faction members · Invite")
   local camera=workspace.CurrentCamera
   local character=player.Character
   local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -65,7 +66,7 @@ local function redraw()
    local target=other.Character
    local part=target and target:FindFirstChild("HumanoidRootPart")
    local hp=target and target:FindFirstChildOfClass("Humanoid")
-   if other~=player and (other:GetAttribute("GroupID") or 0)==0 and root and camera and part and hp and hp.Health>0 and not target:GetAttribute("Knockout") and (part.Position-root.Position).Magnitude<=40 and View.Check(target,root,character,camera) then
+   if other~=player and Affiliation.SameFaction(player,other) and (other:GetAttribute("GroupID") or 0)==0 and root and camera and part and hp and hp.Health>0 and not target:GetAttribute("Knockout") and (part.Position-root.Position).Magnitude<=40 and View.Check(target,root,character,camera) then
     found=true
     row("Invite "..(other.DisplayName or other.Name),function() action:FireServer("Invite",other.UserId) end)
    end

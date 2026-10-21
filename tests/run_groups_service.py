@@ -3,13 +3,13 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 s=(root/'src/server/Groups.server.luau').read_text()
-s=re.sub(r'local (Rules|Sight|Journal)=require[^\n]+\n','',s)
+s=re.sub(r'local (Rules|Sight|Journal|Affiliation)=require[^\n]+\n','',s)
 setup='''
 local messages={}
 local Journal={Send=function(p,message) table.insert(messages,{Player=p,Text=message}) end}
 local blocked=false
 local Sight={Cast=function() if blocked then return {Instance={IsDescendantOf=function() return false end}} end end}
-for _,p in ipairs(Players:GetPlayers()) do p:LoadCharacterAsync() end
+for _,p in ipairs(Players:GetPlayers()) do p:LoadCharacterAsync();p:SetAttribute("TeamID",10) end
 '''
 cases='''
 local folder=ReplicatedStorage:FindFirstChild("GroupRemotes")
@@ -22,7 +22,11 @@ b.Character.HumanoidRootPart.Position=Vector3.new(100,0,0)
 send(a,"Invite",b.UserId);assert(not snapshot(b).Invite,"distant invite rejected")
 b.Character.HumanoidRootPart.Position=Vector3.zero
 blocked=true;send(a,"Invite",b.UserId);assert(not snapshot(b).Invite,"wall blocks invitation")
-blocked=false;send(a,"Invite",b.UserId)
+blocked=false
+b:SetAttribute("TeamID",20);send(a,"Invite",b.UserId);assert(not snapshot(b).Invite,"foreign faction denied")
+b:SetAttribute("TeamID",nil);a:SetAttribute("TeamID",nil);send(a,"Invite",b.UserId);assert(not snapshot(b).Invite,"unaffiliated players denied")
+a:SetAttribute("TeamID",10);b:SetAttribute("TeamID",10)
+send(a,"Invite",b.UserId)
 assert(snapshot(b).Invite.From==a.UserId and not snapshot(c).Invite,"invitation visible only to intended recipient")
 send(b,"Reply",true)
 assert(a:GetAttribute("GroupID")>0 and a:GetAttribute("GroupID")==b:GetAttribute("GroupID"))
@@ -34,9 +38,9 @@ send(a,"Invite",d.UserId)
 Players.PlayerRemoving:Fire(a);a.Parent=nil
 assert(b:GetAttribute("GroupLeaderID")==b.UserId and not snapshot(d).Invite,"departure transfers leadership and cancels invitations")
 send(d,"Reply",true);assert(d:GetAttribute("GroupID")==0)
-send(c,"Leave");assert(b:GetAttribute("GroupID")==0 and c:GetAttribute("GroupID")==0,"pair dissolves")
+c:SetAttribute("TeamID",nil);assert(b:GetAttribute("GroupID")==0 and c:GetAttribute("GroupID")==0,"pair dissolves")
 print("PASS: actual server range/occlusion validation, consent, private invitations/rosters, leader authority, departure and cleanup")
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Rules=(function()\n'+(root/'src/shared/GroupRules.luau').read_text()+'\nend)()',setup,s,cases]
+parts=['local Affiliation=(function()\n'+(root/'src/shared/AffiliationRules.luau').read_text()+'\nend)()',(root/'tests/fixtures/town_mock.luau').read_text(),'local Rules=(function()\n'+(root/'src/shared/GroupRules.luau').read_text()+'\nend)()',setup,s,cases]
 with tempfile.TemporaryDirectory() as folder:
  path=Path(folder)/'groups.luau';path.write_text('\n'.join(parts));subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

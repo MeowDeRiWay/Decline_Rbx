@@ -3,6 +3,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Rules=require(ReplicatedStorage.Shared.GroupRules)
 local Sight=require(ReplicatedStorage.Shared.Sight)
 local Journal=require(script.Parent.Services.JournalService)
+local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
 local state=Rules.New()
 local folder=Instance.new("Folder");folder.Name="GroupRemotes";folder.Parent=ReplicatedStorage
 local action=Instance.new("RemoteEvent");action.Name="Action";action.Parent=folder
@@ -43,7 +44,7 @@ action.OnServerEvent:Connect(function(player,command,value)
   if typeof(value)~="number" or value~=math.floor(value) then return end
   local target=Players:GetPlayerByUserId(value)
   local a,b=alive(player),alive(target)
-  if not a or not b or (a.Position-b.Position).Magnitude>40 then return end
+  if not a or not b or not Affiliation.SameFaction(player,target) or (a.Position-b.Position).Magnitude>40 then return end
   local hit=Sight.Cast(a.Position,b.Position-a.Position,player.Character)
   if hit and not hit.Instance:IsDescendantOf(target.Character) then return end
   if Rules.Invite(state,user,value,now) then
@@ -52,11 +53,17 @@ action.OnServerEvent:Connect(function(player,command,value)
   else Journal.Send(player,"Cannot invite this player right now.") end
  elseif command=="Reply" then
   if typeof(value)~="boolean" then return end
-  Rules.Reply(state,user,value,now,function(from) return alive(Players:GetPlayerByUserId(from)) and true or false end)
+  Rules.Reply(state,user,value,now,function(from) local sender=Players:GetPlayerByUserId(from);return alive(sender) and Affiliation.SameFaction(player,sender) end)
  elseif command=="Leave" then Rules.Leave(state,user)
  elseif command=="Kick" then if typeof(value)=="number" then Rules.Kick(state,user,value) end
  else return end
  publish()
 end)
-Players.PlayerAdded:Connect(function(player) player:SetAttribute("GroupID",0);player:SetAttribute("GroupLeaderID",0) end)
+local function register(player)
+ player:SetAttribute("GroupID",0);player:SetAttribute("GroupLeaderID",0)
+ player:GetAttributeChangedSignal("TeamID"):Connect(function() Rules.Leave(state,player.UserId);publish() end)
+ player:GetAttributeChangedSignal("TownID"):Connect(function() Rules.Leave(state,player.UserId);publish() end)
+end
+Players.PlayerAdded:Connect(register)
+for _,player in ipairs(Players:GetPlayers()) do register(player) end
 Players.PlayerRemoving:Connect(function(player) recent[player]=nil;Rules.Leave(state,player.UserId);publish() end)

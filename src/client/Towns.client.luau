@@ -35,6 +35,7 @@ local snapshot, selected, section = {Towns = {}}, nil, nil
 local hidden = false
 local queue, messageUntil, message = {}, 0, ""
 local confirmation
+local expelTarget,expelReason=nil,""
 local function send(command, value, extra) action:FireServer(command,value,extra) end
 local function text(caption, size)
  local label = Instance.new("TextLabel")
@@ -111,7 +112,7 @@ render = function()
  elseif session.Kind == "Flag" then
   local town = townByID(session.TownID)
   if not town then return end
-  if section == "Diplomacy" and town.LeaderID ~= player.UserId then section = nil end
+  if (section == "Diplomacy" or section == "Citizens") and town.LeaderID ~= player.UserId then section = nil end
   if snapshot.TownID ~= town.ID and section ~= "Member" then section = nil end
   detail(town)
   if not section or section == "Member" then button("Membership",function() toggle("Member") end) end
@@ -134,6 +135,28 @@ render = function()
     else button("Start a vote",function() confirm("Start an anonymous vote to remove the mayor?", "Vote") end) end
    end
    if town.LeaderID == player.UserId then
+    if not section or section == "Citizens" then button("Citizens",function() expelTarget=nil;expelReason="";toggle("Citizens") end) end
+    if section == "Citizens" then
+     text("Expel a citizen from the faction. A reason is required and shared with every faction member.")
+     for _,member in ipairs(town.Members) do
+      if member.ID~=player.UserId then button(member.Name,function() expelTarget=member.ID;expelReason="";render() end) end
+     end
+     if expelTarget then
+      local targetName
+      for _,member in ipairs(town.Members) do if member.ID==expelTarget then targetName=member.Name end end
+      if targetName then
+       text("Expel "..targetName.." · Reason (up to 200 characters)")
+       local input=Instance.new("TextBox")
+       order+=1;input.LayoutOrder=order;input.Size=UDim2.new(1,-8,0,70)
+       input.BackgroundColor3=Theme.Card;input.TextColor3=Theme.Text;input.Font=Theme.Font;input.TextSize=16
+       input.TextWrapped=true;input.ClearTextOnFocus=false;input.PlaceholderText="Required reason";input.Text=expelReason;input.Parent=content
+       input:GetPropertyChangedSignal("Text"):Connect(function() expelReason=input.Text end)
+       button("Expel citizen",function()
+        if expelReason:find("%S") then confirm("Expel "..targetName.."? Reason: "..expelReason,"Expel",expelTarget,expelReason) end
+       end)
+      end
+     end
+    end
     if not section or section == "Diplomacy" then button("Diplomacy",function() toggle("Diplomacy") end) end
     if section == "Diplomacy" then
      text("Towns begin with neutral relations. An alliance needs approval from the other mayor. War and neutrality take effect for both towns as soon as you select them.")
@@ -289,7 +312,7 @@ RunService.RenderStepped:Connect(function()
    (request.Kind == "Vote" and "Y — remove the mayor · N — keep in office" or "Y — approve · N — decline"))) .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
  else caption.Text = message end
  hovered, highlight.Enabled, hoverLabel.Visible = nil, false, false
- if panel.Visible or player:GetAttribute("ProgressionOpen") or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if panel.Visible or player:GetAttribute("GroupOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local character, camera = player.Character, workspace.CurrentCamera
  local root = character and character:FindFirstChild("HumanoidRootPart")
  if not root or not camera or character:GetAttribute("Knockout") then return end

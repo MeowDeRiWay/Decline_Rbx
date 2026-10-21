@@ -6,6 +6,7 @@ import tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/DamageService.luau').read_text().replace('local Life = require(script.Parent.PlayerLifeService)','')
 service=service.replace('require(ReplicatedStorage.Shared.DefenseRules)','(function()\n'+(root/'src/shared/DefenseRules.luau').read_text()+'\nend)()')
+service=service.replace('require(ReplicatedStorage.Shared.AffiliationRules)','(function()\n'+(root/'src/shared/AffiliationRules.luau').read_text()+'\nend)()')
 setup='''
 local hits=0
 local chance=.1
@@ -59,6 +60,15 @@ Life.Damage=function(_,hp,amount) hp.Parent:SetAttribute("Knockout",true);return
 Service.Apply(hp,10,"Blunt",nil,"Melee",{Attacker=target,HitChecked=true})
 assert(report.sent[1].data.Knockout and report.sent[1].data.Actor==target,"AI attacker and new knockout survive report formatting")
 Life.Damage=priorDamage
+a:SetAttribute("TeamID",10);b:SetAttribute("TeamID",10)
+local oldHP=hp.Health;local oldReports=#report.sent
+assert(Service.Apply(hp,999,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0 and hp.Health==oldHP)
+assert(not Service.RollHit(b,hp));Service.Miss(a.Character,b)
+assert(#report.sent==oldReports,"friendly damage and misses emit no combat report")
+b:SetAttribute("TeamID",20);a:SetAttribute("GroupID",7);b:SetAttribute("GroupID",7)
+assert(Service.Apply(hp,999,"Blunt",nil,"Melee",{Attacker=b})==0 and hp.Health==oldHP,"same group protected")
+a:SetAttribute("TeamID",nil);b:SetAttribute("TeamID",nil);a:SetAttribute("GroupID",0);b:SetAttribute("GroupID",0)
+chance=.1;assert(Service.RollHit(b,hp),"unaffiliated players are not allies")
 print("PASS: structured actor/target reports for client visibility filtering, no overhead text")
 print("PASS: melee-only absorption, non-melee unchanged, zero-damage clamp and Apron Additional slot")
 '''

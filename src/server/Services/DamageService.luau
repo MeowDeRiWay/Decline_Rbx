@@ -3,7 +3,13 @@ local Life = require(script.Parent.PlayerLifeService)
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local report=Instance.new("RemoteEvent");report.Name="CombatReport";report.Parent=ReplicatedStorage
 local Defense=require(ReplicatedStorage.Shared.DefenseRules)
+local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
 local Service = {}
+local function friendly(attacker,target)
+ if not attacker then return false end
+ local source=attacker:IsA("Player") and attacker or Players:GetPlayerFromCharacter(attacker)
+ return Affiliation.Friendly(source,Players:GetPlayerFromCharacter(target))
+end
 local function announce(target,kind,amount,attacker,attackKind,critical,knockout)
  local victim=Players:GetPlayerFromCharacter(target)
  local attackerPlayer=attacker and attacker:IsA("Player")
@@ -21,8 +27,9 @@ local function announce(target,kind,amount,attacker,attackKind,critical,knockout
   if root and (root.Position-position).Magnitude<=250+(observer:GetAttribute("ViewBonus") or 0)*10 then report:FireClient(observer,payload) end
  end
 end
-function Service.Miss(target,attacker) announce(target,"Miss",0,attacker) end
+function Service.Miss(target,attacker) if friendly(attacker,target) then return end;announce(target,"Miss",0,attacker) end
 function Service.RollHit(attacker,humanoid,bonus)
+ if friendly(attacker,humanoid.Parent) then return false end
  local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
  local dodge=defender and defender:GetAttribute("DodgeChance") or 0
  local chance=math.max(0,math.clamp((attacker:GetAttribute("Accuracy") or .25)+(bonus or 0),0,.9)-dodge)
@@ -31,6 +38,8 @@ end
 function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,options)
  local target = humanoid.Parent
  if not target or humanoid.Health <= 0 then return 0 end
+ options=options or {}
+ if friendly(options.Attacker,target) then return 0 end
  if sourcePosition then
   local delta = target:GetPivot().Position-sourcePosition
   delta = Vector3.new(delta.X,0,delta.Z)
