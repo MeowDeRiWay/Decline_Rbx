@@ -42,7 +42,7 @@ function Service.RollHit(attacker,humanoid,bonus,skill)
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local target=humanoid.Parent:FindFirstChild("HumanoidRootPart",true) or humanoid.Parent:FindFirstChildWhichIsA("BasePart",true)
  if not root or not target then return false end
- local chance=Accuracy.Chance(skill or Accuracy.ForWeapon(attacker,Items[character:GetAttribute("HandsItem")]),bonus,(target.Position-root.Position).Magnitude,dodge)/100
+ local chance=Accuracy.Chance(skill or Accuracy.ForWeapon(attacker,Items[character:GetAttribute("HandsItem")]),bonus,(target.Position-root.Position).Magnitude,dodge,Accuracy.NightMultiplier(attacker))/100
  return math.random()<chance
 end
 function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,options)
@@ -68,6 +68,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  end
  target:SetAttribute("LastDamageDodged",false)
  local multiplier=options.CriticalMultiplier or 1
+ if multiplier>1 and options.Attacker and options.Attacker:IsA("Player") then multiplier*=options.Attacker:GetAttribute("CriticalDamageMultiplier") or 1 end
  local negation=player and (player:GetAttribute("CriticalNegation") or 0) or 0
  if multiplier>1 and negation>0 and math.random()<negation then multiplier=1 end
  local postDefense=attackKind=="Ranged" and math.max(0,options.PostDefenseDamage or 0) or 0
@@ -77,7 +78,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
   if target:FindFirstChildOfClass("ForceField") then amount=0
   else
    local absorption=(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0)+(attackKind=="Melee" and (player:GetAttribute("MeleeAbsorption") or 0) or 0)
-   amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0),absorption)+postDefense
+   amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0)+(humanoid.Health<humanoid.MaxHealth*.25 and (player:GetAttribute("LowHealthResistance") or 0) or 0),absorption)+postDefense
    amount=amount>0 and Life.Damage(player,humanoid,amount,true,true) or 0
   end
  elseif target.Name == "Mannikin" then

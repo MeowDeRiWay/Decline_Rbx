@@ -34,9 +34,9 @@ local storage=Rules.New()
 assert(Service.Transfer(a,storage,"AssaultRifle223",1,true))
 assert(not Service.ToggleHolster(a),"transfer invalidates holster memory")
 assert(Service.Add(a,"AssaultRifle223",1,{1}));assert(Service.Equip(a,"AssaultRifle223"))
-Service.UseWeapon(a);assert(#notices==1 and notices[1].data:find("broke",1,true))
-Service.UseWeapon(a);assert(#notices==1,"broken item does not repeat notification")
-assert(notices[1].player==a,"personal notices are sent only to their owner")
+Service.UseWeapon(a);assert(#notices==0,"weapon wear disabled")
+Service.UseWeapon(a);assert(#notices==0,"no wear notifications")
+assert(#notices==0,"wear disabled without personal notices")
 Service.Reset(a);assert(not Service.ToggleHolster(a),"reset clears memory")
 Service.Reset(a)
 assert(Service.Add(a,"AssaultRifle223",2))
@@ -80,7 +80,7 @@ workspace.DescendantAdded=event()
 local worldFolder=make("Folder","WorldItems",workspace);worldFolder.ChildAdded=event()
 local Inventory=Service
 local template=make("Model","AssaultRifle223",ServerStorage);make("Part","Part",template)
-local EquipmentVisuals={Template=function() return template end,CaptureTemplate=function() end}
+local EquipmentVisuals={Template=function() return template end,CaptureTemplate=function() end,Apply=function(model,id) model:SetAttribute("HandsItem",id or "") end}
 local Random={new=function() return {NextNumber=function() return .5 end} end}
 local originalPivot=methods.GetPivot
 function methods:GetPivot() local cf=originalPivot(self);cf.Rotation=CFrame.new(Vector3.zero);return cf end
@@ -103,6 +103,14 @@ assert(World.Pickup(a,dropped))
 assert(math.abs(Service.Snapshot(a).Weight-beforeDrop)<.00001,"drop/pickup conserves weapon plus ammunition weight")
 assert(Service.Equip(a,"AssaultRifle223",charged.Key) and Service.GetMagazine(a).Loaded==30 and Service.GetMagazine(a).Type=="AP")
 assert(not World.Pickup(a,dropped),"pickup cannot duplicate a loaded weapon")
+ground=true
+assert(World.Disarm(a) and not Service.Snapshot(a).Equipment.Hands,"bolt disarm drops equipped gun")
+local disarmed=worldFolder:GetChildren()[1]
+ground=false
+assert(disarmed and World.Pickup(a,disarmed))
+assert(Service.Equip(a,"AssaultRifle223",charged.Key) and Service.GetMagazine(a).Loaded==30 and Service.GetMagazine(a).Type=="AP","disarm conserves loaded ammunition")
+ground=false
+assert(not World.Disarm(a) and Service.Snapshot(a).Equipment.Hands=="AssaultRifle223","failed world placement restores held gun")
 local corpseInventory=Service.ExtractAll(a)
 local foundLoaded=false
 for _,stack in ipairs(Rules.Stacks(corpseInventory,ItemConfig.Items)) do if stack.ID=="AssaultRifle223" and stack.Loaded==30 and stack.AmmoType=="AP" then foundLoaded=true end end

@@ -22,6 +22,25 @@ local Progression=require(ReplicatedStorage.Shared.ProgressionRules)
 local ZombieStats=require(ReplicatedStorage.Shared.ZombieStats)
 local statRandom=Random.new()
 local registered = setmetatable({},{__mode="k"})
+local baseStats=setmetatable({},{__mode="k"})
+local function applyDayStats(model,hp,base)
+ local stats=table.clone(base)
+ if workspace:GetAttribute("IsNight") then for id,value in pairs(stats) do stats[id]=value+2 end end
+ local derived=Progression.Bonuses(stats)
+ local skills=Progression.SkillValues(stats)
+ local ratio=hp.MaxHealth>0 and hp.Health/hp.MaxHealth or 1
+ for id,value in pairs(stats) do model:SetAttribute(id,value) end
+ for id,value in pairs(derived) do model:SetAttribute(id,value) end
+ model:SetAttribute("SkillUnarmed",skills.Unarmed);model:SetAttribute("Accuracy",skills.Unarmed)
+ model:SetAttribute("SightRange",derived.ViewRange);model:SetAttribute("MoveSpeed",derived.RunBonus)
+ hp.MaxHealth=derived.MaxHealth;hp.Health=hp.MaxHealth*ratio;hp.WalkSpeed=derived.RunBonus
+end
+workspace:GetAttributeChangedSignal("IsNight"):Connect(function()
+ for model,base in pairs(baseStats) do
+  local hp=model:FindFirstChildOfClass("Humanoid")
+  if model.Parent and hp and hp.Health>0 and not model:GetAttribute("IsDead") then applyDayStats(model,hp,base) end
+ end
+end)
 local function positive(value)
  return typeof(value)=="number" and value==value and value>0 and value<math.huge
 end
@@ -43,16 +62,9 @@ local function prepare(model)
  humanoid.JumpHeight=0
  humanoid.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None
  local stats=ZombieStats.Roll(statRandom)
- local derived=Progression.Bonuses(stats)
- local skills=Progression.SkillValues(stats)
- for id,value in pairs(stats) do model:SetAttribute(id,value) end
- for id,value in pairs(derived) do model:SetAttribute(id,value) end
- model:SetAttribute("SkillUnarmed",skills.Unarmed)
- model:SetAttribute("Accuracy",skills.Unarmed)
- model:SetAttribute("SightRange",derived.ViewRange)
- model:SetAttribute("MoveSpeed",derived.RunBonus)
- humanoid.MaxHealth=derived.MaxHealth;humanoid.Health=derived.MaxHealth
- humanoid.WalkSpeed=derived.RunBonus
+ baseStats[model]=stats
+ applyDayStats(model,humanoid,stats)
+ humanoid.Health=humanoid.MaxHealth
  humanoid.Parent=model
  root.Name="HumanoidRootPart"
  model.PrimaryPart=root

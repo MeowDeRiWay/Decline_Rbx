@@ -78,6 +78,7 @@ function Service.Cook(player,id,requested)
  local state=states[stove]
  if recipe and recipe.Requirements and not Progression.Meets(player,recipe.Requirements) then return false end
  if not recipe or recipe.Station~=stove.Name or state.Job or not Progression.CanStation(player,stove.Name) then return false end
+ recipe=Rules.Discount(recipe,player:GetAttribute("CraftCostMultiplier"))
  local own=Inventory.Snapshot(player)
  local speed=Rules.Speed(own.CraftTools or {},recipe)
  if not speed or speed<=0 then return false end

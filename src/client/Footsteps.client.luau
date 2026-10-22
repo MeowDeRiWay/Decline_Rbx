@@ -10,12 +10,12 @@ local function configure(sound,player,character)
  local applying=false
  local function apply()
   if applying then return end;applying=true
-  local quiet=Noise.StepMultiplier(player:GetAttribute("SkillSneak"),character:GetAttribute("Running"))
+  local quiet=Noise.StepMultiplier(player:GetAttribute("SkillSneak"),character:GetAttribute("Running"),player:GetAttribute("SilentRunning"))
   sound:SetAttribute("FootstepNoiseMultiplier",quiet)
   sound.RollOffMode=Enum.RollOffMode.InverseTapered
   sound.RollOffMinDistance=Config.FootstepMinDistance*quiet
   local base=character:GetAttribute("Running") and Config.RunFootstepMaxDistance or Config.FootstepMaxDistance
-  local radius=Noise.StepRadius(player:GetAttribute("SkillSneak"),character:GetAttribute("Running"),base)
+  local radius=Noise.StepRadius(player:GetAttribute("SkillSneak"),character:GetAttribute("Running"),base,player:GetAttribute("SilentRunning"))
   sound:SetAttribute("FootstepBaseMin",Config.FootstepMinDistance*quiet)
   sound:SetAttribute("FootstepBaseDistance",radius)
   sound.RollOffMaxDistance=radius
@@ -24,8 +24,9 @@ local function configure(sound,player,character)
  end
  local a=character:GetAttributeChangedSignal("Running"):Connect(apply)
  local b=player:GetAttributeChangedSignal("SkillSneak"):Connect(apply)
+ local perk=player:GetAttributeChangedSignal("SilentRunning"):Connect(apply)
  local c=sound:GetPropertyChangedSignal("Volume"):Connect(apply)
- sound.Destroying:Once(function() a:Disconnect();b:Disconnect();c:Disconnect() end)
+ sound.Destroying:Once(function() a:Disconnect();b:Disconnect();c:Disconnect();perk:Disconnect() end)
  apply()
 end
 local connections={}

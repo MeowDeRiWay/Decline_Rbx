@@ -110,6 +110,10 @@ local function added(player)
   Towns.Publish()
  end)
 end
+function Service.OfflineInventory(model)
+ local record=records[model:GetAttribute("OfflineUserId")]
+ return record and not record.Returned and record.Body==model and record.Inventory or nil
+end
 function Service.OfflineCharacters()
  local result={}
  for _,record in pairs(records) do if record.Body and not record.Returned then table.insert(result,record.Body) end end

@@ -170,7 +170,7 @@ function Service.Damage(player,humanoid,amount,hitChecked,defenseChecked)
  if humanoid.Health<=0 or character:GetAttribute("Knockout") or finished[character] then return 0 end
  if not hitChecked and amount>0 and math.random()<math.clamp((player:GetAttribute("DodgeChance") or 0)/100,0,1) then return 0 end
  if not defenseChecked then
-  amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0),(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0))
+  amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0)+(humanoid.Health<humanoid.MaxHealth*.25 and (player:GetAttribute("LowHealthResistance") or 0) or 0),(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0))
  end
  local actual=math.min(humanoid.Health,amount)
  if amount>=humanoid.Health then Service.Knockout(player,character)

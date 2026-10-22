@@ -1,0 +1,54 @@
+"""Run actual clock cycle and zombie transition stat application."""
+from pathlib import Path
+import subprocess,tempfile,sys
+root=Path(__file__).resolve().parents[1]
+cycle=(root/'src/server/DayNight.server.luau').read_text()
+zombie=(root/'src/server/Zombie.server.luau').read_text()
+stats=zombie[zombie.index('local baseStats='):zombie.index('local function positive')]
+rules=(root/'src/shared/ProgressionRules.luau').read_text()
+mock='''
+local clock=0
+local beat
+local Lighting={}
+local workspace={attrs={}}
+function workspace:GetServerTimeNow() return clock end
+function workspace:GetAttribute(k) return self.attrs[k] end
+function workspace:SetAttribute(k,v) self.attrs[k]=v;if self.changed then self.changed() end end
+function workspace:GetAttributeChangedSignal() return {Connect=function(_,fn) workspace.changed=fn end} end
+local Run={Heartbeat={Connect=function(_,fn) beat=fn end}}
+local game={GetService=function(_,name) return name=="Lighting" and Lighting or Run end}
+'''
+cases='''
+local function model()
+ local m={attrs={},Parent=true};local hp={Health=40,MaxHealth=40}
+ function m:GetAttribute(k) return self.attrs[k] end
+ function m:SetAttribute(k,v) self.attrs[k]=v end
+ function m:FindFirstChildOfClass() return hp end
+ return m,hp
+end
+local m,hp=model();local base={Strength=4,Attention=4,Endurance=4,Intelligence=1,Agility=2,Luck=5}
+baseStats[m]=base
+applyDayStats(m,hp,base);assert(hp.MaxHealth==40 and m.attrs.Intelligence==1)
+clock=1500;beat(1);assert(Lighting.ClockTime==18 and workspace.attrs.IsNight)
+assert(hp.MaxHealth==60 and hp.Health==60 and m.attrs.Intelligence==3 and m.attrs.Luck==7 and m.attrs.Strength==6)
+hp.Health=30
+clock=3300;beat(1);assert(Lighting.ClockTime==6 and not workspace.attrs.IsNight)
+assert(hp.MaxHealth==40 and hp.Health==20 and m.attrs.Intelligence==1,"transition preserves health fraction and base attributes")
+clock=3600;beat(1);assert(Lighting.ClockTime==8,"full day lasts exactly3600seconds")
+hp.Health=0;clock=5100;beat(1);assert(hp.Health==0,"night cannot revive a corpse")
+print("PASS: one-hour day cycle, dawn/dusk, all zombie attributes +2, health fraction, no corpse revival")
+'''
+accuracy=(root/'src/shared/AccuracyRules.luau').read_text()
+cases+='''
+local a={AttributesConfirmed=true,SkillLightWeapons=100}
+local p={GetAttribute=function(_,k) return a[k] end}
+assert(Accuracy.Chance(Accuracy.ForWeapon(p,{Firearm={}}),0,20,0,Accuracy.NightMultiplier(p))==50)
+assert(Accuracy.Chance(300,20,20,0,Accuracy.NightMultiplier(p))==90,"cap applies before night")
+a.NightAccuracyMultiplier=.9;assert(Accuracy.Chance(Accuracy.ForWeapon(p,{Firearm={}}),0,20,0,Accuracy.NightMultiplier(p))==90)
+workspace.attrs.IsNight=false;assert(Accuracy.ForWeapon(p,{Firearm={}})==100)
+print("PASS: night accuracy half, cat eyes ten-percent penalty, day restoration")
+'''
+with tempfile.TemporaryDirectory() as d:
+ p=Path(d)/'night.luau'
+ p.write_text(mock+'\nlocal Progression=(function()\n'+rules+'\nend)()\n'+cycle+'\n'+stats+'\nlocal Accuracy=(function()\n'+accuracy+'\nend)()\n'+cases)
+ subprocess.run([sys.argv[1],str(p)],check=True)

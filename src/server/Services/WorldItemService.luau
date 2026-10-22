@@ -171,6 +171,41 @@ function Service.SpawnLoot(loot,position,ignored)
  for _,item in ipairs(prepared) do item.Parent = folder end
  return true
 end
+local function dropHeld(state,model)
+ local id=state and state.Equipment.Hands
+ local definition=id and ItemConfig.Items[id]
+ if not definition or not definition.Weapon or id=="ZombieHand" or not model then return false end
+ local root=model:FindFirstChild("HumanoidRootPart")
+ if not root then return false end
+ local item=makeItem(id)
+ if not item then return false end
+ local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={model,folder}
+ local hit=workspace:Raycast(root.Position+Vector3.new(0,2,0),Vector3.new(0,-12,0),params)
+ if not hit then item:Destroy();return false end
+ place(item,hit.Position,1,id)
+ item:SetAttribute("Conditions",HttpService:JSONEncode({state.EquipmentCondition.Hands or definition.Weapon.MaxUses}))
+ local data=state.EquipmentWeapon and state.EquipmentWeapon.Hands
+ if data then item:SetAttribute("WeaponData",HttpService:JSONEncode({data})) end
+ state.Equipment.Hands=nil;state.EquipmentCondition.Hands=nil
+ if state.EquipmentWeapon then state.EquipmentWeapon.Hands=nil end
+ EquipmentVisuals.Apply(model,nil)
+ item.Parent=folder
+ return true
+end
+function Service.DisarmCreature(model)
+ if model:GetAttribute("OfflineUserId") then
+  local state=require(script.Parent.PlayerSessionService).OfflineInventory(model)
+  return dropHeld(state,model)
+ end
+ local id=model:GetAttribute("HandsItem")
+ if not id or id=="ZombieHand" then return false end
+ return dropHeld({Equipment={Hands=id},EquipmentCondition={},EquipmentWeapon={}},model)
+end
+function Service.Disarm(player)
+ if not dropHeld(Inventory.Export(player),player.Character) then return false end
+ Inventory.Refresh(player)
+ return true
+end
 function Service.Drop(player, id, requested,key)
  if typeof(id) ~= "string" or not ItemConfig.Items[id] then return false end
  local snapshot=Inventory.Snapshot(player)

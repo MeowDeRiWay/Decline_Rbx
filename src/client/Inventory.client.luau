@@ -270,7 +270,7 @@ local function renderRecipes()
  table.sort(ids)
  if #ids==0 then text(equipment,"No recipes available yet.",UDim2.fromOffset(8,8),UDim2.new(1,-16,0,50)) end
  for order,id in ipairs(ids) do
-  local recipe=Recipes[id]
+  local recipe=CraftRules.Discount(Recipes[id],player:GetAttribute("CraftCostMultiplier"))
   local available=CraftRules.Available(snapshot.Items,recipe)
   local speed=CraftRules.Speed(snapshot.CraftTools or {},recipe)
   local card=Instance.new("Frame")
@@ -330,7 +330,9 @@ local function renderRecipes()
   local cook=button(card,"Craft",UDim2.fromOffset(10,267),UDim2.new(.5,-15,0,32))
   local all=button(card,string.format("Craft all (max %d)",recipe.MaxBatch),UDim2.new(.5,5,0,267),UDim2.new(.5,-15,0,32))
   local busy=(snapshot.CookingEndsAt or 0)>0
-  local enabled=not busy and available>0 and speed~=nil
+  local eligible=true
+  for skill,value in pairs(recipe.Requirements and recipe.Requirements.Skills or {}) do if (player:GetAttribute("Skill"..skill) or 0)<value then eligible=false end end
+  local enabled=eligible and not busy and available>0 and speed~=nil
   cook.Active,all.Active=enabled,enabled
   cook.AutoButtonColor,all.AutoButtonColor=enabled,enabled
   cook.TextTransparency,all.TextTransparency=enabled and 0 or .5,enabled and 0 or .5
@@ -380,7 +382,7 @@ redraw = function()
  if selectedId then
   local definition = ItemConfig.Items[selectedId]
   rightTitle.Text = "Item details"
-  local stateText=definition.Weapon and string.format("\nCondition %d / %d",selectedStack.Condition or 0,definition.Weapon.MaxUses) or ""
+  local stateText=""
   if definition.Firearm then stateText..=string.format("\nLoaded %d / %d · %s",selectedStack.Loaded or 0,definition.Firearm.Magazine,selectedStack.AmmoType or "FMJ") end
   if definition.Armor then stateText..=string.format("\nArmor %g / %g%%",definition.Armor.Absorption or 0,(definition.Armor.Resistance or 0)*100) end
   local ammo=definition.Firearm and ItemConfig.Items["Ammo"..definition.Firearm.Caliber..(selectedStack.AmmoType or "FMJ")]

@@ -38,6 +38,7 @@ local function gauge(x,color)
  return track,fill
 end
 local conditionTrack,conditionFill=gauge(166,Theme.Green)
+conditionTrack.Visible=false
 local ammoTrack,ammoFill=gauge(184,Theme.Accent)
 local hint=Instance.new("TextLabel")
 hint.AnchorPoint=Vector2.new(1,1);hint.Position=UDim2.fromOffset(204,-8);hint.Size=UDim2.fromOffset(280,78)
@@ -74,11 +75,8 @@ local function refresh()
  panel.Visible = true
  if not weapon then hint.Visible=false; held = nil; world:ClearAllChildren();conditionFill.Size=UDim2.fromScale(1,0);ammoTrack.Visible=false;return end
  if held ~= currentHeld then held = currentHeld; preview(held) end
- local uses = math.clamp(character:GetAttribute("WeaponCondition") or 0,0,weapon.MaxUses)
- local fraction = uses/math.max(1,weapon.MaxUses)
- conditionFill.Size=UDim2.fromScale(1,fraction)
- conditionFill.BackgroundColor3=fraction<.2 and Theme.Danger or Theme.Green
- hint.Text=string.format("%s\nCondition %d / %d",definition.Name or id,uses,weapon.MaxUses)
+ conditionFill.Parent.Visible=false
+ hint.Text=definition.Name or id
  ammoTrack.Visible=definition.Firearm~=nil
  if definition.Firearm then
   local loaded=character:GetAttribute("MagazineAmmo") or 0

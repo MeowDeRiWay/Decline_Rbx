@@ -27,7 +27,7 @@ local function update(player)
  end
  player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,.9))
  if player.Character then
-  player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1))
+  player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")))
   Visuals.Apply(player.Character, state.Equipment.Hands)
   player.Character:SetAttribute("MedicineItem",state.Equipment.Medicine or "")
   player.Character:SetAttribute("MedicineCount",(state.Items.Bandage or 0)+(state.Equipment.Medicine=="Bandage" and 1 or 0))
@@ -150,7 +150,7 @@ local function craftTools(state)
  local tools={}
  local function add(id,condition)
   local item=ItemConfig.Items[id]
-  if item and item.CraftTool and (not item.Weapon or (condition or 0)>0) then
+  if item and item.CraftTool then
    tools[item.CraftTool]=math.max(tools[item.CraftTool] or 0,item.CraftSpeed or 1)
   end
  end
@@ -188,31 +188,26 @@ function Service.UnloadMagazine(player,kind)
  if data.Loaded>0 then Rules.Add(state,ItemConfig.Items,"Ammo"..gun.Caliber..data.Type,data.Loaded) end
  data.Loaded=0;data.Type=kind;update(player)
 end
+function Service.Refresh(player) update(player) end
 function Service.GetWeapon(player)
  local state = states[player]
  return state and CombatRules.GetWeapon(state,ItemConfig.Items)
 end
 function Service.UseWeapon(player)
- local state = states[player]
- if not state then return nil end
- local id=state.Equipment.Hands
- local before=state.EquipmentCondition.Hands or 0
- local weapon = CombatRules.Use(state,ItemConfig.Items)
- if not weapon then return nil end
- if before>0 and (state.EquipmentCondition.Hands or 0)<=0 then Journal.Send(player,(ItemConfig.Items[id].Name or id).." broke.") end
- update(player)
- return weapon
+ -- Combat remains functional, with no condition mutation or wear notification.
+ return Service.GetWeapon(player)
 end
 function Service.Snapshot(player)
  local state = states[player]
  if not state then return {Items = {}, Equipment = {}, Weight = 0, CraftTools = {}} end
- return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), Stacks=Rules.Stacks(state,ItemConfig.Items), Weight = Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1), CraftTools = craftTools(state)}
+ return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), Stacks=Rules.Stacks(state,ItemConfig.Items), Weight = Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")), CraftTools = craftTools(state)}
 end
 function Service.Start()
  if Service.Started then return end
  Service.Started = true
  local function added(player)
   player:GetAttributeChangedSignal("AmmoWeightMultiplier"):Connect(function() update(player) end)
+  player:GetAttributeChangedSignal("EquippedWeaponWeightMultiplier"):Connect(function() update(player) end)
   player.CharacterAdded:Connect(function(character)
    if character:GetAttribute("ReturningSession") then update(player) else Service.Reset(player) end
   end)

@@ -18,15 +18,16 @@ gui.Parent = player:WaitForChild("PlayerGui")
 local panel = Instance.new("Frame")
 panel.Size = UDim2.fromScale(1,1)
 panel.BackgroundColor3 = Theme.Card
-panel.BackgroundTransparency = .15
+panel.BackgroundTransparency = 1
 panel.BorderSizePixel = 0
 panel.Parent = gui
-Theme.Bevel(panel)
+
 local function label(y,size,color)
  local text = Instance.new("TextLabel")
  text.Position = UDim2.fromOffset(8,y)
  text.Size = UDim2.new(1,-16,0,22)
  text.BackgroundTransparency = 1
+ text.TextStrokeTransparency=.35
  text.Font = Theme.Font
  text.TextSize = size
  text.TextColor3 = color
@@ -36,16 +37,7 @@ end
 local name = label(4,16,Color3.fromRGB(238,241,245))
 local chanceText=label(27,14,Theme.Accent)
 local health = label(27,14,Color3.fromRGB(215,225,219))
-local track = Instance.new("Frame")
-track.Position = UDim2.fromOffset(10,55)
-track.Size = UDim2.new(1,-20,0,4)
-track.BackgroundColor3 = Color3.fromRGB(55,62,69)
-track.BorderSizePixel = 0
-track.Parent = panel
-local fill = Instance.new("Frame")
-fill.Size = UDim2.fromScale(1,1)
-fill.BorderSizePixel = 0
-fill.Parent = track
+local equipped=label(70,14,Theme.Text)
 local function creature(part)
  local model,humanoid
  local ancestor = part.Parent
@@ -94,24 +86,24 @@ RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Valu
  local offline=model:GetAttribute("OfflineUserId")~=nil
  local isPlayer=owner~=nil or offline
  if owner and (player:GetAttribute("GroupID") or 0)~=0 and owner:GetAttribute("GroupID")==player:GetAttribute("GroupID") then return end
+ local known=player:GetAttribute("Observant")==true
+ name.Visible=known;health.Visible=known;equipped.Visible=known
  name.Text=owner and (owner.DisplayName or owner.Name) or display
- health.Visible=not isPlayer;track.Visible=not isPlayer
  local root=character:FindFirstChild("HumanoidRootPart")
  local target=model:FindFirstChild("HumanoidRootPart",true) or anchor
  local definition=Items[character:GetAttribute("HandsItem")]
  local category=definition and definition.Firearm and (definition.Firearm.Category or "Rifle") or ""
  local friendly=Affiliation.Friendly(player,owner or (offline and model))
  chanceText.Visible=root~=nil and not friendly
- chanceText.Position=UDim2.fromOffset(8,isPlayer and 27 or 65)
+ chanceText.Position=UDim2.fromOffset(8,known and 48 or 4)
  if chanceText.Visible then
-  local chance=Accuracy.Chance(Accuracy.ForWeapon(player,definition),(definition and definition.Firearm and Accuracy.SightBonus(character:FindFirstChild("HeldItem")) or 0),(target.Position-root.Position).Magnitude,owner and owner:GetAttribute("DodgeChance") or model:GetAttribute("DodgeChance") or 0)
+  local chance=Accuracy.Chance(Accuracy.ForWeapon(player,definition),(definition and definition.Firearm and Accuracy.SightBonus(character:FindFirstChild("HeldItem")) or 0),(target.Position-root.Position).Magnitude,owner and owner:GetAttribute("DodgeChance") or model:GetAttribute("DodgeChance") or 0,Accuracy.NightMultiplier(player))
   chanceText.Text=string.format("Hit chance: %d%%",math.floor(chance))
  end
- gui.Size=UDim2.fromOffset(190,isPlayer and (friendly and 30 or 54) or 90)
- local current,maximum = humanoid.Health,humanoid.MaxHealth
- health.Text = string.format("%.0f / %.0f HP",current,maximum)
- local ratio = maximum > 0 and math.clamp(current/maximum,0,1) or 0
- fill.Size = UDim2.fromScale(ratio,1)
- fill.BackgroundColor3 = Color3.fromRGB(215,65,65):Lerp(Color3.fromRGB(90,210,130),ratio)
+ gui.Size=UDim2.fromOffset(230,known and 98 or 30)
+ health.Text=string.format("%.0f / %.0f HP",humanoid.Health,humanoid.MaxHealth)
+ local weaponID=model:GetAttribute("HandsItem")
+ local item=weaponID and Items[weaponID]
+ equipped.Text="Weapon: "..(item and item.Name or "Unarmed")
  gui.Enabled = true
 end)

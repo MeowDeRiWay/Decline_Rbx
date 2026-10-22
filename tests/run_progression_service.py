@@ -32,8 +32,8 @@ Config.StationRequirements.Stove={Skills={Repair=52}}
 assert(not Service.CanStation(a,"Stove"));send("Skill","Repair");assert(Service.CanStation(a,"Stove"))
 local hp=a.Character.Humanoid;hp.Health=22;send("Request");assert(hp.Health==22,"request cannot repeat confirmation heal")
 hp.Health=10
-clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==22,"END6 heals12 per minute")
-a.Character:SetAttribute("Knockout",true);clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==22,"regeneration cannot revive knockout")
+clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==16,"END6 heals6 per minute")
+a.Character:SetAttribute("Knockout",true);clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==16,"regeneration cannot revive knockout")
 a.Character:SetAttribute("Knockout",false);hp.Health=59;assert(coroutine.resume(loops[1]));assert(hp.Health==60,"heal capped at max")
 hp.Health=0;assert(coroutine.resume(loops[1]));assert(hp.Health==0,"cannot revive dead")
 a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("Strength")==5 and a.Character.Humanoid.MaxHealth==60,"immutable creation survives respawn")

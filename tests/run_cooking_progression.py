@@ -20,8 +20,9 @@ local callbacks,durations={},{}
 function task.delay(duration,fn) table.insert(callbacks,fn); table.insert(durations,duration) end
 local cookState={Profession="Cook",Talents={}}
 local allowed=false
+local doctor=false
 local xp,bonuses=0,0
-local Progression={CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
+local Progression={Meets=function() return doctor end,CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
  CraftXP=function(_,recipe,count) xp+=ProgressionRules.CraftExperience(recipe,count) end,
  Loot=function(_,items) bonuses+=1; return items end}
 local stock={Potato=10,CleanWater=10,TreeLog=5}
@@ -71,6 +72,14 @@ assert(Service.Open(a,bench) and Service.Cook(a,"MakePlanks",1))
 assert(math.abs(durations[6]-10)<1e-6,"retired crafting perks have no effect")
 callbacks[6]()
 assert(Service.Snapshot(a).CookingReady.Plank==3 and xp==650,"one log to three boards awards one craft operation")
+Service.Close(a);assert(Service.Open(a,bench))
+stock.Rags=4;a:SetAttribute("CraftCostMultiplier",.8)
+assert(not Service.Cook(a,"MakeBandage",1),"Doctor requirement enforced")
+doctor=true
+assert(not Service.Cook(a,"MakeBandage",2),"one bandage per queue")
+assert(Service.Cook(a,"MakeBandage",1) and stock.Rags==0 and durations[#durations]==20,"discounted rags consumed,20second craft")
+callbacks[#callbacks]()
+assert(Service.Snapshot(a).CookingReady.Bandage==1,"bandage delivered once at completion")
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]

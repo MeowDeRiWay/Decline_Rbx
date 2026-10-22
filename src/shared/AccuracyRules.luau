@@ -1,7 +1,11 @@
 local Rules={}
 function Rules.Skill(base,bonus) return math.clamp((base or 25)+(bonus or 0),0,300) end
-function Rules.Chance(base,bonus,distance,dodge)
- return math.clamp(Rules.Skill(base,bonus)-math.max(0,(distance or 0)-20)-math.max(0,dodge or 0),5,90)
+function Rules.NightMultiplier(player)
+ if workspace and workspace:GetAttribute("IsNight") and player:GetAttribute("AttributesConfirmed")~=nil then return player:GetAttribute("NightAccuracyMultiplier") or .5 end
+ return 1
+end
+function Rules.Chance(base,bonus,distance,dodge,multiplier)
+ return math.clamp(Rules.Skill(base,bonus)*(multiplier or 1)-math.max(0,(distance or 0)-20)-math.max(0,dodge or 0),5,90)
 end
 -- Only the authored Sight model on the currently held weapon supplies this bonus.
 function Rules.SightBonus(held)
@@ -17,6 +21,7 @@ function Rules.WeaponSkill(definition)
  return definition and definition.Weapon and "Melee" or "Unarmed"
 end
 function Rules.ForWeapon(player,definition)
- return player:GetAttribute("Skill"..Rules.WeaponSkill(definition)) or player:GetAttribute("Accuracy") or 25
+ local value=player:GetAttribute("Skill"..Rules.WeaponSkill(definition)) or player:GetAttribute("Accuracy") or 25
+ return value
 end
 return Rules

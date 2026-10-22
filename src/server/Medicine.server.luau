@@ -46,7 +46,9 @@ remote.OnServerEvent:Connect(function(player,mode,target)
   if now<(target:GetAttribute("ReviveLockedUntil") or 0) then Journal.Send(player,"This patient cannot be revived yet.");return end
   doctorReady[player]=now+10;player:SetAttribute("DoctorReadyAt",now+10)
   if random:NextNumber()>=Rules.ReviveChance(player:GetAttribute("SkillDoctor")) then Journal.Send(player,"Your revival attempt failed.");return end
-  if Life.Revive(target,player:GetAttribute("ReviveLockSeconds") or 600) then
+  local fortunate=random:NextNumber()<(player:GetAttribute("DoctorFortuneChance") or 0)
+  if Life.Revive(target,fortunate and 0 or (player:GetAttribute("ReviveLockSeconds") or 600)) then
+   if fortunate then health.Health=health.MaxHealth;patient:SetAttribute("Health",health.Health);target:SetAttribute("ReviveLockedUntil",0) end
    Progression.Award(player,100)
    Journal.Send(player,"You revived "..target.Name..".")
    Journal.Send(target,player.Name.." revived you.")

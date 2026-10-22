@@ -5,7 +5,7 @@ assert(s.Health==80 and s.MaxHealth==150 and s.MeleeDamage==25)
 assert(s.Carry==45 and s.WalkSpeed==1.5 and s.RunSpeed==5 and s.Regeneration==10 and s.Dodge==25 and s.CriticalChance==.05)
 assert(s.Absorption==3 and s.Resistance==.2)
 assert(S.Calculate(a,{Weapon={Damage=25},Firearm={}},100).MeleeDamage==5,"firearm damage excluded")
-assert(S.Calculate(a,{Weapon={Damage=20}},0).MeleeDamage==0)
+assert(S.Calculate(a,{Weapon={Damage=20}},0).MeleeDamage==25,"durability no longer disables equipped weapon")
 print("PASS: new character stats, equipment defense and melee damage, movement, regeneration and global critical chance")
 
 local m=S.Calculate({MaxHealth=10,CarryLimitKg=5,MeleeBonus=1,DodgeChance=5,WalkBonus=.3,RunBonus=1,Regeneration=2,CriticalChance=.01},nil,nil,10,10)

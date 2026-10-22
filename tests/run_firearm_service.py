@@ -126,7 +126,7 @@ player.attributes.AttributesConfirmed=true
 fire(player,"Fire",direction);assert(magazine.Loaded==before-1)
 advance(.1);fire(player,"Fire",direction);assert(magazine.Loaded==before-1,"bolt cycle blocks rapid fire")
 advance(1.4);fire(player,"Fire",direction);assert(magazine.Loaded==before-2)
-assert(noiseRadius==100,".223 shot noise is100studs even without an audio asset")
+assert(noiseRadius==80,".223 shot noise is80studs even without an audio asset")
 print("PASS: persistent per-weapon charge, independent identical guns, loose/loaded conservation, holster cooldown, reload cancellation, RPM/wall/direction guards, mode, sound, durability and empty notice")
 '''
 parts=[(root/'tests/city_geometry.fixture.luau').read_text(),

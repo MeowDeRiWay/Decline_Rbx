@@ -20,7 +20,7 @@ Random={new=function() return {NextNumber=function(_,a,b) return b or 0 end,Next
 Enum={RaycastFilterType={Exclude=1},PartType={Block=1}}
 RaycastParams={new=function() return {} end}
 local dealt=0
-local Damage={RollHit=function() return true end,Apply=function(_,amount,_,_,_,options) dealt+=amount*(options and options.CriticalMultiplier or 1) end,Miss=function() error("unexpected miss") end}
+local Damage={RollHit=function() return true end,Apply=function(_,amount,_,_,_,options) dealt+=amount*(options and options.CriticalMultiplier or 1);return amount end,Miss=function() error("unexpected miss") end}
 local parts={}
 workspace={}
 function workspace:Raycast(origin,delta,params)

@@ -11,7 +11,7 @@ local roll=.1
 local math=table.clone(math);math.random=function() return roll end
 local player={GetAttribute=function(_,key) return key=="DodgeChance" and 50 or 0 end}
 local character={GetAttribute=function() return nil end}
-local hp={Health=100,Parent=character}
+local hp={Health=100,MaxHealth=100,Parent=character}
 '''
 cases='''
 assert(Service.Damage(player,hp,10)==0 and hp.Health==100,"environmental damage can be dodged")

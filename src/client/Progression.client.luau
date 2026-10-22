@@ -132,7 +132,7 @@ end
 redraw=function()
  if not snapshot then return end
  summary.Text=string.format("Level %d · XP %g / %g",snapshot.Level,snapshot.XP,snapshot.NextXP)
- points.Text="Skill points: "..snapshot.SkillPoints.." · Perk points: "..(snapshot.PerkPoints or 0)..(snapshot.Confirmed and "" or "\nAttribute points remaining: "..remaining())
+ points.Text="Perks: "..Rules.PerkCount(snapshot).." / 10 · Skill points: "..snapshot.SkillPoints.." · Perk points: "..(snapshot.PerkPoints or 0)..(snapshot.Confirmed and "" or "\nAttribute points remaining: "..remaining())
  for id,card in pairs(cards) do
   card.Value.Text=tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id])
   card.Minus.Visible=not snapshot.Confirmed;card.Plus.Visible=not snapshot.Confirmed
@@ -152,12 +152,13 @@ redraw=function()
   local eligible=snapshot.Confirmed
   for id,required in pairs(perk.Attributes or {}) do if (snapshot.Stats[id] or 0)<required then eligible=false end end
   for id,required in pairs(perk.Skills or {}) do if (snapshot.Skills[id] or 0)<required then eligible=false end end
+  eligible=eligible or ((snapshot.Perks or {})[perk.ID] or 0)>0
   local row=perkRows[perk.ID];row.Visible=eligible
   if eligible then
    local rank=(snapshot.Perks or {})[perk.ID] or 0
    row.Position=UDim2.fromOffset(0,count*56);count+=1
    row.Text="  "..perk.Name.." · "..rank.." / "..perk.Max
-   row.TextColor3=rank<perk.Max and (snapshot.PerkPoints or 0)>0 and palette.Accent or palette.Muted
+   row.TextColor3=rank<perk.Max and (perk.FreeSlot or Rules.PerkCount(snapshot)<10) and (snapshot.PerkPoints or 0)>0 and palette.Accent or palette.Muted
   end
  end
  noPerks.Visible=count==0;perkPanel.CanvasSize=UDim2.fromOffset(0,count*56)

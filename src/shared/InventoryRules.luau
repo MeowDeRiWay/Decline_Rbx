@@ -126,10 +126,10 @@ function Rules.Unequip(state, definitions, slots, slot)
  state.Equipment[slot] = nil
  return true
 end
-function Rules.Weight(state, definitions, ammoMultiplier)
+function Rules.Weight(state, definitions, ammoMultiplier,equippedMultiplier)
  local total = 0
  for id, count in pairs(state.Items) do total += (definitions[id].Weight or 0) * count * (definitions[id].Ammo and (ammoMultiplier or 1) or 1) end
- for _, id in pairs(state.Equipment) do total += definitions[id].Weight or 0 end
+ for _, id in pairs(state.Equipment) do total += (definitions[id].Weight or 0)*(definitions[id].Weapon and (equippedMultiplier or 1) or 1) end
  local function magazine(id,data)
   local gun=definitions[id].Firearm
   local ammo=gun and definitions["Ammo"..gun.Caliber..(data.Type or "FMJ")]

@@ -70,6 +70,14 @@ clock+=10;use("Doctor",b);assert(b.Character:GetAttribute("Knockout"),"patient10
 clock=b:GetAttribute("ReviveLockedUntil")+1
 a:SetAttribute("SkillDoctor",200);a:SetAttribute("ReviveLockSeconds",300);roll=.999
 use("Doctor",b);assert(not b.Character:GetAttribute("Knockout") and b:GetAttribute("ReviveLockedUntil")==clock+300 and xp==254.5,"200 Doctor certain; field hospital sets5min patient lock")
+clock=b:GetAttribute("ReviveLockedUntil")+1
+Life.Knockout(b,b.Character)
+a:SetAttribute("DoctorFortuneChance",.17);roll=.169
+use("Doctor",b)
+assert(not b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==b.Character.Humanoid.MaxHealth and b:GetAttribute("ReviveLockedUntil")==0,"fortunate revival restores full HP and removes patient lock")
+Life.Knockout(b,b.Character);clock+=10;roll=.17
+use("Doctor",b)
+assert(b.Character.Humanoid.Health==2 and b:GetAttribute("ReviveLockedUntil")==clock+300,"fortune boundary does not trigger")
 a.Character:SetAttribute("Knockout",true);b.Character.Humanoid.Health=50;before=equipped;use("Bandage",b);assert(equipped==before,"incapacitated healer denied")
 print("PASS: medical authority, self/other actual HP XP, medicine consumption, overheal, wall/range guards; doctor chance, both cooldowns, restoration and stale knockout timer safety")
 '''

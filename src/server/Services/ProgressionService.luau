@@ -41,7 +41,7 @@ function Service.Snapshot(player)
  Confirmed=s.Confirmed,Stats=table.clone(s.Stats),Skills=Rules.TotalSkills(s),Practice=practice,Perks=table.clone(s.Perks),PerkPoints=s.PerkPoints}
 end
 function Service.Sync(player)
- local state=stateFor(player);local bonus=Rules.Bonuses(state.Stats,state.Perks);local totals=Rules.TotalSkills(state)
+ local state=stateFor(player);if state.Level>=30 then state.Perks.Observant=1 end;local bonus=Rules.Bonuses(state.Stats,state.Perks,state.Level);local totals=Rules.TotalSkills(state)
  player:SetAttribute("CharacterLevel",state.Level);player:SetAttribute("CharacterXP",state.XP)
  player:SetAttribute("AttributePoints",state.Points);player:SetAttribute("SkillPoints",state.SkillPoints)
  player:SetAttribute("AttributesConfirmed",state.Confirmed)
@@ -65,7 +65,7 @@ function Service.Sync(player)
 end
 function Service.Award(player,amount)
  if not player or player.Parent~=Players then return end
- if Rules.AddXP(stateFor(player),amount) then Journal.Send(player,string.format("You gained %g XP.",amount));Service.Sync(player) end
+ if Rules.AddXP(stateFor(player),amount) then Journal.Send(player,string.format("You gained %g XP.",amount*(1+(stateFor(player).Perks.GoodStudent or 0))));Service.Sync(player) end
 end
 function Service.Meets(player,requirements) return Rules.Meets(stateFor(player),requirements) end
 function Service.CanStation(player,name) return Service.Meets(player,Config.StationRequirements[name]) end
@@ -111,7 +111,7 @@ function Service.Start()
    for player,state in pairs(states) do
     local character=player.Character;local hp=character and character:FindFirstChildOfClass("Humanoid")
     if state.Confirmed and hp and hp.Health>0 and not character:GetAttribute("Knockout") and not character:GetAttribute("IsDead") then
-     hp.Health=math.min(hp.MaxHealth,hp.Health+Rules.Bonuses(state.Stats,state.Perks).Regeneration)
+     hp.Health=math.min(hp.MaxHealth,hp.Health+Rules.Bonuses(state.Stats,state.Perks,state.Level).Regeneration)
      character:SetAttribute("Health",hp.Health)
     end
    end

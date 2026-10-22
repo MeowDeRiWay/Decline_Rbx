@@ -1,4 +1,9 @@
 local Rules = {}
+function Rules.Discount(recipe,multiplier)
+ local result=table.clone(recipe);result.Ingredients={}
+ for id,amount in pairs(recipe.Ingredients) do result.Ingredients[id]=math.max(1,math.ceil(amount*(multiplier or 1))) end
+ return result
+end
 function Rules.Batch(available,requested,maximum)
  if available < 1 then return nil end
  if requested == "All" then return math.min(available,maximum) end
