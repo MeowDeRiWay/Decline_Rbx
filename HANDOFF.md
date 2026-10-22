@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Explicit zombie audio distance gate — 23 October
+
+- User still heard distant zombies after rolloff fixes; root cause is not established without live Studio. New ZombieAudioRange client independently measures local character root to emitting zombie root, mutes voice/footsteps beyond8*Senses.Hearing(effectiveAttention), restores authored volume inside. No listener/camera dependence. Checks every50ms and on initial registration; tracks only zombie playback sounds and cleans destroyed records. Named voice templates are also locally silenced. Existing engine attenuation still controls falloff inside radius.
+
 ## Zombie sound range — 23 October
 
 - All zombie voices (idle/attack/death) and footsteps now use a fixed base8stud maximum, including templates with old MaxDistance attributes. Hearing range multiplier still applies locally (Attention5 =8studs). Authored volume remains untouched.
