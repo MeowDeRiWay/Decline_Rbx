@@ -10,7 +10,7 @@ local Service = {}
 local function friendly(attacker,target)
  if not attacker then return false end
  local source=attacker:IsA("Player") and attacker or Players:GetPlayerFromCharacter(attacker)
- return Affiliation.Friendly(source,Players:GetPlayerFromCharacter(target))
+ return Affiliation.Friendly(source,Players:GetPlayerFromCharacter(target) or (target:GetAttribute("OfflineUserId") and target))
 end
 local function announce(target,kind,amount,attacker,attackKind,critical,knockout)
  local victim=Players:GetPlayerFromCharacter(target)
@@ -22,6 +22,8 @@ local function announce(target,kind,amount,attacker,attackKind,critical,knockout
   TargetName=victim and (victim.DisplayName or victim.Name) or (target:GetAttribute("DisplayName") or target.Name),
   ActorUserId=attackerPlayer and attacker.UserId or nil,TargetUserId=victim and victim.UserId or nil,TargetIsCreature=victim==nil,ActorIsCreature=not attackerPlayer,Kind=kind,Damage=amount,AttackKind=attackKind,Critical=critical==true,
   Killed=humanoid and humanoid.Health<=0 or false,Knockout=knockout==true}
+ local offlineID=target:GetAttribute("OfflineUserId")
+ if offlineID then payload.TargetUserId=offlineID;payload.TargetIsCreature=false end
  local position=target:GetPivot().Position
  -- Bound network traffic; exact camera/sector/wall visibility is checked locally.
  for _,observer in ipairs(Players:GetPlayers()) do
@@ -81,13 +83,13 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  elseif target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.
   if not target:FindFirstChildOfClass("ForceField") then
-   amount=Defense.Resolve(amount,target:GetAttribute("DamageResistance") or 0,target:GetAttribute("DamageAbsorption") or 0)+postDefense
+   amount=Defense.Resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0))+postDefense
    local remaining = math.max(0,before-amount)
    humanoid.Health = remaining > 0 and remaining or humanoid.MaxHealth
    amount = math.min(before,amount)
   else amount = 0 end
  else
-  amount=Defense.Resolve(amount,target:GetAttribute("DamageResistance") or 0,target:GetAttribute("DamageAbsorption") or 0)+postDefense
+  amount=Defense.Resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0))+postDefense
   humanoid:TakeDamage(amount)
   amount = math.max(0,before-humanoid.Health)
  end

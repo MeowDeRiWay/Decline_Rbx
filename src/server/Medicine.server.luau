@@ -42,7 +42,7 @@ remote.OnServerEvent:Connect(function(player,mode,target)
   end
  else
   if target==player or not patient:GetAttribute("Knockout") then return end
-  if now<(doctorReady[player] or 0) then Journal.Send(player,"Doctor is on cooldown.");return end
+  if now<math.max(doctorReady[player] or 0,player:GetAttribute("DoctorReadyAt") or 0) then Journal.Send(player,"Doctor is on cooldown.");return end
   if now<(target:GetAttribute("ReviveLockedUntil") or 0) then Journal.Send(player,"This patient cannot be revived yet.");return end
   doctorReady[player]=now+10;player:SetAttribute("DoctorReadyAt",now+10)
   if random:NextNumber()>=Rules.ReviveChance(player:GetAttribute("SkillDoctor")) then Journal.Send(player,"Your revival attempt failed.");return end

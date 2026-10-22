@@ -5,6 +5,7 @@ root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/ZombieActivity.luau').read_text()
 for variable,module in [('Config','GameConfig'),('Progression','ProgressionRules'),('Rules','ZombieActivityRules')]:
  service=service.replace(f'local {variable}=require(ReplicatedStorage.Shared.{module})','')
+service=service.replace('local Sessions=require(script.Parent.PlayerSessionService)','local Sessions={OfflineCharacters=function() return {} end}')
 mock='''
 function cm:Inverse() local rotation=cf(Vector3.zero,-self.yaw);return cf(rotation:VectorToWorldSpace(-self.Position),-self.yaw) end
 local time=0

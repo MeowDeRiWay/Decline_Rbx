@@ -5,6 +5,7 @@ local RunService=game:GetService("RunService")
 local Config=require(ReplicatedStorage.Shared.GameConfig)
 local Progression=require(ReplicatedStorage.Shared.ProgressionRules)
 local Rules=require(ReplicatedStorage.Shared.ZombieActivityRules)
+local Sessions=require(script.Parent.PlayerSessionService)
 local Service={}
 local records,active,views,reportTimes={},{},{},{}
 local footprints={}
@@ -50,6 +51,10 @@ local function gapAt(position)
   local radial=math.max(0,math.sqrt((position.X-corners.Center.X)^2+(position.Z-corners.Center.Z)^2)-corners.Range)
   gap=math.min(gap,math.max(radial,Rules.EdgeDistance(position.X,position.Z,corners)))
   if gap==0 then break end
+ end
+ for _,body in ipairs(Sessions.OfflineCharacters()) do
+  local root=body:FindFirstChild("HumanoidRootPart")
+  if root then gap=math.min(gap,math.max(0,(position-root.Position).Magnitude-(body:GetAttribute("ViewRange") or 15))) end
  end
  return gap
 end

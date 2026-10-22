@@ -51,7 +51,7 @@ end
 prepare(template)
 local function added(player)
  player.CharacterAdded:Connect(function(character)
-  prepare(character)
+  if not character:GetAttribute("ReturningSession") then prepare(character) end
   local humanoid = character:FindFirstChildOfClass("Humanoid")
   humanoid.HealthChanged:Connect(function(health)
    if health<=0 and not character:GetAttribute("IsDead") then Life.Knockout(player,character) end
@@ -61,7 +61,7 @@ local function added(player)
   end)
  end)
  -- TownService loads the first character after the player selects a city.
- if player.Parent == Players and player:GetAttribute("TownID") and not player.Character then require(script.Parent.Services.TownService).LoadCharacter(player) end
+ if player.Parent == Players and player:GetAttribute("TownID") and not player:GetAttribute("Reconnecting") and not player.Character then require(script.Parent.Services.TownService).LoadCharacter(player) end
 end
 Players.PlayerAdded:Connect(added)
 for _, player in ipairs(Players:GetPlayers()) do task.spawn(added, player) end

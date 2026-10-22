@@ -15,7 +15,7 @@ local function attach(player, character)
  local root = character:WaitForChild("HumanoidRootPart", 10)
  if not humanoid or not root or player.Character ~= character or player.Parent ~= Players then return end
  for key, value in pairs({Food = 100, Water = 100, Sick = 0, Working = false, Knockout = false}) do
-  character:SetAttribute(key, value)
+  if not character:GetAttribute("ReturningSession") then character:SetAttribute(key, value) end
  end
  if character:GetAttribute("LoadKg") == nil then character:SetAttribute("LoadKg", 0) end
  local function healthChanged()

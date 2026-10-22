@@ -4,7 +4,9 @@ import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/InventoryService.luau').read_text()
 service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|Journal)\s*=\s*require[^\n]+\n','',service)
+service=service.replace('require(script.Parent.CraftingService).Close(player)','Crafting.Close(player)')
 setup='''
+local Crafting={Close=function() end}
 local Journal=journalPlaceholder
 local notices=ReplicatedStorage:FindFirstChild("PersonalNotice").sent
 local Visuals={Apply=function() end,Validate=function() return true end}
@@ -123,6 +125,18 @@ assert(math.abs(Service.Snapshot(a).Weight-(medWeight-.1))<1e-9,"one bandage con
 assert(Service.UseMedicine(a) and Service.UseMedicine(a) and not Service.UseMedicine(a))
 assert(Service.Snapshot(a).Equipment.Medicine==nil and a.Character:GetAttribute("MedicineCount")==0)
 print("PASS: medicine slot, exact consumption, automatic pocket refill and empty-state synchronization")
+'''
+world_cases+='''
+Service.Start()
+assert(Service.Add(a,"AssaultRifle223",1) and Service.Equip(a,"AssaultRifle223"))
+local mag=Service.GetMagazine(a);mag.Loaded=7;mag.Type="AP"
+Crafting.Close=function(p) Service.Add(p,"Plank",1) end
+Service.RemovePlayer(a);a.Parent=nil
+local rejoined=player(a.UserId);Players.PlayerAdded:Fire(rejoined)
+rejoined.Character=make("Model","Returned",workspace,{ReturningSession=true});rejoined.CharacterAdded:Fire(rejoined.Character)
+assert(Service.GetMagazine(rejoined).Loaded==7 and Service.Snapshot(rejoined).Items.Plank==1,"disconnect refunds before detach and restores loaded magazine")
+rejoined:LoadCharacterAsync();assert(Service.Snapshot(rejoined).Equipment.Hands==nil,"fresh respawn still resets inventory")
+print("PASS: actual inventory disconnect/reconnect continuity, crafting refund order, magazine preservation and fresh respawn reset")
 '''
 parts += [setup,'local Service=(function()\n'+service+'\nend)()',cases,world_setup,'local World=(function()\n'+world+'\nend)()',world_cases]
 with tempfile.TemporaryDirectory() as folder:

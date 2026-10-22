@@ -243,7 +243,7 @@ end
 -- CharacterAdded fires before Roblox finishes moving a newly loaded character.
 -- Position only after LoadCharacterAsync completes, for both joining and respawning.
 function Service.LoadCharacter(player)
- if player.Parent ~= Players or player:GetAttribute("CharacterLoading") then return end
+ if player.Parent ~= Players or player:GetAttribute("CharacterLoading") or player:GetAttribute("Reconnecting") then return end
  player:SetAttribute("CharacterLoading", true)
  local ok, err = pcall(function() player:LoadCharacterAsync() end)
  player:SetAttribute("CharacterLoading", nil)
@@ -256,6 +256,7 @@ function Service.LoadCharacter(player)
  return true
 end
 function Service.PlaceCharacter(player, character)
+ if character:GetAttribute("ReturningSession") then return end
  local town = townOf(player)
  if not town then return end
  local spawn, hospital
@@ -278,8 +279,9 @@ function Service.PlaceCharacter(player, character)
  root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
  if not initializedCharacters[character] then
   hp.MaxHealth = player:GetAttribute("MaxHealth") or 100
-  hp.Health = not spawnedPlayers[player] and hp.MaxHealth or (hospital and hp.MaxHealth or 2)
+  hp.Health = not (spawnedPlayers[player] or player:GetAttribute("HasSpawned")) and hp.MaxHealth or (hospital and hp.MaxHealth or 2)
   spawnedPlayers[player] = true
+  player:SetAttribute("HasSpawned",true)
   initializedCharacters[character] = true
   character:SetAttribute("Health", hp.Health)
  end

@@ -1,4 +1,5 @@
 local Players = game:GetService("Players")
+local Sessions=require(script.Parent.Services.PlayerSessionService)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Sight = require(ReplicatedStorage.Shared.Sight)
@@ -282,7 +283,9 @@ local function prepare(model)
    local range=model:GetAttribute("SightRange")
    local forward=root.CFrame.LookVector
    local reason="No player"
-   for _,player in ipairs(Players:GetPlayers()) do
+   local targets=Players:GetPlayers()
+   for _,body in ipairs(Sessions.OfflineCharacters()) do table.insert(targets,{Character=body}) end
+   for _,player in ipairs(targets) do
     local character=player.Character
     local target=character and character:FindFirstChild("HumanoidRootPart")
     local hp=character and character:FindFirstChildOfClass("Humanoid")

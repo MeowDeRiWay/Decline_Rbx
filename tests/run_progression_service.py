@@ -45,6 +45,10 @@ clock+=.2;action.OnServerEvent:Fire(b,"Perk","RangedDamage")
 assert(b:GetAttribute("RangedDamageBonus")==2 and b.Character:GetAttribute("RangedDamageBonus")==2 and Service.Snapshot(b).PerkPoints==0)
 clock+=.2;action.OnServerEvent:Fire(b,"Perk","RangedDamage")
 assert(Service.Snapshot(b).Perks.RangedDamage==1,"cannot spend an absent perk point")
+local carry=Service.Snapshot(b)
+Players.PlayerRemoving:Fire(b);b.Parent=nil
+local rejoined=player(b.UserId);Players.PlayerAdded:Fire(rejoined)
+assert(Service.Snapshot(rejoined).Confirmed and Service.Snapshot(rejoined).Perks.RangedDamage==1 and Service.Snapshot(rejoined).SkillPoints==carry.SkillPoints,"new Player object restores progression by UserId")
 local zombie=make("Model","Zombie",workspace,{LastDamagerID=a.UserId});local zhp=make("Humanoid","Humanoid",zombie);zhp.MaxHealth=60
 local oldXP=Service.Snapshot(a).XP;Service.ZombieDied(zombie,{})
 assert(Service.Snapshot(a).XP==oldXP+150,"kill XP derives from max HP, not health remaining")

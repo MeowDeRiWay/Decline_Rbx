@@ -138,6 +138,32 @@ function Service.Revive(player,lockSeconds)
  player:SetAttribute("ReviveLockedUntil",workspace:GetServerTimeNow()+lockSeconds)
  return true
 end
+-- Reconnect clones keep the original knockout pose/flags and death deadline.
+function Service.KnockoutRecord(character) return knocked[character] end
+function Service.ResumeKnockout(player,character,record)
+ knocked[character]=record
+ local remaining=math.max(0,(character:GetAttribute("KnockoutEndsAt") or 0)-workspace:GetServerTimeNow())
+ task.delay(remaining,function()
+  if player.Parent==Players and player.Character==character and knocked[character]==record and character:GetAttribute("Knockout") then Service.Finish(player,character) end
+ end)
+end
+function Service.OfflineCorpse(character,storage,userID,displayName)
+ local wasKnocked=character:GetAttribute("Knockout")
+ character:SetAttribute("IsDead",true);character:SetAttribute("Knockout",false)
+ character:SetAttribute("KnockoutEndsAt",nil);character:SetAttribute("OfflineUserId",nil)
+ character:SetAttribute("OfflineUntil",nil);character:SetAttribute("BlocksVision",false)
+ character:SetAttribute("OwnerUserId",userID);character:SetAttribute("DisplayName",displayName)
+ freeze(character)
+ if not wasKnocked then fall(character) end
+ local hp=character:FindFirstChildOfClass("Humanoid")
+ if hp then hp.Health=0 end
+ character:SetAttribute("Health",0)
+ character.Name=character.Name.."Corpse"
+ Chests.CreatePlayerCorpse(character,storage)
+ local folder=workspace:FindFirstChild("PlayerCorpses")
+ if not folder then folder=Instance.new("Folder");folder.Name="PlayerCorpses";folder.Parent=workspace end
+ character.Parent=folder
+end
 function Service.Damage(player,humanoid,amount,hitChecked,defenseChecked)
  if player:GetAttribute("AttributesConfirmed")==false then return 0 end
  local character=humanoid.Parent

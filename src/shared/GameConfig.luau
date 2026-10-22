@@ -1,5 +1,6 @@
 local GameConfig = {}
 GameConfig.MaxTowns = 5
+GameConfig.ReconnectGraceSeconds = 300
 GameConfig.WalkSpeed = 1
 GameConfig.RunSpeedBonus = 2
 GameConfig.CarryLimitKg = 20

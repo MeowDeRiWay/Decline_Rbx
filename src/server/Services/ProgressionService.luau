@@ -5,6 +5,7 @@ local Config=require(ReplicatedStorage.Shared.ProgressionConfig)
 local Journal=require(script.Parent.JournalService)
 local Service={}
 local states={}
+local disconnected={}
 local remote
 local locked=setmetatable({},{__mode="k"})
 local function creationLock(player,character,confirmed)
@@ -30,7 +31,7 @@ local function creationLock(player,character,confirmed)
  end
 end
 local function stateFor(player)
- if not states[player] then states[player]=Rules.New() end
+ if not states[player] then states[player]=disconnected[player.UserId] or Rules.New();disconnected[player.UserId]=nil end
  return states[player]
 end
 function Service.Snapshot(player)
@@ -102,7 +103,7 @@ function Service.Start()
   player.CharacterAdded:Connect(function(character) character:WaitForChild("Humanoid",10);character:WaitForChild("HumanoidRootPart",10);if player.Character==character then Service.Sync(player) end end)
  end
  Players.PlayerAdded:Connect(added)
- Players.PlayerRemoving:Connect(function(player) states[player]=nil;last[player]=nil end)
+ Players.PlayerRemoving:Connect(function(player) disconnected[player.UserId]=states[player];states[player]=nil;last[player]=nil end)
  for _,player in ipairs(Players:GetPlayers()) do added(player) end
  task.spawn(function()
   while true do

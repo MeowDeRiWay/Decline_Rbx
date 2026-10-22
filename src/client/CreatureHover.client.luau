@@ -91,21 +91,23 @@ RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Valu
  local display = model:GetAttribute("DisplayName")
  if typeof(display) ~= "string" or display == "" then display = humanoid.DisplayName ~= "" and humanoid.DisplayName or model.Name end
  local owner=Players:GetPlayerFromCharacter(model)
+ local offline=model:GetAttribute("OfflineUserId")~=nil
+ local isPlayer=owner~=nil or offline
  if owner and (player:GetAttribute("GroupID") or 0)~=0 and owner:GetAttribute("GroupID")==player:GetAttribute("GroupID") then return end
  name.Text=owner and (owner.DisplayName or owner.Name) or display
- health.Visible=owner==nil;track.Visible=owner==nil
+ health.Visible=not isPlayer;track.Visible=not isPlayer
  local root=character:FindFirstChild("HumanoidRootPart")
  local target=model:FindFirstChild("HumanoidRootPart",true) or anchor
  local definition=Items[character:GetAttribute("HandsItem")]
  local category=definition and definition.Firearm and (definition.Firearm.Category or "Rifle") or ""
- local friendly=Affiliation.Friendly(player,owner)
+ local friendly=Affiliation.Friendly(player,owner or (offline and model))
  chanceText.Visible=root~=nil and not friendly
- chanceText.Position=UDim2.fromOffset(8,owner and 27 or 65)
+ chanceText.Position=UDim2.fromOffset(8,isPlayer and 27 or 65)
  if chanceText.Visible then
   local chance=Accuracy.Chance(Accuracy.ForWeapon(player,definition),(definition and definition.Firearm and Accuracy.SightBonus(character:FindFirstChild("HeldItem")) or 0),(target.Position-root.Position).Magnitude,owner and owner:GetAttribute("DodgeChance") or model:GetAttribute("DodgeChance") or 0)
   chanceText.Text=string.format("Hit chance: %d%%",math.floor(chance))
  end
- gui.Size=UDim2.fromOffset(190,owner and (friendly and 30 or 54) or 90)
+ gui.Size=UDim2.fromOffset(190,isPlayer and (friendly and 30 or 54) or 90)
  local current,maximum = humanoid.Health,humanoid.MaxHealth
  health.Text = string.format("%.0f / %.0f HP",current,maximum)
  local ratio = maximum > 0 and math.clamp(current/maximum,0,1) or 0

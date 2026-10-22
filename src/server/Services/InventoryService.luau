@@ -6,6 +6,7 @@ local CombatRules = require(ReplicatedStorage.Shared.CombatRules)
 local Visuals = require(script.Parent.EquipmentVisuals)
 local Service = {}
 local states = {}
+local disconnected = {}
 local holstered = {}
 local Journal=require(script.Parent.JournalService)
 local function rememberedPresent(player,state)
@@ -49,7 +50,23 @@ function Service.ExtractAll(player)
  update(player)
  return state
 end
-function Service.RemovePlayer(player) states[player] = nil;holstered[player]=nil end
+function Service.RemovePlayer(player)
+ -- Cancel/refund before detaching the inventory, regardless of event callback order.
+ require(script.Parent.CraftingService).Close(player)
+ disconnected[player.UserId]=states[player] or disconnected[player.UserId]
+ states[player]=nil;holstered[player]=nil
+end
+function Service.Export(player) return states[player] or disconnected[player.UserId] end
+function Service.ForgetOffline(userID,state)
+ if disconnected[userID]==state then disconnected[userID]=nil end
+end
+function Service.CorpseStorage(state)
+ state=state or Rules.New()
+ for _,slot in ipairs(ItemConfig.Slots) do
+  if state.Equipment[slot] then Rules.Unequip(state,ItemConfig.Items,ItemConfig.Slots,slot) end
+ end
+ return state
+end
 function Service.Add(player, id, count, conditions,weaponData)
  local state = states[player]
  if not state or not Rules.Add(state, ItemConfig.Items, id, count, conditions,weaponData) then return false end
@@ -196,8 +213,11 @@ function Service.Start()
  Service.Started = true
  local function added(player)
   player:GetAttributeChangedSignal("AmmoWeightMultiplier"):Connect(function() update(player) end)
-  player.CharacterAdded:Connect(function() Service.Reset(player) end)
-  Service.Reset(player)
+  player.CharacterAdded:Connect(function(character)
+   if character:GetAttribute("ReturningSession") then update(player) else Service.Reset(player) end
+  end)
+  if disconnected[player.UserId] then states[player]=disconnected[player.UserId];disconnected[player.UserId]=nil;update(player)
+  else Service.Reset(player) end
  end
  Players.PlayerAdded:Connect(added)
  Players.PlayerRemoving:Connect(Service.RemovePlayer)

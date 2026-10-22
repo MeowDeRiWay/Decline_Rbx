@@ -89,6 +89,13 @@ assert(Service.Apply(hp,10,"Blunt",nil,"Melee",{HitChecked=true,PostDefenseDamag
 local shield=make("ForceField","Shield",a.Character)
 assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{HitChecked=true,PostDefenseDamage=2})==0,"perk cannot bypass immunity")
 shield:Destroy()
+local sleeper=make("Model","OfflinePlayer",workspace,{OfflineUserId=900,TeamID=10,ArmorResistance=.5,ArmorAbsorption=2})
+local shp=make("Humanoid","Humanoid",sleeper);shp.Health=50;shp.MaxHealth=50
+function shp:TakeDamage(n) self.Health-=n end
+b:SetAttribute("TeamID",10)
+assert(Service.Apply(shp,20,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0,"offline same-faction player is protected")
+b:SetAttribute("TeamID",20)
+assert(Service.Apply(shp,20,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==8,"offline armor remains active")
 print("PASS: structured actor/target reports for client visibility filtering, no overhead text")
 print("PASS: melee-only absorption, non-melee unchanged, zero-damage clamp and Apron Additional slot")
 '''
