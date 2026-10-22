@@ -28,9 +28,26 @@ local function notify(chest)
  for player, current in pairs(sessions) do if current == chest then changed:Fire(player) end end
 end
 function Service.CreatePlayerCorpse(model,storage)
+ if contents[model] then return end
  contents[model]=storage
  model:SetAttribute("IsCorpse",true)
  model:SetAttribute("CorpseType","Player")
+ local createdAt=os.clock()
+ local emptySince=next(storage.Items)==nil and createdAt or nil
+ -- Deferred: callers finish parenting the corpse after registering its inventory.
+ task.defer(function()
+  while model:IsDescendantOf(workspace) do
+   local now=os.clock()
+   if next(storage.Items)==nil then emptySince=emptySince or now else emptySince=nil end
+   if now-createdAt>=1200 or (emptySince and now-emptySince>=60) then
+    for player,current in pairs(sessions) do if current==model then Service.Close(player) end end
+    contents[model]=nil
+    model:Destroy()
+    return
+   end
+   task.wait(1)
+  end
+ end)
 end
 function Service.CreateCorpse(model,items)
  if contents[model] then return end

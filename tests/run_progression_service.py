@@ -27,6 +27,7 @@ send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==29)
 for _=1,10 do Service.Harvest(a,"StoneVein",1) end
 assert(Service.Snapshot(a).Practice.Miner.Value==1 and Service.Snapshot(a).Practice.Lumberjack.Value==0)
 assert(Service.CanBuild(a,"Kitchen") and Service.CanStation(a,"Stove"))
+assert(not Service.CanBuild(a,"Hospital"),"hospital requires BOTH medical skills")
 Config.StationRequirements.Stove={Skills={Repair=52}}
 assert(not Service.CanStation(a,"Stove"));send("Skill","Repair");assert(Service.CanStation(a,"Stove"))
 local hp=a.Character.Humanoid;hp.Health=22;send("Request");assert(hp.Health==22,"request cannot repeat confirmation heal")
@@ -52,6 +53,13 @@ assert(Service.Snapshot(rejoined).Confirmed and Service.Snapshot(rejoined).Perks
 local zombie=make("Model","Zombie",workspace,{LastDamagerID=a.UserId});local zhp=make("Humanoid","Humanoid",zombie);zhp.MaxHealth=60
 local oldXP=Service.Snapshot(a).XP;Service.ZombieDied(zombie,{})
 assert(Service.Snapshot(a).XP==oldXP+150,"kill XP derives from max HP, not health remaining")
+local med=player(700);Players.PlayerAdded:Fire(med);med:LoadCharacterAsync()
+clock+=.2;action.OnServerEvent:Fire(med,"Confirm",{Strength=5,Attention=10,Endurance=5,Intelligence=10,Agility=5,Luck=1})
+Service.Award(med,6000)
+for _=1,30 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
+for _=1,19 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end
+assert(med:GetAttribute("SkillFirstAid")==100 and med:GetAttribute("SkillDoctor")==99 and not Service.CanBuild(med,"Hospital"))
+clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor");assert(Service.CanBuild(med,"Hospital"),"actual authority requires100 FirstAid AND100 Doctor")
 print("PASS: actual immutable creation, forbidden legacy commands, INT skill points, derived stats, requirements, passive practice, minute regeneration, no revival, and respawn")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]

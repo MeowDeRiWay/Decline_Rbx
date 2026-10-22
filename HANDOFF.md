@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Hospital and player corpse lifetime — 22 October
+
+- Hospital registered in TownConfig.Buildings: ServerStorage/Buildings/Hospital (T1), default T1 material cost1TreeLog like Kitchen/Workshop (user specified skill requirements only). ProgressionConfig.BuildingRequirements.Hospital requires BOTH total Doctor100 and FirstAid100. Existing building options/request and mayor approval construction recheck use CanBuild, so requirement applies server-side and in menu availability. HospitalSpawn Model/Part inside hospital enables existing same-town full-HP hospital spawn; otherwise TownSpawn fallback still applies. Use BuildingMenu/Space as with other T1 infrastructure. Fixed building menu's hardcoded Kitchen caption to actual building name.
+- ChestService.CreatePlayerCorpse now has20minute HARD lifetime from corpse registration, with60seconds grace after inventory becomes empty (initially empty starts at creation). Empty grace never extends hard cap. Deferred watcher starts after caller parents corpse, closes open loot viewers, clears storage and destroys model on expiry; duplicate registration cannot reset timer. Applies to both ordinary player deaths and disconnected-body conversion through same method. Zombie corpse120/20second behavior unchanged. This supersedes earlier "permanent corpse" notes below.
+- Actual timer tests cover1199/1200s with loot,59/60s empty, becoming empty later, hard cap after last-minute looting, duplicate registration/deferred parent/viewer cleanup and unchanged zombie expiry. Progression authority/pure rules test both100 thresholds incl99 denial; town workflow regression, all Luau compile and Rojo build pass. No Studio multiplayer test.
+
 ## Disconnecting players and same-server return — 22 October
 
 - New PlayerSessions.server / PlayerSessionService hold IN-MEMORY UserId records in this running server only. GameConfig.ReconnectGraceSeconds=300 is an explicit assumed wait, since user did not specify a timeout. NOT cross-server persistence, no DataStore/server routing, no survival across Stop/restarting Studio or server shutdown. Team Test must keep same server alive and same account UserId must return; simulated clients may use different IDs on new test runs. No live Team Test conducted by agent.

@@ -64,3 +64,10 @@ assert(R.CraftExperience({},5)==250 and R.CraftExperience({OutputCount=3},1)==50
 assert(R.KillExperience(20)==50 and R.KillExperience(60)==150)
 assert(R.AddXP(s,.5) and s.XP==.5,"healing grants exact actual HP including fractions")
 print("PASS: initial INT skill bundle and perk point; 1000*level XP; per-item practice; all nine perk requirements/rank caps/effects; medical and craft/kill XP")
+
+local requirements={Skills={Doctor=100,FirstAid=100}}
+local doctor=R.New();assert(R.Confirm(doctor,{Strength=5,Attention=5,Endurance=5,Intelligence=10,Agility=6,Luck=5}))
+doctor.Skills.Doctor=35;doctor.Skills.FirstAid=39
+assert(not R.Meets(doctor,requirements),"first aid99 cannot build hospital")
+doctor.Skills.FirstAid=40;assert(R.Meets(doctor,requirements),"100 in BOTH qualifies")
+doctor.Skills.Doctor=34;assert(not R.Meets(doctor,requirements),"doctor99 cannot build hospital")
