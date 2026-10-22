@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Brutal criticals clarified — 23 October
+
+- User correction supersedes the earlier multiplication interpretation: HardCriticals raises the UPPER critical roll bound to2.5, keeping minimum1.5. Normal player range1.5–2; perk1.5–2.5. Both melee and firearms roll these derived bounds directly. Removed central additional multiplier, updated description/stat sheet and actual projectile/damage regression checks. No effect on zombie critical bounds.
+
 ## Perk expansion, night cycle and revised balance — 23 October
 
 - Attribute descriptions audited against current formulas: END now1HP/min per point (Double regeneration still x2), ATT view10+3*ATT and hearing range only, AGI walk.2/run.4 plus1sec sprint, current skill bonuses preserved. No weapon wear/breakage or condition UI; compatibility condition data remains in saved stacks, magazines and drops. Combat/tools work at old0condition too.

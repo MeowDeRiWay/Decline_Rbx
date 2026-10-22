@@ -84,7 +84,7 @@ RunService.Heartbeat:Connect(function(dt)
      victim.Parent:SetAttribute("LastDamagerID",bullet.Player.UserId)
      victim.Parent:SetAttribute("LastHitItem",bullet.ItemID)
      local critical=random:NextNumber()<((bullet.Player:GetAttribute("CriticalChance") or 0)+(bullet.Category=="Pistol" and (bullet.Player:GetAttribute("PistolCriticalBonus") or 0) or 0))
-     local multiplier=critical and random:NextNumber(1.5,2) or 1
+     local multiplier=critical and random:NextNumber(bullet.Player:GetAttribute("CriticalMin") or 1.5,bullet.Player:GetAttribute("CriticalMax") or 2) or 1
      local dealt=Damage.Apply(victim,bullet.Damage*math.max(.1,bullet.Remaining/bullet.Initial),"Bullet",bullet.Position-bullet.Direction,"Ranged",{HitChecked=true,CriticalMultiplier=multiplier,Attacker=bullet.Player,PostDefenseDamage=bullet.PostDefenseDamage})
      if dealt>0 and bullet.BoltAction and random:NextNumber()<(bullet.Player:GetAttribute("DisarmChance") or 0) then
       local targetPlayer=Players:GetPlayerFromCharacter(victim.Parent)

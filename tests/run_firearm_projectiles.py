@@ -12,7 +12,8 @@ local heartbeat=signal()
 local packets={}
 Instance={new=function() return {FireClient=function(_,player,events) local copy={} for _,e in ipairs(events) do table.insert(copy,table.clone(e)) end;table.insert(packets,copy) end} end}
 local critChance=0
-local player={UserId=7,GetAttribute=function(_,key) return key=="Accuracy" and 1 or key=="CriticalChance" and critChance or 0 end,Character={FindFirstChild=function() return {Position=Vector3.zero} end}}
+local criticalMax=2
+local player={UserId=7,GetAttribute=function(_,key) return key=="Accuracy" and 1 or key=="CriticalChance" and critChance or key=="CriticalMax" and criticalMax or key=="CriticalMin" and 1.5 or 0 end,Character={FindFirstChild=function() return {Position=Vector3.zero} end}}
 local Players={GetPlayers=function() return {player} end}
 game={GetService=function(_,name) return ({Players=Players,RunService={Heartbeat=heartbeat},ReplicatedStorage={}})[name] end}
 local highRoll=true
@@ -95,6 +96,8 @@ assert(math.abs(high/low-1.5)<1e-6,"projectiles independently roll configured da
 definition.DamageMin=nil;definition.DamageMax=nil
 critChance=.1
 assert(math.abs(run(nil,"FMJ")-clear*2)<1e-6,"player critical multiplier is capped at x2")
+criticalMax=2.5
+assert(math.abs(run(nil,"FMJ")-clear*2.5)<1e-6,"brutal criticals raise upper roll limit to2.5, not multiply the result")
 print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, AP retention, metal/unknown stop and exact air range")
 '''
 with tempfile.TemporaryDirectory() as directory:

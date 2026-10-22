@@ -16,7 +16,7 @@ function Stats.Calculate(attributes,definition,condition,health,maxHealth)
   Carry=a.CarryLimitKg or 5,WalkSpeed=a.WalkBonus or .2,RunSpeed=a.RunBonus or .4,Regeneration=a.Regeneration or 0,Sprint=10+(a.Agility or 0),Accuracy=math.clamp((a.Accuracy or 25)+(a[category.."AccuracyBonus"] or 0)+(gun and (a.WeaponAccuracyBonus or 0) or 0),0,300),
   Dodge=a.DodgeChance or 0,MeleeDamage=damage,MeleeEquipped=melee~=nil and melee~=false,
   CriticalChance=(a.CriticalChance or 0)+(category=="Pistol" and (a.PistolCriticalBonus or 0) or 0),
-  CriticalMin=1.5*(a.CriticalDamageMultiplier or 1),CriticalMax=2*(a.CriticalDamageMultiplier or 1),Luck=a.LuckChance or 0,
+  CriticalMin=a.CriticalMin or 1.5,CriticalMax=a.CriticalMax or 2,Luck=a.LuckChance or 0,
  }
 end
 return Stats

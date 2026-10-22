@@ -68,7 +68,6 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  end
  target:SetAttribute("LastDamageDodged",false)
  local multiplier=options.CriticalMultiplier or 1
- if multiplier>1 and options.Attacker and options.Attacker:IsA("Player") then multiplier*=options.Attacker:GetAttribute("CriticalDamageMultiplier") or 1 end
  local negation=player and (player:GetAttribute("CriticalNegation") or 0) or 0
  if multiplier>1 and negation>0 and math.random()<negation then multiplier=1 end
  local postDefense=attackKind=="Ranged" and math.max(0,options.PostDefenseDamage or 0) or 0

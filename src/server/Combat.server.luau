@@ -86,7 +86,7 @@ attack.OnServerEvent:Connect(function(player)
    end
    nearest.Parent:SetAttribute("LastDamagerID",player.UserId)
    nearest.Parent:SetAttribute("LastHitItem",character:GetAttribute("HandsItem"))
-   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(1.5,2) or 1})
+   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
  end
