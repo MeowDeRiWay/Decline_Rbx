@@ -127,6 +127,10 @@ ItemConfig.Items.Rifle223={Name=".223 bolt-action rifle",Weight=3.2,Slot="Hands"
  Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
  Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="223",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=40},
  Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
+ItemConfig.Items.Rifle308={Name=".308 bolt-action rifle",Weight=3.2,Slot="Hands",
+ Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
+ Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="308",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=40},
+ Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
 -- Initial game balance; independent of the authored weapon models.
 ItemConfig.Items.Pistol9mm={Name="9 mm pistol",Weight=.9,Slot="Hands",
  Description="Semi-automatic pistol. R reloads available ammo; B selects FMJ/AP.",

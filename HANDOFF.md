@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## .308 bolt-action rifle — 22 October
+
+- Added Rifle308 model/item ID as an exact Rifle223 configuration copy except display name (.308 bolt-action rifle) and Caliber308. SingleOnly, Rifle category (LightWeapons),5round magazine,40RPM,25damage,3.2kg,2.5s reload,100base shot hearing,750speed,350range and durability3000 preserved as explicitly requested. Uses existing Ammo308FMJ/AP; same Muzzle/Sounds setup. No stronger damage invented for caliber change. Standard firearm regression, compile and Rojo build checked.
+
 ## 9 mm submachine gun — 22 October
 
 - Added SMG9mm item/model ID, display9 mm submachine gun, Category Automatic, explicit LightWeapons, Caliber9mm. Shares existing Ammo9mmFMJ/AP and boxes, supports V single/auto. Initial tunable balance2.5kg,30mag,2.2s reload,15damage,750RPM,350speed,200range,70base shot hearing,3000durability. Standard recursive Items template, Muzzle and Sounds setup. Config skill/caliber/mode assertions, firearm authority regression, compile/build checked; user supplies model.
