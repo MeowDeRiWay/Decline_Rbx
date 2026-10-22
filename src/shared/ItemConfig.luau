@@ -132,6 +132,10 @@ ItemConfig.Items.Pistol9mm={Name="9 mm pistol",Weight=.9,Slot="Hands",
  Description="Semi-automatic pistol. R reloads available ammo; B selects FMJ/AP.",
  Firearm={Category="Pistol",Skill="LightWeapons",SingleOnly=true,HoldHeightRatio=.4,Caliber="9mm",ShotDistance=70,Magazine=15,ReloadTime=1.8,Speed=350,Range=180,Damage=15,RPM=300},
  Weapon={Damage=15,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
+ItemConfig.Items.SMG9mm={Name="9 mm submachine gun",Weight=2.5,Slot="Hands",
+ Description="Submachine gun. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
+ Firearm={Category="Automatic",Skill="LightWeapons",HoldHeightRatio=.4,Caliber="9mm",ShotDistance=70,Magazine=30,ReloadTime=2.2,Speed=350,Range=200,Damage=15,RPM=750},
+ Weapon={Damage=15,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=750}}
 ItemConfig.Items.MachineGun308={Name=".308 machine gun",Weight=9,Slot="Hands",
  Description="Heavy machine gun. Uses Heavy weapons. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
  Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="308",ShotDistance=150,Magazine=60,ReloadTime=5,Speed=750,Range=450,Damage=35,RPM=600},

@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## 9 mm submachine gun — 22 October
+
+- Added SMG9mm item/model ID, display9 mm submachine gun, Category Automatic, explicit LightWeapons, Caliber9mm. Shares existing Ammo9mmFMJ/AP and boxes, supports V single/auto. Initial tunable balance2.5kg,30mag,2.2s reload,15damage,750RPM,350speed,200range,70base shot hearing,3000durability. Standard recursive Items template, Muzzle and Sounds setup. Config skill/caliber/mode assertions, firearm authority regression, compile/build checked; user supplies model.
+
 ## 9 mm pistol and .308 machine gun — 22 October
 
 - Added ItemConfig Pistol9mm (semi-auto only, Pistol category, explicit LightWeapons) and MachineGun308 (MachineGun category, explicit HeavyWeapons). Initial game balance: pistol .9kg,15mag,1.8s reload,15damage,300RPM,350speed,180range,70base shot hearing; MG9kg,60mag,5s reload,35damage,600RPM,750speed,450range,150base shot hearing. These are tunable game values, not verified real weapon specs.

@@ -37,3 +37,5 @@ for _,caliber in ipairs({"9mm","308"}) do
  end
 end
 print("PASS: new pistol uses Light weapons, .308 machine gun Heavy weapons, separate FMJ/AP ammunition")
+
+assert(Rules.ForWeapon(p,Items.SMG9mm)==90 and Items.SMG9mm.Firearm.Caliber=="9mm" and not Items.SMG9mm.Firearm.SingleOnly and Items.SMG9mm.Firearm.Category=="Automatic")
