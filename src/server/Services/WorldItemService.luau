@@ -112,7 +112,8 @@ function Service.Pickup(player, item)
 end
 local function makeItem(id)
  local source = EquipmentVisuals.Template(id)
- if not source and (id=="Ammo223FMJ" or id=="Ammo223AP") then source=EquipmentVisuals.Template("AmmoBox223"..string.sub(id,8)) end
+ local ammo=ItemConfig.Items[id] and ItemConfig.Items[id].Ammo
+ if not source and ammo then source=EquipmentVisuals.Template("AmmoBox"..ammo.Caliber..ammo.Type) end
  if source and (source:IsA("Model") or source:IsA("BasePart")) then
   local item = source:Clone()
   if item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart",true) then item:Destroy()

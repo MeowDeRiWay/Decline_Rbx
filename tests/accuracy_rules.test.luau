@@ -27,3 +27,13 @@ assert(Rules.WeaponSkill({Firearm={Category="Rifle"}})=="LightWeapons")
 assert(Rules.WeaponSkill({Firearm={Category="MachineGun"}})=="HeavyWeapons")
 local p={GetAttribute=function(_,key) return ({SkillLightWeapons=90,SkillHeavyWeapons=40,SkillUnarmed=65,SkillMelee=25})[key] end}
 assert(Rules.ForWeapon(p,{Firearm={}})==90 and Rules.ForWeapon(p,{Weapon={}})==25)
+
+local Items=require("../src/shared/ItemConfig").Items
+assert(Rules.ForWeapon(p,Items.Pistol9mm)==90 and Items.Pistol9mm.Firearm.SingleOnly)
+assert(Rules.ForWeapon(p,Items.MachineGun308)==40 and Items.MachineGun308.Firearm.Caliber=="308")
+for _,caliber in ipairs({"9mm","308"}) do
+ for _,kind in ipairs({"FMJ","AP"}) do
+  assert(Items["Ammo"..caliber..kind].Ammo.Caliber==caliber and Items["AmmoBox"..caliber..kind].AmmoBox.Type==kind)
+ end
+end
+print("PASS: new pistol uses Light weapons, .308 machine gun Heavy weapons, separate FMJ/AP ammunition")

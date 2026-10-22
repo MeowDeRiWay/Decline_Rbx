@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## 9 mm pistol and .308 machine gun — 22 October
+
+- Added ItemConfig Pistol9mm (semi-auto only, Pistol category, explicit LightWeapons) and MachineGun308 (MachineGun category, explicit HeavyWeapons). Initial game balance: pistol .9kg,15mag,1.8s reload,15damage,300RPM,350speed,180range,70base shot hearing; MG9kg,60mag,5s reload,35damage,600RPM,750speed,450range,150base shot hearing. These are tunable game values, not verified real weapon specs.
+- Models can live under any recursive category Folder of ServerStorage/Items, e.g Weapons; names Pistol9mm and MachineGun308. Reuse Model Muzzle and Sounds/ShotSound, ReloadSound as existing firearms. Matching Item_ID for world pickups as usual.
+- Added loose Ammo9mmFMJ/AP and Ammo308FMJ/AP (.008/.024kg each), boxes AmmoBox9mmFMJ/AP and AmmoBox308FMJ/AP. Box Maximum defaults50; model MaxAmmo attribute overrides spawn maximum, Caliber strings9mm/308, AmmoType FMJ/AP inferred from item definition unless overridden. AmmoID accepts only223/9mm/308 and FMJ/AP. Existing reload/type/holster/drop/chest logic works per caliber. Loose dropped ammunition can reuse corresponding box visual generically, replacing223-only fallback.
+- Tests verify actual ItemConfig skill selection with different Light/Heavy values, single-only pistol, eight ammo/box definitions, accepted/rejected ammo IDs plus firearm authority/holster/inventory regression. No new weapon assets or sounds authored by agent; user is preparing them. Luau compile and Rojo build checked.
+
 ## Shared building wall pieces via Replace — 22 October
 
 - User's screenshots show ServerStorage/CityGeneration/Walls containing Corner (brick), DoorWay (brick), Wall (brick), Window (brick). Workspace/house placeholders can be named CornerPlacer, DoorWayPlacer, WallPlacer, WindowPlacer or anything else: string attribute Replace on outer Model/Part selects exact template name, including spaces/(brick).

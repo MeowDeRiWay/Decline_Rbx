@@ -127,10 +127,23 @@ ItemConfig.Items.Rifle223={Name=".223 bolt-action rifle",Weight=3.2,Slot="Hands"
  Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
  Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="223",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=40},
  Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
+-- Initial game balance; independent of the authored weapon models.
+ItemConfig.Items.Pistol9mm={Name="9 mm pistol",Weight=.9,Slot="Hands",
+ Description="Semi-automatic pistol. R reloads available ammo; B selects FMJ/AP.",
+ Firearm={Category="Pistol",Skill="LightWeapons",SingleOnly=true,HoldHeightRatio=.4,Caliber="9mm",ShotDistance=70,Magazine=15,ReloadTime=1.8,Speed=350,Range=180,Damage=15,RPM=300},
+ Weapon={Damage=15,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
+ItemConfig.Items.MachineGun308={Name=".308 machine gun",Weight=9,Slot="Hands",
+ Description="Heavy machine gun. Uses Heavy weapons. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
+ Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="308",ShotDistance=150,Magazine=60,ReloadTime=5,Speed=750,Range=450,Damage=35,RPM=600},
+ Weapon={Damage=35,DamageType="Bullet",MaxUses=5000,AttacksPerMinute=600}}
 ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Equip in Medicine. H, then click yourself or a nearby player to apply first aid."}
 for _,kind in ipairs({"FMJ","AP"}) do
  ItemConfig.Items["Ammo223"..kind]={Name = ".223 "..kind,Weight=.012,Description="Loose rifle ammunition.",Ammo={Caliber="223",Type=kind}}
  ItemConfig.Items["AmmoBox223"..kind]={Name = ".223 "..kind.." ammo box",Weight=.1,Description="Collect to unpack its ammunition.",AmmoBox={Caliber="223",Type=kind,Maximum=50}}
+ for _,ammo in ipairs({{ID="9mm",Name="9 mm",Weight=.008},{ID="308",Name=".308",Weight=.024}}) do
+  ItemConfig.Items["Ammo"..ammo.ID..kind]={Name=ammo.Name.." "..kind,Weight=ammo.Weight,Description="Loose ammunition.",Ammo={Caliber=ammo.ID,Type=kind}}
+  ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="Collect to unpack its ammunition.",AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=50}}
+ end
 end
 return ItemConfig
 
