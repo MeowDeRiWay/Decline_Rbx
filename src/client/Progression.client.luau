@@ -115,7 +115,7 @@ local function skillRow(id,index,passive)
    if tagDraft[id] then tagDraft[id]=nil elseif #selectedTags()<3 then tagDraft[id]=true end
    confirming=false;redraw()
   end)
-  plus=button(card,"+",UDim2.fromOffset(428,2),UDim2.fromOffset(96,30),function() action:FireServer("Skill",id) end)
+  plus=button(card,"+",UDim2.fromOffset(486,2),UDim2.fromOffset(34,30),function() action:FireServer("Skill",id) end)
  end
  skillRows[id]={Name=name,Value=value,Plus=plus,Tag=tag}
 
@@ -152,7 +152,7 @@ redraw=function()
   card.Value.Text=tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id])
   card.Minus.Visible=not snapshot.Confirmed;card.Plus.Visible=not snapshot.Confirmed
  end
- confirmedText.Text=(snapshot.Confirmed and "Attributes confirmed." or "Attributes must total 36.")..(snapshot.TagsConfirmed and " Main skills locked." or " Choose 3 main skills in Skills ("..#selectedTags().." / 3). Confirm to lock your choice.")
+ confirmedText.Text=(snapshot.Confirmed and "Attributes confirmed." or "Attributes must total 36.")..(snapshot.TagsConfirmed and "" or " Choose 3 main skills in Skills ("..#selectedTags().." / 3). Confirm to lock your choice.")
  confirmButton.Visible=not snapshot.Confirmed or not snapshot.TagsConfirmed
  confirmButton.Text=confirming and "Confirm permanently" or (snapshot.Confirmed and "Confirm main skills" or "Confirm character")
  for id,row in pairs(skillRows) do
@@ -161,14 +161,16 @@ redraw=function()
   row.Value.Text=practice and string.format("%d · XP %d / %d",value,practice.XP,10*(value+1)) or tostring(value)
   if row.Plus then
    local tagged=snapshot.TagsConfirmed and snapshot.TaggedSkills[id] or (not snapshot.TagsConfirmed and tagDraft[id])
-   row.Name.TextColor3=tagged and palette.Accent or palette.Text
-   row.Tag.Visible=not snapshot.TagsConfirmed or tagged==true
-   row.Tag.Text=tagged and "Main" or "Tag"
+   local mainColor=Color3.fromRGB(190,124,112)
+   row.Name.TextColor3=tagged and mainColor or palette.Text
+   row.Value.TextColor3=tagged and mainColor or palette.Accent
+   row.Tag.Visible=not snapshot.TagsConfirmed
+   row.Tag.Text=tagged and "Selected" or "Tag"
    row.Tag.AutoButtonColor=not snapshot.TagsConfirmed
-   row.Tag.TextColor3=tagged and palette.Accent or palette.Muted
+   row.Tag.TextColor3=tagged and mainColor or palette.Muted
    local gain,cost=Rules.SkillQuote(snapshot,id,value)
    row.Plus.Visible=snapshot.Confirmed and gain~=nil
-   row.Plus.Text=gain and string.format("+%d (%d SP)",gain,cost) or "Max"
+   row.Plus.Text="+"
    row.Plus.Active=cost~=nil and snapshot.SkillPoints>=cost
    row.Plus.AutoButtonColor=row.Plus.Active
    row.Plus.TextColor3=row.Plus.Active and palette.Accent or palette.Muted

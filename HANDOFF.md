@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Quiet main-skill presentation — 23 October
+
+- After confirmation, main skills are indicated only by muted red names/values (RGB190,124,112). No Main badge or locked-main reminder. Tag selectors remain only during initial selection. All skill training buttons are compact plain +, no gain/cost labels; shared quote still controls affordability and server pricing unchanged.
+
 ## Three main skills and tiered training — 23 October
 
 - Manual skills can be tagged as exactly three main skills. New character UI requires three valid unique tags alongside36-point attributes before Confirm character unlocks play. Server Confirm now accepts {Stats=...,TaggedSkills={id1,id2,id3}} and rejects malformed/duplicate/passive/unknown selections atomically. Shared Confirm's optional tags argument remains for internal/legacy callers; external server command always requires the tag list.
