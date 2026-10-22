@@ -10,6 +10,7 @@ service=(root/'src/server/Services/CityGenerationService.luau').read_text()
 service=service.replace('local Config = require(ReplicatedStorage.Shared.CityGenerationConfig)','')
 service=service.replace('local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)','')
 service=service.replace('local Furniture=require(script.Parent.StoreFurnitureService)','')
+service=service.replace('local Walls=require(script.Parent.WallReplacementService)','')
 furniture=(root/'src/server/Services/StoreFurnitureService.luau').read_text().replace('local Rules=require(ReplicatedStorage.Shared.CityGenerationRules)','')
 cases='''
 assert(Config.StoreChance==.05)
@@ -20,6 +21,11 @@ house.CFrame=CFrame.new(Vector3.new(40,1,30))
 local yard=make("Model","Yard",house)
 yard.CFrame=CFrame.new(Vector3.new(43,0,37)); yard.Size=Vector3.new(20,.2,20)
 make("Part","Part",yard)
+local wallLibrary=make("Folder","Walls",library)
+local wall=make("Model","Wall (brick)",wallLibrary,{BlocksVision=true})
+local wallYard=make("Model","WallYard",wall);make("Part","Part",wallYard)
+local wallMarker=make("Model","WallPlacer",house,{Replace="Wall (brick)"})
+local wallTarget=make("Model","YardPlacer",wallMarker);make("Part","Part",wallTarget)
 local road=make("Model","Custom Road Name",workspace,{Road=true})
 road.CFrame=CFrame.new(Vector3.new(0,0,30)); road.Size=Vector3.new(20,.2,20)
 make("Part","Part",road)
@@ -34,6 +40,8 @@ assert(marker.Transparency==1 and marker.CanQuery==false and marker.CanCollide==
 local built=generated:GetChildren()[1]
 assert(built:GetAttribute("ZNumber")==2 and built:GetAttribute("ZHouse"),"house attributes preserved")
 assert(built.Yard.Part.Transparency==1,"template yard marker is hidden")
+assert(built:FindFirstChild("Wall (brick)") and not built:FindFirstChild("WallPlacer"),"house wall pieces replaced before the clone enters workspace")
+assert(house:FindFirstChild("WallPlacer"),"house template keeps reusable markers")
 Service.Generate(); Service.Start()
 assert(#generated:GetChildren()==1,"repeated Generate/Start must not duplicate house")
 plot:Destroy(); Service.Generate()
@@ -82,6 +90,7 @@ print("PASS: template discovery by attribute, placement, source references, hidd
 parts=[mock,geometry,(root/'tests/city_service.fixture.luau').read_text()]
 for name,var in [('CityGenerationConfig','Config'),('CityGenerationRules','Rules')]:
     parts.append('local '+var+'=(function()\n'+(root/f'src/shared/{name}.luau').read_text()+'\nend)()')
+parts.append('local Walls=(function()\n'+(root/'src/server/Services/WallReplacementService.luau').read_text()+'\nend)()')
 parts.append('local Furniture=(function()\n'+furniture+'\nend)()')
 parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])
 with tempfile.TemporaryDirectory(prefix='decline-city-service-') as directory:

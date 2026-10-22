@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.CityGenerationConfig)
 local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)
 local Furniture=require(script.Parent.StoreFurnitureService)
+local Walls=require(script.Parent.WallReplacementService)
 local Service = {}
 local started = false
 local configuredSeed = Config.Seed
@@ -116,6 +117,7 @@ local function place(plot, sources, roadList)
  yard:SetAttribute("BlocksVision",false)
  for _, part in ipairs(clone:GetDescendants()) do if part:IsA("BasePart") then part.Anchored = true end end
  clone:PivotTo(chosen.frame)
+ Walls.Fill(clone)
  Furniture.Fill(clone)
  local reference = Instance.new("ObjectValue")
  reference.Name,reference.Value,reference.Parent = "GenerationSource",plot,clone
@@ -135,6 +137,7 @@ function Service.Generate()
  end
  table.sort(plots,plotOrder)
  for _, plot in ipairs(plots) do place(plot,sources,roadList) end
+ Walls.Fill(workspace)
  Furniture.Fill(workspace)
  -- Release markers that have been removed; do not leave their generated houses behind.
  for plot, house in pairs(generated) do

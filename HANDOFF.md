@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Shared building wall pieces via Replace — 22 October
+
+- User's screenshots show ServerStorage/CityGeneration/Walls containing Corner (brick), DoorWay (brick), Wall (brick), Window (brick). Workspace/house placeholders can be named CornerPlacer, DoorWayPlacer, WallPlacer, WindowPlacer or anything else: string attribute Replace on outer Model/Part selects exact template name, including spaces/(brick).
+- New WallReplacementService.Fill aligns template's inner WallYard bounding frame to marker's inner YardPlacer bounding frame, including rotated references and offset source pivots; if no YardPlacer, marker's own frame is used (Part supported). WallYard must exist and have physical geometry. No resizing. All cloned BaseParts anchored; authored collisions/materials/BlocksVision remain. WallYard geometry is preserved, not hidden indiscriminately (may include actual wall parts).
+- Successful clone replaces/destroys marker as a sibling under original parent. It is not nested under marker: Sight.Cast lets outer BlocksVision override inner flags, so hidden marker ancestry would incorrectly make real walls transparent to sight. Source templates untouched. Clone Replace removed; GeneratedWallPiece true. Missing/invalid templates leave placeholders intact for retry with deduplicated warning.
+- CityGeneration fills walls after positioning house/store clone before furniture/parenting, and on workspace in existing5second generation retry (covers preplaced structures and later additions). Existing town fortifications Buildings/Wall, WallPlace/WallTemplate and mayor wall upgrades unchanged; these are building components, not faction perimeter walls.
+- Actual service tests cover rotated YardPlacer/WallYard alignment with differing pivots, nested house markers, Part markers, anchor/collision/vision preservation, source safety, idempotence and late-template retry. City/furniture regression, Luau compilation and Rojo build pass. No Studio model playtest; user may adjust marker orientation/pivots if authored references differ.
+
 ## Medical actions, revised progression and nine perks — 22 October
 
 - Shared attributes now: Attention3studs vision/point; AGI+1 Light weapons,+.2 walk,+.8 sprint per point; ATT+2 First aid,+3 Doctor; STR Heavy weapons contribution3 (ATT contribution3 remains). Cook manual skill added,4INT+ATT, capped300 with other manual skills. Tooltips/previews/shared stats and camera/vision fallback values updated. Zombies inherit the same changed derived vision/speeds.
