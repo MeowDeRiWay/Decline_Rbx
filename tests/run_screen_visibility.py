@@ -22,8 +22,9 @@ assert(Rules.ScreenRayDistance(0,0,1,0,corners,3)==3)
 local calls=0
 local Sight={Cast=function() calls+=1;return nil end}
 local Config={CreatureViewAngle=160}
+local angleMultiplier=1
 local viewRange=25
-local player={GetAttribute=function(_,key) if key=="ViewRange" then return viewRange end end}
+local player={GetAttribute=function(_,key) if key=="ViewRange" then return viewRange elseif key=="ViewAngleMultiplier" then return angleMultiplier end end}
 local target={Position=Vector3.new(200,0,5),IsA=function() return true end}
 local model={FindFirstChild=function(_,name) return name=="HumanoidRootPart" and target or nil end}
 local character={FindFirstChild=function() end}
@@ -38,6 +39,11 @@ viewRange=4;assert(not visible(model,root,character,camera) and calls==1,"outsid
 viewRange=5;assert(visible(model,root,character,camera) and calls==2,"at5 studs visible with1 attention")
 target.Position=Vector3.new(0,0,-5)
 assert(not visible(model,root,character,camera) and calls==2,"rear sector still hidden")
+viewRange=35;target.Position=Vector3.new(5,0,5)
+assert(visible(model,root,character,camera),"45degrees inside normal80degree half cone")
+angleMultiplier=.5;local prior=calls
+assert(not visible(model,root,character,camera) and calls==prior,"Tunnel vision rejects45degrees before LOS, half angle40")
+target.Position=Vector3.new(0,0,34);assert(visible(model,root,character,camera),"extra range remains usable in narrow cone")
 print("PASS: viewport edges, behind camera, four ground edges, diagonal and max range; 1000 off-screen checks cast zero rays; on-screen sector/occlusion preserved")
 '''.replace('VISIBLE',visible)
 with tempfile.TemporaryDirectory() as directory:

@@ -106,9 +106,9 @@ local function visible(model,root,character,camera)
  end
  if not onScreen(target) and not onScreen(targetHead) then return false end
  local offset = target.Position-root.Position
- if offset.Magnitude>(player:GetAttribute("ViewRange") or 3*(player:GetAttribute("Attention") or 5)) then return false end
+ if offset.Magnitude>(player:GetAttribute("ViewRange") or (10+3*(player:GetAttribute("Attention") or 5))) then return false end
  local forward = root.CFrame.LookVector
- if not Rules.InSector(forward.X,forward.Z,offset.X,offset.Z,Config.CreatureViewAngle) then return false end
+ if not Rules.InSector(forward.X,forward.Z,offset.X,offset.Z,Config.CreatureViewAngle*(player:GetAttribute("ViewAngleMultiplier") or 1)) then return false end
  local head = character:FindFirstChild("Head")
  local origin = (head and head:IsA("BasePart") and head.Position or root.Position) + Vector3.new(0,.05,0)
  local function clear(part)

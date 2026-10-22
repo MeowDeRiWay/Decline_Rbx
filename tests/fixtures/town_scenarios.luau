@@ -32,7 +32,7 @@ for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==
 assert(approval and not plot:GetAttribute("BuildingID"))
 call(c,"Reply",approval,true); assert(not plot:GetAttribute("BuildingID"),"only actual mayor may approve")
 call(a,"Reply",approval,true)
-assert(logs[102]==2 and menu.Parent==nil and plot:FindFirstChild("Kitchen (T1)").BuildingMenu,"consume one log and use kitchen sign")
+assert(logs[102]==25 and scrap[102]==85 and menu.Parent==nil and plot:FindFirstChild("Kitchen (T1)").BuildingMenu,"consume5logs/15scrap and use kitchen sign")
 assert(plot:GetAttribute("BuildingID")=="Kitchen" and plot:GetAttribute("OwnerID")==102 and space.Parent==nil)
 call(a,"Open",flagA); call(a,"OwnAll")
 assert(plot:GetAttribute("OwnerID")==102,"removed bulk ownership action must have no effect")
@@ -97,17 +97,17 @@ assert(expired); tick(61); call(b,"Reply",expired,true); assert(not plot:GetAttr
 call(b,"Open",plot); call(b,"Build","Kitchen")
 local selfRequest
 for _,item in ipairs(notices) do if item.player==b and item.data.Kind=="Approval" then selfRequest=item.data.ID end end
-assert(selfRequest and not plot:GetAttribute("BuildingID") and logs[102]==2,"self-build waits for Y/N without spending")
+assert(selfRequest and not plot:GetAttribute("BuildingID") and logs[102]==25,"self-build waits for Y/N without spending")
 call(b,"Reply",selfRequest,false)
-assert(not plot:GetAttribute("BuildingID") and logs[102]==2,"decline does not consume logs")
+assert(not plot:GetAttribute("BuildingID") and logs[102]==25,"decline does not consume logs")
 call(b,"Build","Kitchen")
 for _,item in ipairs(notices) do if item.player==b and item.data.Kind=="Approval" then selfRequest=item.data.ID end end
 call(b,"Reply",selfRequest,true)
-assert(plot:GetAttribute("BuildingID")=="Kitchen" and logs[102]==1,"self-approval consumes exactly one log")
-call(b,"Reply",selfRequest,true); assert(logs[102]==1,"repeated approval cannot charge twice")
+assert(plot:GetAttribute("BuildingID")=="Kitchen" and logs[102]==20 and scrap[102]==70,"self-approval consumes5logs/15scrap")
+call(b,"Reply",selfRequest,true); assert(logs[102]==20,"repeated approval cannot charge twice")
 call(b,"Open",plot); call(b,"Destroy")
 assert(menu.Parent==plot,"demolition restores empty plot sign")
-logs[101]=1
+logs[101]=5
 call(a,"Open",plot); call(a,"Build","Kitchen")
 local missing
 for _,item in ipairs(notices) do if item.player==b and item.data.Kind=="Approval" then missing=item.data.ID end end

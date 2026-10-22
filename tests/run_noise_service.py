@@ -6,7 +6,7 @@ s=(root/'src/server/Services/NoiseService.luau').read_text();s=re.sub(r'local (C
 setup='''
 local heartbeat=event();local oldService=game.GetService
 function game:GetService(name) if name=="RunService" then return {Heartbeat=heartbeat} end;return oldService(self,name) end
-local Config={FootstepMaxDistance=12}
+local Config={FootstepMaxDistance=5,RunFootstepMaxDistance=10}
 local alerts=0;local Activity={Alert=function() alerts+=1 end}
 local Enum={Material={Air="Air"}}
 '''
@@ -21,13 +21,13 @@ local root=a.Character.HumanoidRootPart;root.Anchored=false
 local before=alerts
 heartbeat:Fire(.25);root.Position=Vector3.new(.1,0,0);heartbeat:Fire(.25);assert(alerts==before)
 root.Position=Vector3.new(.2,0,0);heartbeat:Fire(.25);assert(alerts==before+1,"slow footsteps accumulate travel")
-heard,cursor=Service.Listen(root.Position,5,cursor);assert(heard.Kind=="Footsteps" and heard.Radius==12)
-a:SetAttribute("SkillSneak",100);a.Character:SetAttribute("Running",false);root.Position=Vector3.new(.4,0,0);heartbeat:Fire(.25)
+heard,cursor=Service.Listen(root.Position,5,cursor);assert(heard.Kind=="Footsteps" and heard.Radius==5)
+a:SetAttribute("SkillSneak",30);a.Character:SetAttribute("Running",false);root.Position=Vector3.new(.4,0,0);heartbeat:Fire(.25)
 heard,cursor=Service.Listen(root.Position,5,cursor);assert(heard.Radius==2)
 assert(not Service.Listen(root.Position+Vector3.new(2.1,0,0),5,cursor-1))
 assert(Service.Listen(root.Position+Vector3.new(3.9,0,0),10,cursor-1),"Attention10 hears quiet2stud footsteps to4")
 a.Character:SetAttribute("Running",true);root.Position=Vector3.new(.6,0,0);heartbeat:Fire(.25)
-heard,cursor=Service.Listen(root.Position,5,cursor);assert(heard.Radius==12,"running ignores Sneak")
+heard,cursor=Service.Listen(root.Position,5,cursor);assert(heard.Radius==10,"running ignores Sneak")
 local silence=alerts;Service.Emit(root.Position,0,"Footsteps");assert(alerts==silence,"zero radius is truly silent")
 root.Position=Vector3.new(100,0,0);before=alerts;heartbeat:Fire(.25);assert(alerts==before,"teleports emit no steps")
 a:SetAttribute("AttributesConfirmed",false);root.Position=Vector3.new(101,0,0);heartbeat:Fire(.25);assert(alerts==before,"creation is silent")

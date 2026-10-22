@@ -512,8 +512,11 @@ local function handle(player, command, value, extra)
    if not definition or not definition.Levels[level] or (plot.kind and (plot.kind ~= value or not owns(player, plot))) or plot.pending then return end
    if not templateFor(value, level) then tell(player, "Add the model ServerStorage/Buildings/" .. definition.Levels[level]); return end
    if not hasMaterials(player,value,level) then tell(player,"You need the required building materials in your inventory."); return end
+   local materials={}
+   for id,amount in pairs(costFor(value,level)) do table.insert(materials,tostring(amount).." "..id) end
+   table.sort(materials)
    requestApproval(player, town, {kind = "Build", plot = plot, building = value, level = level,
-    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. ". Cost: 1 Tree Log from the builder's inventory."})
+    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. ". Cost: " .. table.concat(materials,", ") .. " from the builder's inventory."})
   elseif command == "Destroy" and plot.kind and owns(player, plot) then
    if plot.pending then pending[plot.pending] = nil; plot.pending = nil end
    destroyBuilding(plot)

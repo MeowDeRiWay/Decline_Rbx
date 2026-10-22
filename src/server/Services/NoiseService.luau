@@ -43,7 +43,7 @@ function Service.Start()
    if moved>=.15 then
     positions[p]={Root=root,Position=root.Position}
     if moved>8 then continue end
-    Service.Emit(root.Position,Config.FootstepMaxDistance*Rules.StepMultiplier(p:GetAttribute("SkillSneak"),c:GetAttribute("Running")),"Footsteps")
+    Service.Emit(root.Position,Rules.StepRadius(p:GetAttribute("SkillSneak"),c:GetAttribute("Running"),c:GetAttribute("Running") and Config.RunFootstepMaxDistance or Config.FootstepMaxDistance),"Footsteps")
    end
   end
  end)

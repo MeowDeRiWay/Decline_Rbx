@@ -72,16 +72,17 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
   local point = planePoint(camera,corner.X,corner.Y,root.Position.Y)
   if point then table.insert(screenCorners,point);range = math.max(range,(point-root.Position).Magnitude) end
  end
- range=math.min(range,player:GetAttribute("ViewRange") or 3*(player:GetAttribute("Attention") or 5))
+ range=math.min(range,player:GetAttribute("ViewRange") or (10+3*(player:GetAttribute("Attention") or 5)))
  local head = character:FindFirstChild("Head")
  local origin = (head and head:IsA("BasePart") and head.Position or root.Position)+Vector3.new(0,.05,0)
  local forward = Vector3.new(root.CFrame.LookVector.X,0,root.CFrame.LookVector.Z).Unit
  local right = Vector3.new(-forward.Z,0,forward.X)
  local center = camera:WorldToViewportPoint(root.Position)
  local polygon = {Vector2.new(center.X,center.Y)}
- local rays = math.ceil(Config.CreatureViewAngle*Config.VisionRaysPerDegree)
+ local viewAngle=Config.CreatureViewAngle*(player:GetAttribute("ViewAngleMultiplier") or 1)
+ local rays = math.ceil(viewAngle*Config.VisionRaysPerDegree)
  for i=0,rays do
-  local angle = math.rad(-Config.CreatureViewAngle/2+Config.CreatureViewAngle*i/rays)
+  local angle = math.rad(-viewAngle/2+viewAngle*i/rays)
   local direction = forward*math.cos(angle)+right*math.sin(angle)
   local screenRange = #screenCorners==4 and Rules.ScreenRayDistance(root.Position.X,root.Position.Z,direction.X,direction.Z,screenCorners,range) or range
   local hit = Sight.Cast(origin,direction*screenRange,character)

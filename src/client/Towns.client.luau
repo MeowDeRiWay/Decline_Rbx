@@ -219,7 +219,12 @@ render = function()
     text(plot.BuildingID and ((Config.Buildings[plot.BuildingID] and Config.Buildings[plot.BuildingID].Name or plot.BuildingID) .. " · level " .. plot.Level .. "\nOwner: " .. plot.OwnerName .. "\nCo-owners: " .. count) or "Empty plot")
     if plot.Pending then text("Waiting for the mayor.")
     elseif not plot.BuildingID or owner then
-     for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level .. " · Cost: " .. tostring((option.Cost or {}).TreeLog or 0) .. " Tree Log",function() send("Build",option.ID) end) end
+     local function materials(cost)
+      local parts={}
+      for id,amount in pairs(cost or {}) do table.insert(parts,tostring(amount).." "..id) end
+      table.sort(parts);return table.concat(parts,", ")
+     end
+     for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level .. " · Cost: " .. materials(option.Cost),function() send("Build",option.ID) end) end
      if plot.BuildingID and #plot.Options == 0 then text("No further upgrades are available.") end
     end
     if plot.BuildingID then

@@ -13,8 +13,10 @@ function Audio.Play(character,name,maxDistance)
  sound.Looped=false; sound.PlayOnRemove=false; sound.TimePosition=0
  sound.RollOffMode=Enum.RollOffMode.InverseTapered
  sound.RollOffMinDistance=source:GetAttribute("MinDistance") or 3
- sound.RollOffMaxDistance=source:GetAttribute("MaxDistance") or (name=="ShotSound" and 150 or 25)
+ sound.RollOffMaxDistance=source:GetAttribute("MaxDistance") or (name=="ShotSound" and 150 or 5)
+ if name=="ReloadSound" then sound.RollOffMaxDistance=5 end
  if maxDistance then sound.RollOffMaxDistance=maxDistance end
+ sound.RollOffMinDistance=math.min(sound.RollOffMinDistance,sound.RollOffMaxDistance)
  sound.Parent=origin
  sound.Ended:Once(function() sound:Destroy() end)
  Debris:AddItem(sound,15)

@@ -1,5 +1,5 @@
 local Rules=require("../src/shared/SprintRules")
-assert(Rules.Maximum(0)==20 and Rules.Maximum(7)==27)
+assert(Rules.Maximum(0)==10 and Rules.Maximum(7)==17 and Rules.Maximum(10)==20)
 local value,exhausted,running=20,false,false
 for _=1,199 do value,exhausted,running=Rules.Step(value,20,exhausted,true,true,true,.1) end
 assert(value<.11 and running)
@@ -13,4 +13,4 @@ value,exhausted,running=Rules.Step(10,20,false,true,false,true,1)
 assert(value==12,"stationary shift does not consume reserve")
 value,exhausted,running=Rules.Step(10,20,false,true,true,false,1)
 assert(not running and value==12,"incapacitated players cannot sprint")
-print("PASS: endurance capacity, exact depletion, exhaustion lock, recovery, standing and incapacitation")
+print("PASS: agility capacity, exact depletion, exhaustion lock, recovery, standing and incapacitation")

@@ -135,8 +135,8 @@ Run.Heartbeat:Connect(function(dt)
  medicine.TextColor3=player:GetAttribute("MedicalMode")=="Bandage" and Theme.Green or Theme.Text
  health.Text=string.format("HP %03d",character and character:GetAttribute("Health") or 0)
  armor.Text=string.format("AC %02d",math.floor((player:GetAttribute("DodgeChance") or 0)+.5))
- local remaining=character and character:GetAttribute("SprintRemaining") or 20
- local maximum=character and character:GetAttribute("SprintMaximum") or 20
+ local remaining=character and character:GetAttribute("SprintRemaining") or (10+(player:GetAttribute("Agility") or 5))
+ local maximum=character and character:GetAttribute("SprintMaximum") or (10+(player:GetAttribute("Agility") or 5))
  stamina.Size=UDim2.fromScale(math.clamp(remaining/math.max(1,maximum),0,1),1)
 
  local fighting=false

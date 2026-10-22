@@ -1,4 +1,4 @@
--- Authored footstep source settings; Hearing applies each listener's gain afterwards.
+-- Source volume is independent of Attention; listeners extend hearing range only.
 local Players=game:GetService("Players")
 local Storage=game:GetService("ReplicatedStorage")
 local Config=require(Storage.Shared.GameConfig)
@@ -7,17 +7,25 @@ local watched=setmetatable({},{__mode="k"})
 local function configure(sound,player,character)
  if not sound:IsA("Sound") or sound.Name~="Running" or watched[sound] then return end
  watched[sound]=true
+ local applying=false
  local function apply()
+  if applying then return end;applying=true
   local quiet=Noise.StepMultiplier(player:GetAttribute("SkillSneak"),character:GetAttribute("Running"))
   sound:SetAttribute("FootstepNoiseMultiplier",quiet)
   sound.RollOffMode=Enum.RollOffMode.InverseTapered
   sound.RollOffMinDistance=Config.FootstepMinDistance*quiet
-  sound.RollOffMaxDistance=Config.FootstepMaxDistance*quiet
+  local base=character:GetAttribute("Running") and Config.RunFootstepMaxDistance or Config.FootstepMaxDistance
+  local radius=Noise.StepRadius(player:GetAttribute("SkillSneak"),character:GetAttribute("Running"),base)
+  sound:SetAttribute("FootstepBaseMin",Config.FootstepMinDistance*quiet)
+  sound:SetAttribute("FootstepBaseDistance",radius)
+  sound.RollOffMaxDistance=radius
   sound.Volume=Config.FootstepVolume*quiet
+  applying=false
  end
  local a=character:GetAttributeChangedSignal("Running"):Connect(apply)
  local b=player:GetAttributeChangedSignal("SkillSneak"):Connect(apply)
- sound.Destroying:Once(function() a:Disconnect();b:Disconnect() end)
+ local c=sound:GetPropertyChangedSignal("Volume"):Connect(apply)
+ sound.Destroying:Once(function() a:Disconnect();b:Disconnect();c:Disconnect() end)
  apply()
 end
 local connections={}

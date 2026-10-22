@@ -89,7 +89,7 @@ local noPerks=label(perkPanel,"No eligible perks.",UDim2.fromOffset(12,10),UDim2
 local function setMode(value) mode=value;statPanel.Visible=value=="Stats";skillPanel.Visible=value=="Skills";perkPanel.Visible=value=="Perks" end
 for index,value in ipairs({"Stats","Skills","Perks"}) do button(right,value,UDim2.fromOffset(20+(index-1)*180,24),UDim2.fromOffset(166,38),function() setMode(value) end) end
 local values={}
-for index,row in ipairs({{"Health","Health"},{"ArmorClass","Armor class"},{"Carry","Carrying capacity"},{"MeleeDamage","Melee / unarmed damage"},{"Absorption","Damage absorption"},{"Resistance","Damage resistance"},{"WalkSpeed","Walk speed"},{"RunSpeed","Sprint speed"},{"Regeneration","Regeneration / minute"},{"CriticalChance","Critical chance"}}) do
+for index,row in ipairs({{"Health","Health"},{"ArmorClass","Armor class"},{"Carry","Carrying capacity"},{"MeleeDamage","Melee / unarmed damage"},{"Absorption","Damage absorption"},{"Resistance","Damage resistance"},{"WalkSpeed","Walk speed"},{"RunSpeed","Sprint speed"},{"Sprint","Sprint duration"},{"Regeneration","Regeneration / minute"},{"CriticalChance","Critical chance"}}) do
  local card=frame(statPanel,UDim2.fromOffset(0,(index-1)*48),UDim2.fromOffset(548,42),palette.Card)
  label(card,row[2],UDim2.fromOffset(10,0),UDim2.fromOffset(270,42),15)
  values[row[1]]=label(card,"—",UDim2.fromOffset(284,0),UDim2.fromOffset(254,42),15,palette.Accent)
@@ -125,6 +125,7 @@ local function refreshStats()
  values.Resistance.Text=string.format("%g%%",stats.Resistance*100)
  values.WalkSpeed.Text=string.format("%g studs/s",stats.WalkSpeed)
  values.RunSpeed.Text=string.format("%g studs/s",stats.RunSpeed)
+ values.Sprint.Text=string.format("%g seconds",stats.Sprint)
  values.Regeneration.Text=string.format("%g HP",stats.Regeneration)
  values.CriticalChance.Text=string.format("%g%%",stats.CriticalChance*100)
 end

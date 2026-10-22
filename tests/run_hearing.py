@@ -35,11 +35,12 @@ function methods:Destroy() self.Destroying:Fire();self.Parent=nil;self.Destroyed
 function methods:GetDistanceAttenuation() return self.Curve end
 function methods:SetDistanceAttenuation(curve) self.Curve=curve end
 function methods:GetAttribute(k) return self.attrs[k] end
+function methods:SetAttribute(k,v) local old=self.attrs[k];self.attrs[k]=v;if old~=v then self:GetAttributeChangedSignal(k):Fire() end end
 function methods:GetAttributeChangedSignal(k) return self:GetPropertyChangedSignal('attr:'..k) end
 local Instance={new=function(c)
  return setmetatable({props={ClassName=c,Name=c,Volume=.5,RollOffMinDistance=10,RollOffMaxDistance=100,Playing=true,SourceName="Output",Curve={[0]=1,[100]=0},DistanceAttenuationBounds={Min=10,Max=100},DistanceAttenuationMode="Preset",AncestryChanged=signal(),Destroying=signal(),DescendantAdded=signal()},signals={},children={},attrs={}},meta)
 end}
-local Enum={DistanceAttenuationMode={Custom="Custom"}}
+local Enum={DistanceAttenuationMode={Custom="Custom"},RollOffMode={InverseTapered="InverseTapered"}}
 local NumberRange={new=function(a,b) return {Min=a,Max=b} end}
 game=Instance.new("DataModel")
 local workspace=Instance.new("Workspace");workspace.Parent=game
@@ -61,31 +62,42 @@ local foreignOutput=Instance.new("AudioDeviceOutput");foreignOutput.Player={};fo
 local foreignWire=Instance.new("Wire");foreignWire.SourceInstance=listener;foreignWire.TargetInstance=foreignOutput;foreignWire.Parent=foreignOutput
 local function attention(v) player.attrs.Attention=v;player:GetAttributeChangedSignal("Attention"):Fire();flush() end
 '''
+footsteps=(root/'src/client/Footsteps.client.luau').read_text()
+footsteps=footsteps[footsteps.index('local watched='):footsteps.index('local connections=')]
 cases='''
-flush();local fader=wire.SourceInstance
-assert(fader:IsA("AudioFader") and fader.Volume==1 and foreignWire.SourceInstance==listener)
+flush();assert(wire.SourceInstance==listener and foreignWire.SourceInstance==listener,"hearing must never rewrite the user's audio mix")
 attention(10)
-assert(sound.Volume==1 and sound.RollOffMaxDistance==200 and sound.RollOffMinDistance==20)
-assert(copy.Volume==1 and original.Volume==.5 and template.Volume==.5,"own centered copies only, never muted owner source or templates")
-assert(fader.Volume==2 and emitter.DistanceAttenuationBounds.Max==200 and custom.Curve[200]==0)
-attention(10);assert(sound.Volume==1 and emitter.DistanceAttenuationBounds.Max==200,"no compounding")
-attention(1);assert(sound.Volume==.1 and sound.RollOffMaxDistance==20 and fader.Volume==.2)
+assert(sound.Volume==.5 and sound.RollOffMaxDistance==200 and sound.RollOffMinDistance==10)
+assert(copy.Volume==.5 and original.Volume==.5 and template.Volume==.5,"Attention never amplifies centered copies, spatial sources or templates")
+assert(emitter.DistanceAttenuationBounds.Max==200 and custom.Curve[200]==0)
+attention(10);assert(sound.Volume==.5 and emitter.DistanceAttenuationBounds.Max==200,"no compounding")
+attention(1);assert(sound.Volume==.5 and sound.RollOffMaxDistance==20)
 assert(emitter.DistanceAttenuationBounds.Max==20 and custom.Curve[20]==0)
-sound.Playing=false;assert(sound.Volume==.5 and sound.RollOffMaxDistance==100,"stopped sound restores authored properties")
-sound.Playing=true;assert(sound.Volume==.1)
-sound.Volume=1;assert(sound.Volume==.2,"authored runtime volume remains hearing scaled")
-wire:Destroy();assert(fader.Destroyed and wire.SourceInstance==listener,"wire cleanup restores source and deletes local mix nodes")
-attention(5);assert(sound.Volume==1 and sound.RollOffMaxDistance==100)
-sound.Name="Running";sound.Volume=.65;attention(10)
-assert(sound.Volume==.3,"footstep cap does not cancel200% hearing")
-sound.attrs.FootstepNoiseMultiplier=.5;sound:GetAttributeChangedSignal("FootstepNoiseMultiplier"):Fire()
-assert(sound.Volume==.15,"quiet source multiplier and listener hearing compose")
-sound.attrs.FootstepNoiseMultiplier=1/6;sound:GetAttributeChangedSignal("FootstepNoiseMultiplier"):Fire()
-sound.RollOffMaxDistance=2
-assert(math.abs(sound.Volume-.05)<1e-9 and sound.RollOffMaxDistance==4,"Sneak100 at Attention10 stays quiet and reaches4")
+sound.Playing=false;assert(sound.Volume==.5 and sound.RollOffMaxDistance==100)
+sound.Playing=true;assert(sound.Volume==.5)
+sound.Volume=.3;assert(sound.Volume==.3,"authored live volume is untouched at low Attention")
+attention(10);assert(sound.Volume==.3,"authored volume untouched at high Attention too")
+sound.Name="Running";sound.Volume=.08;sound.RollOffMaxDistance=5
+attention(5);assert(sound.RollOffMaxDistance==5 and sound.Volume==.08)
+attention(10);assert(sound.RollOffMaxDistance==10 and sound.Volume==.08)
+sound.attrs.FootstepBaseDistance=10;sound:GetAttributeChangedSignal("FootstepBaseDistance"):Fire()
+attention(5);assert(sound.RollOffMaxDistance==10 and sound.Volume==.08)
+attention(10);assert(sound.RollOffMaxDistance==20)
 player.attrs.HearingAttention=12;player:GetAttributeChangedSignal("HearingAttention"):Fire();flush()
-assert(math.abs(sound.RollOffMaxDistance-4.8)<1e-9,"hearing perk exceeds10 without changing vision Attention")
-print("PASS: actual hearing20/100/200%, legacy volume/range, voice emitter curves, output gain, owner/template separation, no compounding and wire cleanup")
+assert(sound.RollOffMaxDistance==24 and sound.Volume==.08)
+assert(wire.SourceInstance==listener,"range-only hearing creates no gain faders")
+player.attrs.HearingAttention=nil;attention(5)
+Config.FootstepMinDistance=2;Config.FootstepMaxDistance=5;Config.RunFootstepMaxDistance=10
+FOOTSTEPS
+player.attrs.SkillSneak=0;configure(sound,player,player.Character)
+assert(sound.RollOffMaxDistance==5 and sound.Volume==.15)
+attention(10);assert(sound.RollOffMaxDistance==10 and sound.Volume==.15)
+player.Character.attrs.Running=true;player.Character:GetAttributeChangedSignal("Running"):Fire()
+assert(sound.RollOffMaxDistance==20 and sound.Volume==.15,"run base10 overrides previously scaled walk10 without feedback")
+sound.Volume=.65;assert(sound.Volume==.15,"Roblox default sound script cannot reset footstep source gain")
+player.attrs.SkillSneak=30;player.Character.attrs.Running=false;player.Character:GetAttributeChangedSignal("Running"):Fire()
+assert(sound.RollOffMaxDistance==4 and math.abs(sound.Volume-.06)<1e-9,"Sneak quiet source combines with range-only hearing")
+print("PASS: Attention changes range only for legacy/centered audio and voice emitters; authored volumes and audio mix untouched, walking5/run10 scale with hearing")
 '''
 with tempfile.TemporaryDirectory() as d:
- p=Path(d)/'test.luau';p.write_text(mock+'\nlocal R=(function()\n'+(root/'src/shared/SensesRules.luau').read_text()+'\nend)()\n'+s+'\n'+cases);subprocess.run([sys.argv[1],str(p)],check=True)
+ p=Path(d)/'test.luau';p.write_text(mock+'\nlocal R=(function()\n'+(root/'src/shared/SensesRules.luau').read_text()+'\nend)()\n'+s+'\n'+cases.replace('FOOTSTEPS','local Noise=(function()\n'+(root/'src/shared/NoiseRules.luau').read_text()+'\nend)()\n'+footsteps));subprocess.run([sys.argv[1],str(p)],check=True)

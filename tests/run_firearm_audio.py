@@ -28,7 +28,7 @@ local shot=Audio.Play(character,"ShotSound")
 assert(shot.played and shot.Parent==origin and shot.Volume==.7 and shot.PlaybackSpeed==1.2)
 assert(shot.RollOffMaxDistance==150 and shot.RollOffMinDistance==3 and not shot.Looped and not shot.PlayOnRemove and expirations[shot]==15)
 local reload=Audio.Play(character,"ReloadSound")
-assert(reload.RollOffMaxDistance==25)
+assert(reload.RollOffMaxDistance==5)
 Audio.Stop(reload);assert(reload.stopped and reload.destroyed)
 shot.finish();assert(shot.destroyed)
 sound.attributes.MaxDistance=90

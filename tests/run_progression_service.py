@@ -26,7 +26,7 @@ send("Skill","Repair");assert(a:GetAttribute("SkillRepair")==51 and a:GetAttribu
 send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==29)
 for _=1,10 do Service.Harvest(a,"StoneVein",1) end
 assert(Service.Snapshot(a).Practice.Miner.Value==1 and Service.Snapshot(a).Practice.Lumberjack.Value==0)
-assert(Service.CanBuild(a,"Kitchen") and Service.CanStation(a,"Stove"))
+assert(not Service.CanBuild(a,"Kitchen") and not Service.CanBuild(a,"Workbench") and Service.CanStation(a,"Stove"))
 assert(not Service.CanBuild(a,"Hospital"),"hospital requires BOTH medical skills")
 Config.StationRequirements.Stove={Skills={Repair=52}}
 assert(not Service.CanStation(a,"Stove"));send("Skill","Repair");assert(Service.CanStation(a,"Stove"))
@@ -60,6 +60,12 @@ for _=1,30 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
 for _=1,19 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end
 assert(med:GetAttribute("SkillFirstAid")==100 and med:GetAttribute("SkillDoctor")==99 and not Service.CanBuild(med,"Hospital"))
 clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor");assert(Service.CanBuild(med,"Hospital"),"actual authority requires100 FirstAid AND100 Doctor")
+assert(not Service.CanBuild(med,"Kitchen") and not Service.CanBuild(med,"Workbench"))
+Service.Award(med,100000)
+for _=1,50 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Repair") end
+assert(Service.CanBuild(med,"Workbench") and not Service.CanBuild(med,"Kitchen"),"Repair100 unlocks workshop only")
+for _=1,50 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Cook") end
+assert(Service.CanBuild(med,"Kitchen"),"Cook100 unlocks kitchen")
 print("PASS: actual immutable creation, forbidden legacy commands, INT skill points, derived stats, requirements, passive practice, minute regeneration, no revival, and respawn")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]

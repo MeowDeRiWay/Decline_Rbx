@@ -2,6 +2,7 @@ local Rules={}
 local attributes={"Strength","Attention","Endurance","Intelligence","Agility","Luck"}
 local skills={LightWeapons=true,HeavyWeapons=true,Unarmed=true,Melee=true,Throwing=true,FirstAid=true,Doctor=true,Sneak=true,Traps=true,Repair=true,Cook=true}
 Rules.Perks={
+ {ID="TunnelVision",Name="Tunnel vision",Max=1,Attributes={Attention=7},Description="Halves your vision angle and adds 10 studs of view range."},
  {ID="RangedDamage",Name="Bonus ranged damage",Max=2,Attributes={Attention=7,Luck=7},Description="+2 damage per bullet after damage resistance and absorption, per rank."},
  {ID="Regeneration",Name="Double regeneration",Max=1,Attributes={Endurance=7},Description="Doubles health regeneration."},
  {ID="Hearing",Name="Bonus awareness",Max=1,Attributes={Attention=7},Description="+2 Attention for hearing only. Can exceed 10."},
@@ -67,9 +68,9 @@ function Rules.Bonuses(stats,perks)
  local p=perks or {}
  local hearing=stats.Attention+2*(p.Hearing or 0)
  return {CarryLimitKg=5*stats.Strength+10*(p.StrongBack or 0),MeleeBonus=stats.Strength*(1+(p.StrongArm or 0)),MaxHealth=(10+5*(p.Lifegiver or 0))*stats.Endurance,
-  WalkBonus=.2*stats.Agility,RunBonus=.8*stats.Agility,Regeneration=2*stats.Endurance*(1+(p.Regeneration or 0)),
+  WalkBonus=.2*stats.Agility,RunBonus=.4*stats.Agility,Regeneration=2*stats.Endurance*(1+(p.Regeneration or 0)),
   DodgeChance=5*stats.Agility,CriticalChance=.01*stats.Luck*(1+(p.Criticals or 0)),
-  ViewRange=3*stats.Attention,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,
+  ViewRange=10+3*stats.Attention+10*(p.TunnelVision or 0),ViewAngleMultiplier=(p.TunnelVision or 0)>0 and .5 or 1,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,
   RangedDamageBonus=2*(p.RangedDamage or 0),FirstAidMultiplier=1+(p.Medic or 0),ReviveLockSeconds=(p.FieldHospital or 0)>0 and 300 or 600}
 end
 function Rules.Meets(state,requirements)

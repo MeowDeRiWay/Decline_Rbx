@@ -1,5 +1,5 @@
 local Rules={}
-function Rules.Maximum(endurance) return 20+math.max(0,endurance or 0) end
+function Rules.Maximum(agility) return 10+math.max(0,agility or 0) end
 function Rules.Step(value,maximum,exhausted,wantsRun,moving,allowed,dt)
  value=math.clamp(value,0,maximum)
  local running=allowed and wantsRun and not exhausted and value>0
@@ -7,7 +7,7 @@ function Rules.Step(value,maximum,exhausted,wantsRun,moving,allowed,dt)
   value=math.max(0,value-dt)
   if value==0 then exhausted=true;running=false end
  else
-  -- Full recovery takes ten seconds, at every endurance level.
+  -- Full recovery takes ten seconds, at every agility level.
   value=math.min(maximum,value+maximum/10*dt)
   if value>=maximum*.2 then exhausted=false end
  end
