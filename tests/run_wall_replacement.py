@@ -31,6 +31,8 @@ local built=house:FindFirstChild("Wall (brick)")
 assert(built and built.Parent==house and built:GetAttribute("BlocksVision")==true,"marker's false vision flag cannot override wall")
 assert((built.WallYard.CFrame.Position-targetFrame.Position).Magnitude<1e-8 and math.abs(built.WallYard.CFrame.yaw-targetFrame.yaw)<1e-8,"reference position and yaw align despite offset pivots")
 assert(built.Outside.Anchored and built.WallYard.Part.Anchored and built.Outside.CanCollide and not built.WallYard.Part.CanCollide,"anchor all parts without changing authored collisions")
+assert(built.WallYard.Part.Transparency==1 and not built.WallYard.Part.CanQuery and not built.WallYard.Part.CanTouch and not built.WallYard.Part.CastShadow,"WallYard is an invisible inert marker")
+assert(built.Outside.Transparency~=1,"wall geometry outside WallYard remains visible")
 assert(source.Parent==walls and not source.Outside.Anchored,"source template untouched")
 Service.Fill(house);assert(#house:GetChildren()==1,"repeated fill cannot duplicate pieces")
 local missing=make("Model","WindowPlacer",house,{Replace="Window (brick)"});make("Part","Part",missing)
@@ -39,6 +41,8 @@ local window=source:Clone();window.Name="Window (brick)";window:SetAttribute("Bl
 Service.Fill(house);assert(missing.destroyed and house:FindFirstChild("Window (brick)"):GetAttribute("BlocksVision")==false,"late template retry preserves window attributes")
 local part=make("Part","Any name",house,{Replace="Wall (brick)"});part.CFrame=cf(Vector3.new(20,0,20),-.4)
 Service.Fill(house);assert(part.destroyed,"Part placeholders also supported with own CFrame")
+local preplaced=source:Clone();preplaced.Parent=workspace
+Service.Fill(workspace);assert(preplaced.WallYard.Part.Transparency==1 and preplaced.Outside.Transparency~=1,"preplaced walls hide placement markers too")
 print("PASS: exact Replace names, nested pieces, pivot/reference alignment and yaw, anchoring/collisions/vision, source preservation, no duplicates and missing-template retry")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),(root/'tests/city_geometry.fixture.luau').read_text(),(root/'tests/city_service.fixture.luau').read_text(),'local Service=(function()\n'+source+'\nend)()',cases]

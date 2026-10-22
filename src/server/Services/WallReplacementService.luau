@@ -10,6 +10,15 @@ end
 local function warnOnce(marker,message)
  if warnings[marker]~=message then warnings[marker]=message;warn("[Decline Walls] "..message) end
 end
+local function hideYard(yard)
+ local markerParts=yard:IsA("BasePart") and {yard} or yard:GetDescendants()
+ for _,part in ipairs(markerParts) do
+  if part:IsA("BasePart") then
+   part.Transparency=1;part.CanCollide=false;part.CanTouch=false;part.CanQuery=false;part.CastShadow=false
+   part:SetAttribute("BlocksVision",false)
+  end
+ end
+end
 local function replace(marker)
  local name=marker:GetAttribute("Replace")
  if typeof(name)~="string" or name=="" then return end
@@ -32,16 +41,21 @@ local function replace(marker)
  for _,part in ipairs(clone:GetDescendants()) do if part:IsA("BasePart") then part.Anchored=true end end
  -- Parent beside the marker: an invisible marker's BlocksVision setting must not
  -- override real wall/window attributes, and no placeholder collision can remain.
+ hideYard(clone:FindFirstChild("WallYard"))
  clone.Parent=marker.Parent
  warnings[marker]=nil
  marker:Destroy()
 end
 function Service.Fill(root)
  local markers={}
+ local yards={}
+ if root.Name=="WallYard" then table.insert(yards,root) end
  if typeof(root:GetAttribute("Replace"))=="string" then table.insert(markers,root) end
  for _,object in ipairs(root:GetDescendants()) do
+  if object.Name=="WallYard" then table.insert(yards,object) end
   if (object:IsA("Model") or object:IsA("BasePart")) and typeof(object:GetAttribute("Replace"))=="string" then table.insert(markers,object) end
  end
+ for _,yard in ipairs(yards) do hideYard(yard) end
  for _,marker in ipairs(markers) do
   if marker==root or marker:IsDescendantOf(root) then replace(marker) end
  end
