@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Pending construction survives leaving the sign — 23 October
+
+- Closing construction UI or walking away does not cancel the submitted mayor approval request. Removed the sign proximity check from Build approval; initial request still requires interaction at the sign. The 60-second approval expiry remains.
+- Approval still revalidates builder alive, town membership, plot state/ownership, skills and inventory materials before consumption. Regression closes the menu and moves the builder 1000 studs away before approval, then verifies successful construction and one material charge.
+
 ## Building list visibility correction — 22 October
 
 - All construction and available upgrade options remain visible regardless of skills. Snapshot includes CanBuild; UI shows skill requirements and a muted “Requirements not met” row that cannot submit. Server request/approval requirements remain authoritative. Perks still stay hidden when requirements are unmet.

@@ -41,7 +41,12 @@ local approval
 for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==a then approval=item.data.ID end end
 assert(approval and not plot:GetAttribute("BuildingID"))
 call(c,"Reply",approval,true); assert(not plot:GetAttribute("BuildingID"),"only actual mayor may approve")
+call(b,"Close")
+assert(Service.Snapshot(b).Session==nil,"builder can close menu while approval is pending")
+b.Character.HumanoidRootPart.Position=Vector3.new(1000,0,1000)
+assert(Service.Snapshot(b).Session==nil,"walking away keeps menu closed")
 call(a,"Reply",approval,true)
+b.Character.HumanoidRootPart.Position=Vector3.zero
 assert(logs[102]==25 and scrap[102]==85 and menu.Parent==nil and plot:FindFirstChild("Kitchen (T1)").BuildingMenu,"consume5logs/15scrap and use kitchen sign")
 assert(plot:GetAttribute("BuildingID")=="Kitchen" and plot:GetAttribute("OwnerID")==102 and space.Parent==nil)
 call(a,"Open",flagA); call(a,"OwnAll")

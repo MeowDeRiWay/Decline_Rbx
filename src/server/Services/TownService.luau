@@ -427,8 +427,8 @@ local function handle(player, command, value, extra)
    local plot = request.plot
    if not plot.model:IsDescendantOf(workspace) or plotTown(plot) ~= request.town or townOf(request.player) ~= request.town or plot.kind ~= request.previousKind or plot.level ~= request.previousLevel then return end
    if plot.kind and not owns(request.player, plot) then return end
-   if not alive(request.player) or not near(request.player,buildingMenu(plot)) then
-    tell(request.player,"Construction cancelled: return to the building sign and request approval again.")
+   if not alive(request.player) then
+    tell(request.player,"Construction cancelled: you must be alive when the mayor approves.")
     Service.Publish(); return
    end
    local built,reason=build(plot, request.building, request.level, request.player)
