@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Zombie loot update — 23 October
+
+- Independent category rolls: water5% (one CleanWater or DirtyWater, equal choice), Ammo9mmFMJ5% (1–50 loose rounds), Sausage1% (one), Rags15% (1–3), Stone10% (1–3). Removed Potato. Existing progression bonus loot remains separate.
+- LootRules supports optional fractional Chance and equally weighted Choices, preserving legacy Min/Max-only rolls. Deterministic tests cover exact chance boundaries, amount limits, water exclusivity and old format.
+
 ## Pending construction survives leaving the sign — 23 October
 
 - Closing construction UI or walking away does not cancel the submitted mayor approval request. Removed the sign proximity check from Build approval; initial request still requires interaction at the sign. The 60-second approval expiry remains.
