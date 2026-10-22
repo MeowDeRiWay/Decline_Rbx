@@ -32,6 +32,7 @@ local function prepare(model)
  local head = model:FindFirstChild("Head")
  if not root or not root:IsA("BasePart") or not head or not head:IsA("BasePart") then return end
  registered[model]=true
+ Audio.Prepare(model)
  local humanoid=model:FindFirstChildOfClass("Humanoid") or Instance.new("Humanoid")
  humanoid.RequiresNeck=false
  humanoid.BreakJointsOnDeath=false

@@ -6,6 +6,17 @@ local function record(model)
  if not records[model] then records[model]={NextIdle=os.clock()+random:NextNumber(8,20)} end
  return records[model]
 end
+function Audio.Prepare(model)
+ local folder=model:FindFirstChild("Sounds")
+ if not folder then return end
+ for _,source in ipairs(folder:GetDescendants()) do
+  if source:IsA("Sound") then
+   -- A Sound in a Folder is non-positional, even inside a character model.
+   source.PlayOnRemove=false
+   source:Stop()
+  end
+ end
+end
 function Audio.Stop(model)
  local r=records[model]
  if r and r.Sound then r.Sound:Destroy();r.Sound=nil end
@@ -26,8 +37,9 @@ function Audio.Play(model,kind)
  if #options==0 then return end
  local source=options[random:NextInteger(1,#options)]
  local sound=source:Clone()
+ sound:Stop()
  sound.Name="ZombieVoice";sound.Looped=false;sound.PlayOnRemove=false;sound.TimePosition=0
- sound.RollOffMode=Enum.RollOffMode.InverseTapered
+ sound.RollOffMode=Enum.RollOffMode.LinearSquare
  sound.RollOffMaxDistance=source:GetAttribute("MaxDistance") or 20
  sound.RollOffMinDistance=math.min(source:GetAttribute("MinDistance") or 2,sound.RollOffMaxDistance)
  sound.Parent=origin;r.Sound=sound

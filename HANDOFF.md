@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Zombie audio attenuation correction — 23 October
+
+- Stop all source Sound templates under Zombie/Sounds on preparation and disable PlayOnRemove: Folder-parented templates are non-positional and must never play directly. Stop each cloned voice before parenting/restarting. Runtime copies still attach to Head/root only.
+- Voice attenuation now LinearSquare (smoothly quieter toward20stud limit at Attention5) instead of InverseTapered. Authored Volume and optional MaxDistance remain intact. Mock regression starts templates playing and verifies preparation silences them. Actual Studio listening remains to verify.
+
 ## Zombie vocal sounds — 23 October
 
 - Templates in ServerStorage/Creatures/Zombie/Sounds: ZAttack1/2 at attack swing, ZDie1/2 once on death, ZIdle1..4 every random8–20seconds during active AI. Random variants discovered by numbered name; more can be added. No new idle loop/tasks; uses existing active activity callback. Sleeping transitions stop current voice; death interrupts it.

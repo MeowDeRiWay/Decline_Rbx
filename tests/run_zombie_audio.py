@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/ZombieAudio.luau').read_text()
 prefix='''
 local clock=0
-local Enum={RollOffMode={InverseTapered="InverseTapered"}}
+local Enum={RollOffMode={LinearSquare="LinearSquare"}}
 local os={clock=function() return clock end}
 local Random={new=function() return {NextNumber=function(_,a) return a end,NextInteger=function() return 1 end} end}
 local debris={}
@@ -15,16 +15,21 @@ local function sound(name)
  function s:IsA(c) return c=="Sound" end
  function s:GetAttribute() return nil end
  function s:Destroy() self.Destroyed=true;self.Playing=false end
+ function s:Stop() self.Playing=false end
  function s:Play() self.Playing=true end
  function s:Clone() return sound(self.Name) end
  s.Ended={Once=function(_,f) s.finish=f end}
  return s
 end
 local head={IsA=function(_,c) return c=="BasePart" end}
-local folder={GetChildren=function() return {sound("ZIdle1"),sound("ZAttack1"),sound("ZDie1")} end}
+local templates={sound("ZIdle1"),sound("ZAttack1"),sound("ZDie1")}
+for _,s in ipairs(templates) do s.Playing=true;s.PlayOnRemove=true end
+local folder={GetChildren=function() return templates end,GetDescendants=function() return templates end}
 local model={FindFirstChild=function(_,name) return if name=="Sounds" then folder elseif name=="Head" then head else nil end}
 '''
 checks='''
+Audio.Prepare(model)
+for _,s in ipairs(templates) do assert(not s.Playing and not s.PlayOnRemove,"folder templates must never play globally") end
 Audio.Update(model);assert(#debris==0)
 clock=8;Audio.Update(model);assert(#debris==1)
 local idle=debris[1];assert(idle.Parent==head and idle.Volume==.17 and idle.PlaybackSpeed==.8 and idle.Playing)
