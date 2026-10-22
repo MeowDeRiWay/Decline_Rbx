@@ -16,7 +16,7 @@ service = service.replace('local BuildingStorage = require(script.Parent.Buildin
 service = service.replace('local Inventory = require(script.Parent.InventoryService)', '')
 for variable, module in [('Config', 'TownConfig'), ('Rules', 'TownRules'), ('Interaction', 'Interaction')]:
     service = service.replace(f'local {variable} = require(ReplicatedStorage.Shared.{module})', '')
-parts = [(root / 'tests/fixtures/town_mock.luau').read_text(), 'local Progression={CanBuild=function() return true end}', 'local Doors={} function Doors.Start(request) Doors.request=request end function Doors.Admit(player,door,town) Doors.admitted={player,door,town};return true end']
+parts = [(root / 'tests/fixtures/town_mock.luau').read_text(), 'local blockedBuilding=nil; local Progression={CanBuild=function(_,id) return id~=blockedBuilding end}', 'local Doors={} function Doors.Start(request) Doors.request=request end function Doors.Admit(player,door,town) Doors.admitted={player,door,town};return true end']
 for variable, module in [('Config', 'TownConfig'), ('Rules', 'TownRules')]:
     parts.append(f'local {variable} = (function()\n' + (root / f'src/shared/{module}.luau').read_text() + '\nend)()')
 parts.append('''

@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Building list visibility correction — 22 October
+
+- All construction and available upgrade options remain visible regardless of skills. Snapshot includes CanBuild; UI shows skill requirements and a muted “Requirements not met” row that cannot submit. Server request/approval requirements remain authoritative. Perks still stay hidden when requirements are unmet.
+- Town service regression verifies a locked Kitchen remains in the snapshot while a direct Build request is rejected without resource consumption or mayor approval.
+
 ## Construction costs, range-only hearing, agility and tunnel vision — 22 October
 
 - Workbench(T1) now Repair100, cost10TreeLog+5Scrap; Kitchen(T1) Cook100, cost5TreeLog+15Scrap; Hospital(T1) still Doctor100 AND FirstAid100, cost10TreeLog+10Rags. Requirements are total skill values. Existing server CanBuild gates menu/request/approval. Both menu and mayor prompt enumerate actual material maps (removed hardcoded1log text).

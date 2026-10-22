@@ -25,6 +25,16 @@ d:SetAttribute("TownID",3)
 
 call(c,"Open",plot); call(c,"Build","Kitchen")
 assert(not plot:GetAttribute("BuildingID"),"foreign town must not build")
+blockedBuilding="Kitchen"
+call(b,"Open",plot)
+local lockedKitchen
+for _,option in ipairs(Service.Snapshot(b).Session.Plot.Options) do
+ if option.ID=="Kitchen" then lockedKitchen=option end
+end
+assert(lockedKitchen and lockedKitchen.CanBuild==false,"unmet building remains visible and marked locked")
+call(b,"Build","Kitchen")
+assert(not Service.Snapshot(b).Session.Plot.Pending and logs[102]==30,"server rejects locked construction without spending or requesting approval")
+blockedBuilding=nil
 call(b,"Open",plot); call(b,"Build","Kitchen")
 local notices=ReplicatedStorage.TownRemotes.Notice.sent
 local approval

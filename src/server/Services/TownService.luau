@@ -115,12 +115,12 @@ local function plotSnapshot(plot,player)
  local options = {}
  if plot.kind then
   local definition = Config.Buildings[plot.kind]
-  if definition and definition.Levels[plot.level + 1] and Progression.CanBuild(player,plot.kind) then
-   table.insert(options, {ID = plot.kind, Name = definition.Name, Level = plot.level + 1, Cost = costFor(plot.kind,plot.level+1)})
+  if definition and definition.Levels[plot.level + 1] then
+   table.insert(options, {ID = plot.kind, Name = definition.Name, Level = plot.level + 1, CanBuild = Progression.CanBuild(player,plot.kind), Cost = costFor(plot.kind,plot.level+1)})
   end
  else
   for id, definition in pairs(Config.Buildings) do
-   if Progression.CanBuild(player,id) then table.insert(options, {ID = id, Name = definition.Name, Level = 1, Cost = costFor(id,1)}) end
+   table.insert(options, {ID = id, Name = definition.Name, Level = 1, CanBuild = Progression.CanBuild(player,id), Cost = costFor(id,1)})
   end
  end
  return {Model = plot.model, TownID = town and town.id, OwnerID = plot.owner, OwnerName = nameOf(plot.owner),

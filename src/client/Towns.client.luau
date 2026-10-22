@@ -8,6 +8,7 @@ local Theme=require(ReplicatedStorage.Shared.UITheme)
 local remotes = ReplicatedStorage:WaitForChild("TownRemotes")
 local action, state, notice = remotes:WaitForChild("Action"), remotes:WaitForChild("State"), remotes:WaitForChild("Notice")
 local Config = require(ReplicatedStorage.Shared.TownConfig)
+local ProgressionConfig = require(ReplicatedStorage.Shared.ProgressionConfig)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local gui = Instance.new("ScreenGui")
 gui.Name, gui.ResetOnSpawn, gui.DisplayOrder = "TownUI", false, 30
@@ -224,7 +225,20 @@ render = function()
       for id,amount in pairs(cost or {}) do table.insert(parts,tostring(amount).." "..id) end
       table.sort(parts);return table.concat(parts,", ")
      end
-     for _, option in ipairs(plot.Options) do button((plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level .. " · Cost: " .. materials(option.Cost),function() send("Build",option.ID) end) end
+     for _, option in ipairs(plot.Options) do
+      local requirements={}
+      local rule=ProgressionConfig.BuildingRequirements[option.ID] or {}
+      for id,amount in pairs(rule.Skills or {}) do
+       table.insert(requirements,(ProgressionConfig.Names[id] or id).." "..amount)
+      end
+      table.sort(requirements)
+      local caption=(plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level .. " · Cost: " .. materials(option.Cost)
+      if #requirements>0 then caption..="\nRequires: "..table.concat(requirements,", ") end
+      local locked=option.CanBuild==false
+      if locked then caption..="\nRequirements not met" end
+      local item=button(caption,function() if not locked then send("Build",option.ID) end end)
+      if locked then item.TextColor3=Theme.Muted;item.AutoButtonColor=false end
+     end
      if plot.BuildingID and #plot.Options == 0 then text("No further upgrades are available.") end
     end
     if plot.BuildingID then
