@@ -25,7 +25,7 @@ Run.Heartbeat:Connect(function(dt)
   local position=part and part.Position
   local moved=position and r.Position and (position-r.Position).Magnitude or 0
   r.Position=position
-  local radius=source and source:GetAttribute("MaxDistance") or Config.FootstepMaxDistance
+  local radius=8
   local near=root and position and (root.Position-position).Magnitude<=radius*(player:GetAttribute("HearingMultiplier") or 1)+4
   local moving=model:GetAttribute("ActivityMode")=="Active" and hp and hp.Health>0 and moved>.005 and moved<=math.max(1,(model:GetAttribute("MoveSpeed") or 3)*step*2)
   if not near or not moving or not source or not source:IsA("Sound") or source.SoundId=="" then stop(r);continue end

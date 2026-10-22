@@ -32,7 +32,7 @@ Audio.Prepare(model)
 for _,s in ipairs(templates) do assert(not s.Playing and not s.PlayOnRemove,"folder templates must never play globally") end
 Audio.Update(model);assert(#debris==0)
 clock=8;Audio.Update(model);assert(#debris==1)
-local idle=debris[1];assert(idle.Parent==head and idle.Volume==.17 and idle.PlaybackSpeed==.8 and idle.Playing)
+local idle=debris[1];assert(idle.RollOffMaxDistance==8);assert(idle.Parent==head and idle.Volume==.17 and idle.PlaybackSpeed==.8 and idle.Playing)
 Audio.Play(model,"Attack");assert(idle.Destroyed and #debris==2)
 Audio.Stop(model);assert(debris[2].Destroyed)
 Audio.Play(model,"Die");assert(#debris==3)

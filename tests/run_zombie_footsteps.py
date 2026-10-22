@@ -37,7 +37,7 @@ cases='''
 heartbeat.fire(.1);assert(#copies==0,"stationary zombie has no sound")
 zombieRoot.Position=Vector3.new(2.1,0,0);heartbeat.fire(.1)
 assert(#copies==1 and copies[1].Playing and copies[1].Looped and copies[1].Parent==zombieRoot)
-assert(copies[1].Volume==.4 and copies[1].RollOffMaxDistance==12)
+assert(copies[1].Volume==.4 and copies[1].RollOffMaxDistance==8)
 heartbeat.fire(.1);assert(not copies[1].Playing,"standing stops loop")
 zombieRoot.Position=Vector3.new(2.2,0,0);heartbeat.fire(.1);assert(copies[1].Playing and #copies==1,"reuse same sound")
 zombie.Mode="Minimal";zombieRoot.Position=Vector3.new(100,0,0);heartbeat.fire(.1);assert(not copies[1].Playing,"sleep teleport silent")

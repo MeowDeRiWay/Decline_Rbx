@@ -40,7 +40,7 @@ function Audio.Play(model,kind)
  sound:Stop()
  sound.Name="ZombieVoice";sound.Looped=false;sound.PlayOnRemove=false;sound.TimePosition=0
  sound.RollOffMode=Enum.RollOffMode.LinearSquare
- sound.RollOffMaxDistance=source:GetAttribute("MaxDistance") or 20
+ sound.RollOffMaxDistance=8
  sound.RollOffMinDistance=math.min(source:GetAttribute("MinDistance") or 2,sound.RollOffMaxDistance)
  sound.Parent=origin;r.Sound=sound
  sound.Ended:Once(function() if r.Sound==sound then r.Sound=nil end;sound:Destroy() end)

@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Zombie sound range — 23 October
+
+- All zombie voices (idle/attack/death) and footsteps now use a fixed base8stud maximum, including templates with old MaxDistance attributes. Hearing range multiplier still applies locally (Attention5 =8studs). Authored volume remains untouched.
+
 ## Zombie audio attenuation correction — 23 October
 
 - Stop all source Sound templates under Zombie/Sounds on preparation and disable PlayOnRemove: Folder-parented templates are non-positional and must never play directly. Stop each cloned voice before parenting/restarting. Runtime copies still attach to Head/root only.
