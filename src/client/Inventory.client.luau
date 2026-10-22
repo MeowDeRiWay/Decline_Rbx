@@ -152,7 +152,8 @@ local function effectText(definition)
  end
  if definition.Weapon then
   local w = definition.Weapon
-  return string.format("Damage %d · %s\n%d attacks/min",w.Damage,w.DamageType,w.AttacksPerMinute) .. (definition.CraftTool and string.format("\nCraft speed ×%g",definition.CraftSpeed or 1) or "")
+  local damage=if w.DamageMin then string.format("%d–%d",w.DamageMin,w.DamageMax) else tostring(w.Damage)
+  return string.format("Damage %s · %s\n%d attacks/min",damage,w.DamageType,w.AttacksPerMinute) .. (definition.CraftTool and string.format("\nCraft speed ×%g",definition.CraftSpeed or 1) or "")
  end
  if not effects then return "Crafting material" end
  return string.format("Food %+.0f\nWater %+.0f\nSickness %+.0f", effects.Food or 0, effects.Water or 0, effects.Sick or 0) .. (definition.ReturnItems and ("\n"..returnText(definition)) or "")

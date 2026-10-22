@@ -15,7 +15,8 @@ local critChance=0
 local player={UserId=7,GetAttribute=function(_,key) return key=="Accuracy" and 1 or key=="CriticalChance" and critChance or 0 end,Character={FindFirstChild=function() return {Position=Vector3.zero} end}}
 local Players={GetPlayers=function() return {player} end}
 game={GetService=function(_,name) return ({Players=Players,RunService={Heartbeat=heartbeat},ReplicatedStorage={}})[name] end}
-Random={new=function() return {NextNumber=function() return 0 end,NextInteger=function() return 4 end} end}
+local highRoll=true
+Random={new=function() return {NextNumber=function(_,a,b) return b or 0 end,NextInteger=function(_,a,b) return if highRoll then b else a end} end}
 Enum={RaycastFilterType={Exclude=1},PartType={Block=1}}
 RaycastParams={new=function() return {} end}
 local dealt=0
@@ -87,8 +88,13 @@ Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","
 heartbeat.fire(1/60);assert(dealt==0)
 moving.CFrame=CFrame.new(Vector3.new(0,0,2))
 heartbeat.fire(1/60);assert(dealt>0,"world raycasts sample moved target during flight")
+definition.DamageMin=10;definition.DamageMax=15
+highRoll=false;local low=run(nil,"FMJ")
+highRoll=true;local high=run(nil,"FMJ")
+assert(math.abs(high/low-1.5)<1e-6,"projectiles independently roll configured damage bounds")
+definition.DamageMin=nil;definition.DamageMax=nil
 critChance=.1
-assert(math.abs(run(nil,"FMJ")-clear*4)<1e-6,"weapon category critical bonus produces x2..x4 multiplier")
+assert(math.abs(run(nil,"FMJ")-clear*2)<1e-6,"player critical multiplier is capped at x2")
 print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, AP retention, metal/unknown stop and exact air range")
 '''
 with tempfile.TemporaryDirectory() as directory:

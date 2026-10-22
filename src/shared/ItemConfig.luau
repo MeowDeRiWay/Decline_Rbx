@@ -121,29 +121,29 @@ ItemConfig.Items.Axe=ItemConfig.Items.StoneAxe
 ItemConfig.Items.Showel=ItemConfig.Items.StoneShowel
 ItemConfig.Items.Knife=ItemConfig.Items.ScrapKnife
 ItemConfig.Items.AssaultRifle223={Name = ".223 assault rifle",Weight=3.2,Slot="Hands",Description="Automatic rifle. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
- Firearm={Category="Automatic",HoldHeightRatio=.4,Caliber="223",ShotDistance=100,Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=600},
- Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=600}}
+ Firearm={Category="Automatic",HoldHeightRatio=.4,Caliber="223",ShotDistance=100,Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=20,DamageMin=15,DamageMax=20,RPM=600},
+ Weapon={Damage=20,DamageMin=15,DamageMax=20,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=600}}
 ItemConfig.Items.Rifle223={Name=".223 bolt-action rifle",Weight=3.2,Slot="Hands",
  Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
- Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="223",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=40},
- Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
+ Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="223",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,DamageMin=20,DamageMax=25,RPM=40},
+ Weapon={Damage=25,DamageMin=20,DamageMax=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
 ItemConfig.Items.Rifle308={Name=".308 bolt-action rifle",Weight=3.2,Slot="Hands",
  Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
- Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="308",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,RPM=40},
- Weapon={Damage=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
+ Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="308",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=40,DamageMin=35,DamageMax=40,RPM=40},
+ Weapon={Damage=40,DamageMin=35,DamageMax=40,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
 -- Initial game balance; independent of the authored weapon models.
 ItemConfig.Items.Pistol9mm={Name="9 mm pistol",Weight=.9,Slot="Hands",
  Description="Semi-automatic pistol. R reloads available ammo; B selects FMJ/AP.",
- Firearm={Category="Pistol",Skill="LightWeapons",SingleOnly=true,HoldHeightRatio=.4,Caliber="9mm",ShotDistance=70,Magazine=15,ReloadTime=1.8,Speed=350,Range=180,Damage=15,RPM=300},
- Weapon={Damage=15,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
+ Firearm={Category="Pistol",Skill="LightWeapons",SingleOnly=true,HoldHeightRatio=.4,Caliber="9mm",ShotDistance=70,Magazine=15,ReloadTime=1.8,Speed=350,Range=180,Damage=15,DamageMin=10,DamageMax=15,RPM=300},
+ Weapon={Damage=15,DamageMin=10,DamageMax=15,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
 ItemConfig.Items.SMG9mm={Name="9 mm submachine gun",Weight=2.5,Slot="Hands",
  Description="Submachine gun. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
- Firearm={Category="Automatic",Skill="LightWeapons",HoldHeightRatio=.4,Caliber="9mm",ShotDistance=70,Magazine=30,ReloadTime=2.2,Speed=350,Range=200,Damage=15,RPM=750},
- Weapon={Damage=15,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=750}}
+ Firearm={Category="Automatic",Skill="LightWeapons",HoldHeightRatio=.4,Caliber="9mm",ShotDistance=70,Magazine=30,ReloadTime=2.2,Speed=350,Range=200,Damage=15,DamageMin=10,DamageMax=15,RPM=750},
+ Weapon={Damage=15,DamageMin=10,DamageMax=15,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=750}}
 ItemConfig.Items.MachineGun308={Name=".308 machine gun",Weight=9,Slot="Hands",
  Description="Heavy machine gun. Uses Heavy weapons. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
- Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="308",ShotDistance=150,Magazine=60,ReloadTime=5,Speed=750,Range=450,Damage=35,RPM=600},
- Weapon={Damage=35,DamageType="Bullet",MaxUses=5000,AttacksPerMinute=600}}
+ Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="308",ShotDistance=150,Magazine=60,ReloadTime=5,Speed=750,Range=450,Damage=30,DamageMin=25,DamageMax=30,RPM=600},
+ Weapon={Damage=30,DamageMin=25,DamageMax=30,DamageType="Bullet",MaxUses=5000,AttacksPerMinute=600}}
 ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Equip in Medicine. H, then click yourself or a nearby player to apply first aid."}
 for _,kind in ipairs({"FMJ","AP"}) do
  local role=if kind=="FMJ" then "Full metal jacket: a standard round for everyday firefights." else "Armor-piercing: a hardened round that loses less reach when passing through cover."

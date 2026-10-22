@@ -60,7 +60,7 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  if count>=256 then return false end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
-  Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=definition.Damage,PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
+  Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
   AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",Ignored={character},Impacts=0}
  emit("Muzzle",origin)
  return true
@@ -84,7 +84,7 @@ RunService.Heartbeat:Connect(function(dt)
      victim.Parent:SetAttribute("LastDamagerID",bullet.Player.UserId)
      victim.Parent:SetAttribute("LastHitItem",bullet.ItemID)
      local critical=random:NextNumber()<(bullet.Player:GetAttribute("CriticalChance") or 0)
-     local multiplier=critical and random:NextInteger(2,4) or 1
+     local multiplier=critical and random:NextNumber(1.5,2) or 1
      Damage.Apply(victim,bullet.Damage*math.max(.1,bullet.Remaining/bullet.Initial),"Bullet",bullet.Position-bullet.Direction,"Ranged",{HitChecked=true,CriticalMultiplier=multiplier,Attacker=bullet.Player,PostDefenseDamage=bullet.PostDefenseDamage})
     else Damage.Miss(victim.Parent,bullet.Player) end
     emit("Impact",hit.Position,{Direction=hit.Normal,Material="Flesh"});stopped=true;break

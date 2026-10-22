@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Firearm random damage and player critical rebalance — 23 October
+
+- Each projectile rolls inclusive integer base damage once when fired: Pistol9mm/SMG9mm10–15, AssaultRifle22315–20, Rifle22320–25, MachineGun30825–30, Rifle30835–40. Firearm/Weapon config carry DamageMin/Max; Damage retains upper bound for compatibility. Inventory weapon details show range. Range/cover scaling and defense/perk formulas unchanged.
+- Player ranged AND melee critical multipliers now continuous random1.5–2; CharacterStats displays same limits. Zombie criticals intentionally remain2–4 (user specified character). No new critical perks added yet.
+
 ## Ammunition descriptions and compact hover — 23 October
 
 - All inventory/chest item hover cards now show only name and weight, reduced240x64; full condition/effects/ammo/description remain in details. Ammo descriptions distinguish caliber compatibility and FMJ vs AP cover penetration, boxes explain unpacking. No damage values changed.
