@@ -40,4 +40,12 @@ assert(Noise.StepRadius(30,true,nil,true)==7 and Noise.StepRadius(30,true)==10 a
 local inv=I.New();I.Add(inv,Items.Items,"Pistol9mm",1);I.Equip(inv,Items.Items,Items.Slots,"Pistol9mm")
 inv.EquipmentWeapon.Hands.Loaded=10
 assert(math.abs(I.Weight(inv,Items.Items,1,0)-.08)<1e-8,"only equipped gun base weight excluded; ammo retained")
+local four=R.Bonuses({Strength=5,Attention=5,Endurance=6,Intelligence=6,Agility=8,Luck=5},{SilentDeath=1,UnarmedDamage=1,LivingAnatomy=1,FastFeet=1})
+assert(four.BackstabCritical and four.UnarmedDamageBonus==10 and four.ArmorBypassChance==.1)
+assert(math.abs(four.WalkBonus-1.92)<1e-8 and math.abs(four.RunBonus-4.84)<1e-8)
+local Combat=require("../src/shared/CombatRules")
+local empty=I.New();assert(Combat.GetWeapon(empty,Items.Items)==Combat.Unarmed and Combat.Unarmed.Damage==0,"bare fists use strength damage plus unarmed perk")
+local Sheet=require("../src/shared/CharacterStats")
+assert(Sheet.Calculate({MeleeBonus=5,UnarmedDamageBonus=10},nil,nil,50,50).MeleeDamage==15)
+assert(Sheet.Calculate({MeleeBonus=5,UnarmedDamageBonus=10},{Weapon={Damage=10}},nil,50,50).MeleeDamage==15,"unarmed perk never increases knife damage")
 print("PASS: new perk authority/ranks, level-scaled health, automatic perk, doubled XP, craft discount, bandage limits, stealth running and equipped weight")

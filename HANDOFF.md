@@ -4,6 +4,13 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Four approved combat/mobility perks — 23 October
+
+- Added rank1 perks, hidden until requirements met and included in10-rank cap: SilentDeath (Silent death), AGI7/Sneak150/Melee100: all successful melee/unarmed attacks originating in target's rear horizontal half-plane are fixed x2.5 criticals, no sneak/unseen requirement, no multiplication with HardCriticals. UnarmedDamage AGI7/Unarmed150: +10 raw unarmed damage, not knives/tools/guns. LivingAnatomy INT6/Doctor150: independent10% on successful hits of any attack type bypasses armor/perk DR/DA and critical-negation perk; still respects hit checks, friendly fire, creation immunity/ForceFields. FastFeet AGI8/END6: walk=base*1.2, sprint=base*1.2+1stud/s, duration unchanged.
+- Bare-hand attack support was missing (old client/server required held WeaponGrip). CombatRules.Unarmed now supplies0base damage, STR bonus plus perk,60attacks/min,1stud range; client/server accept no held model/motor, retain cooldown, delayed validation, range/wall/hit checks. No new item model needed. Strength-only fists before perk, +10 only bare-handed. Character stat sheet includes this bonus.
+- Central DamageService computes rear half-plane from defender root facing dot attacker offset<0, sets fixed critical before defenses, no ranged backstab. LastArmorBypass debug attr reports anatomy proc. Perks do not affect resource harvesting.
+- Tested rear/front/ranged exclusion, fixed multiplier, anatomy10% boundary plus armor/perk/critical-negation bypass and ForceField immunity; new perk requirements/ranks and exact movement formulas, bare-hand weapon rule/stat sheet; existing inventory, firearms, progression regressions, Luau compile and Rojo build. No live Studio playtest.
+
 ## Quiet main-skill presentation — 23 October
 
 - After confirmation, main skills are indicated only by muted red names/values (RGB190,124,112). No Main badge or locked-main reminder. Tag selectors remain only during initial selection. All skill training buttons are compact plain +, no gain/cost labels; shared quote still controls affordability and server pricing unchanged.

@@ -102,6 +102,25 @@ assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true,Cri
 hp.Health=20;a:SetAttribute("LowHealthResistance",.1)
 assert(math.abs(Service.Apply(hp,10,"Bullet",nil,"Ranged",{HitChecked=true})-9)<1e-8,"low health adds ten percent resistance")
 a:SetAttribute("LowHealthResistance",0)
+hp.Health=100;a:SetAttribute("ArmorResistance",0);a:SetAttribute("ArmorAbsorption",0)
+b:SetAttribute("BackstabCritical",true)
+a.Character.HumanoidRootPart.Position=Vector3.zero
+b.Character.HumanoidRootPart.Position=Vector3.new(0,0,1)
+assert(Service.Apply(hp,10,"Blunt",nil,"Melee",{Attacker=b,HitChecked=true})==25,"rear melee is guaranteed fixed x2.5")
+hp.Health=100;b.Character.HumanoidRootPart.Position=Vector3.new(0,0,-1)
+assert(Service.Apply(hp,10,"Blunt",nil,"Melee",{Attacker=b,HitChecked=true})==10,"front attack not forced critical")
+hp.Health=100;b.Character.HumanoidRootPart.Position=Vector3.new(0,0,1)
+assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==10,"rear gunfire excluded")
+b:SetAttribute("ArmorBypassChance",.1);a:SetAttribute("ArmorResistance",.5);a:SetAttribute("ArmorAbsorption",3)
+hp.Health=100;chance=.1
+assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==2,"anatomy boundary retains armor")
+hp.Health=100;chance=.099
+assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==10,"anatomy ignores resistance and absorption")
+hp.Health=100;a:SetAttribute("DamageResistance",.2);a:SetAttribute("DamageAbsorption",5);a:SetAttribute("CriticalNegation",1)
+assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true,CriticalMultiplier=2})==20,"anatomy also bypasses defensive perk absorption/resistance/critical negation")
+local immunity=make("ForceField","Shield",a.Character)
+assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0,"anatomy cannot bypass forcefield")
+immunity:Destroy()
 print("PASS: structured actor/target reports for client visibility filtering, no overhead text")
 print("PASS: melee-only absorption, non-melee unchanged, zero-damage clamp and Apron Additional slot")
 '''

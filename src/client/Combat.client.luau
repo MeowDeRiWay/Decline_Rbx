@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Input = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local CombatRules=require(ReplicatedStorage.Shared.CombatRules)
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local player = Players.LocalPlayer
 local items = require(ReplicatedStorage.Shared.ItemConfig).Items
@@ -15,9 +16,9 @@ Input.InputBegan:Connect(function(input,processed)
  local definition = character and items[character:GetAttribute("HandsItem")]
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  if definition and definition.Firearm then return end
- if not motor or not definition or not definition.Weapon or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") or os.clock() < ready then return end
- local weapon = definition.Weapon
- if definition.CraftTool=="Knife" then
+ if (definition and (not motor or not definition.Weapon)) or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") or os.clock() < ready then return end
+ local weapon = definition and definition.Weapon or CombatRules.Unarmed
+ if definition and definition.CraftTool=="Knife" then
   weapon=table.clone(weapon); weapon.AttacksPerMinute*=player:GetAttribute("KnifeMultiplier") or 1
  end
  local cooldown = 60/weapon.AttacksPerMinute

@@ -6,7 +6,7 @@ function Stats.Calculate(attributes,definition,condition,health,maxHealth)
  local category=gun and (gun.Category or "Rifle") or ""
  local melee=weapon and not gun
  local damage=melee and weapon.Damage or 0
- damage+=a.MeleeBonus or 0
+ damage+=(a.MeleeBonus or 0)+(not definition and (a.UnarmedDamageBonus or 0) or 0)
 
  return {
   Health=health or 0,MaxHealth=maxHealth or a.MaxHealth or 10,

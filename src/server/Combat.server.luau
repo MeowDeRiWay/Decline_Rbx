@@ -18,7 +18,7 @@ attack.OnServerEvent:Connect(function(player)
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local held = character and character:FindFirstChild("HeldItem")
  local motor = held and held:FindFirstChild("WeaponGrip")
- if not root or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") or not motor then return end
+ if not root or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return end
  local now = os.clock()
  if now < (ready[player] or 0) then return end
  local weapon = Inventory.GetWeapon(player)
@@ -33,7 +33,7 @@ attack.OnServerEvent:Connect(function(player)
  ready[player] = now + cooldown
  Motion.Play(motor,motionWeapon)
  task.delay(Motion.HitDelay(motionWeapon),function()
- if player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or motor.Parent ~= held or held.Parent ~= character or Inventory.GetWeapon(player) ~= weapon then return end
+ if player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or (motor and (motor.Parent ~= held or held.Parent ~= character)) or Inventory.GetWeapon(player) ~= weapon then return end
  local params = OverlapParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = {character}
@@ -86,7 +86,7 @@ attack.OnServerEvent:Connect(function(player)
    end
    nearest.Parent:SetAttribute("LastDamagerID",player.UserId)
    nearest.Parent:SetAttribute("LastHitItem",character:GetAttribute("HandsItem"))
-   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
+   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0)+(not definition and (player:GetAttribute("UnarmedDamageBonus") or 0) or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
  end

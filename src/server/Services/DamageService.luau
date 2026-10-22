@@ -67,9 +67,22 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
   target:SetAttribute("LastDamage",0);target:SetAttribute("LastDamageDodged",true);announce(target,"Dodge",0,options.Attacker,attackKind);return 0
  end
  target:SetAttribute("LastDamageDodged",false)
+ local attacker=options.Attacker
+ local attackerPlayer=attacker and attacker:IsA("Player") and attacker or nil
+ local bypass=attackerPlayer and math.random()<(attackerPlayer:GetAttribute("ArmorBypassChance") or 0) or false
  local multiplier=options.CriticalMultiplier or 1
+ if attackKind=="Melee" and attackerPlayer and attackerPlayer:GetAttribute("BackstabCritical") then
+  local source=attackerPlayer.Character and attackerPlayer.Character:FindFirstChild("HumanoidRootPart")
+  local body=target:FindFirstChild("HumanoidRootPart")
+  if source and body then
+   local offset=source.Position-body.Position
+   local facing=body.CFrame.LookVector
+   if offset.X*facing.X+offset.Z*facing.Z<0 then multiplier=2.5 end
+  end
+ end
+ target:SetAttribute("LastArmorBypass",bypass)
  local negation=player and (player:GetAttribute("CriticalNegation") or 0) or 0
- if multiplier>1 and negation>0 and math.random()<negation then multiplier=1 end
+ if not bypass and multiplier>1 and negation>0 and math.random()<negation then multiplier=1 end
  local postDefense=attackKind=="Ranged" and math.max(0,options.PostDefenseDamage or 0) or 0
  amount*=multiplier
  target:SetAttribute("LastDamageCritical",multiplier>1)
@@ -77,19 +90,19 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
   if target:FindFirstChildOfClass("ForceField") then amount=0
   else
    local absorption=(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0)+(attackKind=="Melee" and (player:GetAttribute("MeleeAbsorption") or 0) or 0)
-   amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0)+(humanoid.Health<humanoid.MaxHealth*.25 and (player:GetAttribute("LowHealthResistance") or 0) or 0),absorption)+postDefense
+   amount=(bypass and amount or Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0)+(humanoid.Health<humanoid.MaxHealth*.25 and (player:GetAttribute("LowHealthResistance") or 0) or 0),absorption))+postDefense
    amount=amount>0 and Life.Damage(player,humanoid,amount,true,true) or 0
   end
  elseif target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.
   if not target:FindFirstChildOfClass("ForceField") then
-   amount=Defense.Resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0))+postDefense
+   amount=(bypass and amount or Defense.Resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
    local remaining = math.max(0,before-amount)
    humanoid.Health = remaining > 0 and remaining or humanoid.MaxHealth
    amount = math.min(before,amount)
   else amount = 0 end
  else
-  amount=Defense.Resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0))+postDefense
+  amount=(bypass and amount or Defense.Resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
   humanoid:TakeDamage(amount)
   amount = math.max(0,before-humanoid.Health)
  end

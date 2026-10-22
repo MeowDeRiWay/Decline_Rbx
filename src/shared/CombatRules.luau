@@ -1,6 +1,8 @@
 local Rules = {}
+Rules.Unarmed={Damage=0,DamageType="Blunt",AttacksPerMinute=60,Range=1,Width=2,Animation="SwingLeft"}
 function Rules.GetWeapon(state,definitions)
  local id = state.Equipment.Hands
+ if not id or id=="" then return Rules.Unarmed end
  local definition = id and definitions[id]
  local remaining = state.EquipmentCondition.Hands
  if not definition or not definition.Weapon then return nil end
