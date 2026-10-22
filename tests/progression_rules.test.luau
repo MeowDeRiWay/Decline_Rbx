@@ -9,8 +9,8 @@ draft.Strength=10;draft.Intelligence=6
 assert(R.Confirm(s,draft) and s.Confirmed)
 draft.Strength=1;assert(s.Stats.Strength==10,"confirmation copies input")
 assert(not R.Confirm(s,draft),"cannot respec")
-assert(R.AddXP(s,1000) and s.Level==1 and s.SkillPoints==22 and s.Points==0)
-assert(R.AddXP(s,2000) and s.Level==2 and s.SkillPoints==33)
+assert(R.AddXP(s,1000) and s.Level==1 and s.SkillPoints==22 and s.Points==0 and s.PerkPoints==2)
+assert(R.AddXP(s,2000) and s.Level==2 and s.SkillPoints==33 and s.PerkPoints==3)
 assert(not R.AddXP(s,math.huge) and not R.AddXP(s,0/0))
 assert(R.SpendSkill(s,"Melee") and s.SkillPoints==32 and R.TotalSkills(s).Melee==51)
 assert(not R.SpendSkill(s,"Lumberjack") and not R.SpendSkill(s,"Fake"))
@@ -40,7 +40,7 @@ assert(minimum.MaxHealth==10 and minimum.CarryLimitKg==5 and minimum.MeleeBonus=
 assert(minimum.WalkBonus==.2 and minimum.RunBonus==.8 and minimum.Regeneration==2 and minimum.CriticalChance==.01)
 
 assert(R.TotalSkills(s).FirstAid==40 and R.TotalSkills(s).Doctor==45 and R.TotalSkills(s).Cook==29)
-assert(s.PerkPoints==1 and not R.SpendPerk(s,"RangedDamage"))
+assert(s.PerkPoints==3 and not R.SpendPerk(s,"RangedDamage"))
 local perks=R.New();local all={Strength=7,Attention=7,Endurance=7,Intelligence=1,Agility=7,Luck=7}
 assert(R.Confirm(perks,all));perks.PerkPoints=20
 for _,perk in ipairs(R.Perks) do

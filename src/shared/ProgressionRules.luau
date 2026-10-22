@@ -52,7 +52,7 @@ function Rules.AddXP(state,amount)
  if not state.Confirmed or typeof(amount)~="number" or amount~=amount or amount<=0 or amount==math.huge then return false end
  state.XP+=amount
  while state.XP>=1000*(state.Level+1) do
-  state.XP-=1000*(state.Level+1);state.Level+=1;state.SkillPoints+=5+state.Stats.Intelligence
+  state.XP-=1000*(state.Level+1);state.Level+=1;state.SkillPoints+=5+state.Stats.Intelligence;state.PerkPoints+=1
  end
  return true
 end
