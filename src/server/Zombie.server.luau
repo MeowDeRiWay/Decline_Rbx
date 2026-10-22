@@ -16,6 +16,7 @@ local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Visuals = require(script.Parent.Services.EquipmentVisuals)
 local Noise=require(script.Parent.Services.NoiseService)
 local Damage = require(script.Parent.Services.DamageService)
+local Audio=require(script.Parent.Services.ZombieAudio)
 local Chests = require(script.Parent.Services.ChestService)
 local Progression=require(ReplicatedStorage.Shared.ProgressionRules)
 local ZombieStats=require(ReplicatedStorage.Shared.ZombieStats)
@@ -88,6 +89,7 @@ local function prepare(model)
  local function die()
   if dead then return end
   dead=true
+  Audio.Play(model,"Die")
   local held = model:FindFirstChild("HeldItem")
   local motor = held and held:FindFirstChild("WeaponGrip")
   if motor then Motion.Cancel(motor) end
@@ -270,6 +272,7 @@ local function prepare(model)
  local regenAt=os.clock()+60
  local movement
  movement=Activity.Register(model,root,function(dt)
+  Audio.Update(model)
   if not model:IsDescendantOf(workspace) then navigation:Cancel(); movement:Disconnect(); return end
   -- Custom anchored rigs may not enter Humanoid's Dead state. HP is authoritative.
   if humanoid.Health<=0 and not dead then die() end
@@ -372,6 +375,7 @@ local function prepare(model)
    if motor then
     ready=os.clock()+60/weapon.AttacksPerMinute
     model:SetAttribute("AIState","Attacking")
+    Audio.Play(model,"Attack")
     local victimRoot=nearest
     Motion.Play(motor,weapon)
     task.delay(Motion.HitDelay(weapon),function()
@@ -405,6 +409,7 @@ local function prepare(model)
   idle=IdleRules.New();idlePhase=nil
   elapsed=random:NextNumber(0,.1)
   if mode~="Active" then
+   Audio.Stop(model)
    model:SetAttribute("AIState",mode)
    model:SetAttribute("TargetName","")
    model:SetAttribute("DetectionReason","Outside active screen buffer")

@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Zombie vocal sounds — 23 October
+
+- Templates in ServerStorage/Creatures/Zombie/Sounds: ZAttack1/2 at attack swing, ZDie1/2 once on death, ZIdle1..4 every random8–20seconds during active AI. Random variants discovered by numbered name; more can be added. No new idle loop/tasks; uses existing active activity callback. Sleeping transitions stop current voice; death interrupts it.
+- Playback clones attach to Head (root fallback), preserve authored Volume/PlaybackSpeed, no overlapping voices per zombie. Default20stud max/2stud min at Attention5; optional Sound attributes MaxDistance/MinDistance override. Existing hearing scales range, not volume. Ended cleanup plus30sec Debris fallback. Existing footstep setup unchanged.
+
 ## Zombie loot update — 23 October
 
 - Independent category rolls: water5% (one CleanWater or DirtyWater, equal choice), Ammo9mmFMJ5% (1–50 loose rounds), Sausage1% (one), Rags15% (1–3), Stone10% (1–3). Removed Potato. Existing progression bonus loot remains separate.
