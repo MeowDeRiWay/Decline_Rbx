@@ -128,7 +128,7 @@ local takeAll = button(window,"Take all",UDim2.new(.5,12,1,-88),UDim2.new(.5,-32
 takeAll.Visible=false
 takeAll.Activated:Connect(function() action:FireServer("TakeAll") end)
 local redraw
-local tooltip = text(gui, "", UDim2.new(), UDim2.fromOffset(300, 170))
+local tooltip = text(gui, "", UDim2.new(), UDim2.fromOffset(240, 64))
 tooltip.Name = "ItemTooltip"
 tooltip.BackgroundTransparency = 0.05
 tooltip.BackgroundColor3 = Theme.Card
@@ -164,7 +164,7 @@ RunService.RenderStepped:Connect(function()
  local inset = game:GetService("GuiService"):GetGuiInset()
  local position = mouse - inset
  local viewport = workspace.CurrentCamera.ViewportSize
- tooltip.Position = UDim2.fromOffset(math.clamp(position.X + 16,0,math.max(0,viewport.X-300)),math.clamp(position.Y+16,0,math.max(0,viewport.Y-inset.Y-170)))
+ tooltip.Position = UDim2.fromOffset(math.clamp(position.X + 16,0,math.max(0,viewport.X-240)),math.clamp(position.Y+16,0,math.max(0,viewport.Y-inset.Y-64)))
 end)
 local function renderItems(frame, items, side)
  local cards = {}
@@ -198,7 +198,7 @@ local function renderItems(frame, items, side)
   container.Parent = frame
   local row = button(container, caption, UDim2.fromOffset(6, 6), UDim2.new(1, -12, 0, 56))
   row.MouseEnter:Connect(function()
-   tooltip.Text = (definition.Name or id) .. "\n" .. effectText(definition)..(definition.Weapon and string.format("\nCondition %d / %d",stack.Condition or 0,definition.Weapon.MaxUses) or "")..(definition.Firearm and string.format("\nLoaded %d / %d · %s",stack.Loaded or 0,definition.Firearm.Magazine,stack.AmmoType or "FMJ") or "") .. string.format(definition.Ammo and "\nWeight %.3f kg" or "\nWeight %.1f kg", itemWeight)
+   tooltip.Text = (definition.Name or id) .. string.format(definition.Ammo and "\nWeight %.3f kg" or "\nWeight %.1f kg", itemWeight)
    tooltip.Visible = true
   end)
   row.MouseLeave:Connect(function() tooltip.Visible = false end)

@@ -146,11 +146,11 @@ ItemConfig.Items.MachineGun308={Name=".308 machine gun",Weight=9,Slot="Hands",
  Weapon={Damage=35,DamageType="Bullet",MaxUses=5000,AttacksPerMinute=600}}
 ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Equip in Medicine. H, then click yourself or a nearby player to apply first aid."}
 for _,kind in ipairs({"FMJ","AP"}) do
- ItemConfig.Items["Ammo223"..kind]={Name = ".223 "..kind,Weight=.012,Description="Loose rifle ammunition.",Ammo={Caliber="223",Type=kind}}
- ItemConfig.Items["AmmoBox223"..kind]={Name = ".223 "..kind.." ammo box",Weight=.1,Description="Collect to unpack its ammunition.",AmmoBox={Caliber="223",Type=kind,Maximum=50}}
- for _,ammo in ipairs({{ID="9mm",Name="9 mm",Weight=.008},{ID="308",Name=".308",Weight=.024}}) do
-  ItemConfig.Items["Ammo"..ammo.ID..kind]={Name=ammo.Name.." "..kind,Weight=ammo.Weight,Description="Loose ammunition.",Ammo={Caliber=ammo.ID,Type=kind}}
-  ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="Collect to unpack its ammunition.",AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=50}}
+ local role=if kind=="FMJ" then "Full metal jacket: a standard round for everyday firefights." else "Armor-piercing: a hardened round that loses less reach when passing through cover."
+ for _,ammo in ipairs({{ID="223",Name=".223",Weight=.012,Use="rifles"},{ID="9mm",Name="9 mm",Weight=.008,Use="pistols and submachine guns"},{ID="308",Name=".308",Weight=.024,Use="rifles and machine guns"}}) do
+  local description=ammo.Name.." ammunition for compatible "..ammo.Use..". "..role
+  ItemConfig.Items["Ammo"..ammo.ID..kind]={Name=ammo.Name.." "..kind,Weight=ammo.Weight,Description=description,Ammo={Caliber=ammo.ID,Type=kind}}
+  ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="A box of "..ammo.Name.." "..kind.." rounds. Collect it to unpack the ammunition. "..role,AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=50}}
  end
 end
 return ItemConfig

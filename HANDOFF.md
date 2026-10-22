@@ -4,6 +4,11 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Ammunition descriptions and compact hover — 23 October
+
+- All inventory/chest item hover cards now show only name and weight, reduced240x64; full condition/effects/ammo/description remain in details. Ammo descriptions distinguish caliber compatibility and FMJ vs AP cover penetration, boxes explain unpacking. No damage values changed.
+- Projectile base damage comes from Firearm.Damage, scaled by remaining range (including cover costs); ammo type affects cover cost, not raw base damage. Criticals/defenses/post-defense perk bonus apply subsequently.
+
 ## Explicit zombie audio distance gate — 23 October
 
 - User still heard distant zombies after rolloff fixes; root cause is not established without live Studio. New ZombieAudioRange client independently measures local character root to emitting zombie root, mutes voice/footsteps beyond8*Senses.Hearing(effectiveAttention), restores authored volume inside. No listener/camera dependence. Checks every50ms and on initial registration; tracks only zombie playback sounds and cleans destroyed records. Named voice templates are also locally silenced. Existing engine attenuation still controls falloff inside radius.
