@@ -4,6 +4,14 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Three main skills and tiered training — 23 October
+
+- Manual skills can be tagged as exactly three main skills. New character UI requires three valid unique tags alongside36-point attributes before Confirm character unlocks play. Server Confirm now accepts {Stats=...,TaggedSkills={id1,id2,id3}} and rejects malformed/duplicate/passive/unknown selections atomically. Shared Confirm's optional tags argument remains for internal/legacy callers; external server command always requires the tag list.
+- TagsConfirmed/TaggedSkills are copied in snapshots and retained in the existing UserId reconnect state. Confirmed characters from earlier builds can make one permanent selection through ConfirmTags, without respec or freezing gameplay. Tag choice cannot be changed later. Existing allocated skill values are not retroactively doubled; base attribute skill bonuses are never doubled.
+- SpendSkill uses shared SkillQuote: normal purchase +1, main purchase +2, capped at300. Cost is destination total-skill tier: resulting value1–100 costs1SP,101–200 costs2SP,201–300 costs3SP. Tagged99→101 costs2;199→201 costs3;299→300 gains1 at3SP. Crossing uses the higher tier, no free boundary bypass. Server checks entire price before any mutation. Thresholds use total skills including attribute bonuses.
+- Skills UI has Tag/Main selectors, highlights tagged names, and shows +gain (cost SP) buttons with unaffordable actions disabled. Confirmation of attributes/tags is permanent and two-step. Practice skills Lumberjack/Miner/Scavenger remain XP-only and cannot be tagged. Sneak tooltip now mentions Silent running rather than outdated sprint exclusion.
+- Checks: tagged_skills covers exact3 validation, immutable copying/legacy selection, starting bonus unchanged, gain/cost on both boundaries, atomic affordability, max300, passive exclusion. Actual progression service covers malformed tags creation protection and reconnect preservation; existing perk/progression/day-night regressions passed. Luau compile and Rojo build passed; no Studio UI playtest.
+
 ## Brutal criticals clarified — 23 October
 
 - User correction supersedes the earlier multiplication interpretation: HardCriticals raises the UPPER critical roll bound to2.5, keeping minimum1.5. Normal player range1.5–2; perk1.5–2.5. Both melee and firearms roll these derived bounds directly. Removed central additional multiplier, updated description/stat sheet and actual projectile/damage regression checks. No effect on zombie critical bounds.

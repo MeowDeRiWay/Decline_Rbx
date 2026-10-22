@@ -9,11 +9,13 @@ local notices={};local Journal={Send=function(p,text) table.insert(notices,{p,te
 SERVICE
 Service.Start();a:LoadCharacterAsync()
 local action=ReplicatedStorage.ProgressionRemotes.Action
-local function send(command,value) clock+=.2;action.OnServerEvent:Fire(a,command,value) end
+local function send(command,value) if command=="Confirm" then value={Stats=value,TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}} end;clock+=.2;action.OnServerEvent:Fire(a,command,value) end
 assert(not Service.Snapshot(a).Confirmed and not Service.CanStation(a,"Stove"))
 Service.Award(a,100);assert(Service.Snapshot(a).Level==0 and #notices==0)
 assert(a.Character.HumanoidRootPart.Anchored and a.Character.CreationProtection and a.Character:GetAttribute("CreatingCharacter"),"server creation lock and shield")
 local draft=table.clone(Service.Snapshot(a).Stats);draft.Intelligence=10;draft.Endurance=6
+clock+=.2;action.OnServerEvent:Fire(a,"Confirm",{Stats=draft,TaggedSkills={"LightWeapons","LightWeapons","Doctor"}})
+assert(not Service.Snapshot(a).Confirmed,"invalid duplicate main skills cannot unlock creation")
 send("Confirm",draft)
 assert(a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CarryLimitKg")==25 and a.Character.Humanoid.MaxHealth==60)
 assert(not a.Character.HumanoidRootPart.Anchored and not a.Character:FindFirstChild("CreationProtection") and a.Character.Humanoid.Health==60,"confirmation releases and fills health")
@@ -40,7 +42,7 @@ a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("
 assert(Service.Loot(a,{Rags=1}).Rags==1)
 b:LoadCharacterAsync()
 local bd=table.clone(Service.Snapshot(b).Stats);bd.Strength=7;bd.Attention=7;bd.Luck=7
-clock+=.2;action.OnServerEvent:Fire(b,"Confirm",bd)
+clock+=.2;action.OnServerEvent:Fire(b,"Confirm",{Stats=bd,TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})
 assert(Service.Snapshot(b).SkillPoints==10 and Service.Snapshot(b).PerkPoints==1)
 clock+=.2;action.OnServerEvent:Fire(b,"Perk","RangedDamage")
 assert(b:GetAttribute("RangedDamageBonus")==2 and b.Character:GetAttribute("RangedDamageBonus")==2 and Service.Snapshot(b).PerkPoints==0)
@@ -49,12 +51,12 @@ assert(Service.Snapshot(b).Perks.RangedDamage==1,"cannot spend an absent perk po
 local carry=Service.Snapshot(b)
 Players.PlayerRemoving:Fire(b);b.Parent=nil
 local rejoined=player(b.UserId);Players.PlayerAdded:Fire(rejoined)
-assert(Service.Snapshot(rejoined).Confirmed and Service.Snapshot(rejoined).Perks.RangedDamage==1 and Service.Snapshot(rejoined).SkillPoints==carry.SkillPoints,"new Player object restores progression by UserId")
+assert(Service.Snapshot(rejoined).TagsConfirmed and Service.Snapshot(rejoined).TaggedSkills.Throwing and Service.Snapshot(rejoined).Confirmed and Service.Snapshot(rejoined).Perks.RangedDamage==1 and Service.Snapshot(rejoined).SkillPoints==carry.SkillPoints,"new Player object restores progression by UserId")
 local zombie=make("Model","Zombie",workspace,{LastDamagerID=a.UserId});local zhp=make("Humanoid","Humanoid",zombie);zhp.MaxHealth=60
 local oldXP=Service.Snapshot(a).XP;Service.ZombieDied(zombie,{})
 assert(Service.Snapshot(a).XP==oldXP+150,"kill XP derives from max HP, not health remaining")
 local med=player(700);Players.PlayerAdded:Fire(med);med:LoadCharacterAsync()
-clock+=.2;action.OnServerEvent:Fire(med,"Confirm",{Strength=5,Attention=10,Endurance=5,Intelligence=10,Agility=5,Luck=1})
+clock+=.2;action.OnServerEvent:Fire(med,"Confirm",{Stats={Strength=5,Attention=10,Endurance=5,Intelligence=10,Agility=5,Luck=1},TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})
 Service.Award(med,6000)
 for _=1,30 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
 for _=1,19 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end

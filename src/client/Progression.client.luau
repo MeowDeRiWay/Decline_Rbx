@@ -43,9 +43,14 @@ label(left,"Attributes",UDim2.fromOffset(20,10),UDim2.fromOffset(420,30),20,pale
 local summary=label(left,"",UDim2.fromOffset(20,46),UDim2.fromOffset(420,26),16)
 local points=label(left,"",UDim2.fromOffset(20,80),UDim2.fromOffset(420,50),14,palette.Accent)
 local snapshot,draft,hovered,closeControl
+local tagDraft={}
+local function selectedTags()
+ local list={};for id,selected in pairs(tagDraft) do if selected then table.insert(list,id) end end
+ table.sort(list);return list
+end
 local mode="Stats"
 local Presentation=require(ReplicatedStorage.Shared.ProgressionPresentation)
-local tips={Sneak="Always active while walking.\nEvery 10 Sneak reduces footstep range by 1 stud.\nSprinting has no Sneak bonus yet.",Doctor="Press 4, then click a nearby knocked-out player.\nChance: Doctor / 2.\n10-second cooldown per attempt."}
+local tips={Sneak="Always active while walking.\nEvery 10 Sneak reduces footstep range by 1 stud.\nSilent running also applies Sneak while sprinting.",Doctor="Press 4, then click a nearby knocked-out player.\nChance: Doctor / 2.\n10-second cooldown per attempt."}
 for _,id in ipairs(config.Stats) do tips[id]=Presentation.Attribute(id) end
 local setOpen
 local cards={}
@@ -70,9 +75,11 @@ end
 local confirmedText=label(left,"",UDim2.fromOffset(20,490),UDim2.fromOffset(420,52),14,palette.Muted)
 local confirming=false
 local confirmButton=button(left,"Confirm attributes",UDim2.fromOffset(20,554),UDim2.fromOffset(422,40),function()
- if not snapshot or snapshot.Confirmed or remaining()~=0 then return end
+ if not snapshot or (snapshot.Confirmed and snapshot.TagsConfirmed) or #selectedTags()~=3 or (not snapshot.Confirmed and remaining()~=0) then return end
  if not confirming then confirming=true;redraw();return end
- action:FireServer("Confirm",table.clone(draft));confirming=false
+ if snapshot.Confirmed then action:FireServer("ConfirmTags",selectedTags())
+ else action:FireServer("Confirm",{Stats=table.clone(draft),TaggedSkills=selectedTags()}) end
+ confirming=false
 end)
 local statPanel=frame(right,UDim2.fromOffset(20,94),UDim2.fromOffset(548,526))
 local skillPanel=Instance.new("ScrollingFrame");skillPanel.Position=UDim2.fromOffset(20,94);skillPanel.Size=UDim2.fromOffset(548,526);skillPanel.BackgroundTransparency=1;skillPanel.BorderSizePixel=0;skillPanel.ScrollBarThickness=4;skillPanel.CanvasSize=UDim2.fromOffset(0,560);skillPanel.Parent=right
@@ -98,12 +105,20 @@ local skillRows={}
 local function skillRow(id,index,passive)
  local y=(index-1)*40
  local card=frame(skillPanel,UDim2.fromOffset(0,y),UDim2.fromOffset(532,34),palette.Card)
- label(card,config.Names[id],UDim2.fromOffset(8,0),UDim2.fromOffset(238,34),15)
- local value=label(card,"0",UDim2.fromOffset(250,0),UDim2.fromOffset(220,34),14,palette.Accent)
+ local name=label(card,config.Names[id],UDim2.fromOffset(8,0),UDim2.fromOffset(238,34),15)
+ local value=label(card,"0",UDim2.fromOffset(250,0),UDim2.fromOffset(passive and 220 or 82,34),14,palette.Accent)
  if tips[id] then card.MouseEnter:Connect(function() hovered=id end);card.MouseLeave:Connect(function() if hovered==id then hovered=nil end end) end
- local plus
- if not passive then plus=button(card,"+",UDim2.fromOffset(486,2),UDim2.fromOffset(34,30),function() action:FireServer("Skill",id) end) end
- skillRows[id]={Value=value,Plus=plus}
+ local plus,tag
+ if not passive then
+  tag=button(card,"Tag",UDim2.fromOffset(344,2),UDim2.fromOffset(76,30),function()
+   if not snapshot or snapshot.TagsConfirmed then return end
+   if tagDraft[id] then tagDraft[id]=nil elseif #selectedTags()<3 then tagDraft[id]=true end
+   confirming=false;redraw()
+  end)
+  plus=button(card,"+",UDim2.fromOffset(428,2),UDim2.fromOffset(96,30),function() action:FireServer("Skill",id) end)
+ end
+ skillRows[id]={Name=name,Value=value,Plus=plus,Tag=tag}
+
 end
 for index,id in ipairs(config.Skills) do skillRow(id,index,false) end
 label(skillPanel,"Practice skills · improve through harvesting",UDim2.fromOffset(8,#config.Skills*40),UDim2.fromOffset(516,30),14,palette.Muted)
@@ -137,14 +152,27 @@ redraw=function()
   card.Value.Text=tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id])
   card.Minus.Visible=not snapshot.Confirmed;card.Plus.Visible=not snapshot.Confirmed
  end
- confirmedText.Text=snapshot.Confirmed and "Attributes confirmed." or "Attributes must total 36. Confirm to unlock progression. The distribution will be locked."
- confirmButton.Visible=not snapshot.Confirmed
- confirmButton.Text=confirming and "Confirm permanently" or "Confirm attributes"
+ confirmedText.Text=(snapshot.Confirmed and "Attributes confirmed." or "Attributes must total 36.")..(snapshot.TagsConfirmed and " Main skills locked." or " Choose 3 main skills in Skills ("..#selectedTags().." / 3). Confirm to lock your choice.")
+ confirmButton.Visible=not snapshot.Confirmed or not snapshot.TagsConfirmed
+ confirmButton.Text=confirming and "Confirm permanently" or (snapshot.Confirmed and "Confirm main skills" or "Confirm character")
  for id,row in pairs(skillRows) do
   local preview=not snapshot.Confirmed and Rules.SkillValues(draft) or snapshot.Skills
   local value=preview[id] or 0;local practice=snapshot.Practice[id]
   row.Value.Text=practice and string.format("%d · XP %d / %d",value,practice.XP,10*(value+1)) or tostring(value)
-  if row.Plus then row.Plus.Visible=snapshot.Confirmed and snapshot.SkillPoints>0 and value<300 end
+  if row.Plus then
+   local tagged=snapshot.TagsConfirmed and snapshot.TaggedSkills[id] or (not snapshot.TagsConfirmed and tagDraft[id])
+   row.Name.TextColor3=tagged and palette.Accent or palette.Text
+   row.Tag.Visible=not snapshot.TagsConfirmed or tagged==true
+   row.Tag.Text=tagged and "Main" or "Tag"
+   row.Tag.AutoButtonColor=not snapshot.TagsConfirmed
+   row.Tag.TextColor3=tagged and palette.Accent or palette.Muted
+   local gain,cost=Rules.SkillQuote(snapshot,id,value)
+   row.Plus.Visible=snapshot.Confirmed and gain~=nil
+   row.Plus.Text=gain and string.format("+%d (%d SP)",gain,cost) or "Max"
+   row.Plus.Active=cost~=nil and snapshot.SkillPoints>=cost
+   row.Plus.AutoButtonColor=row.Plus.Active
+   row.Plus.TextColor3=row.Plus.Active and palette.Accent or palette.Muted
+  end
  end
  local count=0
  -- Eligibility uses already-computed total skills, including allocated points.
@@ -198,7 +226,7 @@ Run.RenderStepped:Connect(function()
  end
 end)
 remotes:WaitForChild("State").OnClientEvent:Connect(function(value)
- snapshot=value;if not draft or value.Confirmed then draft=table.clone(value.Stats) end
+ snapshot=value;if value.TagsConfirmed then tagDraft=table.clone(value.TaggedSkills or {}) end;if not draft or value.Confirmed then draft=table.clone(value.Stats) end
  redraw()
 end)
 player.CharacterRemoving:Connect(function() setOpen(false,true) end)

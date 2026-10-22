@@ -30,10 +30,29 @@ function Rules.New()
  local stats={};for _,id in ipairs(attributes) do stats[id]=5 end
  local ranks={};for id in pairs(skills) do ranks[id]=0 end
  local practice={};for id in pairs(passive) do practice[id]={Value=0,XP=0} end
- return {Level=0,XP=0,Points=6,SkillPoints=0,PerkPoints=1,Confirmed=false,Stats=stats,Skills=ranks,Practice=practice,Perks={}}
+ return {Level=0,XP=0,Points=6,SkillPoints=0,PerkPoints=1,Confirmed=false,Stats=stats,Skills=ranks,Practice=practice,Perks={},TaggedSkills={},TagsConfirmed=false}
 end
-function Rules.Confirm(state,stats)
+local function validTags(tags)
+ if typeof(tags)~="table" or #tags~=3 then return nil end
+ local result={}
+ for key,id in pairs(tags) do
+  if typeof(key)~="number" or key<1 or key>3 or key~=math.floor(key) or not skills[id] or result[id] then return nil end
+  result[id]=true
+ end
+ local count=0;for _ in pairs(result) do count+=1 end
+ return count==3 and result or nil
+end
+function Rules.SelectTags(state,tags)
+ if state.TagsConfirmed then return false end
+ local selected=validTags(tags)
+ if not selected then return false end
+ state.TaggedSkills=selected;state.TagsConfirmed=true
+ return true
+end
+function Rules.Confirm(state,stats,tags)
  if state.Confirmed or typeof(stats)~="table" then return false end
+ local selected=tags~=nil and validTags(tags) or nil
+ if tags~=nil and not selected then return false end
  local sum=0
  for key in pairs(stats) do if state.Stats[key]==nil then return false end end
  for _,id in ipairs(attributes) do
@@ -42,6 +61,7 @@ function Rules.Confirm(state,stats)
   sum+=v
  end
  if sum~=36 then return false end
+ if selected then state.TaggedSkills=selected;state.TagsConfirmed=true end
  state.Stats=table.clone(stats);state.Points=0;state.Confirmed=true;state.SkillPoints=5+stats.Intelligence
  return true
 end
@@ -57,9 +77,20 @@ function Rules.TotalSkills(state)
  for id in pairs(passive) do values[id]=state.Practice[id].Value end
  return values
 end
+function Rules.SkillQuote(state,id,current)
+ if not skills[id] then return nil end
+ current=current or Rules.TotalSkills(state)[id]
+ if current>=300 then return nil end
+ local gain=math.min(state.TaggedSkills and state.TaggedSkills[id] and 2 or 1,300-current)
+ -- Crossing a tier uses the destination tier, including both tagged skill points.
+ local cost=math.max(1,math.ceil((current+gain)/100))
+ return gain,cost
+end
 function Rules.SpendSkill(state,id)
- if not state.Confirmed or not skills[id] or state.SkillPoints<1 or Rules.TotalSkills(state)[id]>=300 then return false end
- state.Skills[id]+=1;state.SkillPoints-=1;return true
+ if not state.Confirmed then return false end
+ local gain,cost=Rules.SkillQuote(state,id)
+ if not gain or state.SkillPoints<cost then return false end
+ state.Skills[id]+=gain;state.SkillPoints-=cost;return true
 end
 function Rules.AddXP(state,amount)
  if not state.Confirmed or typeof(amount)~="number" or amount~=amount or amount<=0 or amount==math.huge then return false end

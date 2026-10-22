@@ -38,7 +38,7 @@ function Service.Snapshot(player)
  local s=stateFor(player)
  local practice={};for id,data in pairs(s.Practice) do practice[id]=table.clone(data) end
  return {Level=s.Level,XP=s.XP,NextXP=1000*(s.Level+1),Points=s.Points,SkillPoints=s.SkillPoints,
- Confirmed=s.Confirmed,Stats=table.clone(s.Stats),Skills=Rules.TotalSkills(s),Practice=practice,Perks=table.clone(s.Perks),PerkPoints=s.PerkPoints}
+ TaggedSkills=table.clone(s.TaggedSkills or {}),TagsConfirmed=s.TagsConfirmed==true,Confirmed=s.Confirmed,Stats=table.clone(s.Stats),Skills=Rules.TotalSkills(s),Practice=practice,Perks=table.clone(s.Perks),PerkPoints=s.PerkPoints}
 end
 function Service.Sync(player)
  local state=stateFor(player);if state.Level>=30 then state.Perks.Observant=1 end;local bonus=Rules.Bonuses(state.Stats,state.Perks,state.Level);local totals=Rules.TotalSkills(state)
@@ -92,7 +92,9 @@ function Service.Start()
  action.OnServerEvent:Connect(function(player,command,value)
   local now=os.clock();if now-(last[player] or -math.huge)<.1 then return end;last[player]=now
   local state=stateFor(player)
-  if command=="Confirm" then Rules.Confirm(state,value)
+  if command=="Confirm" then
+   if typeof(value)=="table" and typeof(value.TaggedSkills)=="table" and not state.TagsConfirmed then Rules.Confirm(state,value.Stats,value.TaggedSkills) end
+  elseif command=="ConfirmTags" and state.Confirmed then Rules.SelectTags(state,value)
   elseif command=="Perk" and typeof(value)=="string" then Rules.SpendPerk(state,value)
   elseif command=="Skill" and typeof(value)=="string" then Rules.SpendSkill(state,value)
   elseif command~="Request" then return end
