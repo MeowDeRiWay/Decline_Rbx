@@ -73,6 +73,7 @@ for index,id in ipairs(config.Stats) do
  cards[id]={Value=value,Minus=minus,Plus=plus}
 end
 local confirmedText=label(left,"",UDim2.fromOffset(20,490),UDim2.fromOffset(420,52),14,palette.Muted)
+local creationHint=label(left,"Review all perks on the right before confirming.",UDim2.fromOffset(20,600),UDim2.fromOffset(422,32),13,palette.Muted)
 local confirming=false
 local confirmButton=button(left,"Confirm attributes",UDim2.fromOffset(20,554),UDim2.fromOffset(422,40),function()
  if not snapshot or (snapshot.Confirmed and snapshot.TagsConfirmed) or #selectedTags()~=3 or (not snapshot.Confirmed and remaining()~=0) then return end
@@ -191,6 +192,7 @@ redraw=function()
  end
  confirmedText.Text=(snapshot.Confirmed and "Attributes confirmed." or "Attributes must total 36.")..(snapshot.TagsConfirmed and "" or " Choose 3 main skills in Skills ("..#selectedTags().." / 3). Confirm to lock your choice.")
  confirmButton.Visible=not snapshot.Confirmed or not snapshot.TagsConfirmed
+ creationHint.Visible=not snapshot.Confirmed
  confirmButton.Text=confirming and "Confirm permanently" or (snapshot.Confirmed and "Confirm main skills" or "Confirm character")
  for id,row in pairs(skillRows) do
   local preview=not snapshot.Confirmed and Rules.SkillValues(draft) or snapshot.Skills
@@ -264,9 +266,13 @@ Run.RenderStepped:Connect(function()
   local mouse=Input:GetMouseLocation();tooltip.Position=UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-350)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-height)));tooltip.Visible=true
  end
 end)
-remotes:WaitForChild("State").OnClientEvent:Connect(function(value)
+local function receiveState(value)
+ local startCreation=not value.Confirmed and (not snapshot or snapshot.Confirmed)
  snapshot=value;if value.TagsConfirmed then tagDraft=table.clone(value.TaggedSkills or {}) end;if not draft or value.Confirmed then draft=table.clone(value.Stats) end
+ -- First allocation opens with attributes on the left and the complete perk catalog on the right.
+ if startCreation then setMode("Perks") end
  redraw()
-end)
+end
+remotes:WaitForChild("State").OnClientEvent:Connect(receiveState)
 player.CharacterRemoving:Connect(function() setOpen(false,true) end)
 action:FireServer("Request")

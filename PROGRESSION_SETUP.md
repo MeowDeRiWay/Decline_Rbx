@@ -12,6 +12,8 @@ This section supersedes the historical profession/talent notes below.
   delay and one purchase every 0.15 seconds. Release, leaving the button, losing
   window focus, closing/changing the menu, KO, depleted points or skill cap stops
   repetition. Normal server costs, tagged gains and caps remain authoritative.
+- The first attribute-allocation screen automatically opens the full perk catalog
+  on the right, alongside editable attributes on the left.
 - All perks are visible from the start, with rank and requirements. Locked perks
   are muted and cannot be bought until their requirements and point costs are met.
   Full descriptions and requirements are also available on hover.

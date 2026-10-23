@@ -72,7 +72,26 @@ snapshot.Perks.StrongArm=1;redrawPerks();assert(not perkRows.StrongArm.Active an
 snapshot.Perks={};snapshot.PerkPoints=0;redrawPerks();assert(not perkRows.KhersonMelons.Active)
 print("PASS: all perks visible before creation/requirements, requirement text, inactive unmet/ranked/pointless perks and scroll extent")
 '''
+receiver=source[source.index('local function receiveState'):source.index('remotes:WaitForChild("State").OnClientEvent:Connect(receiveState)')]
+creation_cases='''
+local draft,tagDraft
+local function setMode(value) mode=value end
+local function redraw() redrawPerks() end
+RECEIVER
+snapshot=nil;mode="Stats"
+local fresh=Rules.New();fresh.Skills=Rules.TotalSkills(fresh)
+receiveState(fresh)
+assert(mode=="Perks" and not snapshot.Confirmed,"first attribute allocation opens directly on Perks")
+for _,perk in ipairs(Rules.Perks) do assert(perkRows[perk.ID].Visible and not perkRows[perk.ID].Active) end
+mode="Skills";draft.Strength=7;receiveState(fresh)
+assert(mode=="Skills" and draft.Strength==7,"creation refresh preserves selected tab and unconfirmed attribute draft")
+local confirmed=table.clone(fresh);confirmed.Confirmed=true;confirmed.TagsConfirmed=true;confirmed.TaggedSkills={Melee=true}
+receiveState(confirmed);assert(mode=="Skills" and tagDraft.Melee,"confirmation does not force another tab")
+mode="Stats";receiveState(confirmed);assert(mode=="Stats","ordinary snapshots preserve the selected tab")
+receiveState(fresh);assert(mode=="Perks","a new creation flow opens the catalog again")
+print("PASS: first attribute allocation automatically shows every perk before confirmation, later snapshots preserve selected tabs and draft attributes")
+'''
 parts=['local Rules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',
- 'local Presentation=(function()\n'+(root/'src/shared/ProgressionPresentation.luau').read_text()+'\nend)()',setup,hold,cases.replace('ROWS',rows)]
+ 'local Presentation=(function()\n'+(root/'src/shared/ProgressionPresentation.luau').read_text()+'\nend)()',setup,hold,cases.replace('ROWS',rows),creation_cases.replace('RECEIVER',receiver)]
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'hold.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)

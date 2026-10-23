@@ -4,6 +4,17 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## First-creation perk catalog — 23 October
+
+Clarification: the complete perk catalog must be immediately visible in the initial
+attribute-allocation screen. Progression client now opens Perks on the right when
+receiving the first unconfirmed creation snapshot; editable attributes remain on
+the left. A creation-only hint explains reviewing perks before confirmation. Later
+snapshots preserve the chosen tab and draft attributes; creation can still switch
+between Stats/Skills/Perks normally. Existing locked/eligible purchase rules remain.
+Actual receiveState callback is exercised alongside perk row rendering in
+run_skill_hold.py. No Studio playtest.
+
 ## Level cap, HP growth, held skill training, reset and perk visibility — 23 October
 
 Rules.MaxLevel=30 limits normal AddXP and admin GrantLevels; excess XP is zero at
