@@ -11,6 +11,7 @@ service=service.replace('local Config = require(ReplicatedStorage.Shared.CityGen
 service=service.replace('local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)','')
 service=service.replace('local Furniture=require(script.Parent.StoreFurnitureService)','')
 service=service.replace('local Walls=require(script.Parent.WallReplacementService)','')
+service=service.replace('local Placement=require(script.Parent.StaticPlacement)','')
 furniture=(root/'src/server/Services/StoreFurnitureService.luau').read_text().replace('local Rules=require(ReplicatedStorage.Shared.CityGenerationRules)','')
 cases='''
 assert(Config.StoreChance==.05)
@@ -113,6 +114,7 @@ for name,var in [('CityGenerationConfig','Config'),('CityGenerationRules','Rules
     parts.append('local '+var+'=(function()\n'+(root/f'src/shared/{name}.luau').read_text()+'\nend)()')
 parts.append('local Walls=(function()\n'+(root/'src/server/Services/WallReplacementService.luau').read_text()+'\nend)()')
 parts.append('local Furniture=(function()\n'+furniture+'\nend)()')
+parts.append('local Placement={Move=function(model,target) model:PivotTo(target) end}')
 parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])
 with tempfile.TemporaryDirectory(prefix='decline-city-service-') as directory:
     path=Path(directory)/'test.luau'

@@ -161,3 +161,15 @@ and deletion. Pool tests cover nested folders, weights/chance, one pickup, ammo
 box filtering, replenishment and missing-template retry. Actual world-item tests
 verify fresh ammo-box rolls and single pickup. Luau compilation and Rojo build
 pass. Visual placement, authored factory/T2 art and live interaction need Studio QA.
+
+## Static factory placement diagnostics
+
+The map marker may be named Yard or YardPlace; attributes select it. Factory and
+its internal Yard may share the same PrimaryPart. StaticPlacement snapshots all
+physical parts before moving them, anchors them, and applies one rigid transform
+per part. Models without a PrimaryPart also receive the corresponding WorldPivot.
+Generated factories expose GenerationPlacementVersion=RigidParts1, GenerationTarget
+and GenerationAnchorError (studs between the placed Yard and plot). Error should
+be near zero. The regression fixture preserves the supplied factory's 603 physical
+parts and 183 shared PrimaryPart references, tested at four orientations. Actual
+Roblox Studio placement still requires verification.

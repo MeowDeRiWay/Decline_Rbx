@@ -4,6 +4,7 @@ local Config = require(ReplicatedStorage.Shared.CityGenerationConfig)
 local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)
 local Furniture=require(script.Parent.StoreFurnitureService)
 local Walls=require(script.Parent.WallReplacementService)
+local Placement=require(script.Parent.StaticPlacement)
 local Service = {}
 local started = false
 local configuredSeed = Config.Seed
@@ -127,9 +128,15 @@ local function place(plot, sources, roadList)
  end
  yard:SetAttribute("BlocksVision",false)
  for _, part in ipairs(clone:GetDescendants()) do if part:IsA("BasePart") then part.Anchored = true end end
- clone:PivotTo(chosen.frame)
+ Placement.Move(clone,chosen.frame)
  Walls.Fill(clone)
  Furniture.Fill(clone)
+ local placedYard=box(yard)
+ local anchorError=placedYard and (placedYard.Position-plotFrame.Position).Magnitude or math.huge
+ clone:SetAttribute("GenerationPlacementVersion","RigidParts1")
+ clone:SetAttribute("GenerationAnchorError",anchorError)
+ clone:SetAttribute("GenerationTarget",plotFrame.Position)
+ if anchorError>Config.FitTolerance then warnOnce(plot,string.format("Building Yard missed plot by %.3f studs",anchorError)) end
  local reference = Instance.new("ObjectValue")
  reference.Name,reference.Value,reference.Parent = "GenerationSource",plot,clone
  generated[plot] = clone

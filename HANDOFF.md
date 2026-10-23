@@ -904,3 +904,13 @@ and admin KO revival through PlayerLifeService. Items searches all ItemConfig
 entries and grants only to the invoking admin via InventoryService. AdminOpen
 blocks combat/aim/sprint/medical interaction; the menu survives respawn. See
 ADMIN_SETUP.md for limits, test commands and pending Studio verification.
+
+## 2026-10-23 — Factory static placement
+
+The supplied Factory/Yard files have matching anchor heights and correct shared
+PrimaryPart references; renaming the plot does not change placement. Added
+StaticPlacement to snapshot and move each anchored physical part once, with cached
+pivots for models lacking PrimaryParts. This avoids dependence on hierarchical
+PivotTo movement; an engine-level cause has not been established in Studio.
+Added placement diagnostics and a numerical regression fixture from all 603 parts,
+including 183 shared PrimaryPart references. See INDUSTRY_SETUP.md.
