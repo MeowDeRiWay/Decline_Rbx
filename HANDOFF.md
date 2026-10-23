@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Combat-skill movement and paused zombie infection — 23 October
+
+Player walk/sprint speeds now multiply the entire existing speed (including FastFeet flat sprint bonus) by1+clamp(max(totalUnarmed,totalMelee),0,200)/200.100skill+50%,200+100%,above200noextra; two skills never stack. Total skills include attribute contributions and trained points. ProgressionService.Sync passes TotalSkills to Rules.Bonuses fourth argument, so character attrs/sheet/movement refresh with skill training. Creation draft preview passes SkillValues(draft) too. Rules.Bonuses without skills preserves base behavior, so zombie movement is not incidentally increased. Sprint duration and encumbrance rules unchanged. CombatMovementMultiplier exported for diagnostics.
+
+ZombieStats.InfectionPerStrength=0 disables all zombie-hit Sick changes for online/offline characters while retaining guarded code. Restore to1 to re-enable previousStrengthperlandedhit. Other Sick sources and existing Sick values unchanged. Pure rule tests check skill boundaries/max-not-sum/perk composition and switch restore; actual progression Sync multiplier tested; day/night regression, compile/Rojo passed. No live Studio test.
+
 ## Hover lifecycle and faster leveling — 23 October
 
 CreatureHover BillboardGui now ResetOnSpawn=false: StarterPlayerScripts hover callback previously survived respawn while Roblox deleted its default-resettable GUI, so render updates targeted a detached interface. Explicit own humanoid alive/notKnockout guard hides during incapacity and automatically resumes on recovery with current player.Character each frame. Actual callback test simulates KO/revive, death, GUI reset and new character, confirms hit chance reappears.

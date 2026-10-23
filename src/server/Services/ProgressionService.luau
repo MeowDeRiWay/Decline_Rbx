@@ -41,7 +41,7 @@ function Service.Snapshot(player)
  TaggedSkills=table.clone(s.TaggedSkills or {}),TagsConfirmed=s.TagsConfirmed==true,Confirmed=s.Confirmed,Stats=table.clone(s.Stats),Skills=Rules.TotalSkills(s),Practice=practice,Perks=table.clone(s.Perks),PerkPoints=s.PerkPoints}
 end
 function Service.Sync(player)
- local state=stateFor(player);if state.Level>=30 then state.Perks.Observant=1 end;local bonus=Rules.Bonuses(state.Stats,state.Perks,state.Level);local totals=Rules.TotalSkills(state)
+ local state=stateFor(player);if state.Level>=30 then state.Perks.Observant=1 end;local totals=Rules.TotalSkills(state);local bonus=Rules.Bonuses(state.Stats,state.Perks,state.Level,totals)
  player:SetAttribute("CharacterLevel",state.Level);player:SetAttribute("CharacterXP",state.XP)
  player:SetAttribute("AttributePoints",state.Points);player:SetAttribute("SkillPoints",state.SkillPoints)
  player:SetAttribute("AttributesConfirmed",state.Confirmed)

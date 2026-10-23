@@ -404,7 +404,8 @@ local function prepare(model)
      if hit and not hit.Instance:IsDescendantOf(victimRoot.Parent) then return end
      if not Damage.RollHit(model,victim,0,model:GetAttribute("SkillUnarmed")) then Damage.Miss(victim.Parent,model);return end
      local targetPlayer=Players:GetPlayerFromCharacter(victim.Parent)
-     if targetPlayer or victim.Parent:GetAttribute("OfflineUserId") then victim.Parent:SetAttribute("Sick",math.clamp((victim.Parent:GetAttribute("Sick") or 0)+(model:GetAttribute("Strength") or 0),0,100)) end
+     local infection=ZombieStats.Infection(model:GetAttribute("Strength"))
+     if infection>0 and (targetPlayer or victim.Parent:GetAttribute("OfflineUserId")) then victim.Parent:SetAttribute("Sick",math.clamp((victim.Parent:GetAttribute("Sick") or 0)+infection,0,100)) end
      local critical=statRandom:NextNumber()<(model:GetAttribute("CriticalChance") or 0)
      if Damage.Apply(victim,CombatRules.UnarmedDamage(model:GetAttribute("MeleeBonus"),0,statRandom:NextNumber()),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextNumber(model:GetAttribute("CriticalMin") or 1.5,model:GetAttribute("CriticalMax") or 2) or 1})>0 then
       model:SetAttribute("WeaponCondition",math.max(0,(model:GetAttribute("WeaponCondition") or 0)-1))

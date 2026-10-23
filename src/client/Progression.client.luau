@@ -131,7 +131,7 @@ local function refreshStats()
  local character=player.Character;local a=player:GetAttributes()
  a.StationaryFor=workspace:GetServerTimeNow()-(a.StationarySince or workspace:GetServerTimeNow())
  local definition=character and Items[character:GetAttribute("HandsItem")]
- if snapshot and not snapshot.Confirmed and draft then for id,value in pairs(Rules.Bonuses(draft)) do a[id]=value end end
+ if snapshot and not snapshot.Confirmed and draft then for id,value in pairs(Rules.Bonuses(draft,nil,0,Rules.SkillValues(draft))) do a[id]=value end end
  local stats=Sheet.Calculate(a,definition,character and character:GetAttribute("WeaponCondition"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("Health"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("MaxHealth"))
  values.Health.Text=string.format("%.0f / %.0f HP",stats.Health,stats.MaxHealth)
  values.ArmorClass.Text=tostring(stats.Dodge)

@@ -68,3 +68,12 @@ doctor.Skills.FirstAid=40;assert(R.Meets(doctor,requirements),"100 in BOTH quali
 doctor.Skills.Doctor=34;assert(not R.Meets(doctor,requirements),"doctor99 cannot build hospital")
 
 assert(R.RequiredXP(0)==500 and R.RequiredXP(9)==5000)
+
+for _,case in ipairs({{0,0,1},{100,0,1.5},{0,200,2},{200,200,2},{300,100,2},{50,150,1.75}}) do
+ assert(R.MovementMultiplier({Unarmed=case[1],Melee=case[2]})==case[3])
+end
+local fast=R.Bonuses({Strength=5,Attention=5,Endurance=5,Intelligence=5,Agility=5,Luck=5},{FastFeet=1},1,{Unarmed=200,Melee=300})
+assert(math.abs(fast.WalkBonus-2.4)<1e-9 and math.abs(fast.RunBonus-6.8)<1e-9,"whole movement including Fast feet doubles once")
+local Z=require("../src/shared/ZombieStats")
+assert(Z.Infection(6)==0,"zombie infection temporarily disabled")
+Z.InfectionPerStrength=1;assert(Z.Infection(6)==6,"restore switch preserves Strength infection");Z.InfectionPerStrength=0

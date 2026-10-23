@@ -123,11 +123,15 @@ function Rules.Practice(state,id,amount)
  if s.Value==300 then s.XP=0 end
  return true
 end
-function Rules.Bonuses(stats,perks,level)
+function Rules.MovementMultiplier(total)
+ return 1+math.clamp(math.max(total.Unarmed or 0,total.Melee or 0),0,200)/200
+end
+function Rules.Bonuses(stats,perks,level,total)
  local p=perks or {}
+ local movement=Rules.MovementMultiplier(total or {})
  local hearing=stats.Attention+2*(p.Hearing or 0)
  return {CarryLimitKg=5*stats.Strength+10*(p.StrongBack or 0),MeleeBonus=stats.Strength*(1+(p.StrongArm or 0)),MaxHealth=10*stats.Endurance+4*(level or 0)*(p.Lifegiver or 0),
-  WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1),RunBonus=.4*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0),Regeneration=(stats.Endurance+4*(p.QuickRecovery or 0))*(1+(p.Regeneration or 0)),
+  WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)*movement,RunBonus=(.4*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0))*movement,CombatMovementMultiplier=movement,Regeneration=(stats.Endurance+4*(p.QuickRecovery or 0))*(1+(p.Regeneration or 0)),
   DodgeChance=5*stats.Agility+20*(p.Dodger or 0),CriticalChance=.01*stats.Luck*2^(p.Criticals or 0),
   ViewRange=10+3*stats.Attention+10*(p.TunnelVision or 0),ViewAngleMultiplier=(p.TunnelVision or 0)>0 and .5 or 1,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,
   UnarmedArmorClass=15*(p.UnarmedEvade or 0),ReviveLockReduction=180*(p.QuickRecovery or 0),ReviveHealthBonus=.2*(p.QuickRecovery or 0),MeleeIgnoreAbsorption=2*(p.PiercingStrike or 0),MeleeIgnoreResistance=.1*(p.PiercingStrike or 0),SniperCriticalBonus=.1*(p.Sniper or 0),CowboyMultiplier=(p.Cowboy or 0)>0 and 1.15 or 1,ScroungerMultiplier=(p.Scrounger or 0)>0 and 1.25 or 1,GreenhouseYieldMultiplier=(p.KhersonMelons or 0)>0 and 1.5 or 1,

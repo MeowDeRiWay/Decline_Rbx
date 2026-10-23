@@ -27,6 +27,7 @@ draft.Strength=10;send("Confirm",draft);assert(a:GetAttribute("Strength")==5)
 assert(Service.Snapshot(a).NextXP==500)
 Service.Award(a,500);assert(a:GetAttribute("CharacterLevel")==1 and a:GetAttribute("SkillPoints")==30)
 assert(Service.Snapshot(a).NextXP==1000)
+assert(math.abs(a:GetAttribute("CombatMovementMultiplier")-(1+a:GetAttribute("SkillUnarmed")/200))<1e-9)
 send("Skill","Repair");assert(a:GetAttribute("SkillRepair")==51 and a:GetAttribute("SkillPoints")==29)
 send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==29)
 for _=1,10 do Service.Harvest(a,"StoneVein",1) end
