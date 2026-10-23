@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Multi-plant irrigation and rot — 23 October
+
+Supersedes the initial single-potato farming loop below. GardenBed numeric MaxPlants(default5,clamped1..100), MaxWatering(default100). Empty-handed E plants all free slots without seeds/consuming potatoes. Only Potato currently. Each bush grows independently, consumes20water continuously over full growth, stage1early/2late/3ripe/4rot. Four exact PotatoStage1..4 models, evenly spaced along bed's longest horizontal axis using cached pre-crop bounds and optional CropAnchor. Watering bucket adds100 capped capacity; full bed no consumption. Held bucket always waters; pocket bucket waters growing bed without harvestable/rotten plants. Empty hands collect ripe0..4yield each/clear rot, preserve growing plants and remaining water; ownerKherson1.5yield retained. Hover shows units/plants/ready/rot.
+
+Water thresholds normalized to MaxWatering: >=80%time1,>=60%time1.2,>=40%time1.5/10%rot perminute,>0time2/20%,0stopped/50%. Rot rolls per growing bush every60seconds, not per heartbeat. Ripe expiry provisionally300seconds, basegrowth600; user did not specify ripe expiry. Water20perbush total, so5consume100; low water slows and risks rot even if total sufficient. Seedless planting does not require water upfront. Tests use deterministic rot rolls and cover exact total water, tier boundaries, slow growth, ripe expiry, zero harvest, farmerXP, authority/containers. Configurable provisional bucket recipe3Scrap/20sec at Workstation,Repair80,maxbatch1. DirtyWaterBucket Consume.Water100/Sick80 returnsEmptyBucket. No new greenhouse buildmenu/cost. See FARMING_SETUP.md. No Studio playtest.
+
 ## More perks, infection and first farming loop — 23 October
 
 - Added approved rank1 perks with proposed requirements retained: UnarmedEvade AGI8/Unarmed150 gives15AC while hands empty, calculated dynamically for server hits/environmental dodge, hover and sheet. Dodger AGI7 gives20AC. QuickRecovery END7 adds4regen before Double regeneration, subtracts180sec from the incoming doctor's patient lock (normal600→420, FieldHospital300→120, floor0), and adds20%maxHP to base2HP revival. Fortune still overrides to fullHP/no lock. PiercingStrike STR7/Melee150 ignores2DA and.10DR for melee/unarmed only; subtracts from capped90% effective resistance.

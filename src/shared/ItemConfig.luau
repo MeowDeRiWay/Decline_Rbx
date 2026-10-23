@@ -162,6 +162,6 @@ for _,id in ipairs({"BoiledPotato","SausageSlice","MashedPotatoesWithSausage_1",
  ItemConfig.Items["Ramsay_"..id]=food
 end
 ItemConfig.Items.EmptyBucket={Name="Empty bucket",Weight=1,Slot="Hands",Description="Fill at a well, then water a garden bed."}
-ItemConfig.Items.DirtyWaterBucket={Name="Bucket of dirty water",Weight=6,Slot="Hands",TemplateID="EmptyBucket",Description="Water for a garden bed. Returns an empty bucket after watering."}
+ItemConfig.Items.DirtyWaterBucket={Name="Bucket of dirty water",Weight=6,Slot="Hands",TemplateID="EmptyBucket",Consume={Water=100,Sick=80},ReturnItems={EmptyBucket=1},Description="Enough water to irrigate a garden bed. Drinking restores 100 water but adds 80 infection. Returns an empty bucket."}
 return ItemConfig
 

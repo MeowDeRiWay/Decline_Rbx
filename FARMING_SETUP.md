@@ -1,31 +1,41 @@
 # Farming model setup
 
-The first farming loop is ready for models. All names below are exact and case-sensitive.
+All names are exact and case-sensitive. Game text is English.
 
 | Model | Location | Purpose |
 | --- | --- | --- |
-| `Greenhouse (T1)` | `ServerStorage/Buildings` | Future town building, 20×20 plot. Construction cost/requirements and its menu entry are still pending design. For current testing place a copy in Workspace. |
-| `GardenBed` | Inside the greenhouse | One potato crop per bed. Any number of beds is supported. |
-| `Well` | Inside the greenhouse | Unlimited dirty water. |
-| `EmptyBucket` | Any category folder under `ServerStorage/Items` | Empty watering bucket, 1 kg. |
-| `DirtyWaterBucket` | Same items tree, optional model | Filled bucket, 6 kg. Falls back to the empty bucket model until a separate filled model exists. |
-| `PotatoStage1`, `PotatoStage2`, … | `ServerStorage/Farming/PotatoStages` | Ordered growing-potato models. Any positive numbered set is supported; highest number is the mature crop. |
+| `Greenhouse (T1)` | `ServerStorage/Buildings` | Future town building; construction cost/requirements/menu entry pending. Place a copy in Workspace to test. |
+| `GardenBed` | Inside greenhouse | A 1×10 bed. Numeric `MaxPlants` sets capacity (default5, safe range1–100); numeric `MaxWatering` sets stored water capacity (default100). |
+| `Well` | Inside greenhouse | Unlimited dirty water, requires empty bottle or bucket. |
+| `EmptyBucket` | Any category under `ServerStorage/Items` | Craft on Workstation: Repair80, provisional3Scrap/20seconds, one at a time. |
+| `DirtyWaterBucket` | Same item tree; model optional | Holds100 watering units. Drinking from pockets restores100Water, adds80Sick and returnsEmptyBucket. Filled visual falls back to EmptyBucket. |
+| `PotatoStage1`…`PotatoStage4` | `ServerStorage/Farming/PotatoStages` | Exactly four states: early growth, late growth, ripe, rotten. |
 
-Models should contain anchored parts. Part names do not matter. Add an optional `CropAnchor` Part/Model inside each GardenBed to define the crop pivot and rotation; without it the bed pivot is used. Crop visuals are anchored and non-colliding/non-queryable, with BlocksVision=false.
+Bed parts should be anchored; arbitrary part names supported. Optional `CropAnchor` Part/Model defines the center/orientation of the plant row, otherwise bed pivot is used. Plants are evenly spaced along the bed's longer horizontal axis, inside its initial bounds. Use consistent pivots across all four potato models. Visuals are anchored, non-colliding and non-queryable. Missing stage models do not stop simulation.
 
 ## Interaction
 
-Aim and press E, as with existing interactables. Server checks distance, line of sight, living state and character confirmation.
+Aim and press E. Server checks reach, line of sight, life, knockout and creation/crafting locks. Hover shows water, plant count, ready and rotten counts.
 
-- Well: fills one empty bucket or bottle. An empty bucket has priority if available; equipped buckets stay equipped during conversion. Bottles return the existing DirtyWater item. No container means no water.
-- Empty bed: empty hands and one Potato are required to plant.
-- Planted bed: use a DirtyWaterBucket to water. It becomes EmptyBucket. Watering once starts growth; further watering is not consumed.
-- Mature bed: empty hands are required to harvest. Potatoes enter pockets, and each harvested potato awards one Farmer practice XP and one character XP, before Good student effects.
+- Empty hands plant all free slots with potatoes. No seeds or raw potatoes consumed. Potato is the only crop currently available.
+- A filled bucket in hands always waters. A pocket bucket waters when there are growing plants and nothing ready/rotten to collect. Each use adds up to100units, capped by MaxWatering, and returns an empty bucket. A full bed does not consume a bucket.
+- Each bush consumes20units gradually across its complete growth, not upfront. Five bushes therefore need100units total. Water is shared across growing bushes; ripe/rotten bushes stop consuming it.
+- Empty hands harvest ripe bushes and clear rotten ones, leaving immature bushes. Each ripe bush rolls0–4potatoes independently, before greenhouse yield bonuses. Zero yield is valid. Harvest grants Farmer/globalXP per actual potato, with Good student applied as before.
 
-Initial test values in `FarmingConfig`: one seed, one bucket, 600 seconds of watered growth, 2–4 potatoes. These are provisional and should be revisited alongside Farmer progression. Farmer currently uses the same 10×next-rank XP curve as Miner, with no attribute bonus or manual/tagged training.
+## Water and rot
 
-## Greenhouse perk ownership
+Water thresholds use percentage of MaxWatering, so different-capacity beds behave consistently.
 
-Set numeric `OwnerID` on the greenhouse, or let it inherit OwnerID from its parent BuildingSpace. The owner's Kherson watermelons perk gives beds 50% more yield. Odd fractional yields use a fair extra-crop roll rather than always rounding up. The cached bonus survives owner disconnect and resets on ownership transfer. The perk currently has no added skill/attribute requirement pending farming design.
+| Water | Growth duration multiplier | Rot chance per bush per minute |
+| --- | --- | --- |
+| 80–100% | 1 | 0 |
+| 60–under80% | 1.2 | 0 |
+| 40–under60% | 1.5 | 10% |
+| Above0–under40% | 2 | 20% |
+| 0 | No growth | 50% |
 
-Beds and wells currently use physical access, like communal chests; future doors can limit access. Crop/water state exists only within the running server. Greenhouse construction pricing, upgrade persistence, detailed irrigation and farmer bonuses await the next design pass.
+Base growth remains600seconds at full watering. Each minute of growth gets an independent rot roll using current water. A ripe bush becomes rotten after a provisional300seconds if uncollected. Stage3is harvestable; stage4is rotten and yields nothing. Clear rotten plants with E and plant again. Water is retained after harvest/clearing. Timings and yields live in FarmingConfig.
+
+The owner's Kherson watermelons perk multiplies yield by1.5, with fair fractional rounding. Set OwnerID on Greenhouse or parent BuildingSpace. The owner's bonus is cached through disconnect and reset on transfer. No farming perk requirements have been invented yet.
+
+Farmer remains passive like Miner: one practiceXP per harvested unit, 10×next-rank thresholds, no manual/tagged training. Farming bonuses still need review. Access is physical/public like chests. Crop and water state lasts only within the running server; greenhouse building menu/cost and upgrade persistence remain pending.

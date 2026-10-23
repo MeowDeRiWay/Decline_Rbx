@@ -13,9 +13,14 @@ local beds=setmetatable({},{__mode="k"})
 local random=Random.new()
 local function register(model)
  if model:IsA("Model") and model.Name==Config.Bed and not beds[model] then
-  beds[model]={};model:SetAttribute("Crop","");model:SetAttribute("Watered",false);model:SetAttribute("CropReady",false)
+  local _,size=model:GetBoundingBox()
+  beds[model]={Plants={},Size=size,LastUpdate=workspace:GetServerTimeNow()}
+  model:SetAttribute("Watering",0);model:SetAttribute("PlantCount",0);model:SetAttribute("Crop","")
+  model:SetAttribute("CropReady",false);model:SetAttribute("RottenPlants",0)
  end
 end
+local function capacity(bed) return math.max(1,tonumber(bed:GetAttribute("MaxWatering")) or 100) end
+local function plantLimit(bed) return math.clamp(math.floor(tonumber(bed:GetAttribute("MaxPlants")) or 5),1,100) end
 local function yieldMultiplier(bed)
  local ancestor=bed.Parent
  while ancestor and ancestor~=workspace do
@@ -38,26 +43,68 @@ local function yieldMultiplier(bed)
  end
  return 1
 end
-local function visualize(bed,state,progress)
+local function visualize(bed,plant,index,count)
+ local stage=Rules.Stage(plant.Progress,plant.Rotten)
+ if plant.Stage==stage then return end
+ if plant.Visual then plant.Visual:Destroy();plant.Visual=nil end
+ plant.Stage=stage
  local folder=Storage:FindFirstChild("Farming")
  folder=folder and folder:FindFirstChild(Config.StageFolder)
- local templates={}
- for _,model in ipairs(folder and folder:GetChildren() or {}) do
-  local number=tonumber(model.Name:match("^"..Config.StagePrefix.."(%d+)$"))
-  if number and model:IsA("Model") then table.insert(templates,{Model=model,Number=number}) end
- end
- table.sort(templates,function(a,b) return a.Number<b.Number end)
- local stage=Rules.Stage(progress,#templates)
- if not stage or state.Stage==stage then return end
- if state.Visual then state.Visual:Destroy() end
- local visual=templates[stage].Model:Clone()
+ local template=folder and folder:FindFirstChild(Config.StagePrefix..stage)
+ if not template or not template:IsA("Model") then return end
  local anchor=bed:FindFirstChild("CropAnchor",true)
- visual:PivotTo(anchor and anchor:GetPivot() or bed:GetPivot())
+ local frame=anchor and anchor:GetPivot() or bed:GetPivot()
+ local size=beds[bed].Size
+ local length=math.max(size.X,size.Z)
+ local offset=((index-.5)/count-.5)*length
+ local position=size.X>size.Z and CFrame.new(offset,0,0) or CFrame.new(0,0,offset)
+ local visual=template:Clone();visual:PivotTo(frame*position)
  for _,part in ipairs(visual:GetDescendants()) do
   if part:IsA("BasePart") then part.Anchored=true;part.CanCollide=false;part.CanTouch=false;part.CanQuery=false end
  end
  visual.Name="GrowingPotato";visual:SetAttribute("BlocksVision",false);visual.Parent=bed
- state.Visual=visual;state.Stage=stage
+ plant.Visual=visual
+end
+local function publish(bed,state)
+ local ready,rotten,progress=0,0,0
+ for index,plant in ipairs(state.Plants) do
+  if plant.Rotten then rotten+=1 elseif plant.Progress>=1 then ready+=1 end
+  progress+=plant.Progress;visualize(bed,plant,index,#state.Plants)
+ end
+ bed:SetAttribute("PlantCount",#state.Plants);bed:SetAttribute("ReadyPlants",ready);bed:SetAttribute("RottenPlants",rotten)
+ bed:SetAttribute("CropReady",ready>0);bed:SetAttribute("CropProgress",#state.Plants>0 and progress/#state.Plants or 0)
+ bed:SetAttribute("Crop",#state.Plants>0 and Config.Crop or "")
+end
+function Service.Step(bed,now)
+ local state=beds[bed];if not state then return end
+ local elapsed=math.max(0,now-state.LastUpdate);state.LastUpdate=now
+ local water=math.clamp(tonumber(bed:GetAttribute("Watering")) or 0,0,capacity(bed))
+ -- One-second slices keep catch-up and ordinary heartbeat simulation identical.
+ local remaining=elapsed;local cursor=now-elapsed
+ while remaining>0 do
+  local dt=math.min(1,remaining);remaining-=dt;cursor+=dt
+  local factor,chance=Rules.Water(water/capacity(bed)*100)
+  local growing=0
+  for _,plant in ipairs(state.Plants) do if not plant.Rotten and plant.Progress<1 then growing+=1 end end
+  local delta=Rules.Growth(dt,Config.GrowthSeconds,factor,water,growing,Config.WaterPerPlant)
+  water=math.max(0,water-delta*growing*Config.WaterPerPlant)
+  for _,plant in ipairs(state.Plants) do
+   if not plant.Rotten then
+    if plant.Progress>=1 then
+     if cursor-(plant.ReadyAt or cursor)>=Config.HarvestSeconds then plant.Rotten=true end
+    else
+     plant.Progress=math.min(1,plant.Progress+delta)
+     if plant.Progress>=1-1e-9 then plant.Progress=1 end
+     if plant.Progress>=1 then plant.ReadyAt=cursor
+     elseif cursor-plant.LastRotCheck>=60 then
+      plant.LastRotCheck=cursor
+      if random:NextNumber()<chance then plant.Rotten=true end
+     end
+    end
+   end
+  end
+ end
+ bed:SetAttribute("Watering",water);publish(bed,state)
 end
 local function reachable(player,model)
  if typeof(model)~="Instance" or not model:IsA("Model") or not model:IsDescendantOf(workspace) or (model.Name~=Config.Bed and model.Name~=Config.Well) then return false end
@@ -80,27 +127,44 @@ function Service.Use(player,model)
   end
   Journal.Send(player,"Bring an empty bottle or bucket.");return false
  end
- register(model);local state=beds[model]
- local progress=Rules.Progress(state.Started,workspace:GetServerTimeNow(),Config.GrowthSeconds)
- if state.Crop and progress>=1 then
-  if inventory.Equipment.Hands then Journal.Send(player,"Empty your hands to harvest.");return false end
-  local amount=Rules.Yield(random:NextInteger(Config.MinYield,Config.MaxYield),yieldMultiplier(model),random:NextNumber())
-  if not Inventory.Add(player,Config.Crop,amount) then return false end
-  if state.Visual then state.Visual:Destroy() end
-  beds[model]={};model:SetAttribute("Crop","");model:SetAttribute("Watered",false);model:SetAttribute("CropReady",false);model:SetAttribute("CropProgress",0)
-  Progression.FarmXP(player,amount);Journal.Send(player,"You harvested "..amount.." potatoes.");return true
- elseif not state.Crop then
-  if inventory.Equipment.Hands then Journal.Send(player,"Empty your hands to plant.");return false end
-  if not Inventory.Remove(player,Config.Crop,Config.SeedCount) then Journal.Send(player,"You need a potato to plant.");return false end
-  yieldMultiplier(model)
-  state.Crop=Config.Crop;model:SetAttribute("Crop",Config.Crop);model:SetAttribute("PlanterID",player.UserId)
-  visualize(model,state,0);Journal.Send(player,"Potato planted. Water the bed with a bucket.");return true
- elseif not state.Started then
-  if not Inventory.ReplaceOne(player,"DirtyWaterBucket","EmptyBucket") then Journal.Send(player,"Bring a bucket of water to water this bed.");return false end
-  state.Started=workspace:GetServerTimeNow();model:SetAttribute("Watered",true);model:SetAttribute("CropReadyAt",state.Started+Config.GrowthSeconds)
+ register(model);Service.Step(model,workspace:GetServerTimeNow());local state=beds[model]
+ -- A held bucket always waters; a pocket bucket is used while plants are growing.
+ local hasBucket=inventory.Equipment.Hands=="DirtyWaterBucket" or (inventory.Items.DirtyWaterBucket or 0)>0
+ local ready=false
+ for _,plant in ipairs(state.Plants) do if plant.Rotten or plant.Progress>=1 then ready=true end end
+ if hasBucket and (inventory.Equipment.Hands=="DirtyWaterBucket" or (#state.Plants>0 and not ready)) then
+  local water=model:GetAttribute("Watering") or 0
+  if water>=capacity(model) then Journal.Send(player,"The garden bed is already full of water.");return false end
+  if not Inventory.ReplaceOne(player,"DirtyWaterBucket","EmptyBucket") then return false end
+  model:SetAttribute("Watering",math.min(capacity(model),water+Config.BucketWater))
   Journal.Send(player,"You watered the garden bed.");return true
  end
- Journal.Send(player,"The potatoes are still growing.");return false
+ if inventory.Equipment.Hands then Journal.Send(player,"Empty your hands to plant, harvest or clear rotten plants.");return false end
+ if ready then
+  local amount=0;local kept={}
+  for _,plant in ipairs(state.Plants) do
+   if not plant.Rotten and plant.Progress>=1 then
+    amount+=Rules.Yield(random:NextInteger(Config.MinYield,Config.MaxYield),yieldMultiplier(model),random:NextNumber())
+   end
+  end
+  if amount>0 and not Inventory.Add(player,Config.Crop,amount) then return false end
+  for _,plant in ipairs(state.Plants) do
+   if plant.Rotten or plant.Progress>=1 then if plant.Visual then plant.Visual:Destroy() end
+   else table.insert(kept,plant);plant.Stage=nil end
+  end
+  state.Plants=kept;publish(model,state)
+  if amount>0 then Progression.FarmXP(player,amount) end
+  Journal.Send(player,"You harvested "..amount.." potatoes and cleared finished plants.");return true
+ end
+ local count=plantLimit(model)-#state.Plants
+ if count>0 then
+  local now=workspace:GetServerTimeNow()
+  for _=1,count do table.insert(state.Plants,{Progress=0,LastRotCheck=now}) end
+  for _,plant in ipairs(state.Plants) do plant.Stage=nil end
+  model:SetAttribute("PlanterID",player.UserId);publish(model,state)
+  Journal.Send(player,"You planted "..count.." potato plants. Each needs 20 units of water to grow.");return true
+ end
+ Journal.Send(player,"The potatoes are still growing. Water: "..math.floor(model:GetAttribute("Watering") or 0)..".");return false
 end
 function Service.Start()
  if Service.Started then return end;Service.Started=true
@@ -111,10 +175,8 @@ function Service.Start()
    task.wait(1)
    for bed,state in pairs(beds) do
     if not bed:IsDescendantOf(workspace) then beds[bed]=nil
-    elseif state.Crop then
-     yieldMultiplier(bed)
-     local progress=Rules.Progress(state.Started,workspace:GetServerTimeNow(),Config.GrowthSeconds)
-     bed:SetAttribute("CropProgress",progress);bed:SetAttribute("CropReady",progress>=1);visualize(bed,state,progress)
+    else
+     yieldMultiplier(bed);Service.Step(bed,workspace:GetServerTimeNow())
     end
    end
   end

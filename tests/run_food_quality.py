@@ -6,7 +6,7 @@ s=(root/'src/server/Services/ConsumableService.luau').read_text()
 s=re.sub(r'local (Items|Rules|Inventory)\s*=\s*require[^\n]+\n','',s)
 mock='''
 a:LoadCharacterAsync();local hp=a.Character.Humanoid;hp.Health=90
-local stock={Ramsay_BoiledPotato=1,Ramsay_MashedPotatoesWithSausage_2=1}
+local stock={DirtyWaterBucket=1,Ramsay_BoiledPotato=1,Ramsay_MashedPotatoesWithSausage_2=1}
 local Inventory={Remove=function(_,id,n) if (stock[id] or 0)<n then return false end;stock[id]-=n;return true end,Add=function(_,id,n) stock[id]=(stock[id] or 0)+n;return true end}
 a.Character:SetAttribute("Food",10);a.Character:SetAttribute("Water",50);a.Character:SetAttribute("Sick",2)
 '''
@@ -18,6 +18,8 @@ assert(Service.Eat(a,"Ramsay_MashedPotatoesWithSausage_2") and hp.Health==100 an
 assert(a.Character:GetAttribute("Food")==26.5 and a.Character:GetAttribute("Water")==49,"negative nutrition not amplified")
 assert(not Service.Eat(a,"Ramsay_Potato"),"uncooked food never inherits cook quality")
 assert(Items.Items.Ramsay_BoiledPotato.TemplateID=="BoiledPotato")
+a.Character:SetAttribute("Water",0);a.Character:SetAttribute("Sick",0)
+assert(Service.Eat(a,"DirtyWaterBucket") and a.Character:GetAttribute("Water")==100 and a.Character:GetAttribute("Sick")==80 and stock.EmptyBucket==1,"drink bucket and return container")
 print("PASS: persistent quality food heals5, positive nutrition x1.5, negatives unchanged, HP cap and plate return")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]

@@ -34,6 +34,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  hovered, reachable, chestHovered = nil, false, false
  stoveHovered=false;farmHovered=false
  highlight.Enabled, label.Visible = false, false
+ label.Size=UDim2.fromOffset(200,44)
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
@@ -64,8 +65,16 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
   label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and (chest.Name=="CuttingBoard" and "Cutting Board" or chest.Name=="Workstation" and "Workstation" or "Stove") or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
-  if farmHovered then label.Text=(chest.Name=="Well" and "Well" or "Garden bed")..(reachable and "\n[E] Use" or "\nToo far") end
-  label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-44)))
+  if farmHovered then
+   label.Text=(chest.Name=="Well" and "Well" or "Garden bed")
+   if chest.Name=="GardenBed" then
+    label.Size=UDim2.fromOffset(200,88)
+    label.Text..="\nWater: "..math.floor(chest:GetAttribute("Watering") or 0).."/"..(chest:GetAttribute("MaxWatering") or 100)
+    label.Text..="\nPlants: "..(chest:GetAttribute("PlantCount") or 0).." | Ready: "..(chest:GetAttribute("ReadyPlants") or 0).." | Rotten: "..(chest:GetAttribute("RottenPlants") or 0)
+   end
+   label.Text..=reachable and "\n[E] Use" or "\nToo far"
+  end
+  label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-label.Size.Y.Offset)))
   label.Visible = true
   return
  end

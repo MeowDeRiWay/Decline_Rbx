@@ -84,6 +84,11 @@ Service.Close(a);assert(Service.Open(a,stove));stock.Potato=1;stock.CleanWater=1
 assert(Service.Cook(a,"BoilPotatoes",1));callbacks[#callbacks]()
 assert(Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==1,"cook quality persists in station output")
 assert(Service.CollectRecipe(a,"BoilPotatoes","All") and stock.Ramsay_BoiledPotato==1,"collect all preserves Ramsay food variant")
+Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=3;a:SetAttribute("CraftCostMultiplier",1)
+assert(Recipes.MakeBucket.Requirements.Skills.Repair==80)
+doctor=false;assert(not Service.Cook(a,"MakeBucket",1),"bucket skill requirement checked")
+doctor=true;assert(not Service.Cook(a,"MakeBucket",2));assert(Service.Cook(a,"MakeBucket",1) and stock.Scrap==0 and durations[#durations]==20)
+callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.EmptyBucket==1,"bucket craft output")
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]

@@ -1,5 +1,6 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 return {
+ MakeBucket={Name="Make empty bucket",Station="Workstation",Description="Shape scrap into a watering bucket. Requires Repair 80.",Ingredients={Scrap=3},Output="EmptyBucket",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Repair=80}}},
  MakeBandage={Name="Make bandage",Station="Workstation",Description="Prepare a bandage from five rags. Requires Doctor 100.",Ingredients={Rags=5},Output="Bandage",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Doctor=100}}},
  MakePlanks = {
   Name = "Make planks", Station = "Workstation",
