@@ -8,11 +8,19 @@ function Rules.BoxCount(maximum,roll)
  if typeof(maximum)~="number" or maximum~=maximum or maximum<1 or maximum==math.huge then return nil end
  return math.clamp(math.floor(roll*math.min(10000,math.floor(maximum)))+1,1,math.min(10000,math.floor(maximum)))
 end
-function Rules.Cost(material,thickness,kind)
+-- FMJ and AP use the same world-material budget. Caliber sets material access.
+function Rules.Cost(material,thickness,caliber)
+ if material=="Brick" and caliber~="223" and caliber~="308" then return math.huge end
+ if material=="Concrete" and caliber~="308" then return math.huge end
  local resistance=Rules.Resistance[material]
  if not resistance then return math.huge end
- local hard=material=="Brick" or material=="Concrete" or material=="Metal" or material=="ArmorSteel"
- return thickness*(1+resistance*(kind=="AP" and hard and .5 or 1))
+ return thickness*(1+resistance)
+end
+function Rules.ArmorIgnore(caliber,kind)
+ if caliber=="223" then return kind=="AP" and 3 or 2,kind=="AP" and .15 or .1 end
+ if caliber=="308" then return 5,kind=="AP" and .4 or .2 end
+ -- No 9 mm armor-ignore values have been specified yet.
+ return 0,0
 end
 -- Slab intersection in Part local coordinates; returns path distances, not bbox size.
 function Rules.Interval(origin,direction,frame,size)

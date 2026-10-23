@@ -1,3 +1,49 @@
+# Current wall and armor penetration — 23 October 2026
+
+This section supersedes earlier ammunition penetration descriptions below.
+
+For wall thickness 0.1 stud, both FMJ and AP follow identical rules:
+
+| Caliber | Glass / wood | Brick | Concrete |
+| --- | --- | --- | --- |
+| 9 mm | Penetrates if budget remains | Stops | Stops |
+| .223 | Penetrates if budget remains | Penetrates if budget remains | Stops |
+| .308 | Penetrates if budget remains | Penetrates if budget remains | Penetrates if budget remains |
+
+Material/angle/thickness still consume the shared projectile range budget.
+At 0.1 stud a brick wall costs180.1 and concrete costs320.1 budget units, plus air
+travel. Current .223 range350 permits one near brick wall; .308 range450 permits
+one near concrete wall. No infinite wall traversal. Unknown geometry/material
+still stops the shot. AP never reduces world-material cost or changes speed/range.
+
+| Ammunition | Ignore absorption | Ignore resistance (percentage points) |
+| --- | --- | --- |
+| .223 FMJ | 2 | 10 |
+| .223 AP | 3 | 15 |
+| .308 FMJ | 5 | 20 |
+| .308 AP | 5 | 40 |
+
+No values were specified for9mm FMJ/AP, so both remain0/0 until balanced.
+Projectile caliber/type determines these server-side values; clients cannot set
+them. They apply to both players and zombies through the common damage service.
+
+Damage order: roll base damage and critical multiplier; reduce effective armor
+by the ammunition's ignore values; apply percentage resistance first, then flat
+absorption; clamp at zero; add the flat Bonus ranged damage perk last. Resistance
+ignore subtracts percentage points (50%-15%=35%), not15% of the armor's value.
+Ignore is bounded at zero and operates on capped90% effective resistance.
+The flat perk bonus is not reduced by armor or multiplied by criticals and can
+deal damage when the base bullet is completely absorbed. It does not bypass
+creation/ForceField/friendly-fire protection. Existing Anatomy full bypass and
+melee Piercing strike retain their original behavior. No firearm base-damage
+rebalance has been invented from the qualitative automatic-weapon design note.
+
+Actual projectile tests cover caliber gates, two-layer walls, FMJ/AP parity and
+armor option propagation. Damage authority tests cover player/zombie armor values
+and perk order. Compilation and Rojo build pass; no Studio playtest.
+
+---
+
 # Rifle and ammunition
 
 ## Studio models
@@ -55,7 +101,7 @@ projectiles; each is limited to64impacts. No physical bullet Parts on the server
 
 Air consumes range1:1. Material crossing additionally consumes resistance times
 actual traversed thickness, including oblique angle. FirearmRules contains the
-initial per-stud resistance. AP halves hard-material resistance; soft materials
+initial per-stud resistance. AP uses the same material resistance as FMJ; soft materials
 use the same cost. Crossing reduces speed and damage via remaining budget.
 
 Set custom string `Material` on the Wall/Corner/DoorWay Model or individual Part:

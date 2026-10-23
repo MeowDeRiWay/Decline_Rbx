@@ -65,7 +65,7 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
   Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
-  SniperBonus=sniperBonus,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true,Ignored={character},Impacts=0}
+  SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true,Ignored={character},Impacts=0}
  emit("Muzzle",origin)
  return true
 end
@@ -90,7 +90,8 @@ RunService.Heartbeat:Connect(function(dt)
      local sniper=bullet.SniperBonus or 0
      local critical=random:NextNumber()<((sniper)+(bullet.Player:GetAttribute("CriticalChance") or 0)+(bullet.Category=="Pistol" and (bullet.Player:GetAttribute("PistolCriticalBonus") or 0) or 0))
      local multiplier=critical and random:NextNumber(bullet.Player:GetAttribute("CriticalMin") or 1.5,bullet.Player:GetAttribute("CriticalMax") or 2) or 1
-     local dealt=Damage.Apply(victim,bullet.Damage*math.max(.1,bullet.Remaining/bullet.Initial),"Bullet",bullet.Position-bullet.Direction,"Ranged",{HitChecked=true,CriticalMultiplier=multiplier,Attacker=bullet.Player,PostDefenseDamage=bullet.PostDefenseDamage})
+     local ignoreAbsorption,ignoreResistance=Rules.ArmorIgnore(bullet.Caliber,bullet.AmmoType)
+     local dealt=Damage.Apply(victim,bullet.Damage*math.max(.1,bullet.Remaining/bullet.Initial),"Bullet",bullet.Position-bullet.Direction,"Ranged",{HitChecked=true,CriticalMultiplier=multiplier,Attacker=bullet.Player,PostDefenseDamage=bullet.PostDefenseDamage,ArmorIgnoreAbsorption=ignoreAbsorption,ArmorIgnoreResistance=ignoreResistance})
      if dealt>0 and bullet.BoltAction and random:NextNumber()<(bullet.Player:GetAttribute("DisarmChance") or 0) then
       local targetPlayer=Players:GetPlayerFromCharacter(victim.Parent)
       if targetPlayer then require(script.Parent.WorldItemService).Disarm(targetPlayer)
@@ -102,7 +103,7 @@ RunService.Heartbeat:Connect(function(dt)
    local kind,thickness,parts=barrier(hit,bullet.Direction)
    emit("Impact",hit.Position,{Direction=hit.Normal,Material=kind or "Concrete"})
    if not kind then stopped=true;break end
-   local cost=Rules.Cost(kind,thickness,bullet.AmmoType)
+   local cost=Rules.Cost(kind,thickness,bullet.Caliber)
    if cost>=bullet.Remaining then
     bullet.Position+=bullet.Direction*(thickness*bullet.Remaining/cost);stopped=true;break
    end

@@ -134,6 +134,23 @@ chance=.349;assert(Service.RollHit(b,hp));chance=.35;assert(not Service.RollHit(
 a.Character:SetAttribute("HandsItem","Knife");chance=.35;assert(Service.RollHit(b,hp),"equipping removes unarmed evasion")
 print("PASS: structured actor/target reports for client visibility filtering, no overhead text")
 print("PASS: melee-only absorption, non-melee unchanged, zero-damage clamp and Apron Additional slot")
+-- Caliber armor ignore applies equally to players and zombies.
+a:SetAttribute("ArmorAbsorption",5);a:SetAttribute("ArmorResistance",.5);a:SetAttribute("DamageAbsorption",0);a:SetAttribute("DamageResistance",0);a:SetAttribute("LowHealthResistance",0);a:SetAttribute("DodgeChance",0);a:SetAttribute("CriticalNegation",0)
+b:SetAttribute("ArmorBypassChance",0)
+a.Character:SetAttribute("Knockout",false)
+for _,case in ipairs({{2,.1,9},{3,.15,11},{5,.2,14},{5,.4,18}}) do
+ hp.Health=100
+ local dealt=Service.Apply(hp,20,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true,ArmorIgnoreAbsorption=case[1],ArmorIgnoreResistance=case[2]})
+ assert(math.abs(dealt-case[3])<1e-8,"reduced resistance first, then reduced absorption")
+ local zombie=make("Model","Armored zombie",workspace,{ArmorResistance=.5,ArmorAbsorption=5})
+ local health=make("Humanoid","Humanoid",zombie);health.Health=100;health.MaxHealth=100
+ function health:TakeDamage(amount) self.Health=math.max(0,self.Health-amount) end
+ assert(math.abs(Service.Apply(health,20,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true,ArmorIgnoreAbsorption=case[1],ArmorIgnoreResistance=case[2]})-case[3])<1e-8)
+end
+hp.Health=100;a:SetAttribute("ArmorAbsorption",100);a:SetAttribute("ArmorResistance",.9)
+assert(Service.Apply(hp,20,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true,ArmorIgnoreAbsorption=5,ArmorIgnoreResistance=.4,PostDefenseDamage=4,CriticalMultiplier=2})==4,"flat perk damage survives fully absorbed automatic bullet and is added last without crit scaling")
+print("PASS: caliber armor penetration on players/zombies and post-defense flat perk ordering")
+
 '''
 cases=cases.replace('requirePlaceholder','(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)()').replace('inventoryPlaceholder','(function()\n'+(root/'src/shared/InventoryRules.luau').read_text()+'\nend)()')
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),setup,'local Service=(function()\n'+service+'\nend)()',cases]

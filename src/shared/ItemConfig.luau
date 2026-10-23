@@ -149,11 +149,12 @@ ItemConfig.Items.MachineGun308={Name=".308 machine gun",Weight=9,Slot="Hands",
  Weapon={Damage=30,DamageMin=25,DamageMax=30,DamageType="Bullet",MaxUses=5000,AttacksPerMinute=600}}
 ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Equip in Medicine. H, then click yourself or a nearby player to apply first aid."}
 for _,kind in ipairs({"FMJ","AP"}) do
- local role=if kind=="FMJ" then "Full metal jacket: a standard round for everyday firefights." else "Armor-piercing: a hardened round that loses less reach when passing through cover."
+ local role=if kind=="FMJ" then "Full metal jacket: a standard round for everyday firefights." else "Armor-piercing: ignores target armor according to caliber. Wall penetration is identical to FMJ."
  for _,ammo in ipairs({{ID="223",Name=".223",Weight=.012,Use="rifles"},{ID="9mm",Name="9 mm",Weight=.008,Use="pistols and submachine guns"},{ID="308",Name=".308",Weight=.024,Use="rifles and machine guns"}}) do
-  local description=ammo.Name.." ammunition for compatible "..ammo.Use..". "..role
+  local armorText=({["223FMJ"]=" Ignores 2 absorption and 10 percentage points of resistance.",["223AP"]=" Ignores 3 absorption and 15 percentage points of resistance.",["308FMJ"]=" Ignores 5 absorption and 20 percentage points of resistance.",["308AP"]=" Ignores 5 absorption and 40 percentage points of resistance."})[ammo.ID..kind] or ""
+  local description=ammo.Name.." ammunition for compatible "..ammo.Use..". "..role..armorText
   ItemConfig.Items["Ammo"..ammo.ID..kind]={Name=ammo.Name.." "..kind,Weight=ammo.Weight,Description=description,Ammo={Caliber=ammo.ID,Type=kind}}
-  ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="A box of "..ammo.Name.." "..kind.." rounds. Collect it to unpack the ammunition. "..role,AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=50}}
+  ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="A box of "..ammo.Name.." "..kind.." rounds. Collect it to unpack the ammunition. "..role..armorText,AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=50}}
  end
 end
 -- Prepared-food quality is an item variant, so it survives sharing, chests and drops.

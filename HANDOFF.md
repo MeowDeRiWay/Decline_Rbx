@@ -4,6 +4,21 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Caliber material gates and armor-only AP — 23 October
+
+FirearmRules.Cost now takes caliber, not ammo type. AP/FMJs identical world cost;
+Brick only223/308, Concrete only308,9mm stops both. Other material costs and budget
+falloff retained. At.1stud Brick180.1 and Concrete320.1;223range350/308range450.
+FirearmProjectiles captures Caliber and passes ArmorIgnoreAbsorption/Resistance
+from FirearmRules.ArmorIgnore:223FMJ2/.10,223AP3/.15,308FMJ5/.20,308AP5/.40.
+No9mm values supplied;0/0forboth, do not invent them. DamageService reduces effective
+armor using these ranged-only options; resistance then absorption then flat
+PostDefenseDamage perk. Percent ignores are percentage points, subtract after
+90%cap. Flat perk damage still unscaled bycrit/armor, useful through absorption.
+No weapon damage changes for qualitative automatic-weapon remark. Melee/anatomy
+unchanged. Ammo/box descriptions updated. Tests run actual wall geometry/projectiles
+and player/zombie damage routing; docs FIREARMS_SETUP.md authoritative section.
+
 ## Stove cooking fuel correction — 23 October
 
 User corrected5logs for potatoes to1log and requested Wood/Charcoal tabs, charcoal

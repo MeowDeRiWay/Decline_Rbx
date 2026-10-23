@@ -100,6 +100,10 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  if not bypass and multiplier>1 and negation>0 and math.random()<negation then multiplier=1 end
  local ignoreAbsorption=attackKind=="Melee" and attackerPlayer and (attackerPlayer:GetAttribute("MeleeIgnoreAbsorption") or 0) or 0
  local ignoreResistance=attackKind=="Melee" and attackerPlayer and (attackerPlayer:GetAttribute("MeleeIgnoreResistance") or 0) or 0
+ if attackKind=="Ranged" then
+  ignoreAbsorption=math.max(0,options.ArmorIgnoreAbsorption or 0)
+  ignoreResistance=math.max(0,options.ArmorIgnoreResistance or 0)
+ end
  local function resolve(value,resistance,absorption)
   return Defense.Resolve(value,math.max(0,math.clamp(resistance,0,.9)-ignoreResistance),math.max(0,absorption-ignoreAbsorption))
  end

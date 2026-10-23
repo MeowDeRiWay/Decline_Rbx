@@ -24,7 +24,8 @@ Random={new=function() return {NextNumber=function(_,a,b) return b or 0 end,Next
 Enum={RaycastFilterType={Exclude=1},PartType={Block=1}}
 RaycastParams={new=function() return {} end}
 local dealt=0
-local Damage={RollHit=function() return true end,Apply=function(_,amount,_,_,_,options) dealt+=amount*(options and options.CriticalMultiplier or 1);return amount end,Miss=function() error("unexpected miss") end}
+local lastOptions
+local Damage={RollHit=function() return true end,Apply=function(_,amount,_,_,_,options) lastOptions=options;dealt+=amount*(options and options.CriticalMultiplier or 1);return amount end,Miss=function() error("unexpected miss") end}
 local parts={}
 workspace={}
 function workspace:Raycast(origin,delta,params)
@@ -61,7 +62,7 @@ function character:FindFirstChild() end
 local target=group(nil)
 local hp={Health=100,Parent=target}
 function target:FindFirstChildOfClass() return hp end
-local definition={Category="Automatic",Speed=750,Range=350,Damage=25}
+local definition={Caliber="223",Category="Automatic",Speed=750,Range=350,Damage=25}
 '''
 cases='''
 local function run(kind,ammo)
@@ -77,7 +78,15 @@ local fmj=run("Brick","FMJ");assert(fmj>0 and fmj<clear,"thin wall crossed with 
 local brick=0
 for _,packet in ipairs(packets) do for _,e in ipairs(packet) do if e.Kind=="Impact" and e.Material=="Brick" then brick+=1 end end end
 assert(brick==2,"two visual layers produce ONE entrance and ONE exit")
-local ap=run("Brick","AP");assert(ap>fmj,"AP retains more range/damage through hard material")
+local ap=run("Brick","AP");assert(math.abs(ap-fmj)<1e-8,"AP and FMJ lose identical range/damage through walls")
+assert(lastOptions.ArmorIgnoreAbsorption==3 and lastOptions.ArmorIgnoreResistance==.15)
+assert(run("Concrete","FMJ")==0 and run("Concrete","AP")==0,"223 cannot penetrate concrete")
+definition.Caliber="9mm";definition.Range=200
+assert(run("Brick","FMJ")==0 and run("Brick","AP")==0,"9mm cannot penetrate brick even with SMG range")
+definition.Caliber="308";definition.Range=450
+assert(run("Concrete","FMJ")>0 and run("Concrete","AP")>0,"308 crosses a10cm concrete wall")
+assert(lastOptions.ArmorIgnoreAbsorption==5 and lastOptions.ArmorIgnoreResistance==.4)
+definition.Caliber="223";definition.Range=350
 assert(run("Metal","FMJ")==0,"insufficient budget stops projectile before target")
 assert(run("Unknown","AP")==0,"unknown material stops safely")
 parts={};packets={};definition.Range=10
@@ -108,7 +117,7 @@ since=2;assert(math.abs(run(nil,"FMJ")-clear*2.5)<1e-6,"sniper gives critical bo
 definition.SingleOnly=false;assert(math.abs(run(nil,"FMJ")-clear)<1e-6,"sniper excludes automatic rifles")
 definition.Category="Pistol";cowboy=1.15
 assert(math.abs(run(nil,"FMJ")-clear*1.15)<1e-6,"cowboy pistol damage")
-print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, AP retention, metal/unknown stop and exact air range")
+print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, FMJ/AP wall parity and caliber gates, metal/unknown stop and exact air range")
 '''
 with tempfile.TemporaryDirectory() as directory:
  path=Path(directory)/'projectiles.luau'
