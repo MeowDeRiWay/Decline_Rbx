@@ -8,6 +8,8 @@ This section supersedes the historical profession/talent notes below.
 - Maximum HP is `10 × Endurance + 4 × level × (1 + Lifegiver ranks)`.
   Every earned level adds 4 maximum HP before the existing Lifegiver bonuses.
   Increasing maximum HP preserves current HP; reducing it clamps current HP.
+- Carrying capacity is `5 × Strength + level + 10 × Strong back ranks` kg.
+  Each earned level adds 1 kg; admin reset recalculates it at level 1.
 - In Skills, click `+` once or hold it: one purchase on press, then a 0.35-second
   delay and one purchase every 0.15 seconds. Release, leaving the button, losing
   window focus, closing/changing the menu, KO, depleted points or skill cap stops

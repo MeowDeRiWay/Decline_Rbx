@@ -4,6 +4,16 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Level-based carrying capacity — 23 October
+
+Each earned character level adds1kg. CarryLimitKg=5*Strength+clamp(level,0,30)
++10*StrongBackRanks, recalculated by normal progression Sync, including admin grants
+and reset to1. Level0 keeps its old base capacity; zombies have no player level.
+Rule and actual service tests cover stacking, level cap, reset and subsequent gain.
+User also clarified that per-level HP should depend on Endurance but has not yet
+specified that formula. Existing +4/level HP remains pending that clarification;
+do not guess a coefficient or treat it as resolved.
+
 ## First-creation perk catalog — 23 October
 
 Clarification: the complete perk catalog must be immediately visible in the initial
