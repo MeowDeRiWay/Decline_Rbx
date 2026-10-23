@@ -92,7 +92,7 @@ attack.OnServerEvent:Connect(function(player)
    local dealt = Damage.Apply(nearest,baseDamage*knifeMultiplier,weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
- else Audio.Play(character,"Miss")
+ else Audio.Play(character,"Miss",player.UserId)
  end
  end)
 end)

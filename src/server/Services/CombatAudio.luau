@@ -13,7 +13,7 @@ function Audio.Prepare(model)
   end
  end
 end
-function Audio.Play(model,kind)
+function Audio.Play(model,kind,ownerUserId)
  local pattern=patterns[kind]
  if not model or not pattern then return end
  local origin=model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Body")
@@ -27,6 +27,7 @@ function Audio.Play(model,kind)
  local sound=options[random:NextInteger(1,#options)]:Clone()
  sound:Stop();sound.Name="Combat"..kind;sound.Looped=false;sound.PlayOnRemove=false;sound.TimePosition=0
  sound.RollOffMode=Enum.RollOffMode.LinearSquare;sound.RollOffMinDistance=1;sound.RollOffMaxDistance=8
+ sound:SetAttribute("CombatOwnerUserId",ownerUserId or 0)
  sound.Parent=origin
  sound.Ended:Once(function() sound:Destroy() end);Debris:AddItem(sound,10);sound:Play()
  return sound

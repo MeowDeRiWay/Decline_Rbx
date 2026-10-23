@@ -37,7 +37,8 @@ function Service.Miss(target,attacker,attackKind)
  if victim and victim:GetAttribute("AttributesConfirmed")==false then return end
  if friendly(attacker,target) then return end
  local actor=attacker and (attacker:IsA("Player") and attacker.Character or attacker)
- if attackKind=="Ranged" then Audio.Play(target,"ShotEvade") else Audio.Play(actor,"Miss") end
+ local owner=attacker and attacker:IsA("Player") and attacker.UserId or nil
+ if attackKind=="Ranged" then Audio.Play(target,"ShotEvade",owner) else Audio.Play(actor,"Miss",owner) end
  announce(target,"Miss",0,attacker,attackKind)
 end
 local function armorClass(actor,model)
@@ -128,7 +129,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  if amount>0 and attackKind=="Melee" and options.Attacker then
   local actor=options.Attacker:IsA("Player") and options.Attacker.Character or options.Attacker
   local hands=actor and actor:GetAttribute("HandsItem")
-  if not hands or hands=="" or hands=="ZombieHand" then Audio.Play(target,"Punch") end
+  if not hands or hands=="" or hands=="ZombieHand" then Audio.Play(target,"Punch",options.Attacker:IsA("Player") and options.Attacker.UserId or nil) end
  end
  target:SetAttribute("LastDamage",amount)
  target:SetAttribute("LastDamageType",damageType)

@@ -28,7 +28,8 @@ cases='''
 Audio.Prepare(template)
 for _,s in ipairs(template:GetChildren()) do assert(not s.Playing and s.Volume==.4 and not s.PlayOnRemove) end
 for _,kind in ipairs({"Punch","Miss","ShotEvade"}) do
- local s=Audio.Play(target,kind)
+ local s=Audio.Play(target,kind,123)
+ assert(s:GetAttribute("CombatOwnerUserId")==123)
  assert(s.Parent==target.Head and s.Playing and s.Name=="Combat"..kind)
  assert(s.RollOffMaxDistance==8 and s.RollOffMinDistance==1 and not s.Looped and not s.PlayOnRemove)
 end

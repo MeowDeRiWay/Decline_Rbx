@@ -14,6 +14,8 @@ local expirations={}
 local Debris={AddItem=function(_,copy,time) expirations[copy]=time end}
 local function sound(name,volume)
  local value={Name=name,Volume=volume or .7,PlaybackSpeed=1.2,TimePosition=.1,Looped=false,PlayOnRemove=false,Ended=signal(),Destroying=signal(),VolumeChanged=signal()}
+ function value:GetAttribute(key) return self[key] end
+ function value:IsDescendantOf(model) return self.Character==model end
  function value:IsA(kind) return kind=="Sound" end
  function value:GetPropertyChangedSignal(key) assert(key=="Volume");return self.VolumeChanged end
  function value:Play() self.Played=true end
@@ -24,7 +26,8 @@ local function sound(name,volume)
 end
 local initial=sound("PlayingReloadSound",.4)
 local character={DescendantAdded=signal(),DescendantRemoving=signal(),GetDescendants=function() return {initial} end}
-local player={Character=character,CharacterAdded=signal(),CharacterRemoving=signal()}
+local player={UserId=1,Character=character,CharacterAdded=signal(),CharacterRemoving=signal()}
+local workspace={DescendantAdded=signal(),GetDescendants=function() return {} end}
 local services={Players={LocalPlayer=player},SoundService=SoundService,Debris=Debris}
 local game={GetService=function(_,name) return services[name] end}
 '''
@@ -55,6 +58,16 @@ character.DescendantAdded:Fire(sound("PlayingShotSound"));assert(#copies==4,"old
 local replacement={DescendantAdded=signal(),DescendantRemoving=signal(),GetDescendants=function() return {} end}
 player.CharacterAdded:Fire(replacement)
 replacement.DescendantAdded:Fire(sound("PlayingShotSound"));assert(#copies==5 and copies[5].Played)
+local before=#copies
+local ownPunch=sound("CombatPunch",.3);ownPunch.CombatOwnerUserId=player.UserId
+workspace.DescendantAdded:Fire(ownPunch)
+assert(#copies==before+1 and ownPunch.Volume==0 and copies[#copies].Parent==SoundService and copies[#copies].Volume==.3,"attacker hears centered punch at remote victim")
+local received=sound("CombatPunch");received.Character=player.Character
+workspace.DescendantAdded:Fire(received);assert(#copies==before+2 and received.Volume==0,"victim hears centered incoming hit")
+local other=sound("CombatMiss");other.CombatOwnerUserId=99
+workspace.DescendantAdded:Fire(other);assert(#copies==before+2 and other.Volume==.7,"spectator keeps spatial sound")
+local selfHit=sound("CombatPunch");selfHit.Character=player.Character;selfHit.CombatOwnerUserId=player.UserId
+workspace.DescendantAdded:Fire(selfHit);workspace.DescendantAdded:Fire(selfHit);assert(#copies==before+3,"attacker and receiver same player never doubles")
 print("PASS: centered owner copies, preserved authored sound, no owner spatial double-play, overlapping shots, untouched remote/template/footsteps, reload cancellation, holster, cleanup and respawn")
 '''
 with tempfile.TemporaryDirectory() as folder:

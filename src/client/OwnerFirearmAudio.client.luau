@@ -1,5 +1,5 @@
--- Only the shooter hears a centered local copy. Other clients keep the original
--- server-approved muzzle sound, with its authored spatial attenuation.
+-- Attackers and players receiving a hit hear one centered local copy.
+-- Other clients keep the server-approved spatial sound and hearing range.
 local Players=game:GetService("Players")
 local SoundService=game:GetService("SoundService")
 local Debris=game:GetService("Debris")
@@ -13,9 +13,16 @@ local function stop(source,copyDestroying)
  for _,connection in ipairs(record.Connections) do connection:Disconnect() end
  if not copyDestroying then record.Copy:Stop();record.Copy:Destroy() end
 end
+local function combatSound(source)
+ return source.Name=="CombatPunch" or source.Name=="CombatMiss" or source.Name=="CombatShotEvade"
+end
 local function center(source)
  if not source:IsA("Sound") or active[source] then return end
- if source.Name~="PlayingShotSound" and source.Name~="PlayingReloadSound" then return end
+ if combatSound(source) then
+  local own=source:GetAttribute("CombatOwnerUserId")==player.UserId
+  local received=player.Character and source:IsDescendantOf(player.Character)
+  if not own and not received then return end
+ elseif source.Name~="PlayingShotSound" and source.Name~="PlayingReloadSound" then return end
  local copy=source:Clone()
  copy.Name="Owner"..source.Name
  copy.Looped=false;copy.PlayOnRemove=false
@@ -49,3 +56,11 @@ end
 player.CharacterAdded:Connect(bind)
 player.CharacterRemoving:Connect(clear)
 if player.Character then bind(player.Character) end
+
+-- Punches are emitted at the victim, which can be outside the attacker's rig.
+workspace.DescendantAdded:Connect(function(source)
+ if source:IsA("Sound") and combatSound(source) then center(source) end
+end)
+for _,source in ipairs(workspace:GetDescendants()) do
+ if source:IsA("Sound") and combatSound(source) then center(source) end
+end
