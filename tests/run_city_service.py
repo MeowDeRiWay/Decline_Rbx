@@ -86,13 +86,21 @@ local missing=make("Model","MissingShelf",furnishings); missing.CFrame=CFrame.ne
 Furniture.Fill(standalone); assert(#standalone.GeneratedFurniture:GetChildren()==1,"missing furniture can be supplied on a later retry")
 print("PASS: store choice, nested plots, furniture fill/anchoring, missing-template fallback and retry idempotence")
 local factories=make("Folder","Factories",library)
-local factory=make("Model","FactoryA",factories)
+local factory=make("Model","FactoryA",factories,{ForInfrastructure=true})
 factory.CFrame=CFrame.new(Vector3.zero);factory.Size=Vector3.new(40,5,40)
 local factoryYard=make("Model","Yard",factory);factoryYard.CFrame=CFrame.new(Vector3.zero);factoryYard.Size=Vector3.new(40,.2,40);make("Part","Part",factoryYard)
 local large=make("Model","InfrastructurePlace",workspace,{ForInfrastructure=true});large.CFrame=CFrame.new(Vector3.new(100,0,0));large.Size=Vector3.new(40,.2,40);make("Part","Part",large)
 Service.Generate()
 assert(large.GeneratedHouse.Value:GetAttribute("GenerationCategory")=="Factories" and large.GeneratedHouse.Value.Name=="FactoryA")
-local same=large.GeneratedHouse.Value;Service.Generate();assert(large.GeneratedHouse.Value==same,"factory cannot duplicate on retries")
+local same=large.GeneratedHouse.Value
+local buildingCount=#generated:GetChildren()
+-- Reproduce the screenshots: the source factory was also tagged as a plot.
+-- Retag the clone to cover an already-generated building and nested marker too.
+same:SetAttribute("ForInfrastructure",true);same.Yard:SetAttribute("ForInfrastructure",true)
+for _=1,5 do Service.Generate() end
+assert(large.GeneratedHouse.Value==same and #generated:GetChildren()==buildingCount,"tagged factory and its inner Yard must never become new plots")
+assert(not same:FindFirstChild("GeneratedHouse") and not same.Yard:FindFirstChild("GeneratedHouse"),"no recursive factories inside generated buildings")
+assert(factory:GetAttribute("ForInfrastructure"),"template attributes are not mutated")
 local small=make("Model","YardPlace",workspace,{ForZHouse=true,GenerationCategory="Factories"});small.CFrame=CFrame.new(Vector3.new(200,0,0));small.Size=Vector3.new(20,.2,20);make("Part","Part",small)
 Service.Generate();assert(not small:FindFirstChild("GeneratedHouse"),"40x40 factory cannot fit a 20x20 plot or fall back to a house")
 large:Destroy();Service.Generate();assert(same.destroyed)

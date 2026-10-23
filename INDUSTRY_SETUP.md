@@ -14,6 +14,10 @@ Set the **Model** attribute:
 | ForInfrastructure | Boolean | true |
 | GenerationCategory | String | Factories (optional; this is the default for infrastructure) |
 
+`ForInfrastructure=true` belongs on the placement marker in Workspace, not on
+the factory template. Generated buildings and all their descendants are excluded
+from plot discovery, even if they accidentally retain this attribute.
+
 Put factory templates in `ServerStorage/CityGeneration/Factories`. Each is a Model
 with a direct child `Yard` Model or Part matching the 40 × 40 plot footprint. Its
 physical marker establishes the alignment and vertical level, as for houses.

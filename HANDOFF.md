@@ -4,6 +4,20 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Factory recursive generation fix — 23 October
+
+Screenshots showed ForInfrastructure=true both on Workspace/Yard plot and on
+ServerStorage/CityGeneration/Factories/Factory. Clones inherited the template flag
+and Generate scanned each completed factory as a new plot every5s, recursively
+stacking/spawning buildings. Reproduced with real service test: tagged factory
+and inner Yard made building count grow on retries. Fixed discovery and place()
+to reject all content within GeneratedCityHouses or under GeneratedCityHouse=true
+ancestors. Also clear ForInfrastructure on new clone roots, preserving source
+attributes. Regression retags a finished clone and its inner Yard, runs5passes,
+asserts stable count and no nested GeneratedHouse references. City/geometry tests,
+compile and Rojo pass. User should stop Play, pull and restart to clear existing
+transient clones; ForInfrastructure should only be on the Workspace plot marker.
+
 ## Caliber material gates and armor-only AP — 23 October
 
 FirearmRules.Cost now takes caliber, not ammo type. AP/FMJs identical world cost;

@@ -13,6 +13,14 @@ local random = Random.new(seed)
 local generated, busy, warnings = {}, {}, {}
 local categories=setmetatable({},{__mode="k"})
 local folder
+local function generatedContent(object)
+ local ancestor=object
+ while ancestor and ancestor~=workspace do
+  if ancestor==folder or ancestor:GetAttribute("GeneratedCityHouse")==true then return true end
+  ancestor=ancestor.Parent
+ end
+ return false
+end
 local function box(object)
  if object:IsA("Model") and object:FindFirstChildWhichIsA("BasePart",true) then return object:GetBoundingBox() end
  if object:IsA("BasePart") then return object.CFrame,object.Size end
@@ -70,7 +78,7 @@ local function hidePlot(plot)
  plot:SetAttribute("BlocksVision",false)
 end
 local function place(plot, sources, roadList)
- if busy[plot] or not plot:IsDescendantOf(workspace) or (plot:GetAttribute("ForZHouse") ~= true and plot:GetAttribute("ForInfrastructure") ~= true) then return end
+ if busy[plot] or generatedContent(plot) or not plot:IsDescendantOf(workspace) or (plot:GetAttribute("ForZHouse") ~= true and plot:GetAttribute("ForInfrastructure") ~= true) then return end
  local explicit=plot:GetAttribute("GenerationCategory") or (plot:GetAttribute("ForInfrastructure")==true and "Factories" or nil)
  if explicit and not sources[explicit] then warnOnce(plot,"Unknown GenerationCategory: "..tostring(explicit));return end
  local existing = plot:FindFirstChild("GeneratedHouse")
@@ -106,6 +114,7 @@ local function place(plot, sources, roadList)
  local chosen = candidates[random:NextInteger(1,#candidates)]
  local clone = chosen.house:Clone()
  clone:SetAttribute("GeneratedCityHouse",true)
+ clone:SetAttribute("ForInfrastructure",nil)
  clone:SetAttribute("GenerationCategory",category)
  clone:SetAttribute("GenerationSeed",seed)
  local yard = clone:FindFirstChild("Yard")
@@ -135,7 +144,7 @@ end
 function Service.Generate()
  local sources,roadList,plots = {Houses=templates("Houses"),Stores=templates("Stores"),Factories=templates("Factories")},roads(),{}
  for _, object in ipairs(workspace:GetDescendants()) do
-  if object:IsA("Model") and ((object.Name == "YardPlace" and object:GetAttribute("ForZHouse") == true) or object:GetAttribute("ForInfrastructure")==true) then table.insert(plots,object) end
+  if object:IsA("Model") and not generatedContent(object) and ((object.Name == "YardPlace" and object:GetAttribute("ForZHouse") == true) or object:GetAttribute("ForInfrastructure")==true) then table.insert(plots,object) end
  end
  table.sort(plots,plotOrder)
  for _, plot in ipairs(plots) do place(plot,sources,roadList) end
