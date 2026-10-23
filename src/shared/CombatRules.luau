@@ -1,5 +1,9 @@
 local Rules = {}
 Rules.Unarmed={Damage=0,DamageType="Blunt",AttacksPerMinute=60,Range=1,Width=2,Animation="SwingLeft"}
+-- Randomize only the Strength-derived part; flat unarmed perks remain additive.
+function Rules.UnarmedDamage(strengthBonus,flatBonus,roll)
+ return math.max(0,strengthBonus or 0)*(.75+.45*math.clamp(roll,0,1))+(flatBonus or 0)
+end
 function Rules.GetWeapon(state,definitions)
  local id = state.Equipment.Hands
  if not id or id=="" then return Rules.Unarmed end

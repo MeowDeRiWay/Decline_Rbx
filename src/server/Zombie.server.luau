@@ -12,6 +12,7 @@ local Sector = require(ReplicatedStorage.Shared.VisibilityRules)
 local LootConfig = require(ReplicatedStorage.Shared.ZombieLootConfig)
 local LootRules = require(ReplicatedStorage.Shared.LootRules)
 local Items = require(ReplicatedStorage.Shared.ItemConfig).Items
+local CombatRules=require(ReplicatedStorage.Shared.CombatRules)
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Visuals = require(script.Parent.Services.EquipmentVisuals)
 local Noise=require(script.Parent.Services.NoiseService)
@@ -405,7 +406,7 @@ local function prepare(model)
      local targetPlayer=Players:GetPlayerFromCharacter(victim.Parent)
      if targetPlayer or victim.Parent:GetAttribute("OfflineUserId") then victim.Parent:SetAttribute("Sick",math.clamp((victim.Parent:GetAttribute("Sick") or 0)+(model:GetAttribute("Strength") or 0),0,100)) end
      local critical=statRandom:NextNumber()<(model:GetAttribute("CriticalChance") or 0)
-     if Damage.Apply(victim,model:GetAttribute("MeleeBonus"),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextInteger(2,4) or 1})>0 then
+     if Damage.Apply(victim,CombatRules.UnarmedDamage(model:GetAttribute("MeleeBonus"),0,statRandom:NextNumber()),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextInteger(2,4) or 1})>0 then
       model:SetAttribute("WeaponCondition",math.max(0,(model:GetAttribute("WeaponCondition") or 0)-1))
      end
     end)

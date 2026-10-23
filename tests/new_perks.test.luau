@@ -59,3 +59,6 @@ local mixed=C.Plan({BoiledPotato=0,Ramsay_BoiledPotato=1,SausageSlice=1,Plate=1}
 assert(mixed and mixed.Ingredients.Ramsay_BoiledPotato==1 and not mixed.Ingredients.BoiledPotato,"quality food usable in later recipes")
 local farmer=R.New();farmer.Confirmed=true;assert(farmer.Practice.Farmer.Value==0 and R.Practice(farmer,"Farmer",10) and farmer.Practice.Farmer.Value==1)
 print("PASS: new perk authority/ranks, level-scaled health, automatic perk, doubled XP, craft discount, bandage limits, stealth running and equipped weight")
+
+assert(Combat.UnarmedDamage(10,0,0)==7.5 and Combat.UnarmedDamage(10,0,1)==12)
+assert(Combat.UnarmedDamage(20,10,0)==25 and Combat.UnarmedDamage(20,10,1)==34,"Strong arm scales rolled Strength, flat perk remains additive")

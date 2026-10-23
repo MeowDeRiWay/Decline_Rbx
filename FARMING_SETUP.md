@@ -34,7 +34,7 @@ Water thresholds use percentage of MaxWatering, so different-capacity beds behav
 | Above0–under40% | 2 | 20% |
 | 0 | No growth | 50% |
 
-Base growth remains600seconds at full watering. Each minute of growth gets an independent rot roll using current water. A ripe bush becomes rotten after a provisional300seconds if uncollected. Stage3is harvestable; stage4is rotten and yields nothing. Clear rotten plants with E and plant again. Water is retained after harvest/clearing. Timings and yields live in FarmingConfig.
+Stages1and2 each take120seconds at full watering (240seconds total). Each minute of growth gets an independent rot roll using current water. A ripe bush becomes rotten after a 180seconds if uncollected. Stage3is harvestable; stage4is rotten and yields nothing. Rotten plants persist indefinitely until cleared with E; then plant again. Water is retained after harvest/clearing. Timings and yields live in FarmingConfig.
 
 The owner's Kherson watermelons perk multiplies yield by1.5, with fair fractional rounding. Set OwnerID on Greenhouse or parent BuildingSpace. The owner's bonus is cached through disconnect and reset on transfer. No farming perk requirements have been invented yet.
 

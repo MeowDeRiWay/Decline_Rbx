@@ -11,3 +11,7 @@ print("PASS: new character stats, equipment defense and melee damage, movement, 
 local m=S.Calculate({MaxHealth=10,CarryLimitKg=5,MeleeBonus=1,DodgeChance=5,WalkBonus=.3,RunBonus=1,Regeneration=2,CriticalChance=.01},nil,nil,10,10)
 assert(m.MaxHealth==10 and m.Dodge==5 and m.Carry==5 and m.MeleeDamage==1 and m.Absorption==0 and m.Resistance==0)
 assert(m.WalkSpeed==.3 and m.RunSpeed==1 and m.Regeneration==2 and m.CriticalChance==.01)
+
+local fists=S.Calculate({MeleeBonus=10,UnarmedDamageBonus=10},nil)
+assert(fists.MeleeDamageMin==17.5 and fists.MeleeDamageMax==22)
+assert(s.MeleeDamageMin==25 and s.MeleeDamageMax==25,"equipped melee unchanged")

@@ -15,6 +15,8 @@ function Stats.Calculate(attributes,definition,condition,health,maxHealth)
   MeleeAbsorption=math.max(0,(a.ArmorAbsorption or 0)+(a.DamageAbsorption or 0)+(a.MeleeAbsorption or 0)),
   Resistance=math.clamp((a.ArmorResistance or 0)+(a.DamageResistance or 0)+((health or 0)<(maxHealth or a.MaxHealth or 10)*.25 and (a.LowHealthResistance or 0) or 0),0,.9),
   Carry=a.CarryLimitKg or 5,WalkSpeed=a.WalkBonus or .2,RunSpeed=a.RunBonus or .4,Regeneration=a.Regeneration or 0,Sprint=10+(a.Agility or 0),Accuracy=math.clamp((a.Accuracy or 25)+(a[category.."AccuracyBonus"] or 0)+(gun and (a.WeaponAccuracyBonus or 0) or 0),0,300),
+  MeleeDamageMin=not definition and (a.MeleeBonus or 0)*.75+(a.UnarmedDamageBonus or 0) or damage,
+  MeleeDamageMax=not definition and (a.MeleeBonus or 0)*1.2+(a.UnarmedDamageBonus or 0) or damage,
   Dodge=(a.DodgeChance or 0)+(not definition and (a.UnarmedArmorClass or 0) or 0),MeleeDamage=damage,MeleeEquipped=melee~=nil and melee~=false,
   CriticalChance=(a.CriticalChance or 0)+(category=="Pistol" and (a.PistolCriticalBonus or 0) or 0)+(gun and category=="Rifle" and gun.SingleOnly and (a.StationaryFor or 0)>=2 and (a.SniperCriticalBonus or 0) or 0),
   CriticalMin=a.CriticalMin or 1.5,CriticalMax=a.CriticalMax or 2,Luck=a.LuckChance or 0,

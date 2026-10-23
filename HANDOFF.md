@@ -4,6 +4,10 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Farming timing and unarmed variance — 23 October
+
+Supersedes timings below: GrowthSeconds240 (stages1and2 each120seconds at normal watering speed); ripe stage3lasts180seconds then permanently rotten stage4until manually cleared. Low-water growth penalties unchanged. Tests updated to verify timing and persistent rot. Player and zombie unarmed attacks now roll75%–120% of effective Strength-derived MeleeBonus, uniform per landed attack before criticals/armor. StrongArm affects this Strength component, flat UnarmedDamage perk remains additive; equipped melee/tools/ranged unchanged. CombatRules.UnarmedDamage shared by both servers. Character sheet shows unarmed min–max while hands empty. Infection still raw current Strength, not rolled hit damage.
+
 ## Multi-plant irrigation and rot — 23 October
 
 Supersedes the initial single-potato farming loop below. GardenBed numeric MaxPlants(default5,clamped1..100), MaxWatering(default100). Empty-handed E plants all free slots without seeds/consuming potatoes. Only Potato currently. Each bush grows independently, consumes20water continuously over full growth, stage1early/2late/3ripe/4rot. Four exact PotatoStage1..4 models, evenly spaced along bed's longest horizontal axis using cached pre-crop bounds and optional CropAnchor. Watering bucket adds100 capped capacity; full bed no consumption. Held bucket always waters; pocket bucket waters growing bed without harvestable/rotten plants. Empty hands collect ripe0..4yield each/clear rot, preserve growing plants and remaining water; ownerKherson1.5yield retained. Hover shows units/plants/ready/rot.

@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CombatRules=require(ReplicatedStorage.Shared.CombatRules)
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Damage = require(script.Parent.Services.DamageService)
 local Inventory = require(script.Parent.Services.InventoryService)
@@ -86,7 +87,8 @@ attack.OnServerEvent:Connect(function(player)
    end
    nearest.Parent:SetAttribute("LastDamagerID",player.UserId)
    nearest.Parent:SetAttribute("LastHitItem",character:GetAttribute("HandsItem"))
-   local dealt = Damage.Apply(nearest,(weapon.Damage+(player:GetAttribute("MeleeBonus") or 0)+(not definition and (player:GetAttribute("UnarmedDamageBonus") or 0) or 0))*knifeMultiplier,weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
+   local baseDamage=not definition and CombatRules.UnarmedDamage(player:GetAttribute("MeleeBonus"),player:GetAttribute("UnarmedDamageBonus"),random:NextNumber()) or weapon.Damage+(player:GetAttribute("MeleeBonus") or 0)
+   local dealt = Damage.Apply(nearest,baseDamage*knifeMultiplier,weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
  end
