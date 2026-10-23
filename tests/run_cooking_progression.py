@@ -45,6 +45,7 @@ Service.Close(a)
 callbacks[1]()
 assert(stock.TreeLog==5 and xp==0 and bonuses==0,"cancelled crafting refunds ingredients and grants no XP/bonus")
 allowed=true
+stock.TreeLog=20
 assert(Service.Open(a,stove))
 assert(not Service.Cook(a,"BoilPotatoes",6))
 assert(Service.Cook(a,"BoilPotatoes",5))
@@ -80,7 +81,7 @@ assert(not Service.Cook(a,"MakeBandage",2),"one bandage per queue")
 assert(Service.Cook(a,"MakeBandage",1) and stock.Rags==0 and durations[#durations]==20,"discounted rags consumed,20second craft")
 callbacks[#callbacks]()
 assert(Service.Snapshot(a).CookingReady.Bandage==1,"bandage delivered once at completion")
-Service.Close(a);assert(Service.Open(a,stove));stock.Potato=1;stock.CleanWater=1;cookState.Ramsay=1
+Service.Close(a);assert(Service.Open(a,stove));stock.Potato=1;stock.CleanWater=1;stock.TreeLog=1;cookState.Ramsay=1
 assert(Service.Cook(a,"BoilPotatoes",1));callbacks[#callbacks]()
 assert(Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==1,"cook quality persists in station output")
 assert(Service.CollectRecipe(a,"BoilPotatoes","All") and stock.Ramsay_BoiledPotato==1,"collect all preserves Ramsay food variant")
@@ -132,10 +133,16 @@ assert(Service.CollectRecipe(a,"BurnLogs","All") and stock.Coal==5)
 stock.TreeLog=5
 assert(Service.Cook(a,"BurnLogsWithCoal",1) and stock.Coal==4 and durations[#durations]==30)
 Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Coal==5)
-Service.Close(a);assert(Service.Open(a,stove));stock.TreeLog=5;stock.Potato=5;stock.CleanWater=5;cookState.Ramsay=1
-assert(Service.Cook(a,"BoilPotatoesWithLogs",1));Service.Close(a);callbacks[#callbacks]()
-assert(Service.Open(a,stove) and Service.Snapshot(a).CookingReady.Coal==5 and Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==5,"charcoal byproduct cannot become a food quality alias")
-assert(Service.CollectRecipe(a,"BoilPotatoesWithLogs","All"))
+Service.Close(a);assert(Service.Open(a,stove));stock.TreeLog=1;stock.Potato=5;stock.CleanWater=5;cookState.Ramsay=1
+assert(Service.Cook(a,"BoilPotatoes",5));Service.Close(a);callbacks[#callbacks]()
+assert(Service.Open(a,stove) and Service.Snapshot(a).CookingReady.Coal==1 and Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==5,"charcoal byproduct cannot become a food quality alias")
+assert(Service.CollectRecipe(a,"BoilPotatoes","All"))
+stock.Potato=5;stock.CleanWater=5;stock.TreeLog=0;stock.Coal=1
+assert(not Service.Cook(a,"BoilPotatoes",5),"no unfueled boiling bypass")
+assert(Service.Cook(a,"BoilPotatoesCoal",5) and stock.Coal==0 and durations[#durations]==30)
+Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,stove))
+assert(Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==5 and not Service.Snapshot(a).CookingReady.Coal,"coal cooks twice as fast without producing charcoal")
+print("PASS: one fuel for five servings, one wood charcoal byproduct, wood60s versus coal30s, no unfueled bypass")
 print("PASS: industrial recipe inputs, Repair gates, exact XP/output, town/factory separation, Furnace T2 gate, unattended processing, charcoal fuel and food byproducts")
 
 '''

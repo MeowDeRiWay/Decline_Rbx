@@ -34,7 +34,7 @@ end
 for _,recipe in pairs(Recipes) do
  if recipe.Station=="Workstation" then
   assert(recipe.MaxBatch==1)
-  local items={TreeLog=100,Plank=100,Handle=100,Stone=100,Scrap=100}
+  local items={TreeLog=100,Plank=100,Handle=100,Stone=100,Scrap=100,Rags=100,Coal=100,Chemicals=100}
   assert(Craft.Batch(Craft.Available(items,recipe),"All",recipe.MaxBatch)==1)
   assert(Craft.Plan(items,recipe,2)==nil,"server must reject multi-item workstation batches")
  end
@@ -44,7 +44,7 @@ assert(Recipes.MakeAxe.Ingredients.Handle==1 and Recipes.MakeShovel.Ingredients.
 assert(Recipes.MakePlanks.OutputCount==3,"one crafting operation still produces three planks per log")
 local boil=Recipes.BoilPotatoes
 assert(boil.MaxBatch==5)
-local plan=assert(Craft.Plan({Potato=5,CleanWater=5},boil,5))
+local plan=assert(Craft.Plan({Potato=5,CleanWater=5,TreeLog=1},boil,5))
 assert(plan.Ingredients.Potato==5 and plan.Ingredients.CleanWater==5 and plan.Outputs.BoiledPotato==5)
 assert(Craft.Plan({Potato=6,CleanWater=6},boil,6)==nil)
 print("PASS: 8 material tools/weapons, 5/10/15 resource damage, access tiers, knife damage/cooking and recipe costs")

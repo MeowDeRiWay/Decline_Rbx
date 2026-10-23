@@ -21,6 +21,7 @@ local CraftRules=require(ReplicatedStorage.Shared.CraftRules)
 local selectedRecipe=nil
 local craftAmounts={}
 local craftStatuses={}
+local stoveFuelTab="Wood"
 local gui = Instance.new("ScreenGui")
 gui.Name, gui.ResetOnSpawn, gui.Enabled = "InventoryUI", false, false
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -266,8 +267,16 @@ local function renderItems(frame, items, side)
 end
 local function renderRecipes()
  table.clear(craftStatuses)
+ if snapshot.CookingStation=="Stove" then
+  local tabs=Instance.new("Frame");tabs.Size=UDim2.new(1,-8,0,38);tabs.BackgroundTransparency=1;tabs.LayoutOrder=0;tabs.Parent=equipment
+  for index,entry in ipairs({{ID="Wood",Name="Wood"},{ID="Coal",Name="Charcoal (2x)"}}) do
+   local tab=button(tabs,entry.Name,UDim2.new((index-1)*.5,2,0,2),UDim2.new(.5,-6,0,32))
+   tab.TextSize=14;tab.TextColor3=stoveFuelTab==entry.ID and Theme.Accent or Theme.Muted
+   tab.Activated:Connect(function() stoveFuelTab=entry.ID;selectedRecipe=nil;redraw() end)
+  end
+ end
  local ids={}
- for id,recipe in pairs(Recipes) do if Stations.Matches(recipe,snapshot.CookingStation) then table.insert(ids,id) end end
+ for id,recipe in pairs(Recipes) do if Stations.Matches(recipe,snapshot.CookingStation) and (snapshot.CookingStation~="Stove" or not recipe.FuelTab or recipe.FuelTab==stoveFuelTab) then table.insert(ids,id) end end
  table.sort(ids)
  if #ids==0 then text(equipment,"No recipes available yet.",UDim2.fromOffset(8,8),UDim2.new(1,-16,0,50)) end
  for order,id in ipairs(ids) do
@@ -294,6 +303,7 @@ local function renderRecipes()
   description.TextWrapped=true
   local ingredients={}
   for item,count in pairs(recipe.Ingredients) do table.insert(ingredients,string.format("%d %s (%d owned)",count,ItemConfig.Items[item].Name,CraftRules.Count(snapshot.Items,item))) end
+  if recipe.Fuel then table.insert(ingredients,string.format("%d %s per batch (%d owned)",recipe.Fuel.Count,ItemConfig.Items[recipe.Fuel.ID].Name,snapshot.Items[recipe.Fuel.ID] or 0)) end
   if recipe.Variants then
    local names,total={},0
    for _,variant in ipairs(recipe.Variants) do
@@ -305,6 +315,7 @@ local function renderRecipes()
   table.sort(ingredients)
   local extras=""
   for output,count in pairs(recipe.Byproducts or {}) do extras..=string.format(" + %d %s",count,ItemConfig.Items[output].Name) end
+  for output,count in pairs(recipe.FuelByproducts or {}) do extras..=string.format(" + %d %s per batch",count,ItemConfig.Items[output].Name) end
   local ingredientsText=text(card,table.concat(ingredients,"\n")..string.format("\n→ %d %s",recipe.OutputCount or 1,(recipe.Output and ItemConfig.Items[recipe.Output].Name or "Meal matching the plate")..extras),UDim2.fromOffset(10,104),UDim2.new(1,-20,0,74))
   ingredientsText.TextSize=14; ingredientsText.TextWrapped=true
   local tool=recipe.Tool and (speed and string.format("Knife required · Speed ×%g",speed) or "Knife required · Missing usable knife") or "No tool required"

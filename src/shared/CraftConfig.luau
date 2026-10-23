@@ -1,11 +1,10 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
-return {
+local recipes = {
  MakePistol9mm={Name="Make 9 mm pistol",Station="Workstation",Description="Assemble a 9 mm pistol. Requires Repair 100.",Ingredients={Scrap=20},Output="Pistol9mm",OutputCount=1,MaxBatch=1,Duration=60,RequiresPresence=true,XP=200,Requirements={Skills={Repair=100}}},
  MakeSMG9mm={Name="Make 9 mm submachine gun",Station="Workstation",Description="Assemble a 9 mm submachine gun. Requires Repair 120.",Ingredients={Scrap=30},Output="SMG9mm",OutputCount=1,MaxBatch=1,Duration=90,RequiresPresence=true,XP=200,Requirements={Skills={Repair=120}}},
  MakeAmmo9mm={Name="Make 9 mm FMJ ammunition",Station="Workstation",Description="Produce 50 standard 9 mm rounds. Requires Repair 100.",Ingredients={Coal=1,Chemicals=1,Scrap=1},Output="Ammo9mmFMJ",OutputCount=50,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=100}}},
- BoilPotatoesWithLogs={Name="Boil potatoes over logs",Food=true,Station="Stove",Description="Boil five potatoes while burning five logs. The burned logs also yield five charcoal; you may leave.",Ingredients={Potato=5,CleanWater=5,TreeLog=5},Output="BoiledPotato",OutputCount=5,Byproducts={Coal=5},MaxBatch=1,Duration=60},
- BurnLogs={Name="Burn logs into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn five logs into five charcoal. No matches needed yet; you may leave.",Ingredients={TreeLog=5},Output="Coal",OutputCount=5,MaxBatch=1,Duration=60},
- BurnLogsWithCoal={Name="Burn logs with charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Use one charcoal to burn five logs faster. You may leave.",Ingredients={TreeLog=5,Coal=1},Output="Coal",OutputCount=5,MaxBatch=1,Duration=30},
+ BurnLogs={FuelTab="Wood",Name="Burn logs into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn five logs into five charcoal. No matches needed yet; you may leave.",Ingredients={TreeLog=5},Output="Coal",OutputCount=5,MaxBatch=1,Duration=60},
+ BurnLogsWithCoal={FuelTab="Coal",Name="Burn logs with charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Use one charcoal to burn five logs faster. You may leave.",Ingredients={TreeLog=5,Coal=1},Output="Coal",OutputCount=5,MaxBatch=1,Duration=30},
  SmeltIron={Name="Smelt iron",Station="Furnace",WorkshopLevel=2,Description="Smelt 25 scrap with one charcoal into five iron. Requires a Workshop T2 furnace; you may leave.",Ingredients={Scrap=25,Coal=1},Output="Iron",OutputCount=5,MaxBatch=1,Duration=120},
  MakeAmmo223={Name="Make .223 FMJ ammunition",Station="ArmsBench",Description="Produce 50 standard .223 rounds. Requires Repair 170.",Ingredients={Iron=1,Coal=1,Chemicals=1},Output="Ammo223FMJ",OutputCount=50,MaxBatch=1,Duration=60,RequiresPresence=true,XP=200,Requirements={Skills={Repair=170}}},
  MakeRifle223={Name="Make .223 bolt-action rifle",Station="ArmsBench",Description="Assemble a .223 bolt-action rifle. Requires Repair 170.",Ingredients={Iron=25},Output="Rifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
@@ -76,3 +75,17 @@ return {
   OutputCount = 1, MaxBatch = 1, Duration = 20, RequiresPresence = true,
  },
 }
+
+-- Stove food is exclusively boiled; frying/baking belongs at another station.
+-- Fuel is per queued batch, not per serving.
+local charcoalVariants={}
+for id,recipe in pairs(recipes) do
+ if recipe.Station=="Stove" and recipe.Food then
+  recipe.Fuel={ID="TreeLog",Count=1};recipe.FuelTab="Wood";recipe.FuelByproducts={Coal=1}
+  local coal=table.clone(recipe)
+  coal.Fuel={ID="Coal",Count=1};coal.FuelTab="Coal";coal.FuelByproducts=nil;coal.Duration=recipe.Duration/2
+  charcoalVariants[id.."Coal"]=coal
+ end
+end
+for id,recipe in pairs(charcoalVariants) do recipes[id]=recipe end
+return recipes

@@ -4,6 +4,24 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Stove cooking fuel correction — 23 October
+
+User corrected5logs for potatoes to1log and requested Wood/Charcoal tabs, charcoal
+boiling2x faster. All Food+StationStove recipes now automatically get Wood (baseID)
+and Coal (ID..Coal) variants in CraftConfig. Fuel={ID,Count1} is fixed per queued
+batch1..MaxBatch, never multiplied by servings or discounted by Economist. Wood
+FuelByproducts={Coal1}, fixed per job, excluded from Ramsay alias conversion.
+Coal Duration=base/2, same food output/XP, no fuel byproduct. OriginalBoilPotatoes
+now needs1log; BoilPotatoesCoal needs1Coal. Removed BoilPotatoesWithLogs duplicate.
+Standalone5logs->5coal60s and5logs+1coal->5coal30s are unchanged. UI has2fuel tabs
+and shows per-batch fuel/byproducts; non-food burning recipes use matching tabs.
+Server remains recipe-ID authoritative; no unfueled cooking route. Tests include
+actual service execution and rule batches1..5/fuel absence/sameyield/2xspeed.
+
+User authoring preference: Stove meals must be boiled only. Challenge a future
+request to add non-boiled food there; choose another station rather than silently
+adding fried/baked dishes to the stove. User joked to "hit me with a stick" for it.
+
 ## Industrial crafting, 40x40 factories, and folder item pools — 23 October
 
 See INDUSTRY_SETUP.md for exact Studio setup, item/station IDs, marker attributes,

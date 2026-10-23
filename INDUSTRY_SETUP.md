@@ -85,13 +85,22 @@ world box; AP recipes were not specified and have not been invented.
 | Stove / Furnace | Burn logs | 5 TreeLog | 5 Coal | — | default 50 | 60 |
 | Stove / Furnace | Burn logs with charcoal | 5 TreeLog + 1 Coal | 5 Coal | — | default 50 | 30 |
 | Furnace in Workshop T2 | Smelt iron | 25 Scrap + 1 Coal | 5 Iron | — | default 50 | 120 |
-| Stove | Boil potatoes over logs | 5 Potato + 5 CleanWater + 5 TreeLog | 5 BoiledPotato + 5 Coal | — | default 50 | 60 |
+| Stove / Wood | Boil potatoes (1–5 servings) | 1 Potato + 1 CleanWater per serving; **1 TreeLog per batch** | 1 BoiledPotato per serving + **1 Coal per batch** | — | 50 per serving | 60 |
+| Stove / Charcoal | Boil potatoes (1–5 servings) | 1 Potato + 1 CleanWater per serving; **1 Coal per batch** | 1 BoiledPotato per serving | — | 50 per serving | 30 |
 
 The iron batch implements both specified quantities: **5 Scrap per Iron**, with
 one charcoal fueling the full five-iron batch. No matches are required yet.
-The optional potatoes-over-logs recipe gives charcoal as an actual cooking
-byproduct. The previous potato recipe remains available at its existing cost.
-Ramsay quality applies to the cooked food, never to the charcoal byproduct.
+The stove UI has **Wood** and **Charcoal (2x)** tabs. Every stove food recipe is
+boiling and automatically gets both variants: one log or one charcoal per entire
+queued batch, irrespective of serving count. Charcoal halves the duration without
+changing food yield or XP. The original fuel-free route and five-log cooking
+duplicate are removed. Wood produces one charcoal as a byproduct; charcoal fuel
+is consumed without returning itself. Ramsay quality applies only to cooked food.
+
+Authoring rule: Stove food is exclusively boiled. If a future request puts a fried,
+baked or otherwise non-boiled meal in the Stove, point out the mismatch before
+adding it; use an appropriate different station. Separate five-log charcoal
+processing recipes remain unchanged in their matching fuel tab.
 
 Burning, cooking and smelting do **not** anchor the player or require an open menu.
 Ingredients are consumed when starting; close the menu and return later to

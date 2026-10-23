@@ -13,7 +13,11 @@ end
 function Rules.Count(items,id) return (items[id] or 0)+(items["Ramsay_"..id] or 0) end
 function Rules.Available(items,recipe)
  local available=math.huge
- for id,count in pairs(recipe.Ingredients) do available=math.min(available,math.floor(Rules.Count(items,id)/count)) end
+ for id,count in pairs(recipe.Ingredients) do
+  local reserve=recipe.Fuel and recipe.Fuel.ID==id and recipe.Fuel.Count or 0
+  available=math.min(available,math.floor((Rules.Count(items,id)-reserve)/count))
+ end
+ if recipe.Fuel and (items[recipe.Fuel.ID] or 0)<recipe.Fuel.Count then return 0 end
  if recipe.Variants then
   local total=0
   for _,variant in ipairs(recipe.Variants) do total+=items[variant.Ingredient] or 0 end
@@ -29,6 +33,7 @@ function Rules.Plan(items,recipe,count)
   if ordinary>0 then inputs[id]=ordinary end
   if needed>ordinary then inputs["Ramsay_"..id]=needed-ordinary end
  end
+ if recipe.Fuel then inputs[recipe.Fuel.ID]=(inputs[recipe.Fuel.ID] or 0)+recipe.Fuel.Count end
  if recipe.Variants then
   local remaining=count
   for _,variant in ipairs(recipe.Variants) do
@@ -41,6 +46,7 @@ function Rules.Plan(items,recipe,count)
   end
  else outputs[recipe.Output]=count*(recipe.OutputCount or 1) end
  for id,amount in pairs(recipe.Byproducts or {}) do outputs[id]=(outputs[id] or 0)+amount*count end
+ for id,amount in pairs(recipe.FuelByproducts or {}) do outputs[id]=(outputs[id] or 0)+amount end
  return {Ingredients=inputs,Outputs=outputs}
 end
 function Rules.Outputs(recipe)
@@ -48,7 +54,9 @@ function Rules.Outputs(recipe)
  if recipe.Variants then for _,variant in ipairs(recipe.Variants) do table.insert(result,variant.Output) end
  else table.insert(result,recipe.Output) end
  if recipe.Food then for index=#result,1,-1 do table.insert(result,"Ramsay_"..result[index]) end end
- local extra={};for id in pairs(recipe.Byproducts or {}) do table.insert(extra,id) end;table.sort(extra)
+ local found={};for id in pairs(recipe.Byproducts or {}) do found[id]=true end
+ for id in pairs(recipe.FuelByproducts or {}) do found[id]=true end
+ local extra={};for id in pairs(found) do table.insert(extra,id) end;table.sort(extra)
  for _,id in ipairs(extra) do table.insert(result,id) end
  return result
 end
