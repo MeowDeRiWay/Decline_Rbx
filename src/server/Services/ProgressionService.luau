@@ -37,7 +37,7 @@ end
 function Service.Snapshot(player)
  local s=stateFor(player)
  local practice={};for id,data in pairs(s.Practice) do practice[id]=table.clone(data) end
- return {Level=s.Level,XP=s.XP,NextXP=1000*(s.Level+1),Points=s.Points,SkillPoints=s.SkillPoints,
+ return {Level=s.Level,XP=s.XP,NextXP=Rules.RequiredXP(s.Level),Points=s.Points,SkillPoints=s.SkillPoints,
  TaggedSkills=table.clone(s.TaggedSkills or {}),TagsConfirmed=s.TagsConfirmed==true,Confirmed=s.Confirmed,Stats=table.clone(s.Stats),Skills=Rules.TotalSkills(s),Practice=practice,Perks=table.clone(s.Perks),PerkPoints=s.PerkPoints}
 end
 function Service.Sync(player)

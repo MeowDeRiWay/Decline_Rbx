@@ -30,7 +30,7 @@ assert(b.DamageAbsorption==4 and b.DamageResistance==.2 and b.LowHealthResistanc
 assert(b.NightAccuracyMultiplier==.9 and b.SilentRunning and b.CraftCostMultiplier==.8 and b.EquippedWeaponWeightMultiplier==0)
 assert(R.AddXP(s,50) and s.XP==100)
 assert(R.Practice(s,"Miner",5) and s.Practice.Miner.Value==1,"student applies to practice XP too")
-s.Level=29;s.XP=29999;assert(R.AddXP(s,1) and s.Level==30 and s.Perks.Observant==1,"automatic level30 perk")
+s.Level=29;s.XP=14999;assert(R.AddXP(s,1) and s.Level==30 and s.Perks.Observant==1,"automatic level30 perk")
 local recipe=C.Discount(recipes.MakeBandage,.8)
 assert(recipe.Ingredients.Rags==4 and recipes.MakeBandage.Ingredients.Rags==5)
 assert(recipe.MaxBatch==1 and recipe.Duration==20 and recipe.Requirements.Skills.Doctor==100)

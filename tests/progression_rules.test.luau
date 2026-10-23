@@ -9,8 +9,8 @@ draft.Strength=10;draft.Intelligence=6
 assert(R.Confirm(s,draft) and s.Confirmed)
 draft.Strength=1;assert(s.Stats.Strength==10,"confirmation copies input")
 assert(not R.Confirm(s,draft),"cannot respec")
-assert(R.AddXP(s,1000) and s.Level==1 and s.SkillPoints==22 and s.Points==0 and s.PerkPoints==2)
-assert(R.AddXP(s,2000) and s.Level==2 and s.SkillPoints==33 and s.PerkPoints==3)
+assert(R.AddXP(s,500) and s.Level==1 and s.SkillPoints==22 and s.Points==0 and s.PerkPoints==2)
+assert(R.AddXP(s,1000) and s.Level==2 and s.SkillPoints==33 and s.PerkPoints==3)
 assert(not R.AddXP(s,math.huge) and not R.AddXP(s,0/0))
 assert(R.SpendSkill(s,"Melee") and s.SkillPoints==32 and R.TotalSkills(s).Melee==51)
 assert(not R.SpendSkill(s,"Lumberjack") and not R.SpendSkill(s,"Fake"))
@@ -58,7 +58,7 @@ assert(R.FirstAid(19)==11 and R.FirstAid(20,2)==24 and R.ReviveChance(20)==.1 an
 assert(R.CraftExperience({},5)==250 and R.CraftExperience({OutputCount=3},1)==50 and R.CraftExperience({XP=80},2)==160)
 assert(R.KillExperience(20)==50 and R.KillExperience(60)==150)
 assert(R.AddXP(s,.5) and s.XP==.5,"healing grants exact actual HP including fractions")
-print("PASS: initial INT skill bundle and perk point; 1000*level XP; per-item practice; all nine perk requirements/rank caps/effects; medical and craft/kill XP")
+print("PASS: initial INT skill bundle and perk point; 500*level XP; per-item practice; all nine perk requirements/rank caps/effects; medical and craft/kill XP")
 
 local requirements={Skills={Doctor=100,FirstAid=100}}
 local doctor=R.New();assert(R.Confirm(doctor,{Strength=5,Attention=5,Endurance=5,Intelligence=10,Agility=6,Luck=5}))
@@ -66,3 +66,5 @@ doctor.Skills.Doctor=35;doctor.Skills.FirstAid=39
 assert(not R.Meets(doctor,requirements),"first aid99 cannot build hospital")
 doctor.Skills.FirstAid=40;assert(R.Meets(doctor,requirements),"100 in BOTH qualifies")
 doctor.Skills.Doctor=34;assert(not R.Meets(doctor,requirements),"doctor99 cannot build hospital")
+
+assert(R.RequiredXP(0)==500 and R.RequiredXP(9)==5000)

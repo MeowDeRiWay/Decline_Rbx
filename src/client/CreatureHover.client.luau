@@ -11,6 +11,7 @@ local View=require(script.Parent.EventVisibility)
 local player = Players.LocalPlayer
 local gui = Instance.new("BillboardGui")
 gui.Name = "CreatureHover"
+gui.ResetOnSpawn = false
 gui.Size = UDim2.fromOffset(190,66)
 gui.AlwaysOnTop = true
 gui.Enabled = false
@@ -59,6 +60,8 @@ RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Valu
  local camera = workspace.CurrentCamera
  local character = player.Character
  if not camera or not character or player:GetAttribute("MedicalMode") or player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen") or GuiService.MenuIsOpen or Input:GetFocusedTextBox() then return end
+ local ownHealth=character:FindFirstChildOfClass("Humanoid")
+ if not ownHealth or ownHealth.Health<=0 or character:GetAttribute("Knockout") then return end
  local mouse = Input:GetMouseLocation()
  local size = camera.ViewportSize
  if mouse.X < 0 or mouse.Y < 0 or mouse.X > size.X or mouse.Y > size.Y then return end

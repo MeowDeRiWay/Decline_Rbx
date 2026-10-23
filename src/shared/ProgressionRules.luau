@@ -105,11 +105,12 @@ function Rules.SpendSkill(state,id)
  if not gain or state.SkillPoints<cost then return false end
  state.Skills[id]+=gain;state.SkillPoints-=cost;return true
 end
+function Rules.RequiredXP(level) return 500*(level+1) end
 function Rules.AddXP(state,amount)
  if not state.Confirmed or typeof(amount)~="number" or amount~=amount or amount<=0 or amount==math.huge then return false end
  state.XP+=amount*(1+(state.Perks.GoodStudent or 0))
- while state.XP>=1000*(state.Level+1) do
-  state.XP-=1000*(state.Level+1);state.Level+=1;state.SkillPoints+=5+state.Stats.Intelligence;state.PerkPoints+=1
+ while state.XP>=Rules.RequiredXP(state.Level) do
+  state.XP-=Rules.RequiredXP(state.Level);state.Level+=1;state.SkillPoints+=5+state.Stats.Intelligence;state.PerkPoints+=1
  end
  if state.Level>=30 then state.Perks.Observant=1 end
  return true

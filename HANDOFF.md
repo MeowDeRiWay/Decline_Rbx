@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Hover lifecycle and faster leveling — 23 October
+
+CreatureHover BillboardGui now ResetOnSpawn=false: StarterPlayerScripts hover callback previously survived respawn while Roblox deleted its default-resettable GUI, so render updates targeted a detached interface. Explicit own humanoid alive/notKnockout guard hides during incapacity and automatically resumes on recovery with current player.Character each frame. Actual callback test simulates KO/revive, death, GUI reset and new character, confirms hit chance reappears.
+
+ProgressionRules.RequiredXP(level)=500*(level+1) centralized; AddXP thresholds and ProgressionService Snapshot.NextXP both use it (old1000). First level500, next1000; lvl9→10cost5000. Existing level/SP/perk awards unchanged. Existing currentXP carries until next Award normalizes against new curve; no respec or reset. Updated progression/service and autoObservant threshold fixtures. Actual hover/progression tests plus all Luau compile/Rojo build passed; no Studio test.
+
 ## Centered combat feedback and zombie critical parity — 23 October
 
 Zombie unarmed base already shared CombatRules.UnarmedDamage with players (75–120%effectiveStrength, flat perks additive); removed remaining old2..4critical roll. Zombie critical now uses derivedCriticalMin/Max fallback1.5..2, same normal player rule. Infection remains currentStrength, not damage. CombatAudio.Play accepts optionalownerUserId and sets CombatOwnerUserId before parenting/playing. DamageService passes attacker playerID for Punch/Miss/ShotEvade; empty-air melee passes playerID. Existing OwnerFirearmAudio client now also watches CombatPunch/Miss/ShotEvade throughoutWorkspace: attackerID match OR source under local character gets one centered SoundService copy, mutes original only locally. Both attacker and hit receiver therefore hear normal authored volume without camera-dependent pan/range loss. Others retain spatial sound and existingAttention hearing distance8studat5. Same source centered once, lifecycle/respawn cleanup remains. No assets moved or audio templates renamed. Tests cover remote victim punch to attacker, incoming hit to victim, spectators untouched, duplicate suppression plus prior firearm centering, audio service IDs/range, shared unarmed bounds, defense and day/night. Compile/Rojo passed; no live listening test.
