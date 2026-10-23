@@ -4,6 +4,12 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Combat audio templates — 23 October
+
+StarterPlayer/StarterCharacter authored Sound templates Punch1..N, Miss1..N, ShotEvade1..N supported (screenshot Punch1/2,Miss1/2/3,ShotEvade1). CombatAudio service clones random variants to physical Head/root/Body,8stud baseline atAttention5,LinearSquare min1, preserves authored Volume, no loop/playonremove, Ended/Debris cleanup. Uses StarterCharacter templates so zombies share player punch/miss audio without copying assets. CombatAudio.server stops template playback for existing/new characters; Hearing client silences numbered templates to prevent nonpositional global audio. Playing clone names CombatPunch/CombatMiss/CombatShotEvade avoid template suppression; existing Hearing scales distance, not volume.
+
+DamageService emits Punch only for positive melee damage by empty hands/ZombieHand, at victim. Miss defaults melee emits at attacker; FirearmProjectiles explicitly passes Ranged to emit ShotEvade at target only for failed accuracy roll at living collision. Combat.server no-target swings emit Miss; friendly/creation guards remain before miss sound. Melee armor-blocked hit has no punch (positiveHPdamage requirement). No wall/object impact sounds added yet, user still finding those. These audio events do not add AI noise stimuli. Actual audio selection/template stop/physical emission/range guards tested with mocks; damage routing and projectile regressions, compile/build passed. No live listening test available.
+
 ## Farming timing and unarmed variance — 23 October
 
 Supersedes timings below: GrowthSeconds240 (stages1and2 each120seconds at normal watering speed); ripe stage3lasts180seconds then permanently rotten stage4until manually cleared. Low-water growth penalties unchanged. Tests updated to verify timing and persistent rot. Player and zombie unarmed attacks now roll75%–120% of effective Strength-derived MeleeBonus, uniform per landed attack before criticals/armor. StrongArm affects this Strength component, flat UnarmedDamage perk remains additive; equipped melee/tools/ranged unchanged. CombatRules.UnarmedDamage shared by both servers. Character sheet shows unarmed min–max while hands empty. Infection still raw current Strength, not rolled hit damage.

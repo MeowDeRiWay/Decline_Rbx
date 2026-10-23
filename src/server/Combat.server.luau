@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CombatRules=require(ReplicatedStorage.Shared.CombatRules)
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
+local Audio=require(script.Parent.Services.CombatAudio)
 local Damage = require(script.Parent.Services.DamageService)
 local Inventory = require(script.Parent.Services.InventoryService)
 local Resources = require(script.Parent.Services.ResourceService)
@@ -91,6 +92,7 @@ attack.OnServerEvent:Connect(function(player)
    local dealt = Damage.Apply(nearest,baseDamage*knifeMultiplier,weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
+ else Audio.Play(character,"Miss")
  end
  end)
 end)

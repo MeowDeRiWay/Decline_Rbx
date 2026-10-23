@@ -6,6 +6,7 @@ local Defense=require(ReplicatedStorage.Shared.DefenseRules)
 local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
 local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
+local Audio=require(script.Parent.CombatAudio)
 local Service = {}
 local function friendly(attacker,target)
  if not attacker then return false end
@@ -31,7 +32,14 @@ local function announce(target,kind,amount,attacker,attackKind,critical,knockout
   if root and (root.Position-position).Magnitude<=250+(observer:GetAttribute("ViewBonus") or 0)*10 then report:FireClient(observer,payload) end
  end
 end
-function Service.Miss(target,attacker) local victim=Players:GetPlayerFromCharacter(target);if victim and victim:GetAttribute("AttributesConfirmed")==false then return end;if friendly(attacker,target) then return end;announce(target,"Miss",0,attacker) end
+function Service.Miss(target,attacker,attackKind)
+ local victim=Players:GetPlayerFromCharacter(target)
+ if victim and victim:GetAttribute("AttributesConfirmed")==false then return end
+ if friendly(attacker,target) then return end
+ local actor=attacker and (attacker:IsA("Player") and attacker.Character or attacker)
+ if attackKind=="Ranged" then Audio.Play(target,"ShotEvade") else Audio.Play(actor,"Miss") end
+ announce(target,"Miss",0,attacker,attackKind)
+end
 local function armorClass(actor,model)
  local value=actor:GetAttribute("DodgeChance") or 0
  local hands=model and model:GetAttribute("HandsItem")
@@ -116,6 +124,11 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
   amount=(bypass and amount or resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
   humanoid:TakeDamage(amount)
   amount = math.max(0,before-humanoid.Health)
+ end
+ if amount>0 and attackKind=="Melee" and options.Attacker then
+  local actor=options.Attacker:IsA("Player") and options.Attacker.Character or options.Attacker
+  local hands=actor and actor:GetAttribute("HandsItem")
+  if not hands or hands=="" or hands=="ZombieHand" then Audio.Play(target,"Punch") end
  end
  target:SetAttribute("LastDamage",amount)
  target:SetAttribute("LastDamageType",damageType)

@@ -96,7 +96,7 @@ RunService.Heartbeat:Connect(function(dt)
       if targetPlayer then require(script.Parent.WorldItemService).Disarm(targetPlayer)
       else require(script.Parent.WorldItemService).DisarmCreature(victim.Parent) end
      end
-    else Damage.Miss(victim.Parent,bullet.Player) end
+    else Damage.Miss(victim.Parent,bullet.Player,"Ranged") end
     emit("Impact",hit.Position,{Direction=hit.Normal,Material="Flesh"});stopped=true;break
    end
    local kind,thickness,parts=barrier(hit,bullet.Direction)

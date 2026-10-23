@@ -5,6 +5,7 @@ import sys
 import tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/DamageService.luau').read_text().replace('local Life = require(script.Parent.PlayerLifeService)','')
+service=service.replace('local Audio=require(script.Parent.CombatAudio)','local Audio={Play=function() end}')
 service=service.replace('require(ReplicatedStorage.Shared.DefenseRules)','(function()\n'+(root/'src/shared/DefenseRules.luau').read_text()+'\nend)()')
 service=service.replace('require(ReplicatedStorage.Shared.AffiliationRules)','(function()\n'+(root/'src/shared/AffiliationRules.luau').read_text()+'\nend)()')
 service=service.replace('require(ReplicatedStorage.Shared.AccuracyRules)','(function()\n'+(root/'src/shared/AccuracyRules.luau').read_text()+'\nend)()')

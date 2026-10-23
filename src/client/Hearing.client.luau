@@ -31,6 +31,10 @@ local function applyEmitter(emitter,r)
 end
 local function register(object)
  if object:IsA("Sound") and not sounds[object] then
+  -- A Sound directly under a Model is non-positional; silence combat templates.
+  if object.Name:match("^Punch%d+$") or object.Name:match("^Miss%d+$") or object.Name:match("^ShotEvade%d+$") then
+   object:Stop();object.PlayOnRemove=false;object.Volume=0;return
+  end
   -- Authored templates outside the playing world are never altered.
   if not soundEligible(object) then return end
   local r={Min=object.RollOffMinDistance,Max=object.RollOffMaxDistance};sounds[object]=r
