@@ -15,7 +15,7 @@ local gui=Instance.new("ScreenGui");gui.Name="MedicalAim";gui.ResetOnSpawn=false
 local hint=Instance.new("TextLabel");hint.Size=UDim2.fromOffset(250,58);hint.BackgroundColor3=Theme.Card;hint.TextColor3=Theme.Text;hint.Font=Theme.Font;hint.TextSize=14;hint.TextWrapped=true;hint.Visible=false;hint.Parent=gui
 local selected
 local function blocked()
- return GuiService.MenuIsOpen or Input:GetFocusedTextBox() or player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen")
+ return GuiService.MenuIsOpen or Input:GetFocusedTextBox() or (player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen")
 end
 local function cancel() player:SetAttribute("MedicalMode",nil);selected=nil;highlight.Enabled=false;hint.Visible=false end
 Input.InputBegan:Connect(function(key,processed)

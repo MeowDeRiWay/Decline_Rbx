@@ -745,3 +745,14 @@ Water thresholds normalized to MaxWatering: >=80%time1,>=60%time1.2,>=40%time1.5
 2. Прочитай TOWN_SETUP.md і прийми уточнення користувача щодо вже доданих міст.
 3. Працюй у поточній структурі Rojo: src/shared, src/server, src/server/Services, src/client, src/character.
 4. Перед записом перевіряй свіжий head main, щоб не затерти правки користувача.
+
+## 2026-10-23 — Admin menu
+
+Added server-authorized administration for UserIds 8335513512 and 4455566626.
+F6 / ADMIN button opens Time, Characters and Items tabs. Time changes affect the
+current server, using DayClockService (normal one-hour day remains unchanged).
+Characters supports exact normal level grants, heal/cure, food/water restoration
+and admin KO revival through PlayerLifeService. Items searches all ItemConfig
+entries and grants only to the invoking admin via InventoryService. AdminOpen
+blocks combat/aim/sprint/medical interaction; the menu survives respawn. See
+ADMIN_SETUP.md for limits, test commands and pending Studio verification.

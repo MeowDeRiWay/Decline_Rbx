@@ -68,6 +68,18 @@ function Service.Award(player,amount)
  if Rules.AddXP(stateFor(player),amount) then Journal.Send(player,string.format("You gained %g XP.",amount*(1+(stateFor(player).Perks.GoodStudent or 0))));Service.Sync(player) end
 end
 function Service.Meets(player,requirements) return Rules.Meets(stateFor(player),requirements) end
+-- Exact level grants keep normal rewards and current XP, independent of Good student.
+function Service.GrantLevels(player,count)
+ if not player or player.Parent~=Players or typeof(count)~="number" or count~=count or count%1~=0 or count<1 or count>100 then return false end
+ local state=stateFor(player)
+ if not state.Confirmed then return false end
+ local amount=0
+ for level=state.Level,state.Level+count-1 do amount+=Rules.RequiredXP(level) end
+ if not Rules.AddXP(state,amount/(1+(state.Perks.GoodStudent or 0))) then return false end
+ Service.Sync(player)
+ Journal.Send(player,string.format("Admin granted you %d level(s).",count))
+ return true
+end
 function Service.CanStation(player,name) return Service.Meets(player,Config.StationRequirements[name]) end
 function Service.CanBuild(player,kind) return Service.Meets(player,Config.BuildingRequirements[kind]) end
 function Service.CraftEffects(player) return Rules.CraftEffects(stateFor(player).Perks) end

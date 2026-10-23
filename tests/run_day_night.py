@@ -2,7 +2,7 @@
 from pathlib import Path
 import subprocess,tempfile,sys
 root=Path(__file__).resolve().parents[1]
-cycle=(root/'src/server/DayNight.server.luau').read_text()
+cycle='local DayClock=(function()\n'+(root/'src/server/Services/DayClockService.luau').read_text()+'\nend)();DayClock.Start()'
 zombie=(root/'src/server/Zombie.server.luau').read_text()
 stats=zombie[zombie.index('local baseStats='):zombie.index('local function positive')]
 rules=(root/'src/shared/ProgressionRules.luau').read_text()
@@ -47,6 +47,14 @@ assert(Accuracy.Chance(300,20,20,0,Accuracy.NightMultiplier(p))==90,"cap applies
 a.NightAccuracyMultiplier=.9;assert(Accuracy.Chance(Accuracy.ForWeapon(p,{Firearm={}}),0,20,0,Accuracy.NightMultiplier(p))==90)
 workspace.attrs.IsNight=false;assert(Accuracy.ForWeapon(p,{Firearm={}})==100)
 print("PASS: night accuracy half, cat eyes ten-percent penalty, day restoration")
+DayClock.SetHour(23.5);assert(Lighting.ClockTime==23.5 and workspace.attrs.IsNight)
+DayClock.SetPaused(true);clock+=1000;beat(1);assert(Lighting.ClockTime==23.5,"pause preserves time")
+DayClock.SetSpeed(2);DayClock.SetPaused(false);clock+=75;beat(1)
+assert(math.abs(Lighting.ClockTime-.5)<1e-9,"accelerated clock wraps midnight")
+DayClock.SetSpeed(1);clock+=150;beat(1);assert(math.abs(Lighting.ClockTime-1.5)<1e-9)
+DayClock.SetHour(6);assert(not workspace.attrs.IsNight,"admin time triggers day transition immediately")
+assert(workspace.attrs.DayClockSpeed==1 and not workspace.attrs.DayClockPaused)
+print("PASS: admin clock pause, speed, resume, midnight wrap and immediate day transition")
 '''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'night.luau'
