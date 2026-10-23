@@ -37,7 +37,7 @@ end
 function Service.Snapshot(player)
  local s=stateFor(player)
  local practice={};for id,data in pairs(s.Practice) do practice[id]=table.clone(data) end
- return {Level=s.Level,XP=s.XP,NextXP=Rules.RequiredXP(s.Level),Points=s.Points,SkillPoints=s.SkillPoints,
+ return {Level=s.Level,XP=s.XP,MaxLevel=Rules.MaxLevel,NextXP=s.Level<Rules.MaxLevel and Rules.RequiredXP(s.Level) or 0,Points=s.Points,SkillPoints=s.SkillPoints,
  TaggedSkills=table.clone(s.TaggedSkills or {}),TagsConfirmed=s.TagsConfirmed==true,Confirmed=s.Confirmed,Stats=table.clone(s.Stats),Skills=Rules.TotalSkills(s),Practice=practice,Perks=table.clone(s.Perks),PerkPoints=s.PerkPoints}
 end
 function Service.Sync(player)
@@ -65,19 +65,27 @@ function Service.Sync(player)
 end
 function Service.Award(player,amount)
  if not player or player.Parent~=Players then return end
- if Rules.AddXP(stateFor(player),amount) then Journal.Send(player,string.format("You gained %g XP.",amount*(1+(stateFor(player).Perks.GoodStudent or 0))));Service.Sync(player) end
+ if Rules.AddXP(stateFor(player),amount) then Journal.Send(player,string.format("You gained %g XP.",amount*(1+(stateFor(player).Perks.GoodStudent or 0)))) end
+ Service.Sync(player) -- Practice skills still update after the character reaches level 30.
 end
 function Service.Meets(player,requirements) return Rules.Meets(stateFor(player),requirements) end
 -- Exact level grants keep normal rewards and current XP, independent of Good student.
 function Service.GrantLevels(player,count)
  if not player or player.Parent~=Players or typeof(count)~="number" or count~=count or count%1~=0 or count<1 or count>100 then return false end
  local state=stateFor(player)
- if not state.Confirmed then return false end
+ if not state.Confirmed or state.Level>=Rules.MaxLevel then return false end
+ count=math.min(count,Rules.MaxLevel-state.Level)
  local amount=0
  for level=state.Level,state.Level+count-1 do amount+=Rules.RequiredXP(level) end
  if not Rules.AddXP(state,amount/(1+(state.Perks.GoodStudent or 0))) then return false end
  Service.Sync(player)
  Journal.Send(player,string.format("Admin granted you %d level(s).",count))
+ return true,count
+end
+function Service.ResetProgression(player)
+ if not player or player.Parent~=Players or not Rules.ResetProgression(stateFor(player)) then return false end
+ Service.Sync(player)
+ Journal.Send(player,"Admin reset your progression to level 1. Skills and perks cleared.")
  return true
 end
 function Service.CanStation(player,name) return Service.Meets(player,Config.StationRequirements[name]) end

@@ -4,6 +4,27 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Level cap, HP growth, held skill training, reset and perk visibility — 23 October
+
+Rules.MaxLevel=30 limits normal AddXP and admin GrantLevels; excess XP is zero at
+cap, automatic Observant remains. Admin grants clamp to remaining levels and
+report the actual count. Base maxHP now includes +4 per level, additive to existing
++4/level/rank Lifegiver; zombies call Bonuses without player level and stay unchanged.
+Award still Syncs when no character XP is awarded, so passive skill updates at cap
+reach the player. ResetProgression resets an already confirmed player to level1,
+XP0, no trained/practice skills or perks, normal level1 unspent SP/PP. Attributes,
+main tags and inventory remain. New admin command/button is server-authorized.
+
+Skill plus trains on mouse/touch press with repeat after .35s at .15s intervals;
+release (globally), MouseLeave, focus loss, menu/tab closure, KO, points and cap stop
+it. Activated remains for gamepad/keyboard and never duplicates a mouse release.
+All perks visible even before character confirmation; requirements/ranks shown in
+rows and tooltips, unavailable rows muted/disabled, server purchase checks retained.
+Normal Observant eligibility/purchasing behavior is unchanged; still auto at30.
+Tests execute actual hold handlers and perk row rendering, progression/reset service,
+rule caps/HP and admin authorization. All passed with compile/Rojo; no Studio test.
+
+
 ## Combat-skill movement and paused zombie infection — 23 October
 
 Player walk/sprint speeds now multiply the entire existing speed (including FastFeet flat sprint bonus) by1+clamp(max(totalUnarmed,totalMelee),0,200)/200.100skill+50%,200+100%,above200noextra; two skills never stack. Total skills include attribute contributions and trained points. ProgressionService.Sync passes TotalSkills to Rules.Bonuses fourth argument, so character attrs/sheet/movement refresh with skill training. Creation draft preview passes SkillValues(draft) too. Rules.Bonuses without skills preserves base behavior, so zombie movement is not incidentally increased. Sprint duration and encumbrance rules unchanged. CombatMovementMultiplier exported for diagnostics.

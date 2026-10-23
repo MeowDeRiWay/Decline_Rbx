@@ -23,7 +23,7 @@ for _,p in ipairs(R.Perks) do
 end
 local s=fresh();s.Perks={Lifegiver=2,GoodStudent=1,Criticals=2,Armadillo=2,HardCriticals=1,DoctorFortune=1,SilentRun=1,Economist=1,CatEyes=1,Duelist=1,DroppedIt=1,WeaponPart=1,NotSoEasy=1}
 local b=R.Bonuses(s.Stats,s.Perks,5)
-assert(b.MaxHealth==140 and R.Bonuses(s.Stats,s.Perks,6).MaxHealth==148,"lifegiver scales every level per rank")
+assert(b.MaxHealth==160 and R.Bonuses(s.Stats,s.Perks,6).MaxHealth==172,"lifegiver scales every level per rank")
 assert(b.Regeneration==10 and b.CriticalMin==1.5 and b.CriticalMax==2.5 and b.CriticalChance==.4)
 assert(b.DoctorFortuneChance==.2 and b.PistolCriticalBonus==.1 and b.DisarmChance==.1)
 assert(b.DamageAbsorption==4 and b.DamageResistance==.2 and b.LowHealthResistance==.1)

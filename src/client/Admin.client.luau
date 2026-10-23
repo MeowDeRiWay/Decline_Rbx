@@ -82,10 +82,11 @@ local targetId=player.UserId
 local targetLabel=label(characters,"",302,0,426,76)
 local levels=field(characters,"1",302,92,110)
 button(characters,"Add levels",424,92,200,function() request("Levels",{Target=targetId,Count=tonumber(levels.Text)}) end)
-label(characters,"1-100 levels; normal skill and perk points.",302,132,420,48)
+label(characters,"Normal skill and perk points. Maximum level: 30.",302,132,420,48)
 button(characters,"Heal + cure sickness",302,194,400,function() request("Heal",{Target=targetId}) end)
 button(characters,"Restore food + water",302,238,400,function() request("Needs",{Target=targetId}) end)
 button(characters,"Revive from knockout",302,282,400,function() request("Revive",{Target=targetId}) end)
+button(characters,"Reset to level 1 (skills + perks)",302,326,400,function() request("ResetProgression",{Target=targetId}) end)
 local function refreshPlayers()
  for _,child in ipairs(playerList:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
  local list=Players:GetPlayers();table.sort(list,function(a,b) return a.Name:lower()<b.Name:lower() end)

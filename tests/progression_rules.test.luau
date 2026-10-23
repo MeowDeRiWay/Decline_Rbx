@@ -50,7 +50,7 @@ end
 assert(R.PerkCount(perks)==10 and not R.SpendPerk(perks,"StrongBack"),"ten selected ranks cap")
 perks.Stats.Attention=8;assert(R.SpendPerk(perks,"Observant"),"observant outside cap")
 local bonus=R.Bonuses(perks.Stats,perks.Perks,3)
-assert(bonus.RangedDamageBonus==4 and bonus.MaxHealth==94 and bonus.MeleeBonus==14 and bonus.CarryLimitKg==45)
+assert(bonus.RangedDamageBonus==4 and bonus.MaxHealth==106 and bonus.MeleeBonus==14 and bonus.CarryLimitKg==45)
 assert(bonus.CriticalChance==.14 and bonus.Regeneration==14 and bonus.FirstAidMultiplier==2 and bonus.ReviveLockSeconds==300)
 local high=R.Bonuses({Strength=1,Attention=10,Endurance=1,Intelligence=1,Agility=1,Luck=1},{Hearing=1})
 assert(high.HearingAttention==12 and high.ViewRange==40)
@@ -77,3 +77,22 @@ assert(math.abs(fast.WalkBonus-2.4)<1e-9 and math.abs(fast.RunBonus-6.8)<1e-9,"w
 local Z=require("../src/shared/ZombieStats")
 assert(Z.Infection(6)==0,"zombie infection temporarily disabled")
 Z.InfectionPerStrength=1;assert(Z.Infection(6)==6,"restore switch preserves Strength infection");Z.InfectionPerStrength=0
+
+local capped=R.New();assert(R.Confirm(capped,{Strength=5,Attention=5,Endurance=5,Intelligence=5,Agility=6,Luck=10}))
+assert(R.AddXP(capped,1e12) and capped.Level==30 and capped.XP==0 and capped.Perks.Observant==1)
+local sp,pp=capped.SkillPoints,capped.PerkPoints
+assert(not R.AddXP(capped,1e12) and capped.Level==30 and capped.SkillPoints==sp and capped.PerkPoints==pp and capped.XP==0)
+assert(R.Bonuses(capped.Stats,{},0).MaxHealth==50 and R.Bonuses(capped.Stats,{},1).MaxHealth==54 and R.Bonuses(capped.Stats,{},30).MaxHealth==170)
+assert(R.Bonuses(capped.Stats,{Lifegiver=2},30).MaxHealth==410,"base growth and both Lifegiver ranks stack")
+assert(R.Practice(capped,"Miner",10) and capped.Practice.Miner.Value==1,"practice continues at max character level")
+capped.Skills.Melee=100;capped.TaggedSkills={Melee=true,Unarmed=true,Doctor=true};capped.TagsConfirmed=true
+local stats=table.clone(capped.Stats)
+assert(R.ResetProgression(capped) and capped.Level==1 and capped.XP==0 and next(capped.Perks)==nil)
+for id,v in pairs(capped.Skills) do assert(v==0) end
+for id,v in pairs(capped.Practice) do assert(v.Value==0 and v.XP==0) end
+for id,v in pairs(stats) do assert(capped.Stats[id]==v) end
+assert(capped.SkillPoints==20 and capped.PerkPoints==2 and capped.TaggedSkills.Melee and capped.TagsConfirmed and capped.Confirmed)
+assert(R.TotalSkills(capped).Melee==25,"reset retains only attribute-derived skill values")
+assert(R.ResetProgression(capped) and capped.SkillPoints==20,"repeat reset cannot accumulate points")
+assert(not R.ResetProgression(R.New()))
+print("PASS: hard level30 cap, no surplus XP/rewards, +4 base HP per level, additive Lifegiver, complete level1 progression reset")

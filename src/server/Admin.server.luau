@@ -30,13 +30,17 @@ local function handle(player,command,data)
   if not Inventory.Add(player,data.ID,data.Count) then return false,"Could not add the item." end
   Journal.Send(player,string.format("Admin: received %d x %s.",data.Count,Items[data.ID].Name))
   return true,string.format("Received %d x %s.",data.Count,Items[data.ID].Name)
- elseif command=="Levels" or command=="Heal" or command=="Needs" or command=="Revive" then
+ elseif command=="Levels" or command=="ResetProgression" or command=="Heal" or command=="Needs" or command=="Revive" then
   if not Rules.Number(data.Target,1,1e15,true) then return false,"Choose an online player." end
   local target=Players:GetPlayerByUserId(data.Target)
   if not target then return false,"Player has left the server." end
   if command=="Levels" then
    if not Rules.Number(data.Count,1,100,true) then return false,"Enter 1 to 100 levels." end
-   if not Progression.GrantLevels(target,data.Count) then return false,"Player must finish character creation first." end
+   local ok,count=Progression.GrantLevels(target,data.Count)
+   if not ok then return false,"Player must finish character creation and be below level 30." end
+   return true,string.format("Added %d level(s) to %s (maximum 30).",count,target.Name)
+  elseif command=="ResetProgression" then
+   if not Progression.ResetProgression(target) then return false,"Player must finish character creation first." end
   else
    local c,hp=ready(target)
    if not c then return false,"Player needs a living character." end

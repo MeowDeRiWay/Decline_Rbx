@@ -8,4 +8,15 @@ local bonuses={
  Luck="+1% critical chance",
 }
 function P.Attribute(id) return bonuses[id] and "Per point: "..bonuses[id] or nil end
+function P.PerkRequirements(perk,names)
+ local parts={}
+ for _,key in ipairs({"Attributes","Skills"}) do
+  local sorted={}
+  for id,value in pairs(perk[key] or {}) do table.insert(sorted,{ID=id,Value=value}) end
+  table.sort(sorted,function(a,b) return a.ID<b.ID end)
+  for _,entry in ipairs(sorted) do table.insert(parts,(names and names[entry.ID] or entry.ID).." "..entry.Value) end
+ end
+ local text=#parts>0 and ("Requires: "..table.concat(parts,", ")) or "No requirements"
+ return perk.ID=="Observant" and (text.."; also automatic at level 30") or text
+end
 return P

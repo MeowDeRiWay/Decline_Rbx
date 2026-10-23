@@ -12,7 +12,7 @@ local Items=(function()\nITEMS\nend)().Items
 local clockCalls=0
 local Clock={Start=function() end,SetHour=function(v) clockCalls+=1;workspace:SetAttribute("DayClockHour",v) end,SetSpeed=function(v) clockCalls+=1 end,SetPaused=function(v) clockCalls+=1 end}
 local grants=0
-local Progression={GrantLevels=function(p,count) grants+=count;return p:GetAttribute("AttributesConfirmed")==true end}
+local Progression={GrantLevels=function(p,count) grants+=count;return p:GetAttribute("AttributesConfirmed")==true,count end,ResetProgression=function(p) p:SetAttribute("CharacterLevel",1);return true end}
 local inventory={}
 local Inventory={Add=function(p,id,count) inventory[p]=inventory[p] or InventoryRules.New();return InventoryRules.Add(inventory[p],Items,id,count) end}
 local notices={}
@@ -31,7 +31,7 @@ local remote=ReplicatedStorage.AdminAction
 local function call(p,command,data) clock+=.3;return remote.OnServerInvoke(p,command,data) end
 assert(admin:GetAttribute("AdminAccess") and second:GetAttribute("AdminAccess") and not a:GetAttribute("AdminAccess"))
 a:SetAttribute("AdminAccess",true)
-for _,command in ipairs({"SetHour","SetSpeed","Pause","GiveItem","Heal","Levels","Revive","Needs","Request"}) do
+for _,command in ipairs({"SetHour","SetSpeed","Pause","GiveItem","Heal","Levels","ResetProgression","Revive","Needs","Request"}) do
  assert(not call(a,command,{Value=12,ID="TreeLog",Count=5,Target=b.UserId}).OK,"forged client admin flag cannot authorize "..command)
 end
 assert(clockCalls==0 and grants==0 and inventory[a]==nil)
@@ -55,6 +55,8 @@ assert(not call(admin,"Levels",{Target=9999999,Count=2}).OK)
 assert(not call(admin,"Levels",{Target=b.UserId,Count=1.5}).OK)
 assert(not call(admin,"Levels",{Target=b.Character,Count=2}).OK)
 assert(call(admin,"Levels",{Target=b.UserId,Count=2}).OK and grants==2)
+assert(call(admin,"ResetProgression",{Target=b.UserId}).OK and b:GetAttribute("CharacterLevel")==1)
+assert(not call(admin,"ResetProgression",{Target=9999999}).OK)
 b.Character.Humanoid.Health=4;b.Character:SetAttribute("Sick",80)
 assert(call(admin,"Heal",{Target=b.UserId}).OK and b.Character.Humanoid.Health==100 and b.Character:GetAttribute("Sick")==0)
 b.Character:SetAttribute("Food",1);b.Character:SetAttribute("Water",2)

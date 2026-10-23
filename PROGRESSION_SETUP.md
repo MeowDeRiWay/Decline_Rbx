@@ -1,3 +1,32 @@
+# Current progression update — 23 October 2026
+
+This section supersedes the historical profession/talent notes below.
+
+- The hard maximum character level is **30**, for both normal XP and admin grants.
+  At the cap, character XP is zero and no additional level rewards are issued.
+  Passive practice skills continue progressing normally.
+- Maximum HP is `10 × Endurance + 4 × level × (1 + Lifegiver ranks)`.
+  Every earned level adds 4 maximum HP before the existing Lifegiver bonuses.
+  Increasing maximum HP preserves current HP; reducing it clamps current HP.
+- In Skills, click `+` once or hold it: one purchase on press, then a 0.35-second
+  delay and one purchase every 0.15 seconds. Release, leaving the button, losing
+  window focus, closing/changing the menu, KO, depleted points or skill cap stops
+  repetition. Normal server costs, tagged gains and caps remain authoritative.
+- All perks are visible from the start, with rank and requirements. Locked perks
+  are muted and cannot be bought until their requirements and point costs are met.
+  Full descriptions and requirements are also available on hover.
+- Admin **Reset to level 1 (skills + perks)** clears XP, all allocated and practice
+  skills, and all perks. Attributes and main skill selection are preserved. Because
+  the game starts at level zero, a reset level-one character has two normal skill
+  point bundles (`2 × (5 + Intelligence)`) and two unspent perk points. Derived
+  attribute-based skill values remain visible. The operation retains inventory.
+
+Tests: progression_rules.test.luau, new_perks.test.luau,
+run_progression_service.py, run_admin.py, run_skill_hold.py. Compilation and Rojo
+build pass; live Roblox Studio mouse/touch and multiplayer QA remains pending.
+
+---
+
 # Progression, professions and talents
 
 Press **C** for the two-column Character menu: attributes on the left, final statistics on the right. Press **T** for talents. The appearance matches Inventory. Attribute effects and caps appear only while hovering the relevant card. Choose Cook or Worker; selection lasts for the server session. Progression survives respawn, but has no DataStore persistence yet.

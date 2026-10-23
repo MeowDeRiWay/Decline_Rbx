@@ -1,4 +1,5 @@
 local Rules={}
+Rules.MaxLevel=30
 local attributes={"Strength","Attention","Endurance","Intelligence","Agility","Luck"}
 local skills={LightWeapons=true,HeavyWeapons=true,Unarmed=true,Melee=true,Throwing=true,FirstAid=true,Doctor=true,Sneak=true,Traps=true,Repair=true,Cook=true}
 Rules.Perks={
@@ -108,11 +109,20 @@ end
 function Rules.RequiredXP(level) return 500*(level+1) end
 function Rules.AddXP(state,amount)
  if not state.Confirmed or typeof(amount)~="number" or amount~=amount or amount<=0 or amount==math.huge then return false end
+ if state.Level>=Rules.MaxLevel then state.Level=Rules.MaxLevel;state.XP=0;state.Perks.Observant=1;return false end
  state.XP+=amount*(1+(state.Perks.GoodStudent or 0))
- while state.XP>=Rules.RequiredXP(state.Level) do
+ while state.Level<Rules.MaxLevel and state.XP>=Rules.RequiredXP(state.Level) do
   state.XP-=Rules.RequiredXP(state.Level);state.Level+=1;state.SkillPoints+=5+state.Stats.Intelligence;state.PerkPoints+=1
  end
- if state.Level>=30 then state.Perks.Observant=1 end
+ if state.Level>=Rules.MaxLevel then state.Perks.Observant=1;state.XP=0 end
+ return true
+end
+function Rules.ResetProgression(state)
+ if not state.Confirmed then return false end
+ local fresh=Rules.New()
+ state.Level=1;state.XP=0;state.Skills=fresh.Skills;state.Practice=fresh.Practice;state.Perks={}
+ -- The game starts at level zero: retain the creation bundle plus level one's rewards.
+ state.SkillPoints=2*(5+state.Stats.Intelligence);state.PerkPoints=2
  return true
 end
 function Rules.Practice(state,id,amount)
@@ -130,7 +140,7 @@ function Rules.Bonuses(stats,perks,level,total)
  local p=perks or {}
  local movement=Rules.MovementMultiplier(total or {})
  local hearing=stats.Attention+2*(p.Hearing or 0)
- return {CarryLimitKg=5*stats.Strength+10*(p.StrongBack or 0),MeleeBonus=stats.Strength*(1+(p.StrongArm or 0)),MaxHealth=10*stats.Endurance+4*(level or 0)*(p.Lifegiver or 0),
+ return {CarryLimitKg=5*stats.Strength+10*(p.StrongBack or 0),MeleeBonus=stats.Strength*(1+(p.StrongArm or 0)),MaxHealth=10*stats.Endurance+4*math.clamp(level or 0,0,Rules.MaxLevel)*(1+(p.Lifegiver or 0)),
   WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)*movement,RunBonus=(.4*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0))*movement,CombatMovementMultiplier=movement,Regeneration=(stats.Endurance+4*(p.QuickRecovery or 0))*(1+(p.Regeneration or 0)),
   DodgeChance=5*stats.Agility+20*(p.Dodger or 0),CriticalChance=.01*stats.Luck*2^(p.Criticals or 0),
   ViewRange=10+3*stats.Attention+10*(p.TunnelVision or 0),ViewAngleMultiplier=(p.TunnelVision or 0)>0 and .5 or 1,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,

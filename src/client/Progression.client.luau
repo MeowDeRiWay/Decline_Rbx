@@ -86,13 +86,13 @@ local skillPanel=Instance.new("ScrollingFrame");skillPanel.Position=UDim2.fromOf
 local perkPanel=Instance.new("ScrollingFrame");perkPanel.Position=UDim2.fromOffset(20,94);perkPanel.Size=UDim2.fromOffset(548,526);perkPanel.BackgroundTransparency=1;perkPanel.BorderSizePixel=0;perkPanel.ScrollBarThickness=4;perkPanel.Parent=right
 local perkRows={}
 for _,perk in ipairs(Rules.Perks) do
- local row=button(perkPanel,"",UDim2.new(),UDim2.fromOffset(532,48),function() action:FireServer("Perk",perk.ID) end)
- row.TextXAlignment=Enum.TextXAlignment.Left
- tips[perk.ID]=perk.Description
+ local row
+ row=button(perkPanel,perk.Name,UDim2.new(),UDim2.fromOffset(532,78),function() if row.Active then action:FireServer("Perk",perk.ID) end end)
+ row.TextXAlignment=Enum.TextXAlignment.Left;row.TextWrapped=true;row.TextSize=13;row.Active=false
+ tips[perk.ID]=perk.Description.."\n"..Presentation.PerkRequirements(perk,config.Names)
  row.MouseEnter:Connect(function() hovered=perk.ID end);row.MouseLeave:Connect(function() if hovered==perk.ID then hovered=nil end end)
  perkRows[perk.ID]=row
 end
-local noPerks=label(perkPanel,"No eligible perks.",UDim2.fromOffset(12,10),UDim2.fromOffset(510,48),16,palette.Muted)
 local function setMode(value) mode=value;statPanel.Visible=value=="Stats";skillPanel.Visible=value=="Skills";perkPanel.Visible=value=="Perks" end
 for index,value in ipairs({"Stats","Skills","Perks"}) do button(right,value,UDim2.fromOffset(20+(index-1)*180,24),UDim2.fromOffset(166,38),function() setMode(value) end) end
 local values={}
@@ -102,6 +102,38 @@ for index,row in ipairs({{"Health","Health"},{"ArmorClass","Armor class"},{"Carr
  values[row[1]]=label(card,"—",UDim2.fromOffset(284,0),UDim2.fromOffset(254,42),15,palette.Accent)
 end
 local skillRows={}
+local heldSkill
+local function stopSkillHold() heldSkill=nil end
+local function canTrain(id)
+ if not snapshot or not snapshot.Confirmed or not panel.Visible or mode~="Skills" then return false end
+ local c=player.Character
+ if not c or c:GetAttribute("Knockout") then return false end
+ local gain,cost=Rules.SkillQuote(snapshot,id,snapshot.Skills[id])
+ return gain~=nil and snapshot.SkillPoints>=cost
+end
+local function bindSkillHold(object,id)
+ object.InputBegan:Connect(function(input)
+  local kind=input.UserInputType
+  if kind~=Enum.UserInputType.MouseButton1 and kind~=Enum.UserInputType.Touch then return end
+  stopSkillHold()
+  if not canTrain(id) then return end
+  heldSkill={ID=id,Input=input,Next=os.clock()+.35}
+  action:FireServer("Skill",id)
+ end)
+ object.MouseLeave:Connect(stopSkillHold)
+end
+Input.InputEnded:Connect(function(input)
+ if heldSkill and (input==heldSkill.Input or input.UserInputType==Enum.UserInputType.MouseButton1) then stopSkillHold() end
+end)
+Input.WindowFocusReleased:Connect(stopSkillHold)
+local function repeatSkillHold()
+ if not heldSkill then return end
+ if not canTrain(heldSkill.ID) or Input:GetFocusedTextBox() then stopSkillHold();return end
+ if os.clock()>=heldSkill.Next then
+  heldSkill.Next=os.clock()+.15
+  action:FireServer("Skill",heldSkill.ID)
+ end
+end
 local function skillRow(id,index,passive)
  local y=(index-1)*40
  local card=frame(skillPanel,UDim2.fromOffset(0,y),UDim2.fromOffset(532,34),palette.Card)
@@ -115,7 +147,11 @@ local function skillRow(id,index,passive)
    if tagDraft[id] then tagDraft[id]=nil elseif #selectedTags()<3 then tagDraft[id]=true end
    confirming=false;redraw()
   end)
-  plus=button(card,"+",UDim2.fromOffset(486,2),UDim2.fromOffset(34,30),function() action:FireServer("Skill",id) end)
+  plus=button(card,"+",UDim2.fromOffset(486,2),UDim2.fromOffset(34,30),function(input)
+   -- Mouse/touch train on press; Activated supports keyboard/gamepad without a release duplicate.
+   if input and input.UserInputType~=Enum.UserInputType.MouseButton1 and input.UserInputType~=Enum.UserInputType.Touch and canTrain(id) then action:FireServer("Skill",id) end
+  end)
+  bindSkillHold(plus,id)
  end
  skillRows[id]={Name=name,Value=value,Plus=plus,Tag=tag}
 
@@ -147,7 +183,7 @@ local function refreshStats()
 end
 redraw=function()
  if not snapshot then return end
- summary.Text=string.format("Level %d · XP %g / %g",snapshot.Level,snapshot.XP,snapshot.NextXP)
+ summary.Text=snapshot.Level>=Rules.MaxLevel and ("Level "..Rules.MaxLevel.." · MAX") or string.format("Level %d · XP %g / %g",snapshot.Level,snapshot.XP,snapshot.NextXP)
  points.Text="Perks: "..Rules.PerkCount(snapshot).." / 10 · Skill points: "..snapshot.SkillPoints.." · Perk points: "..(snapshot.PerkPoints or 0)..(snapshot.Confirmed and "" or "\nAttribute points remaining: "..remaining())
  for id,card in pairs(cards) do
   card.Value.Text=tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id])
@@ -178,28 +214,27 @@ redraw=function()
   end
  end
  local count=0
- -- Eligibility uses already-computed total skills, including allocated points.
+ -- All perks stay visible; requirements only control whether they can be selected.
  for _,perk in ipairs(Rules.Perks) do
   local eligible=snapshot.Confirmed
   for id,required in pairs(perk.Attributes or {}) do if (snapshot.Stats[id] or 0)<required then eligible=false end end
   for id,required in pairs(perk.Skills or {}) do if (snapshot.Skills[id] or 0)<required then eligible=false end end
-  eligible=eligible or ((snapshot.Perks or {})[perk.ID] or 0)>0
-  local row=perkRows[perk.ID];row.Visible=eligible
-  if eligible then
-   local rank=(snapshot.Perks or {})[perk.ID] or 0
-   row.Position=UDim2.fromOffset(0,count*56);count+=1
-   row.Text="  "..perk.Name.." · "..rank.." / "..perk.Max
-   row.TextColor3=rank<perk.Max and (perk.FreeSlot or Rules.PerkCount(snapshot)<10) and (snapshot.PerkPoints or 0)>0 and palette.Accent or palette.Muted
-  end
+  local row=perkRows[perk.ID];row.Visible=true
+  local rank=(snapshot.Perks or {})[perk.ID] or 0
+  row.Position=UDim2.fromOffset(0,count*86);count+=1
+  row.Text="  "..perk.Name.." · "..rank.." / "..perk.Max.."\n  "..Presentation.PerkRequirements(perk,config.Names)
+  row.Active=eligible and rank<perk.Max and (perk.FreeSlot or Rules.PerkCount(snapshot)<10) and (snapshot.PerkPoints or 0)>0
+  row.AutoButtonColor=row.Active
+  row.TextColor3=row.Active and palette.Accent or palette.Muted
  end
- noPerks.Visible=count==0;perkPanel.CanvasSize=UDim2.fromOffset(0,count*56)
+ perkPanel.CanvasSize=UDim2.fromOffset(0,count*86)
 end
 setOpen=function(value,force)
  if not force and not value and snapshot and not snapshot.Confirmed and player.Character then return end
  if value and (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("GroupOpen") or (player.Character and player.Character:GetAttribute("Knockout"))) then return end
  panel.Visible=value;player:SetAttribute("ProgressionOpen",value)
  if value then Context:BindActionAtPriority("ProgressionBlockMovement",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+2,Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump)
- else hovered=nil;tooltip.Visible=false;Context:UnbindAction("ProgressionBlockMovement") end
+ else stopSkillHold();hovered=nil;tooltip.Visible=false;Context:UnbindAction("ProgressionBlockMovement") end
 end
 closeControl=button(panel,"X",UDim2.new(1,-48,0,17),UDim2.fromOffset(30,28),function() setOpen(false) end)
 setMode("Stats")
@@ -212,6 +247,7 @@ Input.InputBegan:Connect(function(key,processed)
  elseif key.KeyCode==Enum.KeyCode.Escape then setOpen(false) end
 end)
 Run.RenderStepped:Connect(function()
+ repeatSkillHold()
  if snapshot and not snapshot.Confirmed and not panel.Visible and not player:GetAttribute("TownMenuOpen") and player.Character then setOpen(true) end
  tooltip.Visible=false
  if closeControl and snapshot then closeControl.Visible=snapshot.Confirmed end
