@@ -5,8 +5,9 @@ This section supersedes the historical profession/talent notes below.
 - The hard maximum character level is **30**, for both normal XP and admin grants.
   At the cap, character XP is zero and no additional level rewards are issued.
   Passive practice skills continue progressing normally.
-- Maximum HP is `10 × Endurance + 4 × level × (1 + Lifegiver ranks)`.
-  Every earned level adds 4 maximum HP before the existing Lifegiver bonuses.
+- Maximum HP is `10 × Endurance + level × (Endurance + 4 × Lifegiver ranks)`.
+  Every earned level adds Endurance maximum HP, plus the existing Lifegiver
+  bonus of 4 per rank. Endurance 7 gives +7 HP/level without Lifegiver.
   Increasing maximum HP preserves current HP; reducing it clamps current HP.
 - Carrying capacity is `5 × Strength + level + 10 × Strong back ranks` kg.
   Each earned level adds 1 kg; admin reset recalculates it at level 1.

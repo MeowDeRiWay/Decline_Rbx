@@ -4,15 +4,24 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Endurance-based level HP — 23 October
+
+User confirmed END7 gives7HP per level. MaxHealth now10*END + level*(END +4*LifegiverRanks),
+with player level still clamped0..30. Replaces the flat4/level base addition; Lifegiver
+retains its independent4/level/rank. END7:no perk70HP at0,77at1,280at30. Zombies
+call Bonuses without a player level and retain their original base HP. Admin reset
+and grants recalculate via normal Sync; current HP is preserved/clamped as before.
+Endurance tooltip now explains base HP and level scaling. Rule tests span END1..10,
+levels0..30 and Lifegiver0..2; actual service tests cover grant/cap/reset/respawn.
+
 ## Level-based carrying capacity — 23 October
 
 Each earned character level adds1kg. CarryLimitKg=5*Strength+clamp(level,0,30)
 +10*StrongBackRanks, recalculated by normal progression Sync, including admin grants
 and reset to1. Level0 keeps its old base capacity; zombies have no player level.
 Rule and actual service tests cover stacking, level cap, reset and subsequent gain.
-User also clarified that per-level HP should depend on Endurance but has not yet
-specified that formula. Existing +4/level HP remains pending that clarification;
-do not guess a coefficient or treat it as resolved.
+HP formula clarification is now resolved: each level adds Endurance HP; see the
+newest entry above.
 
 ## First-creation perk catalog — 23 October
 
