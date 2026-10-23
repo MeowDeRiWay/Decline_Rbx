@@ -31,7 +31,7 @@ local function applyDayStats(model,hp,base)
  local ratio=hp.MaxHealth>0 and hp.Health/hp.MaxHealth or 1
  for id,value in pairs(stats) do model:SetAttribute(id,value) end
  for id,value in pairs(derived) do model:SetAttribute(id,value) end
- model:SetAttribute("SkillUnarmed",skills.Unarmed);model:SetAttribute("Accuracy",skills.Unarmed)
+ model:SetAttribute("SkillUnarmed",math.min(300,skills.Unarmed+100));model:SetAttribute("Accuracy",math.min(300,skills.Unarmed+100))
  model:SetAttribute("SightRange",derived.ViewRange);model:SetAttribute("MoveSpeed",derived.RunBonus)
  hp.MaxHealth=derived.MaxHealth;hp.Health=hp.MaxHealth*ratio;hp.WalkSpeed=derived.RunBonus
 end
@@ -402,6 +402,8 @@ local function prepare(model)
      local hit=Sight.Cast(head.Position,victimRoot.Position-head.Position,model)
      if hit and not hit.Instance:IsDescendantOf(victimRoot.Parent) then return end
      if not Damage.RollHit(model,victim,0,model:GetAttribute("SkillUnarmed")) then Damage.Miss(victim.Parent,model);return end
+     local targetPlayer=Players:GetPlayerFromCharacter(victim.Parent)
+     if targetPlayer or victim.Parent:GetAttribute("OfflineUserId") then victim.Parent:SetAttribute("Sick",math.clamp((victim.Parent:GetAttribute("Sick") or 0)+(model:GetAttribute("Strength") or 0),0,100)) end
      local critical=statRandom:NextNumber()<(model:GetAttribute("CriticalChance") or 0)
      if Damage.Apply(victim,model:GetAttribute("MeleeBonus"),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextInteger(2,4) or 1})>0 then
       model:SetAttribute("WeaponCondition",math.max(0,(model:GetAttribute("WeaponCondition") or 0)-1))

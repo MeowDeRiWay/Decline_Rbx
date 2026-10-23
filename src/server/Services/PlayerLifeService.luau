@@ -131,11 +131,11 @@ function Service.Revive(player,lockSeconds)
  for part,flags in pairs(record.Parts) do
   if part.Parent then part.Anchored=flags.Anchored;part.CanCollide=flags.CanCollide;part.CanQuery=flags.CanQuery end
  end
- hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,2)
+ hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0))
  hp:ChangeState(Enum.HumanoidStateType.GettingUp)
  character:SetAttribute("Knockout",false);character:SetAttribute("KnockoutEndsAt",nil)
  character:SetAttribute("Health",hp.Health);character:SetAttribute("BlocksVision",record.BlocksVision)
- player:SetAttribute("ReviveLockedUntil",workspace:GetServerTimeNow()+lockSeconds)
+ player:SetAttribute("ReviveLockedUntil",workspace:GetServerTimeNow()+math.max(0,lockSeconds-(player:GetAttribute("ReviveLockReduction") or 0)))
  return true
 end
 -- Reconnect clones keep the original knockout pose/flags and death deadline.
@@ -168,7 +168,7 @@ function Service.Damage(player,humanoid,amount,hitChecked,defenseChecked)
  if player:GetAttribute("AttributesConfirmed")==false then return 0 end
  local character=humanoid.Parent
  if humanoid.Health<=0 or character:GetAttribute("Knockout") or finished[character] then return 0 end
- if not hitChecked and amount>0 and math.random()<math.clamp((player:GetAttribute("DodgeChance") or 0)/100,0,1) then return 0 end
+ if not hitChecked and amount>0 and math.random()<math.clamp(((player:GetAttribute("DodgeChance") or 0)+((not character:GetAttribute("HandsItem") or character:GetAttribute("HandsItem")=="") and (player:GetAttribute("UnarmedArmorClass") or 0) or 0))/100,0,1) then return 0 end
  if not defenseChecked then
   amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0)+(humanoid.Health<humanoid.MaxHealth*.25 and (player:GetAttribute("LowHealthResistance") or 0) or 0),(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0))
  end

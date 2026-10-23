@@ -29,9 +29,10 @@ label.Font, label.TextSize, label.Visible = Enum.Font.GothamMedium, 15, false
 label.Parent = gui
 local hovered, reachable, chestHovered = nil, false, false
 local stoveHovered=false
+local farmHovered=false
 RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value + 4, function()
  hovered, reachable, chestHovered = nil, false, false
- stoveHovered=false
+ stoveHovered=false;farmHovered=false
  highlight.Enabled, label.Visible = false, false
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -49,7 +50,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  if not hit then return end
  local chest = hit.Instance
  while chest and chest ~= workspace do
-  if chest:IsA("Model") and (chest.Name == "Chest" or (chest.Name == "Stove" or chest.Name == "CuttingBoard" or chest.Name == "Workstation") or chest:GetAttribute("IsCorpse") == true) then break end
+  if chest:IsA("Model") and (chest.Name == "GardenBed" or chest.Name == "Well" or chest.Name == "Chest" or (chest.Name == "Stove" or chest.Name == "CuttingBoard" or chest.Name == "Workstation") or chest:GetAttribute("IsCorpse") == true) then break end
   chest = chest.Parent
  end
  if chest and chest ~= workspace then
@@ -57,11 +58,13 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
   local nearest = Interaction.NearestPoint(chest,root.Position)
   hovered, chestHovered = chest, true
   stoveHovered=chest.Name=="Stove" or chest.Name=="CuttingBoard" or chest.Name=="Workstation"
+  farmHovered=chest.Name=="GardenBed" or chest.Name=="Well"
   reachable = (nearest-root.Position).Magnitude <= Config.PickupDistance
   highlight.FillColor = Color3.fromRGB(80,190,110)
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
   label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and (chest.Name=="CuttingBoard" and "Cutting Board" or chest.Name=="Workstation" and "Workstation" or "Stove") or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
+  if farmHovered then label.Text=(chest.Name=="Well" and "Well" or "Garden bed")..(reachable and "\n[E] Use" or "\nToo far") end
   label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-44)))
   label.Visible = true
   return
@@ -84,6 +87,6 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
  if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
-  action:FireServer(stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
+  action:FireServer(farmHovered and "Farm" or stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
  end
 end)

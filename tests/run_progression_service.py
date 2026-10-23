@@ -4,6 +4,7 @@ import re,subprocess,tempfile,sys
 root=Path(__file__).resolve().parents[1]
 s=(root/'src/server/Services/ProgressionService.luau').read_text()
 s=re.sub(r'local (Rules|Config|Journal)=require[^\n]+\n','',s)
+s=s.replace('local definitions=require(ReplicatedStorage.Shared.ItemConfig).Items','local definitions=LootItems.Items')
 cases='''
 local notices={};local Journal={Send=function(p,text) table.insert(notices,{p,text}) end}
 SERVICE
@@ -68,10 +69,13 @@ for _=1,50 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Repair") end
 assert(Service.CanBuild(med,"Workbench") and not Service.CanBuild(med,"Kitchen"),"Repair100 unlocks workshop only")
 for _=1,50 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Cook") end
 assert(Service.CanBuild(med,"Kitchen"),"Cook100 unlocks kitchen")
+a:SetAttribute("ScroungerMultiplier",1.25)
+local extra=Service.ZombieDied(zombie,{Ammo9mmFMJ=4,Rags=3})
+assert(extra.Ammo9mmFMJ==5 and extra.Rags==3,"scrounger changes ammo quantity only")
 print("PASS: actual immutable creation, forbidden legacy commands, INT skill points, derived stats, requirements, passive practice, minute regeneration, no revival, and respawn")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
-for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig')]:parts.append('local '+name+'=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
+for name,module in [('Rules','ProgressionRules'),('Config','ProgressionConfig'),('LootItems','ItemConfig')]:parts.append('local '+name+'=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
 parts.append(cases.replace('SERVICE','local Service=(function()\n'+s+'\nend)()'))
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'test.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)

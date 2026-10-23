@@ -44,18 +44,18 @@ return {
   MaxBatch = 1, Duration = 15, RequiresPresence = true,
  },
  BoilPotatoes = {
-  Name = "Boil potatoes", Station = "Stove",
+  Name = "Boil potatoes", Food=true, Station = "Stove",
   Description = "Boil potatoes using one bottle of clean water per potato.",
   Ingredients = {Potato = 1, CleanWater = 1}, Output = "BoiledPotato", OutputCount = 1, MaxBatch = 5, Duration = 60,
  },
  SliceSausage = {
-  Name = "Slice sausage", Station = "CuttingBoard",
+  Name = "Slice sausage", Food=true, Station = "CuttingBoard",
   Description = "Slice a sausage into five pieces using a knife.",
   Ingredients = {Sausage = 1}, Output = "SausageSlice", OutputCount = 5,
   Tool = "Knife", MaxBatch = 1, Duration = 10, RequiresPresence = true,
  },
  MashedPotatoesWithSausage = {
-  Name = "Mashed potatoes with sausage", Station = "CuttingBoard",
+  Name = "Mashed potatoes with sausage", Food=true, Station = "CuttingBoard",
   Description = "Prepare mashed potatoes with sausage using either type of plate.",
   Ingredients = {BoiledPotato = 1, SausageSlice = 1},
   Variants = {

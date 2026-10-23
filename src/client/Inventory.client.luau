@@ -156,7 +156,7 @@ local function effectText(definition)
   return string.format("Damage %s · %s\n%d attacks/min",damage,w.DamageType,w.AttacksPerMinute) .. (definition.CraftTool and string.format("\nCraft speed ×%g",definition.CraftSpeed or 1) or "")
  end
  if not effects then return "Crafting material" end
- return string.format("Food %+.0f\nWater %+.0f\nSickness %+.0f", effects.Food or 0, effects.Water or 0, effects.Sick or 0) .. (definition.ReturnItems and ("\n"..returnText(definition)) or "")
+ return string.format("Food %+.0f\nWater %+.0f\nSickness %+.0f", effects.Food or 0, effects.Water or 0, effects.Sick or 0) .. ((effects.Health or 0)>0 and string.format("\nHealth +%g",effects.Health) or "") .. (definition.ReturnItems and ("\n"..returnText(definition)) or "")
 end
 RunService.RenderStepped:Connect(function()
  if not gui.Enabled then tooltip.Visible = false end
@@ -292,7 +292,7 @@ local function renderRecipes()
   local description=text(card,recipe.Description,UDim2.fromOffset(10,56),UDim2.new(1,-20,0,46))
   description.TextWrapped=true
   local ingredients={}
-  for item,count in pairs(recipe.Ingredients) do table.insert(ingredients,string.format("%d %s (%d owned)",count,ItemConfig.Items[item].Name,snapshot.Items[item] or 0)) end
+  for item,count in pairs(recipe.Ingredients) do table.insert(ingredients,string.format("%d %s (%d owned)",count,ItemConfig.Items[item].Name,CraftRules.Count(snapshot.Items,item))) end
   if recipe.Variants then
    local names,total={},0
    for _,variant in ipairs(recipe.Variants) do
@@ -351,9 +351,9 @@ local function foodDetails(definition,bonus)
  local effects=definition.Consume
  if not effects then return bonus and (definition.Weapon and effectText(definition) or "None") or (definition.Weapon and "Cannot damage structures" or "None") end
  local lines={}
- for _,entry in ipairs({{"Food",effects.Food or 0},{"Water",effects.Water or 0},{"Sickness",effects.Sick or 0}}) do
+ for _,entry in ipairs({{"Food",effects.Food or 0},{"Water",effects.Water or 0},{"Health",effects.Health or 0},{"Sickness",effects.Sick or 0}}) do
   local isBonus=entry[1]=="Sickness" and entry[2]<0 or entry[1]~="Sickness" and entry[2]>0
-  if entry[2]~=0 and isBonus==bonus then table.insert(lines,string.format("%s %+.0f",entry[1],entry[2])) end
+  if entry[2]~=0 and isBonus==bonus then table.insert(lines,string.format("%s %+g",entry[1],entry[2])) end
  end
  if bonus and definition.ReturnItems then table.insert(lines,returnText(definition)) end
  return #lines>0 and table.concat(lines,"\n") or "None"

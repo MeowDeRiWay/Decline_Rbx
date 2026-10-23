@@ -97,7 +97,7 @@ RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Valu
  chanceText.Visible=root~=nil and not friendly
  chanceText.Position=UDim2.fromOffset(8,known and 48 or 4)
  if chanceText.Visible then
-  local chance=Accuracy.Chance(Accuracy.ForWeapon(player,definition),(definition and definition.Firearm and Accuracy.SightBonus(character:FindFirstChild("HeldItem")) or 0),(target.Position-root.Position).Magnitude,owner and owner:GetAttribute("DodgeChance") or model:GetAttribute("DodgeChance") or 0,Accuracy.NightMultiplier(player))
+  local chance=Accuracy.Chance(Accuracy.ForWeapon(player,definition),(definition and definition.Firearm and Accuracy.SightBonus(character:FindFirstChild("HeldItem")) or 0),(target.Position-root.Position).Magnitude,(owner and owner:GetAttribute("DodgeChance") or model:GetAttribute("DodgeChance") or 0)+((not model:GetAttribute("HandsItem") or model:GetAttribute("HandsItem")=="") and ((owner or model):GetAttribute("UnarmedArmorClass") or 0) or 0),Accuracy.NightMultiplier(player))
   chanceText.Text=string.format("Hit chance: %d%%",math.floor(chance))
  end
  gui.Size=UDim2.fromOffset(230,known and 98 or 30)

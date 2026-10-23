@@ -28,8 +28,17 @@ Rules.Perks={
  {ID="UnarmedDamage",Name="Bonus unarmed damage",Max=1,Attributes={Agility=7},Skills={Unarmed=150},Description="+10 damage with unarmed attacks."},
  {ID="LivingAnatomy",Name="Living anatomy",Max=1,Attributes={Intelligence=6},Skills={Doctor=150},Description="Each damaging hit has a 10% chance to ignore armor and defensive perks. Does not bypass friendly-fire or creation protection."},
  {ID="FastFeet",Name="Fast feet",Max=1,Attributes={Agility=8,Endurance=6},Description="+20% walking and sprint speed, plus 1 stud per second sprint speed."},
+ {ID="UnarmedEvade",Name="Unarmed evasion",Max=1,Attributes={Agility=8},Skills={Unarmed=150},Description="+15 armor class while your hands are empty."},
+ {ID="Dodger",Name="Dodger",Max=1,Attributes={Agility=7},Description="+20 armor class."},
+ {ID="QuickRecovery",Name="Quick recovery",Max=1,Attributes={Endurance=7},Description="+4 HP regeneration per minute. Your patient revival lock is 3 minutes shorter. Revivals restore an additional 20% of your maximum HP."},
+ {ID="PiercingStrike",Name="Piercing strike",Max=1,Attributes={Strength=7},Skills={Melee=150},Description="Melee and unarmed attacks ignore 2 absorption and 10% resistance."},
+ {ID="Sniper",Name="Sniper",Max=1,Attributes={Attention=8},Skills={LightWeapons=200},Description="+10% critical chance with bolt-action rifles after standing still for 2 seconds."},
+ {ID="Cowboy",Name="Cowboy",Max=1,Attributes={Agility=6},Skills={LightWeapons=100,Melee=100},Description="+15% damage with pistols and knives."},
+ {ID="Ramsay",Name="Ramsay",Max=1,Attributes={Intelligence=6},Skills={Cook=150},Description="Food you prepare restores 5 HP and provides 50% more positive nutrition. The food retains this quality when shared."},
+ {ID="Scrounger",Name="Scrounger",Max=1,Attributes={Luck=7,Attention=6},Description="25% more ammunition in loot from zombies you kill, when ammunition drops."},
+ {ID="KhersonMelons",Name="Kherson watermelons",Max=1,Description="Garden beds in your greenhouse yield 50% more crops."},
 }
-local passive={Lumberjack=true,Miner=true,Scavenger=true}
+local passive={Lumberjack=true,Miner=true,Scavenger=true,Farmer=true}
 function Rules.New()
  local stats={};for _,id in ipairs(attributes) do stats[id]=5 end
  local ranks={};for id in pairs(skills) do ranks[id]=0 end
@@ -78,7 +87,7 @@ end
 function Rules.TotalSkills(state)
  local values=Rules.SkillValues(state.Stats)
  for id in pairs(skills) do values[id]=math.min(300,values[id]+(state.Skills[id] or 0)) end
- for id in pairs(passive) do values[id]=state.Practice[id].Value end
+ for id in pairs(passive) do values[id]=state.Practice[id] and state.Practice[id].Value or 0 end
  return values
 end
 function Rules.SkillQuote(state,id,current)
@@ -107,6 +116,7 @@ function Rules.AddXP(state,amount)
 end
 function Rules.Practice(state,id,amount)
  if not state.Confirmed or not passive[id] or typeof(amount)~="number" or amount<=0 or amount~=math.floor(amount) or amount==math.huge then return false end
+ state.Practice[id]=state.Practice[id] or {Value=0,XP=0}
  local s=state.Practice[id];s.XP+=amount*(1+(state.Perks.GoodStudent or 0))
  while s.Value<300 and s.XP>=10*(s.Value+1) do s.XP-=10*(s.Value+1);s.Value+=1 end
  if s.Value==300 then s.XP=0 end
@@ -116,9 +126,10 @@ function Rules.Bonuses(stats,perks,level)
  local p=perks or {}
  local hearing=stats.Attention+2*(p.Hearing or 0)
  return {CarryLimitKg=5*stats.Strength+10*(p.StrongBack or 0),MeleeBonus=stats.Strength*(1+(p.StrongArm or 0)),MaxHealth=10*stats.Endurance+4*(level or 0)*(p.Lifegiver or 0),
-  WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1),RunBonus=.4*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0),Regeneration=stats.Endurance*(1+(p.Regeneration or 0)),
-  DodgeChance=5*stats.Agility,CriticalChance=.01*stats.Luck*2^(p.Criticals or 0),
+  WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1),RunBonus=.4*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0),Regeneration=(stats.Endurance+4*(p.QuickRecovery or 0))*(1+(p.Regeneration or 0)),
+  DodgeChance=5*stats.Agility+20*(p.Dodger or 0),CriticalChance=.01*stats.Luck*2^(p.Criticals or 0),
   ViewRange=10+3*stats.Attention+10*(p.TunnelVision or 0),ViewAngleMultiplier=(p.TunnelVision or 0)>0 and .5 or 1,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,
+  UnarmedArmorClass=15*(p.UnarmedEvade or 0),ReviveLockReduction=180*(p.QuickRecovery or 0),ReviveHealthBonus=.2*(p.QuickRecovery or 0),MeleeIgnoreAbsorption=2*(p.PiercingStrike or 0),MeleeIgnoreResistance=.1*(p.PiercingStrike or 0),SniperCriticalBonus=.1*(p.Sniper or 0),CowboyMultiplier=(p.Cowboy or 0)>0 and 1.15 or 1,ScroungerMultiplier=(p.Scrounger or 0)>0 and 1.25 or 1,GreenhouseYieldMultiplier=(p.KhersonMelons or 0)>0 and 1.5 or 1,
   BackstabCritical=(p.SilentDeath or 0)>0,UnarmedDamageBonus=10*(p.UnarmedDamage or 0),ArmorBypassChance=(p.LivingAnatomy or 0)>0 and .1 or 0,
   CriticalMin=1.5,CriticalMax=(p.HardCriticals or 0)>0 and 2.5 or 2,DoctorFortuneChance=(p.DoctorFortune or 0)>0 and (.1+.01*stats.Luck) or 0,SilentRunning=(p.SilentRun or 0)>0,CraftCostMultiplier=(p.Economist or 0)>0 and .8 or 1,ExperienceMultiplier=1+(p.GoodStudent or 0),NightAccuracyMultiplier=(p.CatEyes or 0)>0 and .9 or .5,Observant=(p.Observant or 0)>0,DamageAbsorption=2*(p.Armadillo or 0),DamageResistance=.1*(p.Armadillo or 0),LowHealthResistance=(p.NotSoEasy or 0)>0 and .1 or 0,PistolCriticalBonus=(p.Duelist or 0)>0 and .1 or 0,DisarmChance=(p.DroppedIt or 0)>0 and .1 or 0,EquippedWeaponWeightMultiplier=(p.WeaponPart or 0)>0 and 0 or 1,
   RangedDamageBonus=2*(p.RangedDamage or 0),FirstAidMultiplier=1+(p.Medic or 0),ReviveLockSeconds=(p.FieldHospital or 0)>0 and 300 or 600}
@@ -149,7 +160,11 @@ function Rules.FirstAid(skill,multiplier) return (10+math.floor(math.clamp(skill
 function Rules.ReviveChance(skill) return math.clamp((skill or 0)/200,0,1) end
 function Rules.CraftExperience(recipe,count) return (recipe.XP or 50)*count end
 function Rules.KillExperience(health) return math.max(0,math.floor((health or 0)*2.5+.5)) end
-function Rules.CraftEffects() return {DurationMultiplier=1,BonusServing=0} end
-function Rules.CraftOutputs(outputs) return table.clone(outputs) end
+function Rules.CraftEffects(perks) return {DurationMultiplier=1,BonusServing=0,Ramsay=perks and (perks.Ramsay or 0)>0 or false} end
+function Rules.CraftOutputs(outputs,recipe,effects)
+ local result={}
+ for id,count in pairs(outputs) do result[effects and effects.Ramsay and recipe and recipe.Food and ("Ramsay_"..id) or id]=count end
+ return result
+end
 function Rules.ZoomBounds(viewBonus,height,fieldOfView) return 18,height+(viewBonus or 0)/math.tan(math.rad(fieldOfView/2)) end
 return Rules

@@ -121,6 +121,16 @@ assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true,Cri
 local immunity=make("ForceField","Shield",a.Character)
 assert(Service.Apply(hp,10,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0,"anatomy cannot bypass forcefield")
 immunity:Destroy()
+a:SetAttribute("DamageResistance",0);a:SetAttribute("DamageAbsorption",0);a:SetAttribute("CriticalNegation",0);a:SetAttribute("ArmorResistance",.5);a:SetAttribute("ArmorAbsorption",5);b:SetAttribute("ArmorBypassChance",0);b:SetAttribute("BackstabCritical",false)
+b:SetAttribute("MeleeIgnoreAbsorption",2);b:SetAttribute("MeleeIgnoreResistance",.1);hp.Health=100
+assert(math.abs(Service.Apply(hp,20,"Blunt",nil,"Melee",{Attacker=b,HitChecked=true})-9)<1e-8,"melee ignores2DA and10percentDR")
+hp.Health=100;assert(Service.Apply(hp,20,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==5,"piercing strike excludes guns")
+a:SetAttribute("ArmorResistance",.9);a:SetAttribute("DamageResistance",.2);a:SetAttribute("ArmorAbsorption",0);hp.Health=100
+assert(math.abs(Service.Apply(hp,20,"Blunt",nil,"Melee",{Attacker=b,HitChecked=true})-4)<1e-8,"penetration subtracts from effective90percent cap")
+a:SetAttribute("DodgeChance",25);a:SetAttribute("UnarmedArmorClass",15);a.Character:SetAttribute("HandsItem","");b:SetAttribute("Accuracy",75)
+b.Character.HumanoidRootPart.Position=Vector3.zero
+chance=.349;assert(Service.RollHit(b,hp));chance=.35;assert(not Service.RollHit(b,hp),"empty hands add15armor class")
+a.Character:SetAttribute("HandsItem","Knife");chance=.35;assert(Service.RollHit(b,hp),"equipping removes unarmed evasion")
 print("PASS: structured actor/target reports for client visibility filtering, no overhead text")
 print("PASS: melee-only absorption, non-melee unchanged, zero-damage clamp and Apron Additional slot")
 '''

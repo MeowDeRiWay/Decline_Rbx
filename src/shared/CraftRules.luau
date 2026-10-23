@@ -10,9 +10,10 @@ function Rules.Batch(available,requested,maximum)
  if typeof(requested)~="number" or requested~=requested or requested<1 or requested>maximum or requested>available or requested~=math.floor(requested) then return nil end
  return requested
 end
+function Rules.Count(items,id) return (items[id] or 0)+(items["Ramsay_"..id] or 0) end
 function Rules.Available(items,recipe)
  local available=math.huge
- for id,count in pairs(recipe.Ingredients) do available=math.min(available,math.floor((items[id] or 0)/count)) end
+ for id,count in pairs(recipe.Ingredients) do available=math.min(available,math.floor(Rules.Count(items,id)/count)) end
  if recipe.Variants then
   local total=0
   for _,variant in ipairs(recipe.Variants) do total+=items[variant.Ingredient] or 0 end
@@ -23,7 +24,11 @@ end
 function Rules.Plan(items,recipe,count)
  if not Rules.Batch(Rules.Available(items,recipe),count,recipe.MaxBatch) then return nil end
  local inputs,outputs={},{}
- for id,amount in pairs(recipe.Ingredients) do inputs[id]=amount*count end
+ for id,amount in pairs(recipe.Ingredients) do
+  local needed=amount*count;local ordinary=math.min(needed,items[id] or 0)
+  if ordinary>0 then inputs[id]=ordinary end
+  if needed>ordinary then inputs["Ramsay_"..id]=needed-ordinary end
+ end
  if recipe.Variants then
   local remaining=count
   for _,variant in ipairs(recipe.Variants) do
@@ -41,6 +46,7 @@ function Rules.Outputs(recipe)
  local result={}
  if recipe.Variants then for _,variant in ipairs(recipe.Variants) do table.insert(result,variant.Output) end
  else table.insert(result,recipe.Output) end
+ if recipe.Food then for index=#result,1,-1 do table.insert(result,"Ramsay_"..result[index]) end end
  return result
 end
 function Rules.Speed(tools,recipe)

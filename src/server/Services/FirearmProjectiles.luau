@@ -58,10 +58,14 @@ local function barrier(hit,direction)
 end
 function Service.Fire(player,character,origin,direction,definition,ammoType,itemID)
  if count>=256 then return false end
+ local sniperBonus=0
+ if definition.Category=="Rifle" and definition.SingleOnly and (player:GetAttribute("SniperCriticalBonus") or 0)>0 then
+  if workspace:GetServerTimeNow()-(player:GetAttribute("StationarySince") or workspace:GetServerTimeNow())>=2 then sniperBonus=player:GetAttribute("SniperCriticalBonus") end
+ end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
-  Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
-  AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true,Ignored={character},Impacts=0}
+  Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
+  SniperBonus=sniperBonus,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true,Ignored={character},Impacts=0}
  emit("Muzzle",origin)
  return true
 end
@@ -83,7 +87,8 @@ RunService.Heartbeat:Connect(function(dt)
     if Damage.RollHit(bullet.Player,victim,bullet.SightBonus,bullet.Skill) then
      victim.Parent:SetAttribute("LastDamagerID",bullet.Player.UserId)
      victim.Parent:SetAttribute("LastHitItem",bullet.ItemID)
-     local critical=random:NextNumber()<((bullet.Player:GetAttribute("CriticalChance") or 0)+(bullet.Category=="Pistol" and (bullet.Player:GetAttribute("PistolCriticalBonus") or 0) or 0))
+     local sniper=bullet.SniperBonus or 0
+     local critical=random:NextNumber()<((sniper)+(bullet.Player:GetAttribute("CriticalChance") or 0)+(bullet.Category=="Pistol" and (bullet.Player:GetAttribute("PistolCriticalBonus") or 0) or 0))
      local multiplier=critical and random:NextNumber(bullet.Player:GetAttribute("CriticalMin") or 1.5,bullet.Player:GetAttribute("CriticalMax") or 2) or 1
      local dealt=Damage.Apply(victim,bullet.Damage*math.max(.1,bullet.Remaining/bullet.Initial),"Bullet",bullet.Position-bullet.Direction,"Ranged",{HitChecked=true,CriticalMultiplier=multiplier,Attacker=bullet.Player,PostDefenseDamage=bullet.PostDefenseDamage})
      if dealt>0 and bullet.BoltAction and random:NextNumber()<(bullet.Player:GetAttribute("DisarmChance") or 0) then

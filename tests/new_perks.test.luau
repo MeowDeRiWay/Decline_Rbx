@@ -5,7 +5,7 @@ local Noise=require("../src/shared/NoiseRules")
 local I=require("../src/shared/InventoryRules")
 local Items=require("../src/shared/ItemConfig")
 local function fresh()
- local s=R.New();s.Confirmed=true;s.PerkPoints=100
+ local s=R.New();s.Confirmed=true;s.PerkPoints=100;s.Practice.Farmer.Value=150
  for id in pairs(s.Stats) do s.Stats[id]=10 end
  for id in pairs(s.Skills) do s.Skills[id]=250 end
  return s
@@ -17,7 +17,7 @@ for _,p in ipairs(R.Perks) do
  assert(not R.SpendPerk(s,p.ID),"rank cap")
  if p.Skills then
   local denied=fresh()
-  for id in pairs(p.Skills) do denied.Skills[id]=0;denied.Stats.Intelligence=1;denied.Stats.Attention=1 end
+  for id in pairs(p.Skills) do denied.Skills[id]=0;if denied.Practice[id] then denied.Practice[id].Value=0 end;denied.Stats.Intelligence=1;denied.Stats.Attention=1 end
   assert(not R.SpendPerk(denied,p.ID),"skill requirement remains server authoritative")
  end
 end
@@ -48,4 +48,14 @@ local empty=I.New();assert(Combat.GetWeapon(empty,Items.Items)==Combat.Unarmed a
 local Sheet=require("../src/shared/CharacterStats")
 assert(Sheet.Calculate({MeleeBonus=5,UnarmedDamageBonus=10},nil,nil,50,50).MeleeDamage==15)
 assert(Sheet.Calculate({MeleeBonus=5,UnarmedDamageBonus=10},{Weapon={Damage=10}},nil,50,50).MeleeDamage==15,"unarmed perk never increases knife damage")
+local latest=R.Bonuses({Strength=6,Attention=8,Endurance=7,Intelligence=6,Agility=8,Luck=6},{Dodger=1,UnarmedEvade=1,QuickRecovery=1,PiercingStrike=1,Sniper=1,Cowboy=1,Scrounger=1,KhersonMelons=1})
+assert(latest.DodgeChance==60 and latest.UnarmedArmorClass==15 and latest.Regeneration==11)
+assert(latest.ReviveLockReduction==180 and latest.ReviveHealthBonus==.2)
+assert(latest.MeleeIgnoreAbsorption==2 and latest.MeleeIgnoreResistance==.1 and latest.SniperCriticalBonus==.1)
+assert(latest.CowboyMultiplier==1.15 and latest.ScroungerMultiplier==1.25 and latest.GreenhouseYieldMultiplier==1.5)
+local food=Items.Items.Ramsay_BoiledPotato
+assert(food.Consume.Food==7.5 and food.Consume.Health==5 and Items.Items.BoiledPotato.Consume.Food==5)
+local mixed=C.Plan({BoiledPotato=0,Ramsay_BoiledPotato=1,SausageSlice=1,Plate=1},recipes.MashedPotatoesWithSausage,1)
+assert(mixed and mixed.Ingredients.Ramsay_BoiledPotato==1 and not mixed.Ingredients.BoiledPotato,"quality food usable in later recipes")
+local farmer=R.New();farmer.Confirmed=true;assert(farmer.Practice.Farmer.Value==0 and R.Practice(farmer,"Farmer",10) and farmer.Practice.Farmer.Value==1)
 print("PASS: new perk authority/ranks, level-scaled health, automatic perk, doubled XP, craft discount, bandage limits, stealth running and equipped weight")

@@ -5,7 +5,7 @@ local function fresh()
  return s,attrs
 end
 local main={"LightWeapons","Doctor","Repair"}
-for _,invalid in ipairs({{}, {"Doctor","Repair"},{"Doctor","Doctor","Repair"},{"Doctor","Repair","Miner"},{"Doctor","Repair","Fake"},{"Doctor","Repair","LightWeapons","Cook"}}) do
+for _,invalid in ipairs({{}, {"Doctor","Repair"},{"Doctor","Doctor","Repair"},{"Doctor","Repair","Miner"},{"Doctor","Repair","Farmer"},{"Doctor","Repair","Fake"},{"Doctor","Repair","LightWeapons","Cook"}}) do
  local s,attrs=fresh();assert(not R.Confirm(s,attrs,invalid) and not s.Confirmed and not s.TagsConfirmed)
 end
 local s,attrs=fresh();assert(R.Confirm(s,attrs,main));assert(s.TagsConfirmed and s.TaggedSkills.Doctor)

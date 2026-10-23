@@ -129,6 +129,7 @@ tooltip.BackgroundColor3=palette.Card;tooltip.BackgroundTransparency=.05;tooltip
 local padding=Instance.new("UIPadding");padding.PaddingLeft=UDim.new(0,10);padding.PaddingTop=UDim.new(0,8);padding.Parent=tooltip
 local function refreshStats()
  local character=player.Character;local a=player:GetAttributes()
+ a.StationaryFor=workspace:GetServerTimeNow()-(a.StationarySince or workspace:GetServerTimeNow())
  local definition=character and Items[character:GetAttribute("HandsItem")]
  if snapshot and not snapshot.Confirmed and draft then for id,value in pairs(Rules.Bonuses(draft)) do a[id]=value end end
  local stats=Sheet.Calculate(a,definition,character and character:GetAttribute("WeaponCondition"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("Health"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("MaxHealth"))

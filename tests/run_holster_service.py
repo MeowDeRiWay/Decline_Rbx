@@ -135,6 +135,11 @@ assert(Service.Snapshot(a).Equipment.Medicine==nil and a.Character:GetAttribute(
 print("PASS: medicine slot, exact consumption, automatic pocket refill and empty-state synchronization")
 '''
 world_cases+='''
+assert(Service.Add(a,"EmptyBucket",1) and Service.Equip(a,"EmptyBucket"))
+assert(Service.ReplaceOne(a,"EmptyBucket","DirtyWaterBucket") and Service.Snapshot(a).Equipment.Hands=="DirtyWaterBucket")
+assert(Service.ReplaceOne(a,"DirtyWaterBucket","EmptyBucket") and Service.Snapshot(a).Equipment.Hands=="EmptyBucket")
+assert(not Service.ReplaceOne(a,"EmptyBottle","DirtyWater"),"container conversion cannot create water without source")
+assert(Service.Unequip(a,"Hands"))
 Service.Start()
 assert(Service.Add(a,"AssaultRifle223",1) and Service.Equip(a,"AssaultRifle223"))
 local mag=Service.GetMagazine(a);mag.Loaded=7;mag.Type="AP"

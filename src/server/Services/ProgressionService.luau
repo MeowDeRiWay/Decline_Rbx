@@ -70,9 +70,13 @@ end
 function Service.Meets(player,requirements) return Rules.Meets(stateFor(player),requirements) end
 function Service.CanStation(player,name) return Service.Meets(player,Config.StationRequirements[name]) end
 function Service.CanBuild(player,kind) return Service.Meets(player,Config.BuildingRequirements[kind]) end
-function Service.CraftEffects() return Rules.CraftEffects() end
+function Service.CraftEffects(player) return Rules.CraftEffects(stateFor(player).Perks) end
 function Service.CraftXP(player,recipe,count) Service.Award(player,Rules.CraftExperience(recipe,count)) end
 function Service.Loot(_,items) return items end
+function Service.FarmXP(player,count)
+ if not player or player.Parent~=Players then return end
+ Rules.Practice(stateFor(player),"Farmer",count);Service.Award(player,count)
+end
 function Service.Harvest(player,kind,count)
  if not player or player.Parent~=Players then return end
  local id=({Tree="Lumberjack",StoneVein="Miner",ScrapPile="Scavenger"})[kind]
@@ -80,7 +84,12 @@ function Service.Harvest(player,kind,count)
  Service.Award(player,count)
 end
 function Service.ZombieDied(model,items)
- Service.Award(Players:GetPlayerByUserId(model:GetAttribute("LastDamagerID") or 0),Rules.KillExperience((model:FindFirstChildOfClass("Humanoid") or {}).MaxHealth))
+ local killer=Players:GetPlayerByUserId(model:GetAttribute("LastDamagerID") or 0)
+ if killer and (killer:GetAttribute("ScroungerMultiplier") or 1)>1 then
+  local definitions=require(ReplicatedStorage.Shared.ItemConfig).Items
+  for id,count in pairs(items) do if definitions[id] and definitions[id].Ammo then items[id]=math.ceil(count*(killer:GetAttribute("ScroungerMultiplier") or 1)) end end
+ end
+ Service.Award(killer,Rules.KillExperience((model:FindFirstChildOfClass("Humanoid") or {}).MaxHealth))
  return items
 end
 function Service.Start()

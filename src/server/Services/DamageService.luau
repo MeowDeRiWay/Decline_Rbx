@@ -32,12 +32,18 @@ local function announce(target,kind,amount,attacker,attackKind,critical,knockout
  end
 end
 function Service.Miss(target,attacker) local victim=Players:GetPlayerFromCharacter(target);if victim and victim:GetAttribute("AttributesConfirmed")==false then return end;if friendly(attacker,target) then return end;announce(target,"Miss",0,attacker) end
+local function armorClass(actor,model)
+ local value=actor:GetAttribute("DodgeChance") or 0
+ local hands=model and model:GetAttribute("HandsItem")
+ if not hands or hands=="" then value+=actor:GetAttribute("UnarmedArmorClass") or 0 end
+ return value
+end
 function Service.RollHit(attacker,humanoid,bonus,skill)
  if attacker:IsA("Player") and attacker:GetAttribute("AttributesConfirmed")==false then return false end
  if friendly(attacker,humanoid.Parent) then return false end
  local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
  if defender and defender:GetAttribute("AttributesConfirmed")==false then return false end
- local dodge=defender and defender:GetAttribute("DodgeChance") or humanoid.Parent:GetAttribute("DodgeChance") or 0
+ local dodge=armorClass(defender or humanoid.Parent,humanoid.Parent)
  local character=attacker:IsA("Player") and attacker.Character or attacker
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local target=humanoid.Parent:FindFirstChild("HumanoidRootPart",true) or humanoid.Parent:FindFirstChildWhichIsA("BasePart",true)
@@ -62,7 +68,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  local wasKnockedOut=target:GetAttribute("Knockout")==true
  local player=Players:GetPlayerFromCharacter(target)
  options=options or {}
- local dodge=player and (player:GetAttribute("DodgeChance") or 0) or 0
+ local dodge=player and armorClass(player,target) or 0
  if not options.HitChecked and dodge>0 and math.random()<math.clamp(dodge/100,0,1) then
   target:SetAttribute("LastDamage",0);target:SetAttribute("LastDamageDodged",true);announce(target,"Dodge",0,options.Attacker,attackKind);return 0
  end
@@ -83,6 +89,11 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  target:SetAttribute("LastArmorBypass",bypass)
  local negation=player and (player:GetAttribute("CriticalNegation") or 0) or 0
  if not bypass and multiplier>1 and negation>0 and math.random()<negation then multiplier=1 end
+ local ignoreAbsorption=attackKind=="Melee" and attackerPlayer and (attackerPlayer:GetAttribute("MeleeIgnoreAbsorption") or 0) or 0
+ local ignoreResistance=attackKind=="Melee" and attackerPlayer and (attackerPlayer:GetAttribute("MeleeIgnoreResistance") or 0) or 0
+ local function resolve(value,resistance,absorption)
+  return Defense.Resolve(value,math.max(0,math.clamp(resistance,0,.9)-ignoreResistance),math.max(0,absorption-ignoreAbsorption))
+ end
  local postDefense=attackKind=="Ranged" and math.max(0,options.PostDefenseDamage or 0) or 0
  amount*=multiplier
  target:SetAttribute("LastDamageCritical",multiplier>1)
@@ -90,19 +101,19 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
   if target:FindFirstChildOfClass("ForceField") then amount=0
   else
    local absorption=(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0)+(attackKind=="Melee" and (player:GetAttribute("MeleeAbsorption") or 0) or 0)
-   amount=(bypass and amount or Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0)+(humanoid.Health<humanoid.MaxHealth*.25 and (player:GetAttribute("LowHealthResistance") or 0) or 0),absorption))+postDefense
+   amount=(bypass and amount or resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0)+(humanoid.Health<humanoid.MaxHealth*.25 and (player:GetAttribute("LowHealthResistance") or 0) or 0),absorption))+postDefense
    amount=amount>0 and Life.Damage(player,humanoid,amount,true,true) or 0
   end
  elseif target.Name == "Mannikin" then
   -- Training targets reset on the lethal hit without entering the Dead state.
   if not target:FindFirstChildOfClass("ForceField") then
-   amount=(bypass and amount or Defense.Resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
+   amount=(bypass and amount or resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
    local remaining = math.max(0,before-amount)
    humanoid.Health = remaining > 0 and remaining or humanoid.MaxHealth
    amount = math.min(before,amount)
   else amount = 0 end
  else
-  amount=(bypass and amount or Defense.Resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
+  amount=(bypass and amount or resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
   humanoid:TakeDamage(amount)
   amount = math.max(0,before-humanoid.Health)
  end

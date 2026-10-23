@@ -20,6 +20,7 @@ function Service.Eat(player, id)
  character:SetAttribute("Food", newFood)
  character:SetAttribute("Sick", newSick)
  character:SetAttribute("Water",newWater)
+ humanoid.Health=math.min(humanoid.MaxHealth,humanoid.Health+(definition.Consume.Health or 0));character:SetAttribute("Health",humanoid.Health)
  for returned,count in pairs(definition.ReturnItems or {}) do Inventory.Add(player,returned,count) end
  return true
 end

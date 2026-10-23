@@ -80,6 +80,10 @@ assert(not Service.Cook(a,"MakeBandage",2),"one bandage per queue")
 assert(Service.Cook(a,"MakeBandage",1) and stock.Rags==0 and durations[#durations]==20,"discounted rags consumed,20second craft")
 callbacks[#callbacks]()
 assert(Service.Snapshot(a).CookingReady.Bandage==1,"bandage delivered once at completion")
+Service.Close(a);assert(Service.Open(a,stove));stock.Potato=1;stock.CleanWater=1;cookState.Ramsay=1
+assert(Service.Cook(a,"BoilPotatoes",1));callbacks[#callbacks]()
+assert(Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==1,"cook quality persists in station output")
+assert(Service.CollectRecipe(a,"BoilPotatoes","All") and stock.Ramsay_BoiledPotato==1,"collect all preserves Ramsay food variant")
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]

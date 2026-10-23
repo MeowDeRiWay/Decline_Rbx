@@ -18,7 +18,7 @@ local function findTemplate(folder,id)
  end
 end
 local function templateFor(id)
- return findTemplate(ServerStorage:FindFirstChild("Items"),id)
+ return findTemplate(ServerStorage:FindFirstChild("Items"),id) or (Items.Items[id] and Items.Items[id].TemplateID and findTemplate(ServerStorage:FindFirstChild("Items"),Items.Items[id].TemplateID))
 end
 Visuals.Template=templateFor
 -- Hand-authored world tools can supply their own reusable equipment template.

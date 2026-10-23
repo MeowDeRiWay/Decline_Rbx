@@ -25,7 +25,7 @@ local function update(player)
   local armor=ItemConfig.Items[id].Armor
   if armor then absorption+=armor.Absorption or 0;resistance+=armor.Resistance or 0 end
  end
- player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,.9))
+ player:SetAttribute("HandsEquipped",state.Equipment.Hands or "");player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,.9))
  if player.Character then
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")))
   Visuals.Apply(player.Character, state.Equipment.Hands)
@@ -96,6 +96,17 @@ function Service.Unequip(player, slot)
  if not state or not Rules.Unequip(state, ItemConfig.Items, ItemConfig.Slots, slot) then return false end
  update(player)
  return true
+end
+-- Atomic container conversion: held buckets stay held; pocket bottles stay in pockets.
+function Service.ReplaceOne(player,source,target)
+ local state=states[player]
+ if not state or not ItemConfig.Items[source] or not ItemConfig.Items[target] then return false end
+ local held=state.Equipment.Hands==source
+ if held then Rules.Unequip(state,ItemConfig.Items,ItemConfig.Slots,"Hands") end
+ if not Rules.Remove(state,source,1) then return false end
+ Rules.Add(state,ItemConfig.Items,target,1)
+ if held then Rules.Equip(state,ItemConfig.Items,ItemConfig.Slots,target) end
+ update(player);return true
 end
 function Service.UseMedicine(player)
  local state=states[player]

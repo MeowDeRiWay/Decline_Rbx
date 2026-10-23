@@ -26,9 +26,9 @@ attack.OnServerEvent:Connect(function(player)
  local definition=Items[character:GetAttribute("HandsItem")]
  if definition and definition.Firearm then return end
  if definition and definition.Requirements and not Progression.Meets(player,definition.Requirements) then return end
- local knifeMultiplier=1
+ local knifeMultiplier=definition and definition.CraftTool=="Knife" and (player:GetAttribute("CowboyMultiplier") or 1) or 1
  local motionWeapon=weapon
- if knifeMultiplier~=1 then motionWeapon=table.clone(weapon); motionWeapon.AttacksPerMinute*=knifeMultiplier end
+ -- Cowboy affects damage, not swing speed.
  local cooldown = 60 / motionWeapon.AttacksPerMinute
  ready[player] = now + cooldown
  Motion.Play(motor,motionWeapon)
@@ -86,7 +86,7 @@ attack.OnServerEvent:Connect(function(player)
    end
    nearest.Parent:SetAttribute("LastDamagerID",player.UserId)
    nearest.Parent:SetAttribute("LastHitItem",character:GetAttribute("HandsItem"))
-   local dealt = Damage.Apply(nearest,weapon.Damage*knifeMultiplier+(player:GetAttribute("MeleeBonus") or 0)+(not definition and (player:GetAttribute("UnarmedDamageBonus") or 0) or 0),weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
+   local dealt = Damage.Apply(nearest,(weapon.Damage+(player:GetAttribute("MeleeBonus") or 0)+(not definition and (player:GetAttribute("UnarmedDamageBonus") or 0) or 0))*knifeMultiplier,weapon.DamageType,root.Position,"Melee",{HitChecked=true,Attacker=player,CriticalMultiplier=random:NextNumber()<(player:GetAttribute("CriticalChance") or 0) and random:NextNumber(player:GetAttribute("CriticalMin") or 1.5,player:GetAttribute("CriticalMax") or 2) or 1})
    if dealt > 0 then Inventory.UseWeapon(player) end
   end
  end

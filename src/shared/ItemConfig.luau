@@ -153,5 +153,15 @@ for _,kind in ipairs({"FMJ","AP"}) do
   ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="A box of "..ammo.Name.." "..kind.." rounds. Collect it to unpack the ammunition. "..role,AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=50}}
  end
 end
+-- Prepared-food quality is an item variant, so it survives sharing, chests and drops.
+for _,id in ipairs({"BoiledPotato","SausageSlice","MashedPotatoesWithSausage_1","MashedPotatoesWithSausage_2"}) do
+ local base=ItemConfig.Items[id];local food=table.clone(base);food.Consume=table.clone(base.Consume)
+ food.Name=base.Name.." (Ramsay)";food.TemplateID=id
+ for _,stat in ipairs({"Food","Water"}) do if (food.Consume[stat] or 0)>0 then food.Consume[stat]*=1.5 end end
+ food.Consume.Health=5;food.Description=base.Description.." Prepared by a master cook: 50% more positive nutrition and restores 5 HP."
+ ItemConfig.Items["Ramsay_"..id]=food
+end
+ItemConfig.Items.EmptyBucket={Name="Empty bucket",Weight=1,Slot="Hands",Description="Fill at a well, then water a garden bed."}
+ItemConfig.Items.DirtyWaterBucket={Name="Bucket of dirty water",Weight=6,Slot="Hands",TemplateID="EmptyBucket",Description="Water for a garden bed. Returns an empty bucket after watering."}
 return ItemConfig
 
