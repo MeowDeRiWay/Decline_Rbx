@@ -2,7 +2,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/WorldItemService.luau').read_text()
-service=re.sub(r'local (ItemConfig|Inventory|Rules|Interaction|EquipmentVisuals|AmmoRules)\s*=\s*require[^\n]+\n','',service)
+service=re.sub(r'local (ItemConfig|Inventory|Rules|Interaction|EquipmentVisuals|AmmoRules|Stations)\s*=\s*require[^\n]+\n','',service)
 mock='''
 workspace.DescendantAdded=event()
 local world=make("Folder","WorldItems",workspace);world.ChildAdded=event()
@@ -23,7 +23,8 @@ local loose=make("Model","Ammo223AP",world,{Item_ID="Ammo223AP",Quantity=7,AmmoC
 assert(Service.Pickup(a,loose) and grants.Ammo223AP==7,"dropped loose stack preserves quantity and never rerolls from its box visual")
 print("PASS: box1..MaxAmmo rolls once, pickup grants loose rounds once, dropped-stack exact quantity")
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
+station_source='local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()'
+parts=[(root/'tests/fixtures/town_mock.luau').read_text(),station_source]
 for variable,module in [('ItemConfig','ItemConfig'),('Rules','InventoryRules'),('AmmoRules','FirearmRules')]:
  parts.append(f'local {variable}=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
 parts += [mock,'local Service=(function()\n'+service+'\nend)()',cases]

@@ -40,6 +40,7 @@ function Rules.Plan(items,recipe,count)
    remaining-=used
   end
  else outputs[recipe.Output]=count*(recipe.OutputCount or 1) end
+ for id,amount in pairs(recipe.Byproducts or {}) do outputs[id]=(outputs[id] or 0)+amount*count end
  return {Ingredients=inputs,Outputs=outputs}
 end
 function Rules.Outputs(recipe)
@@ -47,6 +48,8 @@ function Rules.Outputs(recipe)
  if recipe.Variants then for _,variant in ipairs(recipe.Variants) do table.insert(result,variant.Output) end
  else table.insert(result,recipe.Output) end
  if recipe.Food then for index=#result,1,-1 do table.insert(result,"Ramsay_"..result[index]) end end
+ local extra={};for id in pairs(recipe.Byproducts or {}) do table.insert(extra,id) end;table.sort(extra)
+ for _,id in ipairs(extra) do table.insert(result,id) end
  return result
 end
 function Rules.Speed(tools,recipe)

@@ -85,6 +85,19 @@ Furniture.Fill(standalone); assert(not standalone:FindFirstChild("GeneratedFurni
 local missing=make("Model","MissingShelf",furnishings); missing.CFrame=CFrame.new(); missing.Size=Vector3.new(1,1,1); local missingPart=make("Part","Part",missing); missingPart.CFrame=missing.CFrame; missingPart.Size=missing.Size
 Furniture.Fill(standalone); assert(#standalone.GeneratedFurniture:GetChildren()==1,"missing furniture can be supplied on a later retry")
 print("PASS: store choice, nested plots, furniture fill/anchoring, missing-template fallback and retry idempotence")
+local factories=make("Folder","Factories",library)
+local factory=make("Model","FactoryA",factories)
+factory.CFrame=CFrame.new(Vector3.zero);factory.Size=Vector3.new(40,5,40)
+local factoryYard=make("Model","Yard",factory);factoryYard.CFrame=CFrame.new(Vector3.zero);factoryYard.Size=Vector3.new(40,.2,40);make("Part","Part",factoryYard)
+local large=make("Model","InfrastructurePlace",workspace,{ForInfrastructure=true});large.CFrame=CFrame.new(Vector3.new(100,0,0));large.Size=Vector3.new(40,.2,40);make("Part","Part",large)
+Service.Generate()
+assert(large.GeneratedHouse.Value:GetAttribute("GenerationCategory")=="Factories" and large.GeneratedHouse.Value.Name=="FactoryA")
+local same=large.GeneratedHouse.Value;Service.Generate();assert(large.GeneratedHouse.Value==same,"factory cannot duplicate on retries")
+local small=make("Model","YardPlace",workspace,{ForZHouse=true,GenerationCategory="Factories"});small.CFrame=CFrame.new(Vector3.new(200,0,0));small.Size=Vector3.new(20,.2,20);make("Part","Part",small)
+Service.Generate();assert(not small:FindFirstChild("GeneratedHouse"),"40x40 factory cannot fit a 20x20 plot or fall back to a house")
+large:Destroy();Service.Generate();assert(same.destroyed)
+print("PASS:40x40 infrastructure factory, explicit category, footprint rejection, idempotence and removal")
+
 print("PASS: template discovery by attribute, placement, source references, hidden markers, ZNumber preservation, idempotence and removed-plot cleanup")
 '''
 parts=[mock,geometry,(root/'tests/city_service.fixture.luau').read_text()]

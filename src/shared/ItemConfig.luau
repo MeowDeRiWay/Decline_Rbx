@@ -30,6 +30,9 @@ ItemConfig.Items = {
   Name = "Scrap", Weight = 0.2,
   Description = "Salvaged scrap metal.",
  },
+ Coal = {Name="Charcoal",Weight=.2,Description="Charcoal made by burning tree logs. Used for smelting and ammunition."},
+ Chemicals = {Name="Chemicals",Weight=.2,Description="Scavenged chemical compounds used to produce ammunition."},
+ Iron = {Name="Iron",Weight=1,ResourceMaterial="Iron",Description="Smelted iron used for industrial firearms and ammunition."},
  Apron = {Name = "Apron", Weight = 0.5, Slot = "Additional", Description = "An apron worn over clothing."},
  Rags = {
   Name = "Rags", Weight = 0.05,

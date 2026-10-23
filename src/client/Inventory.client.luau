@@ -16,6 +16,7 @@ local chestOpen = false
 local chestReadOnly = false
 local cookingOpen=false
 local Recipes=require(ReplicatedStorage.Shared.CraftConfig)
+local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local CraftRules=require(ReplicatedStorage.Shared.CraftRules)
 local selectedRecipe=nil
 local craftAmounts={}
@@ -266,7 +267,7 @@ end
 local function renderRecipes()
  table.clear(craftStatuses)
  local ids={}
- for id,recipe in pairs(Recipes) do if recipe.Station==snapshot.CookingStation then table.insert(ids,id) end end
+ for id,recipe in pairs(Recipes) do if Stations.Matches(recipe,snapshot.CookingStation) then table.insert(ids,id) end end
  table.sort(ids)
  if #ids==0 then text(equipment,"No recipes available yet.",UDim2.fromOffset(8,8),UDim2.new(1,-16,0,50)) end
  for order,id in ipairs(ids) do
@@ -302,7 +303,9 @@ local function renderRecipes()
    table.insert(ingredients,"1 "..table.concat(names," or ").." ("..total.." owned)")
   end
   table.sort(ingredients)
-  local ingredientsText=text(card,table.concat(ingredients,"\n")..string.format("\n→ %d %s",recipe.OutputCount or 1,(recipe.Output and ItemConfig.Items[recipe.Output].Name or "Meal matching the plate")),UDim2.fromOffset(10,104),UDim2.new(1,-20,0,74))
+  local extras=""
+  for output,count in pairs(recipe.Byproducts or {}) do extras..=string.format(" + %d %s",count,ItemConfig.Items[output].Name) end
+  local ingredientsText=text(card,table.concat(ingredients,"\n")..string.format("\n→ %d %s",recipe.OutputCount or 1,(recipe.Output and ItemConfig.Items[recipe.Output].Name or "Meal matching the plate")..extras),UDim2.fromOffset(10,104),UDim2.new(1,-20,0,74))
   ingredientsText.TextSize=14; ingredientsText.TextWrapped=true
   local tool=recipe.Tool and (speed and string.format("Knife required · Speed ×%g",speed) or "Knife required · Missing usable knife") or "No tool required"
   text(card,string.format("Batch: 1–%d · Time: %g seconds\n%s",recipe.MaxBatch,recipe.Duration/(speed or 1),tool .. (recipe.RequiresPresence and " · Stay here" or "")),UDim2.fromOffset(10,181),UDim2.new(1,-20,0,44)).TextSize=14
@@ -330,7 +333,7 @@ local function renderRecipes()
   local cook=button(card,"Craft",UDim2.fromOffset(10,267),UDim2.new(.5,-15,0,32))
   local all=button(card,string.format("Craft all (max %d)",recipe.MaxBatch),UDim2.new(.5,5,0,267),UDim2.new(.5,-15,0,32))
   local busy=(snapshot.CookingEndsAt or 0)>0
-  local eligible=true
+  local eligible=not recipe.WorkshopLevel or (snapshot.CookingWorkshopLevel or 0)>=recipe.WorkshopLevel
   for skill,value in pairs(recipe.Requirements and recipe.Requirements.Skills or {}) do if (player:GetAttribute("Skill"..skill) or 0)<value then eligible=false end end
   local enabled=eligible and not busy and available>0 and speed~=nil
   cook.Active,all.Active=enabled,enabled

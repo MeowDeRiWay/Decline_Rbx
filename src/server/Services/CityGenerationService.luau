@@ -28,7 +28,7 @@ local function templates(category)
  if houses then
   for _, house in ipairs(houses:GetChildren()) do
    local yard = house:FindFirstChild("Yard")
-   if house:IsA("Model") and (category=="Stores" or house:GetAttribute("ZHouse") == true) and yard and box(yard) then table.insert(result,house) end
+   if house:IsA("Model") and (category~="Houses" or house:GetAttribute("ZHouse") == true) and yard and box(yard) then table.insert(result,house) end
   end
  end
  table.sort(result,function(a,b) return a.Name < b.Name end)
@@ -70,13 +70,15 @@ local function hidePlot(plot)
  plot:SetAttribute("BlocksVision",false)
 end
 local function place(plot, sources, roadList)
- if busy[plot] or not plot:IsDescendantOf(workspace) or plot:GetAttribute("ForZHouse") ~= true then return end
+ if busy[plot] or not plot:IsDescendantOf(workspace) or (plot:GetAttribute("ForZHouse") ~= true and plot:GetAttribute("ForInfrastructure") ~= true) then return end
+ local explicit=plot:GetAttribute("GenerationCategory") or (plot:GetAttribute("ForInfrastructure")==true and "Factories" or nil)
+ if explicit and not sources[explicit] then warnOnce(plot,"Unknown GenerationCategory: "..tostring(explicit));return end
  local existing = plot:FindFirstChild("GeneratedHouse")
  if existing and existing:IsA("ObjectValue") and existing.Value and existing.Value:IsDescendantOf(workspace) then
   generated[plot] = existing.Value; hidePlot(plot); return
  end
  if generated[plot] and generated[plot]:IsDescendantOf(workspace) then return end
- if #sources.Houses==0 and #sources.Stores==0 then warnOnce(plot,"Add building Models with an inner Yard in ServerStorage/CityGeneration/Houses or Stores"); return end
+ if #sources.Houses==0 and #sources.Stores==0 and #sources.Factories==0 then warnOnce(plot,"Add building Models with an inner Yard in ServerStorage/CityGeneration/Houses, Stores or Factories"); return end
  local plotFrame,plotSize = box(plot)
  if not plotFrame then warnOnce(plot,"YardPlace needs a physical marker Part"); return end
  if math.abs(plotFrame.UpVector.Y-1) > .001 then warnOnce(plot,"YardPlace must be horizontal; yaw rotation is supported"); return end
@@ -93,14 +95,14 @@ local function place(plot, sources, roadList)
   end
   return result
  end
- if not categories[plot] then categories[plot]=Rules.Category(random:NextNumber(),Config.StoreChance) end
+ if not categories[plot] then categories[plot]=explicit or Rules.Category(random:NextNumber(),Config.StoreChance) end
  local category=categories[plot]
  local candidates=candidatesFor(category)
- if #candidates==0 then
+ if #candidates==0 and not explicit then
   category=category=="Stores" and "Houses" or "Stores"
   candidates=candidatesFor(category)
  end
- if #candidates==0 then busy[plot]=nil; warnOnce(plot,"No building Yard fits this YardPlace; expected matching 20x20 markers and aligned yard axes"); return end
+ if #candidates==0 then busy[plot]=nil; warnOnce(plot,"No building Yard fits this YardPlace; match the building Yard to the plot footprint (20x20 or 40x40) and aligned yard axes"); return end
  local chosen = candidates[random:NextInteger(1,#candidates)]
  local clone = chosen.house:Clone()
  clone:SetAttribute("GeneratedCityHouse",true)
@@ -131,9 +133,9 @@ local function place(plot, sources, roadList)
  warnings[plot],busy[plot] = nil,nil
 end
 function Service.Generate()
- local sources,roadList,plots = {Houses=templates("Houses"),Stores=templates("Stores")},roads(),{}
+ local sources,roadList,plots = {Houses=templates("Houses"),Stores=templates("Stores"),Factories=templates("Factories")},roads(),{}
  for _, object in ipairs(workspace:GetDescendants()) do
-  if object:IsA("Model") and object.Name == "YardPlace" and object:GetAttribute("ForZHouse") == true then table.insert(plots,object) end
+  if object:IsA("Model") and ((object.Name == "YardPlace" and object:GetAttribute("ForZHouse") == true) or object:GetAttribute("ForInfrastructure")==true) then table.insert(plots,object) end
  end
  table.sort(plots,plotOrder)
  for _, plot in ipairs(plots) do place(plot,sources,roadList) end

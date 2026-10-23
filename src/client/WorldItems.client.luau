@@ -6,6 +6,7 @@ local GuiService = game:GetService("GuiService")
 local player = Players.LocalPlayer
 local Config = require(ReplicatedStorage.Shared:WaitForChild("ItemConfig"))
 local Interaction = require(ReplicatedStorage.Shared:WaitForChild("Interaction"))
+local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local folder = workspace:WaitForChild("WorldItems")
 local action = ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("Action")
 local highlight = Instance.new("Highlight")
@@ -38,7 +39,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
- if not root or not camera or character:GetAttribute("Knockout") or (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if not root or not camera or character:GetAttribute("Knockout") or ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  -- GetMouseLocation already matches ViewportPointToRay coordinates.
  local viewportMouse = mouse
@@ -51,20 +52,20 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  if not hit then return end
  local chest = hit.Instance
  while chest and chest ~= workspace do
-  if chest:IsA("Model") and (chest.Name == "GardenBed" or chest.Name == "Well" or chest.Name == "Chest" or (chest.Name == "Stove" or chest.Name == "CuttingBoard" or chest.Name == "Workstation") or chest:GetAttribute("IsCorpse") == true) then break end
+  if chest:IsA("Model") and (chest.Name == "GardenBed" or chest.Name == "Well" or chest.Name == "Chest" or Stations.Kind(chest) or chest:GetAttribute("IsCorpse") == true) then break end
   chest = chest.Parent
  end
  if chest and chest ~= workspace then
   if chest:GetAttribute("IsCorpse") and chest:GetAttribute("ClientVisible") ~= true then return end
   local nearest = Interaction.NearestPoint(chest,root.Position)
   hovered, chestHovered = chest, true
-  stoveHovered=chest.Name=="Stove" or chest.Name=="CuttingBoard" or chest.Name=="Workstation"
+  stoveHovered=Stations.Kind(chest)~=nil
   farmHovered=chest.Name=="GardenBed" or chest.Name=="Well"
   reachable = (nearest-root.Position).Magnitude <= Config.PickupDistance
   highlight.FillColor = Color3.fromRGB(80,190,110)
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
-  label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and (chest.Name=="CuttingBoard" and "Cutting Board" or chest.Name=="Workstation" and "Workstation" or "Stove") or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
+  label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and (Stations.Kind(chest)=="ArmsBench" and "Arms Bench" or Stations.Kind(chest)) or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
   if farmHovered then
    label.Text=(chest.Name=="Well" and "Well" or "Garden bed")
    if chest.Name=="GardenBed" then
@@ -95,7 +96,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  label.Visible = true
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
- if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
+ if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
   action:FireServer(farmHovered and "Farm" or stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
  end
 end)

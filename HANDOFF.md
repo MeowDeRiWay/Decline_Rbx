@@ -4,6 +4,42 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Industrial crafting, 40x40 factories, and folder item pools — 23 October
+
+See INDUSTRY_SETUP.md for exact Studio setup, item/station IDs, marker attributes,
+recipes, defaults and limitations. Added Coal (Charcoal,.2kg), Chemicals(.2kg),
+Iron(1kg). Workstation crafts pistol20Scrap/Repair100/XP200, SMG30/120/200,
+9mmFMJ50 fromCoal1+Chemicals1+Scrap1/Repair100/XP100. ArmsBench factory station
+crafts223FMJ50 fromIron1+Coal1+Chemicals1/Repair170/XP200, Rifle223 and
+AssaultRifle223 fromIron25/Repair170/XP500. Provisional times60/90/30/60/120/120.
+No invented AP recipes. Shared CraftStations supports model-name or CraftStation
+attribute, used in hover, queryability, recipe filtering and server authority.
+
+Stove/Furnace burns5logs->5Coal60s or5logs+1Coal->5Coal30s. Furnace inside an
+ancestor BuildingIDWorkbench, BuildingLevel>=2 smelts25Scrap+1Coal->5Iron120s,
+consistent with5Scrap/iron. Added Workbench(T2) upgrade template slot; provisional
+cost same asT1(10logs5scrap). No matches. All thermal jobs unattended, output stays
+in physical station. Optional five-potato cooking over5logs produces5charcoal as
+byproduct; existing potato recipe unchanged. CraftRules.Byproducts and quality
+handling prevent Ramsay_Coal alias. Gun/ammo crafts require presence as existing
+workstation crafts. XP/discount perks still apply.
+
+ForInfrastructure=true markers (40x40) explicitly use Factories category in
+ServerStorage/CityGeneration/Factories; models have Yard40x40 and +Z forward,
+face roads. ForZHouse/YardPlace can alternatively set GenerationCategoryFactories.
+No house/store fallback for explicit factory; existing20x20 roll unchanged. No
+automatic merging of overlapping small plots. Author factory art and ArmsBench.
+
+ItemPool marker path relativeServerStorage/Items (e.g.Food), SpawnChance0..1,
+RespawnSeconds default300; item-template SpawnWeight default1. RecursiveFolders
+only, registered physical models, no child components/looseammo/ZombieHand. One
+live world pickup per marker; fresh AmmoBox count rolls through existing register
+once1..MaxAmmo(default50). Source attributes retained except staleAmmoCount,
+Quantity forced1. Refill waits after pickup; missing folders retry; marker deletion
+cleans remaining item. Scans every5s. No persistence. Tests cover actual crafting
+and world templates, pool lifecycle and factory generation; prior town/craft/ammo
+regressions, compilation and Rojo pass. No Studio playtest or new authored models.
+
 ## Perk points every third level and free Observant — 23 October
 
 New character PerkPoints0; AddXP gives1 only on levels divisible by3:3..30 =>10

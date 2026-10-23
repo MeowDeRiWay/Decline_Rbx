@@ -181,7 +181,7 @@ function Rules.KillExperience(health) return math.max(0,math.floor((health or 0)
 function Rules.CraftEffects(perks) return {DurationMultiplier=1,BonusServing=0,Ramsay=perks and (perks.Ramsay or 0)>0 or false} end
 function Rules.CraftOutputs(outputs,recipe,effects)
  local result={}
- for id,count in pairs(outputs) do result[effects and effects.Ramsay and recipe and recipe.Food and ("Ramsay_"..id) or id]=count end
+ for id,count in pairs(outputs) do result[effects and effects.Ramsay and recipe and recipe.Food and not (recipe.Byproducts and recipe.Byproducts[id]) and ("Ramsay_"..id) or id]=count end
  return result
 end
 function Rules.ZoomBounds(viewBonus,height,fieldOfView) return 18,height+(viewBonus or 0)/math.tan(math.rad(fieldOfView/2)) end

@@ -7,6 +7,7 @@ local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local EquipmentVisuals = require(script.Parent.EquipmentVisuals)
 local AmmoRules=require(ReplicatedStorage.Shared.FirearmRules)
+local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local random=Random.new()
 local Service = {}
 local fallbackItems = {TreeLog = true, Scrap = true, Rags = true, Stone = true, Ammo223FMJ=true, Ammo223AP=true}
@@ -36,7 +37,7 @@ local function register(item)
  queryable(item)
 end
 local function consider(object)
- if object:IsA("Model") and (object.Name=="Chest" or object.Name=="Stove" or object.Name=="CuttingBoard" or object.Name=="Workstation") then queryable(object) end
+ if object:IsA("Model") and (object.Name=="Chest" or Stations.Kind(object)) then queryable(object) end
  if object.Parent==folder then register(object); return end
  if not object:IsA("Model") and not object:IsA("BasePart") then return end
  -- Pick-up items placed directly on the map (or in organizational folders)
@@ -48,7 +49,7 @@ local function consider(object)
    return
   end
   if ancestor:IsA("Model") then
-   if ancestor.Name=="Chest" or ancestor.Name=="Stove" or ancestor.Name=="CuttingBoard" or ancestor.Name=="Workstation" or (ancestor.Parent==folder and ItemConfig.Items[ancestor:GetAttribute("Item_ID") or ancestor.Name]) then queryable(object) end
+   if ancestor.Name=="Chest" or Stations.Kind(ancestor) or (ancestor.Parent==folder and ItemConfig.Items[ancestor:GetAttribute("Item_ID") or ancestor.Name]) then queryable(object) end
    return
   end
   ancestor=ancestor.Parent
@@ -143,6 +144,16 @@ local function place(item,position,count,id)
  item:SetAttribute("Quantity",count)
  item:SetAttribute("Conditions",nil)
  item:SetAttribute("WeaponData",nil)
+end
+-- A loot-pool point spawns exactly one authored model, preserving its box attributes.
+function Service.SpawnTemplate(source,id,position)
+ if not ItemConfig.Items[id] or not source or (not source:IsA("Model") and not source:IsA("BasePart")) then return nil end
+ local item=source:Clone()
+ if not item or (item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart",true)) then if item then item:Destroy() end;return nil end
+ place(item,position,1,id)
+ if ItemConfig.Items[id].AmmoBox then item:SetAttribute("AmmoCount",nil) end
+ item.Parent=folder
+ return item
 end
 function Service.SpawnLoot(loot,position,ignored)
  local ids,prepared = {},{}

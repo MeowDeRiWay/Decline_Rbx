@@ -9,13 +9,14 @@ local ProgressionRules=require(ReplicatedStorage.Shared.ProgressionRules)
 local Amounts=require(ReplicatedStorage.Shared.InventoryRules)
 local Interaction=require(ReplicatedStorage.Shared.Interaction)
 local Progression=require(script.Parent.ProgressionService)
+local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local Service={}
 local states=setmetatable({},{__mode="k"})
 local sessions={}
 local changed=Instance.new("BindableEvent")
 Service.Changed=changed.Event
 local function reachable(player,stove)
- if typeof(stove)~="Instance" or not stove:IsA("Model") or (stove.Name~="Stove" and stove.Name~="CuttingBoard" and stove.Name~="Workstation") or not stove:IsDescendantOf(workspace) or not stove:FindFirstChildWhichIsA("BasePart",true) then return false end
+ if typeof(stove)~="Instance" or not stove:IsA("Model") or not Stations.Kind(stove) or not stove:IsDescendantOf(workspace) or not stove:FindFirstChildWhichIsA("BasePart",true) then return false end
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")
@@ -50,7 +51,7 @@ local function cancel(stove,job)
  notify(stove)
 end
 function Service.Open(player,stove)
- if not reachable(player,stove) or not Progression.CanStation(player,stove.Name) then return false end
+ if not reachable(player,stove) or not Progression.CanStation(player,Stations.Kind(stove)) then return false end
  if sessions[player] and sessions[player]~=stove then Service.Close(player) end
  states[stove]=states[stove] or {Ready={}}
  sessions[player]=stove
@@ -69,15 +70,15 @@ function Service.Snapshot(player)
  local stove=sessions[player]
  local state=stove and states[stove]
  local job=state and state.Job
- return {CookingOpen=stove~=nil,CookingStation=stove and stove.Name,CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,CookingRequiresPresence=job and job.RequiresPresence or false,CookingCount=job and job.Count or 0}
+ return {CookingOpen=stove~=nil,CookingStation=stove and Stations.Kind(stove),CookingWorkshopLevel=stove and Stations.WorkshopLevel(stove) or 0,CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,CookingRequiresPresence=job and job.RequiresPresence or false,CookingCount=job and job.Count or 0}
 end
 function Service.Cook(player,id,requested)
  local stove=sessions[player]
  if not reachable(player,stove) then Service.Close(player); return false end
  local recipe=typeof(id)=="string" and Recipes[id]
  local state=states[stove]
- if recipe and recipe.Requirements and not Progression.Meets(player,recipe.Requirements) then return false end
- if not recipe or recipe.Station~=stove.Name or state.Job or not Progression.CanStation(player,stove.Name) then return false end
+ if recipe and (not Stations.Allowed(stove,recipe) or (recipe.Requirements and not Progression.Meets(player,recipe.Requirements))) then return false end
+ if not recipe or not Stations.Matches(recipe,Stations.Kind(stove)) or state.Job or not Progression.CanStation(player,Stations.Kind(stove)) then return false end
  recipe=Rules.Discount(recipe,player:GetAttribute("CraftCostMultiplier"))
  local own=Inventory.Snapshot(player)
  local speed=Rules.Speed(own.CraftTools or {},recipe)
@@ -132,7 +133,7 @@ function Service.CollectRecipe(player,id,requested)
  local stove=sessions[player]
  if not reachable(player,stove) then Service.Close(player); return false end
  local recipe=typeof(id)=="string" and Recipes[id]
- if not recipe or recipe.Station~=stove.Name then return false end
+ if not recipe or not Stations.Matches(recipe,Stations.Kind(stove)) then return false end
  local outputs=Rules.Outputs(recipe)
  local total=0
  for _,output in ipairs(outputs) do total+=states[stove].Ready[output] or 0 end

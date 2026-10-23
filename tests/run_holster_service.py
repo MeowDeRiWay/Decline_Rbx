@@ -70,7 +70,8 @@ parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
 for name,module in [('ItemConfig','ItemConfig'),('Rules','InventoryRules'),('CombatRules','CombatRules')]:
  parts.append(f'local {name}=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
 world=(root/'src/server/Services/WorldItemService.luau').read_text()
-world=re.sub(r'local (ItemConfig|Inventory|Rules|Interaction|EquipmentVisuals|AmmoRules)\s*=\s*require[^\n]+\n','',world)
+world=world.replace('local Stations=require(ReplicatedStorage.Shared.CraftStations)', 'local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()')
+world=re.sub(r'local (ItemConfig|Inventory|Rules|Interaction|EquipmentVisuals|AmmoRules|Stations)\s*=\s*require[^\n]+\n','',world)
 world_setup='''
 local encoded={}
 local HttpService={JSONEncode=function(_,value) local key="payload"..(#encoded+1);table.insert(encoded,value);encoded[key]=value;return key end,JSONDecode=function(_,key) return encoded[key] end}
@@ -90,6 +91,17 @@ local Interaction={NearestPoint=function(_,position) return position end}
 local AmmoRules={}
 '''
 world_cases='''
+AmmoRules.BoxCount=function(maximum,roll) return math.floor(maximum*roll)+1 end
+AmmoRules.AmmoID=function(caliber,kind) return "Ammo"..caliber..kind end
+local ammoSource=make("Model","AmmoBox223FMJ",ServerStorage,{AmmoCount=3,MaxAmmo=50,Quantity=99});make("Part","Part",ammoSource)
+local spawned=World.SpawnTemplate(ammoSource,"AmmoBox223FMJ",Vector3.zero)
+assert(spawned and spawned.Parent==worldFolder and spawned:GetAttribute("Quantity")==1 and spawned:GetAttribute("AmmoCount")==nil)
+worldFolder.ChildAdded:Fire(spawned)
+assert(spawned:GetAttribute("AmmoCount")==26 and ammoSource:GetAttribute("AmmoCount")==3,"fresh pool spawn rerolls its own box without altering template")
+worldFolder.ChildAdded:Fire(spawned);assert(spawned:GetAttribute("AmmoCount")==26)
+ground=false;assert(World.Pickup(a,spawned) and Service.Snapshot(a).Items.Ammo223FMJ==26)
+ground=true
+print("PASS: actual pool template placement produces one box and unpacks one freshly rolled ammunition stack")
 Service.ToggleHolster(a)
 local charged
 for _,stack in ipairs(Service.Snapshot(a).Stacks) do if stack.Loaded==30 then charged=stack end end

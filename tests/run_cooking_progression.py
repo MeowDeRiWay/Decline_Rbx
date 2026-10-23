@@ -6,7 +6,7 @@ import sys
 import tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/CraftingService.luau').read_text().replace('local Journal=require(script.Parent.JournalService)', 'local Journal={Send=function() end}')
-for variable in ['Inventory','Items','Recipes','Rules','Amounts','Interaction','Progression','ProgressionRules']:
+for variable in ['Inventory','Items','Recipes','Rules','Amounts','Interaction','Progression','ProgressionRules','Stations']:
  service=re.sub(rf'local {variable}=require\([^\n]+\)\n','',service)
 setup='''
 local baseNew=Instance.new
@@ -90,8 +90,57 @@ doctor=false;assert(not Service.Cook(a,"MakeBucket",1),"bucket skill requirement
 doctor=true;assert(not Service.Cook(a,"MakeBucket",2));assert(Service.Cook(a,"MakeBucket",1) and stock.Scrap==0 and durations[#durations]==20)
 callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.EmptyBucket==1,"bucket craft output")
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
+local repair=99
+Progression.Meets=function(_,requirement)
+ return not requirement.Skills.Repair or repair>=requirement.Skills.Repair
+end
+Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=100;stock.Coal=10;stock.Chemicals=10
+assert(not Service.Cook(a,"MakePistol9mm",1) and stock.Scrap==100)
+repair=100;local before=xp
+assert(Service.Cook(a,"MakePistol9mm",1) and stock.Scrap==80)
+callbacks[#callbacks]();assert(xp==before+200 and Service.Snapshot(a).CookingReady.Pistol9mm==1)
+assert(not Service.Cook(a,"MakeSMG9mm",1));repair=120
+before=xp;assert(Service.Cook(a,"MakeSMG9mm",1) and stock.Scrap==50)
+callbacks[#callbacks]();assert(xp==before+200)
+before=xp;assert(Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==49 and stock.Coal==9 and stock.Chemicals==9)
+callbacks[#callbacks]();assert(xp==before+100 and Service.Snapshot(a).CookingReady.Ammo9mmFMJ==50)
+assert(not Service.Cook(a,"MakeRifle223",1),"factory recipe unavailable on town bench")
+local arms=make("Model","Custom weapons machine",workspace,{CraftStation="ArmsBench"});make("Part","Part",arms)
+Service.Close(a);assert(Service.Open(a,arms));stock.Iron=100
+repair=169;assert(not Service.Cook(a,"MakeAmmo223",1));repair=170
+for _,id in ipairs({"MakeAmmo223","MakeRifle223","MakeAssaultRifle223"}) do
+ before=xp;local recipe=Recipes[id]
+ assert(Service.Cook(a,id,1));callbacks[#callbacks]()
+ assert(xp==before+recipe.XP and Service.Snapshot(a).CookingReady[recipe.Output]==recipe.OutputCount)
+end
+assert(stock.Iron==49 and not Service.Cook(a,"MakePistol9mm",1))
+local workshop=make("Model","Workbench (T2)",workspace,{BuildingID="Workbench",BuildingLevel=1})
+local furnace=make("Model","Furnace",workshop);make("Part","Part",furnace)
+Service.Close(a);assert(Service.Open(a,furnace));stock.Scrap=25;stock.Coal=1
+assert(not Service.Cook(a,"SmeltIron",1),"tier1 cannot smelt iron")
+workshop:SetAttribute("BuildingLevel",2)
+assert(Service.Snapshot(a).CookingWorkshopLevel==2 and Service.Cook(a,"SmeltIron",1))
+assert(stock.Scrap==0 and stock.Coal==0 and durations[#durations]==120 and not Service.Snapshot(a).CookingRequiresPresence)
+Service.Close(a);a.Character.HumanoidRootPart.Position=Vector3.new(100,0,0)
+callbacks[#callbacks]();a.Character.HumanoidRootPart.Position=Vector3.zero
+assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Iron==5,"furnace completes after closing and leaving")
+assert(Service.CollectRecipe(a,"SmeltIron","All") and stock.Iron==54)
+stock.TreeLog=5;stock.Coal=0
+assert(Service.Cook(a,"BurnLogs",1) and durations[#durations]==60);Service.Close(a);callbacks[#callbacks]()
+assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Coal==5)
+assert(Service.CollectRecipe(a,"BurnLogs","All") and stock.Coal==5)
+stock.TreeLog=5
+assert(Service.Cook(a,"BurnLogsWithCoal",1) and stock.Coal==4 and durations[#durations]==30)
+Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Coal==5)
+Service.Close(a);assert(Service.Open(a,stove));stock.TreeLog=5;stock.Potato=5;stock.CleanWater=5;cookState.Ramsay=1
+assert(Service.Cook(a,"BoilPotatoesWithLogs",1));Service.Close(a);callbacks[#callbacks]()
+assert(Service.Open(a,stove) and Service.Snapshot(a).CookingReady.Coal==5 and Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==5,"charcoal byproduct cannot become a food quality alias")
+assert(Service.CollectRecipe(a,"BoilPotatoesWithLogs","All"))
+print("PASS: industrial recipe inputs, Repair gates, exact XP/output, town/factory separation, Furnace T2 gate, unattended processing, charcoal fuel and food byproducts")
+
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]
+station_source='local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()'
+parts=[(root/'tests/fixtures/town_mock.luau').read_text(),station_source,'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]
 for variable,file in [('Items','ItemConfig'),('Recipes','CraftConfig'),('Rules','CraftRules'),('Amounts','InventoryRules')]:
  parts.append(f'local {variable}=(function()\n'+(root/f'src/shared/{file}.luau').read_text()+'\nend)()')
 parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])
