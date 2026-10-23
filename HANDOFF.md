@@ -4,6 +4,20 @@
 Репозиторій: https://github.com/MeowDeRiWay/Decline_Rbx
 База реалізації міст: e235775fe775a9bcd0ecbc0313a0abc94dea7711. Читай актуальний main.
 
+## Perk points every third level and free Observant — 23 October
+
+New character PerkPoints0; AddXP gives1 only on levels divisible by3:3..30 =>10
+lifetime points, with normal grants following those same milestones. Reset to1
+sets PP0 (skill bundles unchanged). SpendPerk treats FreeSlot perks (currently
+only Observant) as both outside the ten-rank cap and costing zero PP. Still requires
+confirmed attributes and Attention8 for manual selection; rank1 prevents repeats.
+Automatic Observant at30 remains independent of Attention, point budget, selected
+ranks or having already selected it. UI enables this free perk at zero PP and adds
+"Free" to requirements; normal rows still require a point. Character hint explains
+third-level awards. Tests cover all level milestones, zero initial/reset PP,
+normal/admin grants, manual and automatic free perk, free purchase at ten normal
+ranks, failed second purchase and client zero-point eligibility. All passed.
+
 ## Endurance-based level HP — 23 October
 
 User confirmed END7 gives7HP per level. MaxHealth now10*END + level*(END +4*LifegiverRanks),

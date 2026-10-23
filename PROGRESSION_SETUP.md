@@ -5,6 +5,12 @@ This section supersedes the historical profession/talent notes below.
 - The hard maximum character level is **30**, for both normal XP and admin grants.
   At the cap, character XP is zero and no additional level rewards are issued.
   Passive practice skills continue progressing normally.
+- There are **no starting perk points**. Levels 3, 6, 9, 12, 15, 18, 21, 24,
+  27 and 30 each award one point: exactly 10 over the full progression. Saved
+  points may be spent later. Admin grants use the same milestones.
+- **Overly observant** is free to select after confirming Attention 8, even with
+  zero perk points or ten selected normal perk ranks. It is also granted
+  automatically at level 30 regardless of Attention, without duplicates or cost.
 - Maximum HP is `10 × Endurance + level × (Endurance + 4 × Lifegiver ranks)`.
   Every earned level adds Endurance maximum HP, plus the existing Lifegiver
   bonus of 4 per rank. Endurance 7 gives +7 HP/level without Lifegiver.
@@ -23,7 +29,7 @@ This section supersedes the historical profession/talent notes below.
 - Admin **Reset to level 1 (skills + perks)** clears XP, all allocated and practice
   skills, and all perks. Attributes and main skill selection are preserved. Because
   the game starts at level zero, a reset level-one character has two normal skill
-  point bundles (`2 × (5 + Intelligence)`) and two unspent perk points. Derived
+  point bundles (`2 × (5 + Intelligence)`) and zero perk points. Derived
   attribute-based skill values remain visible. The operation retains inventory.
 
 Tests: progression_rules.test.luau, new_perks.test.luau,

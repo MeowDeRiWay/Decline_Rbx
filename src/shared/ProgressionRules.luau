@@ -44,7 +44,7 @@ function Rules.New()
  local stats={};for _,id in ipairs(attributes) do stats[id]=5 end
  local ranks={};for id in pairs(skills) do ranks[id]=0 end
  local practice={};for id in pairs(passive) do practice[id]={Value=0,XP=0} end
- return {Level=0,XP=0,Points=6,SkillPoints=0,PerkPoints=1,Confirmed=false,Stats=stats,Skills=ranks,Practice=practice,Perks={},TaggedSkills={},TagsConfirmed=false}
+ return {Level=0,XP=0,Points=6,SkillPoints=0,PerkPoints=0,Confirmed=false,Stats=stats,Skills=ranks,Practice=practice,Perks={},TaggedSkills={},TagsConfirmed=false}
 end
 local function validTags(tags)
  if typeof(tags)~="table" or #tags~=3 then return nil end
@@ -112,7 +112,8 @@ function Rules.AddXP(state,amount)
  if state.Level>=Rules.MaxLevel then state.Level=Rules.MaxLevel;state.XP=0;state.Perks.Observant=1;return false end
  state.XP+=amount*(1+(state.Perks.GoodStudent or 0))
  while state.Level<Rules.MaxLevel and state.XP>=Rules.RequiredXP(state.Level) do
-  state.XP-=Rules.RequiredXP(state.Level);state.Level+=1;state.SkillPoints+=5+state.Stats.Intelligence;state.PerkPoints+=1
+  state.XP-=Rules.RequiredXP(state.Level);state.Level+=1;state.SkillPoints+=5+state.Stats.Intelligence
+  if state.Level%3==0 then state.PerkPoints+=1 end
  end
  if state.Level>=Rules.MaxLevel then state.Perks.Observant=1;state.XP=0 end
  return true
@@ -122,7 +123,7 @@ function Rules.ResetProgression(state)
  local fresh=Rules.New()
  state.Level=1;state.XP=0;state.Skills=fresh.Skills;state.Practice=fresh.Practice;state.Perks={}
  -- The game starts at level zero: retain the creation bundle plus level one's rewards.
- state.SkillPoints=2*(5+state.Stats.Intelligence);state.PerkPoints=2
+ state.SkillPoints=2*(5+state.Stats.Intelligence);state.PerkPoints=0
  return true
 end
 function Rules.Practice(state,id,amount)
@@ -164,10 +165,11 @@ function Rules.PerkCount(state)
  return count
 end
 function Rules.SpendPerk(state,id)
- if (state.PerkPoints or 0)<1 then return false end
  for _,perk in ipairs(Rules.Perks) do
-  if perk.ID==id and (state.Perks[id] or 0)<perk.Max and (perk.FreeSlot or Rules.PerkCount(state)<10) and Rules.Meets(state,perk) then
-   state.Perks[id]=(state.Perks[id] or 0)+1;state.PerkPoints-=1;return true
+  if perk.ID==id and (state.Perks[id] or 0)<perk.Max and (perk.FreeSlot or ((state.PerkPoints or 0)>0 and Rules.PerkCount(state)<10)) and Rules.Meets(state,perk) then
+   state.Perks[id]=(state.Perks[id] or 0)+1
+   if not perk.FreeSlot then state.PerkPoints-=1 end
+   return true
   end
  end
  return false

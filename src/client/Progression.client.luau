@@ -190,7 +190,7 @@ redraw=function()
   card.Value.Text=tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id])
   card.Minus.Visible=not snapshot.Confirmed;card.Plus.Visible=not snapshot.Confirmed
  end
- confirmedText.Text=(snapshot.Confirmed and "Attributes confirmed." or "Attributes must total 36.")..(snapshot.TagsConfirmed and "" or " Choose 3 main skills in Skills ("..#selectedTags().." / 3). Confirm to lock your choice.")
+ confirmedText.Text=(snapshot.Confirmed and "Attributes confirmed. Perk point every 3 levels." or "Attributes must total 36.")..(snapshot.TagsConfirmed and "" or " Choose 3 main skills in Skills ("..#selectedTags().." / 3). Confirm to lock your choice.")
  confirmButton.Visible=not snapshot.Confirmed or not snapshot.TagsConfirmed
  creationHint.Visible=not snapshot.Confirmed
  confirmButton.Text=confirming and "Confirm permanently" or (snapshot.Confirmed and "Confirm main skills" or "Confirm character")
@@ -225,7 +225,7 @@ redraw=function()
   local rank=(snapshot.Perks or {})[perk.ID] or 0
   row.Position=UDim2.fromOffset(0,count*86);count+=1
   row.Text="  "..perk.Name.." · "..rank.." / "..perk.Max.."\n  "..Presentation.PerkRequirements(perk,config.Names)
-  row.Active=eligible and rank<perk.Max and (perk.FreeSlot or Rules.PerkCount(snapshot)<10) and (snapshot.PerkPoints or 0)>0
+  row.Active=eligible and rank<perk.Max and (perk.FreeSlot or (Rules.PerkCount(snapshot)<10 and (snapshot.PerkPoints or 0)>0))
   row.AutoButtonColor=row.Active
   row.TextColor3=row.Active and palette.Accent or palette.Muted
  end

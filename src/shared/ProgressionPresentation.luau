@@ -17,6 +17,6 @@ function P.PerkRequirements(perk,names)
   for _,entry in ipairs(sorted) do table.insert(parts,(names and names[entry.ID] or entry.ID).." "..entry.Value) end
  end
  local text=#parts>0 and ("Requires: "..table.concat(parts,", ")) or "No requirements"
- return perk.ID=="Observant" and (text.."; also automatic at level 30") or text
+ return perk.ID=="Observant" and ("Free; "..text.."; also automatic at level 30") or text
 end
 return P

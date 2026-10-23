@@ -19,13 +19,13 @@ Select an online player; the current selection's name, level and HP appear above
 the controls. Operations require a completed character creation.
 
 - Add 1–100 levels at a time, with the normal Intelligence-based skill point and
-  perk point rewards. Current XP is retained; Good student does not multiply the
+  perk point rewards (one at each third level, ten total by level 30). Current XP is retained; Good student does not multiply the
   granted levels. Grants stop at the level-30 cap, discard excess XP at the cap,
   and report the number actually added. The automatic level-30 perk is awarded normally.
 - Reset progression to level 1: clear all trained skills, practice progress,
   perks (including the level-30 perk) and XP. Preserve attributes and chosen
   main skills. Restore the normal level-1 unspent point budget: two skill-point
-  bundles of `5 + Intelligence` and two perk points, since creation starts at
+  bundles of `5 + Intelligence` and zero perk points, since creation starts at
   level zero. Repeated resets do not accumulate points. Inventory is retained.
 - Heal to maximum HP and remove sickness.
 - Restore food and water to 100 and remove sickness.

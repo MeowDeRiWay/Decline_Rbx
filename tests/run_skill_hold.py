@@ -70,7 +70,10 @@ assert(perkRows.KhersonMelons.Active and not perkRows.StrongArm.Active)
 snapshot.Stats.Strength=7;redrawPerks();assert(perkRows.StrongArm.Active)
 snapshot.Perks.StrongArm=1;redrawPerks();assert(not perkRows.StrongArm.Active and perkRows.StrongArm.Visible)
 snapshot.Perks={};snapshot.PerkPoints=0;redrawPerks();assert(not perkRows.KhersonMelons.Active)
-print("PASS: all perks visible before creation/requirements, requirement text, inactive unmet/ranked/pointless perks and scroll extent")
+snapshot.Stats.Attention=7;redrawPerks();assert(not perkRows.Observant.Active)
+snapshot.Stats.Attention=8;redrawPerks();assert(perkRows.Observant.Active and perkRows.Observant.Text:find("Free",1,true),"free perk selectable at zero perk points")
+snapshot.Perks.Observant=1;redrawPerks();assert(not perkRows.Observant.Active)
+print("PASS: all perks visible, locked requirements/ranks, free Attention8 perk enabled at zero points, scroll extent")
 '''
 receiver=source[source.index('local function receiveState'):source.index('remotes:WaitForChild("State").OnClientEvent:Connect(receiveState)')]
 creation_cases='''

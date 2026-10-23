@@ -9,8 +9,8 @@ draft.Strength=10;draft.Intelligence=6
 assert(R.Confirm(s,draft) and s.Confirmed)
 draft.Strength=1;assert(s.Stats.Strength==10,"confirmation copies input")
 assert(not R.Confirm(s,draft),"cannot respec")
-assert(R.AddXP(s,500) and s.Level==1 and s.SkillPoints==22 and s.Points==0 and s.PerkPoints==2)
-assert(R.AddXP(s,1000) and s.Level==2 and s.SkillPoints==33 and s.PerkPoints==3)
+assert(R.AddXP(s,500) and s.Level==1 and s.SkillPoints==22 and s.Points==0 and s.PerkPoints==0)
+assert(R.AddXP(s,1000) and s.Level==2 and s.SkillPoints==33 and s.PerkPoints==0)
 assert(not R.AddXP(s,math.huge) and not R.AddXP(s,0/0))
 assert(R.SpendSkill(s,"Melee") and s.SkillPoints==32 and R.TotalSkills(s).Melee==51)
 assert(not R.SpendSkill(s,"Lumberjack") and not R.SpendSkill(s,"Fake"))
@@ -40,15 +40,17 @@ assert(minimum.MaxHealth==10 and minimum.CarryLimitKg==5 and minimum.MeleeBonus=
 assert(minimum.WalkBonus==.2 and minimum.RunBonus==.4 and minimum.Regeneration==1 and minimum.CriticalChance==.01)
 
 assert(R.TotalSkills(s).FirstAid==40 and R.TotalSkills(s).Doctor==45 and R.TotalSkills(s).Cook==29)
-assert(s.PerkPoints==3 and not R.SpendPerk(s,"RangedDamage"))
+assert(s.PerkPoints==0 and not R.SpendPerk(s,"RangedDamage"))
 local perks=R.New();local all={Strength=7,Attention=7,Endurance=7,Intelligence=1,Agility=7,Luck=7}
-assert(R.Confirm(perks,all));perks.PerkPoints=20
+assert(R.Confirm(perks,all));perks.PerkPoints=10
 for _,id in ipairs({"RangedDamage","RangedDamage","Lifegiver","Lifegiver","StrongArm","StrongBack","Criticals","Regeneration","Medic","FieldHospital"}) do
  perks.Skills.FirstAid=150;perks.Skills.Doctor=100
  assert(R.SpendPerk(perks,id),id)
 end
 assert(R.PerkCount(perks)==10 and not R.SpendPerk(perks,"StrongBack"),"ten selected ranks cap")
-perks.Stats.Attention=8;assert(R.SpendPerk(perks,"Observant"),"observant outside cap")
+assert(perks.PerkPoints==0 and not R.SpendPerk(perks,"Observant"),"Attention7 cannot select free perk")
+perks.Stats.Attention=8;assert(R.SpendPerk(perks,"Observant") and perks.PerkPoints==0 and R.PerkCount(perks)==10,"observant free outside cap at zero points")
+assert(not R.SpendPerk(perks,"Observant") and perks.PerkPoints==0,"free perk cannot be taken twice")
 local bonus=R.Bonuses(perks.Stats,perks.Perks,3)
 assert(bonus.RangedDamageBonus==4 and bonus.MaxHealth==115 and bonus.MeleeBonus==14 and bonus.CarryLimitKg==48)
 assert(bonus.CriticalChance==.14 and bonus.Regeneration==14 and bonus.FirstAidMultiplier==2 and bonus.ReviveLockSeconds==300)
@@ -58,7 +60,7 @@ assert(R.FirstAid(19)==11 and R.FirstAid(20,2)==24 and R.ReviveChance(20)==.1 an
 assert(R.CraftExperience({},5)==250 and R.CraftExperience({OutputCount=3},1)==50 and R.CraftExperience({XP=80},2)==160)
 assert(R.KillExperience(20)==50 and R.KillExperience(60)==150)
 assert(R.AddXP(s,.5) and s.XP==.5,"healing grants exact actual HP including fractions")
-print("PASS: initial INT skill bundle and perk point; 500*level XP; per-item practice; all nine perk requirements/rank caps/effects; medical and craft/kill XP")
+print("PASS: initial INT skill bundle; perk points every3levels; 500*level XP; per-item practice; all nine perk requirements/rank caps/effects; medical and craft/kill XP")
 
 local requirements={Skills={Doctor=100,FirstAid=100}}
 local doctor=R.New();assert(R.Confirm(doctor,{Strength=5,Attention=5,Endurance=5,Intelligence=10,Agility=6,Luck=5}))
@@ -93,7 +95,7 @@ assert(R.ResetProgression(capped) and capped.Level==1 and capped.XP==0 and next(
 for id,v in pairs(capped.Skills) do assert(v==0) end
 for id,v in pairs(capped.Practice) do assert(v.Value==0 and v.XP==0) end
 for id,v in pairs(stats) do assert(capped.Stats[id]==v) end
-assert(capped.SkillPoints==20 and capped.PerkPoints==2 and capped.TaggedSkills.Melee and capped.TagsConfirmed and capped.Confirmed)
+assert(capped.SkillPoints==20 and capped.PerkPoints==0 and capped.TaggedSkills.Melee and capped.TagsConfirmed and capped.Confirmed)
 assert(R.TotalSkills(capped).Melee==25,"reset retains only attribute-derived skill values")
 assert(R.ResetProgression(capped) and capped.SkillPoints==20,"repeat reset cannot accumulate points")
 assert(not R.ResetProgression(R.New()))
@@ -112,3 +114,19 @@ end
 local seven={Strength=5,Attention=5,Endurance=7,Intelligence=5,Agility=5,Luck=5}
 assert(R.Bonuses(seven,{},0).MaxHealth==70 and R.Bonuses(seven,{},1).MaxHealth==77 and R.Bonuses(seven,{},30).MaxHealth==280)
 print("PASS: Endurance1-10 adds its own value per level0-30; Lifegiver adds4 per rank; END7 gives7HP per level")
+
+local schedule=R.New();schedule.Confirmed=true
+assert(schedule.PerkPoints==0)
+for level=1,30 do
+ assert(R.AddXP(schedule,R.RequiredXP(schedule.Level)))
+ assert(schedule.Level==level and schedule.PerkPoints==math.floor(level/3),"one perk point per third level")
+end
+assert(schedule.PerkPoints==10 and schedule.Perks.Observant==1 and R.PerkCount(schedule)==0)
+assert(not R.AddXP(schedule,1e12) and schedule.PerkPoints==10)
+assert(R.ResetProgression(schedule) and schedule.Level==1 and schedule.PerkPoints==0)
+assert(R.AddXP(schedule,1000) and schedule.Level==2 and schedule.PerkPoints==0)
+assert(R.AddXP(schedule,1500) and schedule.Level==3 and schedule.PerkPoints==1)
+local free=R.New();free.Confirmed=true;free.Stats.Attention=8
+assert(R.SpendPerk(free,"Observant") and free.PerkPoints==0 and R.PerkCount(free)==0)
+assert(R.AddXP(free,1e12) and free.Perks.Observant==1 and free.PerkPoints==10,"automatic award never duplicates or charges free perk")
+print("PASS: perk point milestones3..30 total10, none at creation/reset1, free Attention8 perk outside budget, automatic award at30")
