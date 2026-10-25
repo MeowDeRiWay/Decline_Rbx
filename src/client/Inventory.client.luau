@@ -206,14 +206,15 @@ local function renderItems(frame, items, side)
   end)
   row.MouseLeave:Connect(function() tooltip.Visible = false end)
   if chestOpen and chestReadOnly and side == "Player" then continue end
-  local extraAction = not chestOpen and (definition.Slot or definition.Consume)
+  local actionCount=not chestOpen and ((definition.Slot and 1 or 0)+(definition.Consume and 1 or 0)+(definition.EmptyContainer and 1 or 0)) or 0
+  local extraHeight=actionCount*38
   local actions = Instance.new("Frame")
   actions.Name = "ItemActions"
   actions.Position = UDim2.fromOffset(0, 68)
-  actions.Size = UDim2.new(1, 0, 0, extraAction and 110 or 68)
+  actions.Size = UDim2.new(1, 0, 0, 68+extraHeight)
   actions.BackgroundTransparency = 1
   actions.Parent = container
-  local card = {container = container, actions = actions, row = row, expandedHeight = extraAction and 184 or 142}
+  local card = {container = container, actions = actions, row = row, expandedHeight = 142+extraHeight}
   cards[key] = card
   local function showActions(entry, expanded)
    entry.actions.Visible = expanded
@@ -256,12 +257,16 @@ local function renderItems(frame, items, side)
   local all = button(actions, chestOpen and (chestReadOnly and "Take all" or "Transfer all") or "Drop all", UDim2.new(0.5, 3, 0, 36), UDim2.new(0.5, -9, 0, 32))
   drop.Activated:Connect(function() readAmount(); action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", selection, selected) end)
   all.Activated:Connect(function() action:FireServer(chestOpen and (side == "Chest" and "TransferOut" or "TransferIn") or "Drop", selection, "All") end)
-  if definition.Consume and not chestOpen then
-   local eat = button(actions, definition.ConsumeAction or "Eat", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
-   eat.Activated:Connect(function() action:FireServer("Eat", id) end)
-  elseif definition.Slot and not chestOpen then
-   local equip = button(actions, "Equip", UDim2.fromOffset(6, 74), UDim2.new(1, -12, 0, 32))
-   equip.Activated:Connect(function() action:FireServer("Equip", selection) end)
+  local nextActionY=74
+  local function itemAction(caption,command,value)
+   local control=button(actions,caption,UDim2.fromOffset(6,nextActionY),UDim2.new(1,-12,0,32))
+   nextActionY+=38
+   control.Activated:Connect(function() action:FireServer(command,value) end)
+  end
+  if not chestOpen then
+   if definition.Slot then itemAction("Equip","Equip",selection) end
+   if definition.Consume then itemAction(definition.ConsumeAction or "Consume","Consume",id) end
+   if definition.EmptyContainer then itemAction("Pour out","PourOut",id) end
   end
  end
 end

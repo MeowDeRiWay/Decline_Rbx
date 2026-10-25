@@ -3,7 +3,7 @@ local Items = require(ReplicatedStorage.Shared.ItemConfig)
 local Rules = require(ReplicatedStorage.Shared.ConsumableRules)
 local Inventory = require(script.Parent.InventoryService)
 local Service = {}
-function Service.Eat(player, id)
+function Service.Consume(player, id)
  local definition = typeof(id) == "string" and Items.Items[id]
  if not definition or not definition.Consume then return false end
  if definition.Requirements and not require(script.Parent.ProgressionService).Meets(player,definition.Requirements) then return false end
@@ -23,5 +23,17 @@ function Service.Eat(player, id)
  humanoid.Health=math.min(humanoid.MaxHealth,humanoid.Health+(definition.Consume.Health or 0));character:SetAttribute("Health",humanoid.Health)
  for returned,count in pairs(definition.ReturnItems or {}) do Inventory.Add(player,returned,count) end
  return true
+end
+-- Keep compatibility with existing callers while using a neutral action name.
+Service.Eat=Service.Consume
+function Service.PourOut(player,id)
+ local definition=typeof(id)=="string" and Items.Items[id]
+ local empty=definition and definition.EmptyContainer
+ if not empty or not Items.Items[empty] then return false end
+ local character=player.Character
+ local humanoid=character and character:FindFirstChildOfClass("Humanoid")
+ if not humanoid or humanoid.Health<=0 or character:GetAttribute("Knockout") or character:GetAttribute("CraftingLocked") then return false end
+ -- Replaces one pocket container, or the held container while keeping it equipped.
+ return Inventory.ReplaceOne(player,id,empty)
 end
 return Service

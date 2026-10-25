@@ -41,3 +41,5 @@ The owner's Kherson watermelons perk multiplies yield by1.5, with fair fractiona
 Farmer remains passive like Miner: one practiceXP per harvested unit, 10×next-rank thresholds, no manual/tagged training. Farming bonuses still need review. Access is physical/public like chests. Crop and water state lasts only within the running server; crop/water persistence across server restarts and greenhouse upgrades remain pending.
 
 Botanist (Рослинознавець) costs one normal perk point, with no additional requirement. It reveals each plant's stage and estimated harvest time in the bed menu and hover. Estimates use current watering and change as water falls; dry plants show paused. Missing stage models warn once and are retried.
+
+Filled bottles and buckets have Drink and Pour out actions in the inventory. Pour out empties one container without nutrition/sickness effects and returns its empty version; a held bucket stays equipped as EmptyBucket. Equip is shown independently from consumption. Food uses Consume.
