@@ -4,7 +4,7 @@ All names are exact and case-sensitive. Game text is English.
 
 | Model | Location | Purpose |
 | --- | --- | --- |
-| `Greenhouse (T1)` | `ServerStorage/Buildings` | Future town building; construction cost/requirements/menu entry pending. Place a copy in Workspace to test. |
+| `Greenhouse (T1)` | `ServerStorage/Buildings` | Town building menu: Greenhouse. Costs 10 TreeLog + 5 Scrap, no skill requirement; normal mayor approval. |
 | `GardenBed` | Inside greenhouse | A 1×10 bed. Numeric `MaxPlants` sets capacity (default5, safe range1–100); numeric `MaxWatering` sets stored water capacity (default100). |
 | `Well` | Inside greenhouse | Unlimited dirty water, requires empty bottle or bucket. |
 | `EmptyBucket` | Any category under `ServerStorage/Items` | Craft on Workstation: Repair80, provisional3Scrap/20seconds, one at a time. |
@@ -38,4 +38,4 @@ Stages1and2 each take120seconds at full watering (240seconds total). Each minute
 
 The owner's Kherson watermelons perk multiplies yield by1.5, with fair fractional rounding. Set OwnerID on Greenhouse or parent BuildingSpace. The owner's bonus is cached through disconnect and reset on transfer. No farming perk requirements have been invented yet.
 
-Farmer remains passive like Miner: one practiceXP per harvested unit, 10×next-rank thresholds, no manual/tagged training. Farming bonuses still need review. Access is physical/public like chests. Crop and water state lasts only within the running server; greenhouse building menu/cost and upgrade persistence remain pending.
+Farmer remains passive like Miner: one practiceXP per harvested unit, 10×next-rank thresholds, no manual/tagged training. Farming bonuses still need review. Access is physical/public like chests. Crop and water state lasts only within the running server; crop/water persistence across server restarts and greenhouse upgrades remain pending.
