@@ -164,3 +164,23 @@ Current controls: C character, T talents, Q inventory, R reload, B ammunition ty
 ### Own weapon audio
 
 The shooter hears shot/reload through a local non-positional copy, preserving the authored Sound volume and playback speed. The original muzzle source is muted only on that shooter's client, so other listeners keep the normal spatial sound and distance attenuation. Cancelling reload, holstering or respawning stops the local copy. No new audio assets or model changes are required.
+
+## Updated .223 lineup
+
+| Item/model ID | Damage per bullet | Magazine | RPM | Skill | Mode |
+| --- | --- | --- | --- | --- | --- |
+| Rifle223 | 23–27 | 5 | 40 | LightWeapons | Bolt-action |
+| ServiceRifle223 | 21–25 | 20 | 300 | LightWeapons | Semi-auto only |
+| AssaultRifle223 | 19–23 | 24 | 600 | LightWeapons | Auto/single |
+| LSW223 | 18–22 | 30 | 700 | HeavyWeapons | Auto/single |
+
+LSW223 represents the classic Fallout 2 model. Its authored Sight supplies the
+AccuracyBonus through the existing mechanic; no extra accuracy is added in item
+configuration. New item templates go under any category in ServerStorage/Items
+with these exact IDs. Models retain their authored scale. Existing generic admin,
+loot and equipment systems discover the new definitions. SR explicitly excludes
+bolt-action Sniper/disarm effects, including the character panel's critical chance.
+
+New SR and LSW recipes use ArmsBench, 25 Iron, Repair170, 120seconds, 500XP,
+matching the current .223 weapon crafting tier. SR300RPM, LSW6kg and existing
+.223 range/reload defaults are initial tuning values.

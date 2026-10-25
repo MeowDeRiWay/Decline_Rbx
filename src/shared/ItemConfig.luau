@@ -123,13 +123,19 @@ end
 ItemConfig.Items.Axe=ItemConfig.Items.StoneAxe
 ItemConfig.Items.Showel=ItemConfig.Items.StoneShowel
 ItemConfig.Items.Knife=ItemConfig.Items.ScrapKnife
-ItemConfig.Items.AssaultRifle223={Name = ".223 assault rifle",Weight=3.2,Slot="Hands",Description="Automatic rifle. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
- Firearm={Category="Automatic",HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=20,DamageMin=15,DamageMax=20,RPM=600},
- Weapon={Damage=20,DamageMin=15,DamageMax=20,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=600}}
+ItemConfig.Items.AssaultRifle223={Name=".223 assault rifle",Weight=3.2,Slot="Hands",Description="Automatic rifle. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
+ Firearm={Category="Automatic",Skill="LightWeapons",HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=24,ReloadTime=2.5,Speed=750,Range=350,Damage=23,DamageMin=19,DamageMax=23,RPM=600},
+ Weapon={Damage=23,DamageMin=19,DamageMax=23,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=600}}
+ItemConfig.Items.ServiceRifle223={Name=".223 service rifle",Weight=3.2,Slot="Hands",Description="Semi-automatic service rifle. R reloads available ammo; B selects FMJ/AP.",
+ Firearm={Category="Rifle",Skill="LightWeapons",SingleOnly=true,BoltAction=false,HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=20,ReloadTime=2.5,Speed=750,Range=350,Damage=25,DamageMin=21,DamageMax=25,RPM=300},
+ Weapon={Damage=25,DamageMin=21,DamageMax=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
+ItemConfig.Items.LSW223={Name=".223 light support weapon",Weight=6,Slot="Hands",Description="Automatic light support weapon. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
+ Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=22,DamageMin=18,DamageMax=22,RPM=700},
+ Weapon={Damage=22,DamageMin=18,DamageMax=22,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=700}}
 ItemConfig.Items.Rifle223={Name=".223 bolt-action rifle",Weight=3.2,Slot="Hands",
  Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
- Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=25,DamageMin=20,DamageMax=25,RPM=40},
- Weapon={Damage=25,DamageMin=20,DamageMax=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
+ Firearm={Category="Rifle",Skill="LightWeapons",SingleOnly=true,BoltAction=true,HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=27,DamageMin=23,DamageMax=27,RPM=40},
+ Weapon={Damage=27,DamageMin=23,DamageMax=27,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
 ItemConfig.Items.Rifle308={Name=".308 bolt-action rifle",Weight=3.2,Slot="Hands",
  Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
  Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="308",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=40,DamageMin=35,DamageMax=40,RPM=40},

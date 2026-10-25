@@ -114,12 +114,20 @@ critChance=0;definition.Category="Rifle";definition.SingleOnly=true;sniper=.1
 workspace.GetServerTimeNow=function() return 4 end
 since=3;assert(math.abs(run(nil,"FMJ")-clear)<1e-6,"sniper requires two stationary seconds")
 since=2;assert(math.abs(run(nil,"FMJ")-clear*2.5)<1e-6,"sniper gives critical bonus on steady bolt-action shot")
-definition.SingleOnly=false;assert(math.abs(run(nil,"FMJ")-clear)<1e-6,"sniper excludes automatic rifles")
+definition.BoltAction=false;assert(math.abs(run(nil,"FMJ")-clear)<1e-6,"SR semi-auto excludes bolt-action sniper bonus")
+definition.BoltAction=nil;definition.SingleOnly=false;assert(math.abs(run(nil,"FMJ")-clear)<1e-6,"sniper excludes automatic rifles")
 definition.Category="Pistol";cowboy=1.15
 assert(math.abs(run(nil,"FMJ")-clear*1.15)<1e-6,"cowboy pistol damage")
+critChance=0;sniper=0;cowboy=1
+for _,entry in ipairs({{"LSW223",18,22},{"ServiceRifle223",21,25},{"AssaultRifle223",19,23},{"Rifle223",23,27}}) do
+ definition=Items[entry[1]].Firearm
+ highRoll=false;assert(math.abs(run(nil,"FMJ")-entry[2]*clear/25)<1e-6,entry[1].." minimum damage")
+ highRoll=true;assert(math.abs(run(nil,"AP")-entry[3]*clear/25)<1e-6,entry[1].." maximum damage")
+end
+print("PASS: all four configured .223 weapons roll exact new damage endpoints")
 print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, FMJ/AP wall parity and caliber gates, metal/unknown stop and exact air range")
 '''
 with tempfile.TemporaryDirectory() as directory:
  path=Path(directory)/'projectiles.luau'
- path.write_text((root/'tests/city_geometry.fixture.luau').read_text()+'\nlocal Rules=(function()\n'+(root/'src/shared/FirearmRules.luau').read_text()+'\nend)()\n'+mock+'\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
+ path.write_text((root/'tests/city_geometry.fixture.luau').read_text()+'\nlocal Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items\nlocal Rules=(function()\n'+(root/'src/shared/FirearmRules.luau').read_text()+'\nend)()\n'+mock+'\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
  subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

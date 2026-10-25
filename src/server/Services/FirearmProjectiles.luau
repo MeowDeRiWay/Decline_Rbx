@@ -59,13 +59,13 @@ end
 function Service.Fire(player,character,origin,direction,definition,ammoType,itemID)
  if count>=256 then return false end
  local sniperBonus=0
- if definition.Category=="Rifle" and definition.SingleOnly and (player:GetAttribute("SniperCriticalBonus") or 0)>0 then
+ if definition.Category=="Rifle" and definition.SingleOnly and definition.BoltAction~=false and (player:GetAttribute("SniperCriticalBonus") or 0)>0 then
   if workspace:GetServerTimeNow()-(player:GetAttribute("StationarySince") or workspace:GetServerTimeNow())>=2 then sniperBonus=player:GetAttribute("SniperCriticalBonus") end
  end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
   Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
-  SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true,Ignored={character},Impacts=0}
+  SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true and definition.BoltAction~=false,Ignored={character},Impacts=0}
  emit("Muzzle",origin)
  return true
 end

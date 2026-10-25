@@ -15,3 +15,7 @@ assert(m.WalkSpeed==.3 and m.RunSpeed==1 and m.Regeneration==2 and m.CriticalCha
 local fists=S.Calculate({MeleeBonus=10,UnarmedDamageBonus=10},nil)
 assert(fists.MeleeDamageMin==17.5 and fists.MeleeDamageMax==22)
 assert(s.MeleeDamageMin==25 and s.MeleeDamageMax==25,"equipped melee unchanged")
+
+local steady={SniperCriticalBonus=.1,StationaryFor=2}
+assert(S.Calculate(steady,{Firearm={Category="Rifle",SingleOnly=true,BoltAction=false}}).CriticalChance==0,"semi-auto SR excludes bolt-action perk in character UI")
+assert(S.Calculate(steady,{Firearm={Category="Rifle",SingleOnly=true,BoltAction=true}}).CriticalChance==.1)

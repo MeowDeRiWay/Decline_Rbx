@@ -18,7 +18,7 @@ function Stats.Calculate(attributes,definition,condition,health,maxHealth)
   MeleeDamageMin=not definition and (a.MeleeBonus or 0)*.75+(a.UnarmedDamageBonus or 0) or damage,
   MeleeDamageMax=not definition and (a.MeleeBonus or 0)*1.2+(a.UnarmedDamageBonus or 0) or damage,
   Dodge=(a.DodgeChance or 0)+(not definition and (a.UnarmedArmorClass or 0) or 0),MeleeDamage=damage,MeleeEquipped=melee~=nil and melee~=false,
-  CriticalChance=(a.CriticalChance or 0)+(category=="Pistol" and (a.PistolCriticalBonus or 0) or 0)+(gun and category=="Rifle" and gun.SingleOnly and (a.StationaryFor or 0)>=2 and (a.SniperCriticalBonus or 0) or 0),
+  CriticalChance=(a.CriticalChance or 0)+(category=="Pistol" and (a.PistolCriticalBonus or 0) or 0)+(gun and category=="Rifle" and gun.SingleOnly and gun.BoltAction~=false and (a.StationaryFor or 0)>=2 and (a.SniperCriticalBonus or 0) or 0),
   CriticalMin=a.CriticalMin or 1.5,CriticalMax=a.CriticalMax or 2,Luck=a.LuckChance or 0,
  }
 end
