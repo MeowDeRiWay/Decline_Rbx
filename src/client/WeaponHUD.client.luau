@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TextService=game:GetService("TextService")
 local player = Players.LocalPlayer
 local Theme = require(ReplicatedStorage.Shared.UITheme)
 local items = require(ReplicatedStorage.Shared.ItemConfig).Items
@@ -30,7 +31,8 @@ world.Parent = viewport
 -- Loaded rounds occupy the lower-left corner; no magazine gauge steals preview width.
 local ammoCount=Instance.new("TextLabel")
 ammoCount.Name="MagazineCount"
-ammoCount.Position=UDim2.fromOffset(8,84);ammoCount.Size=UDim2.fromOffset(118,22)
+local ammoWidth=math.ceil(TextService:GetTextSize("100 / 100",18,Theme.Font,Vector2.new(1000,22)).X)+8
+ammoCount.Position=UDim2.fromOffset(8,84);ammoCount.Size=UDim2.fromOffset(ammoWidth,22)
 ammoCount.BackgroundColor3=Theme.Panel;ammoCount.BackgroundTransparency=.12;ammoCount.BorderSizePixel=0
 ammoCount.TextColor3=Theme.Accent;ammoCount.Font=Theme.Font;ammoCount.TextSize=18
 ammoCount.TextXAlignment=Enum.TextXAlignment.Left;ammoCount.ZIndex=2;ammoCount.Visible=false;ammoCount.Parent=panel
@@ -59,7 +61,7 @@ local function preview(model)
  -- View the authored model from its right (+X) side.
  local extent = math.max(size.Y,size.Z*96/246,.1)
  local distance = extent/(2*math.tan(math.rad(camera.FieldOfView/2))) + size.X/2
- camera.CFrame = CFrame.lookAt(box.Position+Vector3.new(distance*1.15,0,0),box.Position,Vector3.yAxis)
+ camera.CFrame = CFrame.lookAt(box.Position+Vector3.new(distance*1.04,0,0),box.Position,Vector3.yAxis)
 end
 local function refresh()
  local id = character and character:GetAttribute("HandsItem")
