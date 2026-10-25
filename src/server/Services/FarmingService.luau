@@ -161,9 +161,10 @@ function Service.Use(player,model,crop)
  if inventory.Equipment.Hands then Journal.Send(player,"Empty your hands to plant, harvest or clear rotten plants.");return false end
  if ready and crop then return false end
  if ready then
-  local amount=0;local kept={}
+  local amount,harvested=0,0;local kept={}
   for _,plant in ipairs(state.Plants) do
    if not plant.Rotten and plant.Progress>=1 then
+    harvested+=1
     amount+=Rules.Yield(random:NextInteger(Config.MinYield,Config.MaxYield),yieldMultiplier(model),random:NextNumber())
    end
   end
@@ -173,7 +174,7 @@ function Service.Use(player,model,crop)
    else table.insert(kept,plant);plant.Stage=nil end
   end
   state.Plants=kept;publish(model,state)
-  if amount>0 then Progression.FarmXP(player,amount) end
+  if harvested>0 then Progression.FarmXP(player,amount,harvested) end
   Journal.Send(player,"You harvested "..amount.." potatoes and cleared finished plants.");return true
  end
  if crop~=Config.Crop then

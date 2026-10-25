@@ -21,7 +21,7 @@ function Inventory.ReplaceOne(_,source,target)
  if not Inventory.Remove(nil,source,1) then return false end
  Inventory.Add(nil,target,1);return true
 end
-local xp=0;local Progression={FarmXP=function(_,count) xp+=count end}
+local xp,practice=0,0;local Progression={FarmXP=function(_,count,bushes) xp+=25*count;practice+=bushes end}
 local Journal={Send=function() end}
 local Random={new=function() return {NextInteger=function() return 3 end,NextNumber=function() return roll end} end}
 local Interaction={NearestPoint=function(model) return model:GetPivot().Position end}
@@ -61,11 +61,11 @@ assert(string.find(bed:GetAttribute("CropDetails"),"Late growth"))
 clock+=200;Service.Step(bed,clock)
 assert(bed:GetAttribute("ReadyPlants")==5 and bed:GetAttribute("Watering")<.00001)
 equipment.Hands=nil;a:SetAttribute("GreenhouseYieldMultiplier",1.5)
-assert(Service.Use(a,bed) and stock.Potato==20 and xp==20)
+assert(Service.Use(a,bed) and stock.Potato==20 and xp==500 and practice==5)
 assert(Service.Use(a,bed,"Potato"));roll=0;clock+=60;Service.Step(bed,clock)
 assert(bed:GetAttribute("RottenPlants")==5 and string.find(bed:GetAttribute("CropDetails"),"Rotten"))
 clock+=1200;Service.Step(bed,clock);assert(bed:GetAttribute("RottenPlants")==5)
-assert(Service.Use(a,bed) and bed:GetAttribute("PlantCount")==0)
+assert(Service.Use(a,bed) and bed:GetAttribute("PlantCount")==0 and xp==500 and practice==5,"clearing rotten plants grants no XP")
 roll=.9;assert(Service.Use(a,bed,"Potato"));equipment.Hands="EmptyBucket";assert(Service.Use(a,well));assert(Service.Use(a,bed))
 clock+=400;Service.Step(bed,clock);assert(bed:GetAttribute("ReadyPlants")==5)
 clock+=Config.HarvestSeconds;Service.Step(bed,clock);assert(bed:GetAttribute("RottenPlants")==5)

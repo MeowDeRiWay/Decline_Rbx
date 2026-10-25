@@ -44,6 +44,11 @@ a.Character:SetAttribute("Knockout",false);hp.Health=65;assert(coroutine.resume(
 hp.Health=0;assert(coroutine.resume(loops[1]));assert(hp.Health==0,"cannot revive dead")
 a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("Strength")==5 and a.Character.Humanoid.MaxHealth==66,"immutable creation survives respawn")
 assert(Service.Loot(a,{Rags=1}).Rags==1)
+local farmBefore=Service.Snapshot(a)
+Service.FarmXP(a,3,5)
+assert(Service.Snapshot(a).XP==farmBefore.XP+75 and Service.Snapshot(a).Practice.Farmer.XP==5,"25 character XP per potato, one practice per harvested bush")
+Service.FarmXP(a,0,2)
+assert(Service.Snapshot(a).XP==farmBefore.XP+75 and Service.Snapshot(a).Practice.Farmer.XP==7,"zero-yield ripe bushes still grant practice")
 b:LoadCharacterAsync()
 local bd=table.clone(Service.Snapshot(b).Stats);bd.Strength=7;bd.Attention=7;bd.Luck=7
 clock+=.2;action.OnServerEvent:Fire(b,"Confirm",{Stats=bd,TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})

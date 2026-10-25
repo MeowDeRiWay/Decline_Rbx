@@ -93,9 +93,9 @@ function Service.CanBuild(player,kind) return Service.Meets(player,Config.Buildi
 function Service.CraftEffects(player) return Rules.CraftEffects(stateFor(player).Perks) end
 function Service.CraftXP(player,recipe,count) Service.Award(player,Rules.CraftExperience(recipe,count)) end
 function Service.Loot(_,items) return items end
-function Service.FarmXP(player,count)
+function Service.FarmXP(player,count,bushes)
  if not player or player.Parent~=Players then return end
- Rules.Practice(stateFor(player),"Farmer",count);Service.Award(player,count)
+ Rules.Practice(stateFor(player),"Farmer",bushes);Service.Award(player,count*25)
 end
 function Service.Harvest(player,kind,count)
  if not player or player.Parent~=Players then return end
