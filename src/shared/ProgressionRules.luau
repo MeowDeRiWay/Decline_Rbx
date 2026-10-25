@@ -3,6 +3,7 @@ Rules.MaxLevel=30
 local attributes={"Strength","Attention","Endurance","Intelligence","Agility","Luck"}
 local skills={LightWeapons=true,HeavyWeapons=true,Unarmed=true,Melee=true,Throwing=true,FirstAid=true,Doctor=true,Sneak=true,Traps=true,Repair=true,Cook=true}
 Rules.Perks={
+ {ID="Botanist",Name="Botanist",Max=1,Description="Shows each plant's growth stage and estimated time until harvest."},
  {ID="TunnelVision",Name="Tunnel vision",Max=1,Attributes={Attention=7},Description="Halves your vision angle and adds 10 studs of view range."},
  {ID="RangedDamage",Name="Bonus ranged damage",Max=2,Attributes={Attention=7,Luck=7},Description="+2 damage per bullet after damage resistance and absorption, per rank."},
  {ID="Regeneration",Name="Double regeneration",Max=1,Attributes={Endurance=7},Description="Doubles health regeneration."},
@@ -146,7 +147,7 @@ function Rules.Bonuses(stats,perks,level,total)
   WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)*movement,RunBonus=(.4*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0))*movement,CombatMovementMultiplier=movement,Regeneration=(stats.Endurance+4*(p.QuickRecovery or 0))*(1+(p.Regeneration or 0)),
   DodgeChance=5*stats.Agility+20*(p.Dodger or 0),CriticalChance=.01*stats.Luck*2^(p.Criticals or 0),
   ViewRange=10+3*stats.Attention+10*(p.TunnelVision or 0),ViewAngleMultiplier=(p.TunnelVision or 0)>0 and .5 or 1,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,
-  UnarmedArmorClass=15*(p.UnarmedEvade or 0),ReviveLockReduction=180*(p.QuickRecovery or 0),ReviveHealthBonus=.2*(p.QuickRecovery or 0),MeleeIgnoreAbsorption=2*(p.PiercingStrike or 0),MeleeIgnoreResistance=.1*(p.PiercingStrike or 0),SniperCriticalBonus=.1*(p.Sniper or 0),CowboyMultiplier=(p.Cowboy or 0)>0 and 1.15 or 1,ScroungerMultiplier=(p.Scrounger or 0)>0 and 1.25 or 1,GreenhouseYieldMultiplier=(p.KhersonMelons or 0)>0 and 1.5 or 1,
+  UnarmedArmorClass=15*(p.UnarmedEvade or 0),ReviveLockReduction=180*(p.QuickRecovery or 0),ReviveHealthBonus=.2*(p.QuickRecovery or 0),MeleeIgnoreAbsorption=2*(p.PiercingStrike or 0),MeleeIgnoreResistance=.1*(p.PiercingStrike or 0),SniperCriticalBonus=.1*(p.Sniper or 0),CowboyMultiplier=(p.Cowboy or 0)>0 and 1.15 or 1,ScroungerMultiplier=(p.Scrounger or 0)>0 and 1.25 or 1,PlantKnowledge=(p.Botanist or 0)>0,GreenhouseYieldMultiplier=(p.KhersonMelons or 0)>0 and 1.5 or 1,
   BackstabCritical=(p.SilentDeath or 0)>0,UnarmedDamageBonus=10*(p.UnarmedDamage or 0),ArmorBypassChance=(p.LivingAnatomy or 0)>0 and .1 or 0,
   CriticalMin=1.5,CriticalMax=(p.HardCriticals or 0)>0 and 2.5 or 2,DoctorFortuneChance=(p.DoctorFortune or 0)>0 and (.1+.01*stats.Luck) or 0,SilentRunning=(p.SilentRun or 0)>0,CraftCostMultiplier=(p.Economist or 0)>0 and .8 or 1,ExperienceMultiplier=1+(p.GoodStudent or 0),NightAccuracyMultiplier=(p.CatEyes or 0)>0 and .9 or .5,Observant=(p.Observant or 0)>0,DamageAbsorption=2*(p.Armadillo or 0),DamageResistance=.1*(p.Armadillo or 0),LowHealthResistance=(p.NotSoEasy or 0)>0 and .1 or 0,PistolCriticalBonus=(p.Duelist or 0)>0 and .1 or 0,DisarmChance=(p.DroppedIt or 0)>0 and .1 or 0,EquippedWeaponWeightMultiplier=(p.WeaponPart or 0)>0 and 0 or 1,
   RangedDamageBonus=2*(p.RangedDamage or 0),FirstAidMultiplier=1+(p.Medic or 0),ReviveLockSeconds=(p.FieldHospital or 0)>0 and 300 or 600}

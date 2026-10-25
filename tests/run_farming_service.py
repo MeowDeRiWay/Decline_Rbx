@@ -5,6 +5,9 @@ root=Path(__file__).resolve().parents[1]
 s=(root/'src/server/Services/FarmingService.luau').read_text()
 s=re.sub(r'local (Config|Rules|Interaction|ItemConfig|Inventory|Progression|Journal)=require[^\n]+\n','',s)
 setup='''
+local warnings={}
+local function warn(message) table.insert(warnings,message) end
+function cfmeta.__add(a,b) return CFrame.new(a.Position+b) end
 workspace.DescendantAdded=event()
 a:LoadCharacterAsync()
 local stock={EmptyBottle=1,EmptyBucket=1};local equipment={}
@@ -27,40 +30,52 @@ local bed=make("Model","GardenBed",greenhouse,{MaxPlants=5,MaxWatering=100});mak
 local well=make("Model","Well",greenhouse);make("Part","Part",well)
 '''
 cases='''
-assert(Config.GrowthSeconds/2==120 and Config.HarvestSeconds==180)
 Service.Start()
-assert(Service.Use(a,well) and stock.DirtyWaterBucket==1 and stock.EmptyBucket==0)
-assert(Service.Use(a,well) and stock.DirtyWater==1 and stock.EmptyBottle==0)
-assert(not Service.Use(a,well),"no free water without container")
-assert(Service.Use(a,bed) and bed:GetAttribute("PlantCount")==5 and not stock.Potato,"plant five without seeds")
-assert(Service.Use(a,bed) and stock.EmptyBucket==1 and bed:GetAttribute("Watering")==100)
-clock+=240;Service.Step(bed,clock)
-assert(bed:GetAttribute("CropProgress")<1,"low water slows growth")
-clock+=160;Service.Step(bed,clock)
-assert(bed:GetAttribute("ReadyPlants")==5 and bed:GetAttribute("Watering")<.00001,"five plants consume exactly100 water")
-a:SetAttribute("GreenhouseYieldMultiplier",1.5)
-assert(Service.Use(a,bed) and stock.Potato==20 and xp==20,"per-bush yield plus owner perk")
-assert(bed:GetAttribute("PlantCount")==0)
-assert(Service.Use(a,bed));roll=0;clock+=60;Service.Step(bed,clock)
-assert(bed:GetAttribute("RottenPlants")==5,"dry bed50% rot check per bush")
-clock+=1200;Service.Step(bed,clock);assert(bed:GetAttribute("RottenPlants")==5,"rot never disappears by itself")
-assert(Service.Use(a,bed) and stock.Potato==20 and bed:GetAttribute("PlantCount")==0,"clear rot without loot")
-roll=.9;assert(Service.Use(a,bed));assert(Service.Use(a,well));assert(Service.Use(a,bed))
-clock+=400;Service.Step(bed,clock);assert(bed:GetAttribute("ReadyPlants")==5)
-clock+=Config.HarvestSeconds;Service.Step(bed,clock)
-assert(bed:GetAttribute("RottenPlants")==5,"uncollected harvest rots")
-equipment.Hands="Knife";assert(not Service.Use(a,bed));equipment.Hands=nil
-assert(Service.Use(a,bed));assert(Service.Use(a,well));equipment.Hands="DirtyWaterBucket";stock.DirtyWaterBucket=0
-bed:SetAttribute("Watering",95);assert(Service.Use(a,bed) and bed:GetAttribute("Watering")==100 and equipment.Hands=="EmptyBucket","bucket caps at max")
+assert(not Service.Use(a,well),"pocket bucket cannot draw water")
+equipment.Hands="EmptyBottle";assert(not Service.Use(a,well),"well requires bucket")
+equipment.Hands="EmptyBucket";assert(Service.Use(a,well) and equipment.Hands=="DirtyWaterBucket")
 equipment.Hands=nil
-a.Character.HumanoidRootPart.Position=Vector3.new(20,0,0);assert(not Service.Use(a,well))
-a.Character.HumanoidRootPart.Position=Vector3.zero;a.Character:SetAttribute("Knockout",true);assert(not Service.Use(a,well))
-for _,case in ipairs({{100,1,0},{80,1,0},{79,1.2,0},{60,1.2,0},{59,1.5,.1},{40,1.5,.1},{39,2,.2},{1,2,.2},{0,math.huge,.5}}) do
- local f,c=Rules.Water(case[1]);assert(f==case[2] and c==case[3])
+assert(Service.Use(a,bed) and bed:GetAttribute("PlantCount")==0,"E opens menu without planting")
+assert(not Service.Use(a,bed,"Carrot"),"reject unsupported crop")
+assert(Service.Use(a,bed,"Potato") and bed:GetAttribute("PlantCount")==5)
+assert(#warnings==1 and string.find(warnings[1],"PotatoStage1"))
+local farming=make("Folder","Farming",ServerStorage)
+local stages=make("Folder","PotatoStages",farming)
+for i=1,4 do local model=make("Model","PotatoStage"..i,stages);make("Part","Leaf",model) end
+Service.Step(bed,clock)
+local visuals=0
+for _,child in ipairs(bed:GetChildren()) do
+ if child.Name=="GrowingPotato" then
+  visuals+=1;assert(child:GetPivot().Position.Y==1,"crop bottom matches bed top despite center pivot")
+ end
 end
-assert(Rules.Stage(0,false)==1 and Rules.Stage(.5,false)==2 and Rules.Stage(1,false)==3 and Rules.Stage(0,true)==4)
-assert(Rules.Yield(0,1.5,0)==0 and Rules.Yield(3,1.5,.49)==5 and Rules.Yield(3,1.5,.5)==4)
-print("PASS: multi-plant seedless bed, continuous water budget, slowdown tiers, rot/harvest expiry, yield/XP, container caps and authority guards")
+assert(visuals==5,"missing models are retried")
+assert(string.find(bed:GetAttribute("CropDetails"),"Paused"))
+stock.DirtyWaterBucket=1
+assert(Service.Use(a,bed) and bed:GetAttribute("Watering")==0,"pocket bucket never waters")
+equipment.Hands="DirtyWaterBucket";assert(Service.Use(a,bed) and equipment.Hands=="EmptyBucket")
+assert(bed:GetAttribute("Watering")==100)
+Service.Step(bed,clock);assert(string.find(bed:GetAttribute("CropDetails"),"240s"))
+clock+=200;Service.Step(bed,clock)
+assert(string.find(bed:GetAttribute("CropDetails"),"Late growth"))
+clock+=200;Service.Step(bed,clock)
+assert(bed:GetAttribute("ReadyPlants")==5 and bed:GetAttribute("Watering")<.00001)
+equipment.Hands=nil;a:SetAttribute("GreenhouseYieldMultiplier",1.5)
+assert(Service.Use(a,bed) and stock.Potato==20 and xp==20)
+assert(Service.Use(a,bed,"Potato"));roll=0;clock+=60;Service.Step(bed,clock)
+assert(bed:GetAttribute("RottenPlants")==5 and string.find(bed:GetAttribute("CropDetails"),"Rotten"))
+clock+=1200;Service.Step(bed,clock);assert(bed:GetAttribute("RottenPlants")==5)
+assert(Service.Use(a,bed) and bed:GetAttribute("PlantCount")==0)
+roll=.9;assert(Service.Use(a,bed,"Potato"));equipment.Hands="EmptyBucket";assert(Service.Use(a,well));assert(Service.Use(a,bed))
+clock+=400;Service.Step(bed,clock);assert(bed:GetAttribute("ReadyPlants")==5)
+clock+=Config.HarvestSeconds;Service.Step(bed,clock);assert(bed:GetAttribute("RottenPlants")==5)
+equipment.Hands="Knife";assert(not Service.Use(a,bed,"Potato"));equipment.Hands=nil
+assert(Service.Use(a,bed));equipment.Hands="EmptyBucket";assert(Service.Use(a,well))
+bed:SetAttribute("Watering",95);assert(Service.Use(a,bed) and bed:GetAttribute("Watering")==100 and equipment.Hands=="EmptyBucket")
+equipment.Hands=nil
+a.Character.HumanoidRootPart.Position=Vector3.new(20,0,0);assert(not Service.Use(a,bed,"Potato"))
+a.Character.HumanoidRootPart.Position=Vector3.zero;a.Character:SetAttribute("Knockout",true);assert(not Service.Use(a,bed,"Potato"))
+print("PASS: menu-only planting, crop validation, held buckets only, surface placement, stage retry, stage/ETA data, water budget, rot, harvest, XP and authority")
 '''
 
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]

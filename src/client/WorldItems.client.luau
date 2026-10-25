@@ -39,7 +39,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
- if not root or not camera or character:GetAttribute("Knockout") or ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if not root or not camera or character:GetAttribute("Knockout") or ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  -- GetMouseLocation already matches ViewportPointToRay coordinates.
  local viewportMouse = mouse
@@ -73,6 +73,10 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
     label.Text..="\nWater: "..math.floor(chest:GetAttribute("Watering") or 0).."/"..(chest:GetAttribute("MaxWatering") or 100)
     label.Text..="\nPlants: "..(chest:GetAttribute("PlantCount") or 0).." | Ready: "..(chest:GetAttribute("ReadyPlants") or 0).." | Rotten: "..(chest:GetAttribute("RottenPlants") or 0)
    end
+   if chest.Name=="GardenBed" and player:GetAttribute("PlantKnowledge") then
+    label.Size=UDim2.fromOffset(400,180)
+    label.Text..="\n"..(chest:GetAttribute("CropDetails") or "")
+   end
    label.Text..=reachable and "\n[E] Use" or "\nToo far"
   end
   label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-label.Size.Y.Offset)))
@@ -96,7 +100,7 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  label.Visible = true
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
- if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
+ if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
   action:FireServer(farmHovered and "Farm" or stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
  end
 end)

@@ -130,3 +130,13 @@ local free=R.New();free.Confirmed=true;free.Stats.Attention=8
 assert(R.SpendPerk(free,"Observant") and free.PerkPoints==0 and R.PerkCount(free)==0)
 assert(R.AddXP(free,1e12) and free.Perks.Observant==1 and free.PerkPoints==10,"automatic award never duplicates or charges free perk")
 print("PASS: perk point milestones3..30 total10, none at creation/reset1, free Attention8 perk outside budget, automatic award at30")
+
+do
+ local farmer=R.New()
+ farmer.PerkPoints=1;farmer.Confirmed=true
+ assert(R.SpendPerk(farmer,"Botanist"))
+ assert(R.Bonuses(farmer.Stats,farmer.Perks,1,R.TotalSkills(farmer)).PlantKnowledge==true)
+ assert(not R.SpendPerk(farmer,"Botanist"))
+ assert(R.Bonuses(farmer.Stats,{},1,R.TotalSkills(farmer)).PlantKnowledge==false)
+ print("PASS: Botanist uses one perk point and enables plant knowledge only while selected")
+end

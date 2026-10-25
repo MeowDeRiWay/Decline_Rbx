@@ -9,12 +9,14 @@ local Inventory=require(script.Parent.InventoryService)
 local Progression=require(script.Parent.ProgressionService)
 local Journal=require(script.Parent.JournalService)
 local Service={}
+local menuRemote
 local beds=setmetatable({},{__mode="k"})
 local random=Random.new()
+local missingStages={}
 local function register(model)
  if model:IsA("Model") and model.Name==Config.Bed and not beds[model] then
-  local _,size=model:GetBoundingBox()
-  beds[model]={Plants={},Size=size,LastUpdate=workspace:GetServerTimeNow()}
+  local frame,size=model:GetBoundingBox()
+  beds[model]={Plants={},Size=size,Surface=frame*CFrame.new(Vector3.new(0,size.Y/2,0)),LastUpdate=workspace:GetServerTimeNow()}
   model:SetAttribute("Watering",0);model:SetAttribute("PlantCount",0);model:SetAttribute("Crop","")
   model:SetAttribute("CropReady",false);model:SetAttribute("RottenPlants",0)
  end
@@ -45,35 +47,54 @@ local function yieldMultiplier(bed)
 end
 local function visualize(bed,plant,index,count)
  local stage=Rules.Stage(plant.Progress,plant.Rotten)
- if plant.Stage==stage then return end
+ if plant.Stage==stage and plant.Visual and plant.Visual.Parent then return end
  if plant.Visual then plant.Visual:Destroy();plant.Visual=nil end
- plant.Stage=stage
  local folder=Storage:FindFirstChild("Farming")
  folder=folder and folder:FindFirstChild(Config.StageFolder)
  local template=folder and folder:FindFirstChild(Config.StagePrefix..stage)
- if not template or not template:IsA("Model") then return end
+ if not template or not template:IsA("Model") then
+  if not missingStages[stage] then
+   missingStages[stage]=true
+   warn("Farming: missing Model ServerStorage/Farming/"..Config.StageFolder.."/"..Config.StagePrefix..stage)
+  end
+  return
+ end
+ missingStages[stage]=nil
  local anchor=bed:FindFirstChild("CropAnchor",true)
- local frame=anchor and anchor:GetPivot() or bed:GetPivot()
+ local frame=anchor and anchor:GetPivot() or beds[bed].Surface
  local size=beds[bed].Size
  local length=math.max(size.X,size.Z)
  local offset=((index-.5)/count-.5)*length
- local position=size.X>size.Z and CFrame.new(offset,0,0) or CFrame.new(0,0,offset)
- local visual=template:Clone();visual:PivotTo(frame*position)
+ local position=size.X>size.Z and CFrame.new(Vector3.new(offset,0,0)) or CFrame.new(Vector3.new(0,0,offset))
+ local visual=template:Clone()
+ for _,part in ipairs(visual:GetDescendants()) do if part:IsA("BasePart") then part.Anchored=true end end
+ visual:PivotTo(frame*position)
+ -- Align the actual bottom of the crop to the bed top, independent of authored pivots.
+ local bounds,extent=visual:GetBoundingBox()
+ local top=beds[bed].Surface.Position.Y
+ visual:PivotTo(visual:GetPivot()+Vector3.new(0,top-(bounds.Position.Y-extent.Y/2),0))
  for _,part in ipairs(visual:GetDescendants()) do
   if part:IsA("BasePart") then part.Anchored=true;part.CanCollide=false;part.CanTouch=false;part.CanQuery=false end
  end
  visual.Name="GrowingPotato";visual:SetAttribute("BlocksVision",false);visual.Parent=bed
- plant.Visual=visual
+ plant.Visual=visual;plant.Stage=stage
 end
 local function publish(bed,state)
  local ready,rotten,progress=0,0,0
+ local details={}
+ local factor=Rules.Water((bed:GetAttribute("Watering") or 0)/capacity(bed)*100)
  for index,plant in ipairs(state.Plants) do
   if plant.Rotten then rotten+=1 elseif plant.Progress>=1 then ready+=1 end
   progress+=plant.Progress;visualize(bed,plant,index,#state.Plants)
+  local stage=Rules.Stage(plant.Progress,plant.Rotten)
+  local caption=({"Early growth","Late growth","Ready to harvest","Rotten"})[stage]
+  local eta=stage<3 and (factor==math.huge and "Paused: needs water" or ("~"..math.ceil((1-plant.Progress)*Config.GrowthSeconds*factor).."s to harvest")) or ""
+  table.insert(details,"Plant "..index..": "..caption..(eta~="" and " | "..eta or ""))
  end
  bed:SetAttribute("PlantCount",#state.Plants);bed:SetAttribute("ReadyPlants",ready);bed:SetAttribute("RottenPlants",rotten)
  bed:SetAttribute("CropReady",ready>0);bed:SetAttribute("CropProgress",#state.Plants>0 and progress/#state.Plants or 0)
  bed:SetAttribute("Crop",#state.Plants>0 and Config.Crop or "")
+ bed:SetAttribute("CropDetails",table.concat(details,"\n"))
 end
 function Service.Step(bed,now)
  local state=beds[bed];if not state then return end
@@ -117,22 +138,20 @@ local function reachable(player,model)
  local hit=workspace:Raycast(root.Position,point-root.Position,params)
  return not hit or hit.Instance:IsDescendantOf(model)
 end
-function Service.Use(player,model)
+function Service.Use(player,model,crop)
+ if crop~=nil and crop~=Config.Crop then return false end
  if not reachable(player,model) then return false end
+ if crop and model.Name~=Config.Bed then return false end
  local inventory=Inventory.Snapshot(player)
  if model.Name==Config.Well then
-  local bucket=inventory.Equipment.Hands=="EmptyBucket" or (inventory.Items.EmptyBucket or 0)>0
-  if Inventory.ReplaceOne(player,bucket and "EmptyBucket" or "EmptyBottle",bucket and "DirtyWaterBucket" or "DirtyWater") then
-   Journal.Send(player,"You filled a container with dirty water.");return true
-  end
-  Journal.Send(player,"Bring an empty bottle or bucket.");return false
+  if inventory.Equipment.Hands~="EmptyBucket" then Journal.Send(player,"Hold an empty bucket to draw water.");return false end
+  if not Inventory.ReplaceOne(player,"EmptyBucket","DirtyWaterBucket") then return false end
+  Journal.Send(player,"You filled your bucket with dirty water.");return true
  end
  register(model);Service.Step(model,workspace:GetServerTimeNow());local state=beds[model]
- -- A held bucket always waters; a pocket bucket is used while plants are growing.
- local hasBucket=inventory.Equipment.Hands=="DirtyWaterBucket" or (inventory.Items.DirtyWaterBucket or 0)>0
  local ready=false
  for _,plant in ipairs(state.Plants) do if plant.Rotten or plant.Progress>=1 then ready=true end end
- if hasBucket and (inventory.Equipment.Hands=="DirtyWaterBucket" or (#state.Plants>0 and not ready)) then
+ if inventory.Equipment.Hands=="DirtyWaterBucket" then
   local water=model:GetAttribute("Watering") or 0
   if water>=capacity(model) then Journal.Send(player,"The garden bed is already full of water.");return false end
   if not Inventory.ReplaceOne(player,"DirtyWaterBucket","EmptyBucket") then return false end
@@ -140,6 +159,7 @@ function Service.Use(player,model)
   Journal.Send(player,"You watered the garden bed.");return true
  end
  if inventory.Equipment.Hands then Journal.Send(player,"Empty your hands to plant, harvest or clear rotten plants.");return false end
+ if ready and crop then return false end
  if ready then
   local amount=0;local kept={}
   for _,plant in ipairs(state.Plants) do
@@ -156,6 +176,10 @@ function Service.Use(player,model)
   if amount>0 then Progression.FarmXP(player,amount) end
   Journal.Send(player,"You harvested "..amount.." potatoes and cleared finished plants.");return true
  end
+ if crop~=Config.Crop then
+  if menuRemote then menuRemote:FireClient(player,model) end
+  return true
+ end
  local count=plantLimit(model)-#state.Plants
  if count>0 then
   local now=workspace:GetServerTimeNow()
@@ -168,6 +192,8 @@ function Service.Use(player,model)
 end
 function Service.Start()
  if Service.Started then return end;Service.Started=true
+ menuRemote=Instance.new("RemoteEvent");menuRemote.Name="FarmingMenu";menuRemote.Parent=Replicated
+ -- Plant requests share the inventory remote throttle and all authority checks.
  for _,model in ipairs(workspace:GetDescendants()) do register(model) end
  workspace.DescendantAdded:Connect(register)
  task.spawn(function()
