@@ -95,10 +95,10 @@ groupButton.Position=UDim2.fromOffset(20,118);groupButton.Size=UDim2.fromOffset(
 groupButton.BackgroundColor3=Theme.Button;groupButton.TextColor3=Theme.Text;groupButton.Font=Theme.Font;groupButton.TextSize=13;groupButton.Text="Group [G]";groupButton.Parent=menu
 Theme.Bevel(groupButton)
 groupButton.Activated:Connect(function() menu.Visible=false;Layout.Group:Fire() end)
-local health=label(bar,"HP —",658,42,116,35,23)
-local armor=label(bar,"AC 0",658,88,116,35,23)
+local health=label(bar,"HP —",714,42,68,35,20)
+local armor=label(bar,"AC 0",714,88,68,35,20)
 local staminaTrack=Instance.new("Frame")
-staminaTrack.Position=UDim2.fromOffset(442,10);staminaTrack.Size=UDim2.fromOffset(204,8)
+staminaTrack.Position=UDim2.fromOffset(442,10);staminaTrack.Size=UDim2.fromOffset(262,8)
 staminaTrack.BackgroundColor3=Theme.Card;staminaTrack.BorderSizePixel=0;staminaTrack.Parent=bar
 local stamina=Instance.new("Frame")
 stamina.Size=UDim2.fromScale(1,1);stamina.BackgroundColor3=Theme.Green;stamina.BorderSizePixel=0;stamina.Parent=staminaTrack
