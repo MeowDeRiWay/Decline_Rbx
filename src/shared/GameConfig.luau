@@ -14,6 +14,7 @@ GameConfig.RunFootstepMaxDistance = 10
 GameConfig.CameraHeight = 30
 GameConfig.CameraBack = 5
 GameConfig.CameraFieldOfView = 40
+GameConfig.CameraOrbitSensitivity = 0.006 -- Radians per horizontal mouse pixel.
 -- Horizontal creature visibility, centered on the character facing direction.
 GameConfig.CreatureViewAngle = 160
 GameConfig.VisibilityInterval = 1 / 30

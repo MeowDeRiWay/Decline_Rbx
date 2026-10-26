@@ -19,5 +19,9 @@ end
 assert(Rules.EdgeDistance(0,0,a)==0,"player inside screen")
 assert(a[1].X<0 and a[2].X>0 and a[1].Z<0 and a[3].Z>0,"fixed camera screen orientation")
 local wide=Rules.ScreenOffsets(30,5,40,32/9)
+local rotated=Rules.ScreenOffsets(30,5,40,16/9,math.pi/2)
+for i=1,4 do
+ assert(math.abs(rotated[i].X-a[i].Z)<1e-6 and math.abs(rotated[i].Z+a[i].X)<1e-6,"activity footprint follows camera yaw")
+end
 assert(math.abs(wide[1].X-2*a[1].X)<1e-6 and wide[1].Z==a[1].Z)
 print("PASS: exact 50/200 boundaries, edge/corner distances, no players, zoom/aspect screen footprint")

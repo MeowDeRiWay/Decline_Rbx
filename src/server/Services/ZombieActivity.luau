@@ -15,13 +15,13 @@ viewRemote.Name="ZombieActivityView";viewRemote.Parent=ReplicatedStorage
 local function finite(number)
  return typeof(number)=="number" and number==number and math.abs(number)<math.huge
 end
-viewRemote.OnServerEvent:Connect(function(player,height,aspect)
+viewRemote.OnServerEvent:Connect(function(player,height,aspect,yaw)
  local now=os.clock()
  if now-(reportTimes[player] or -math.huge)<.4 then return end
  reportTimes[player]=now
- if not finite(height) or not finite(aspect) then return end
+ if not finite(height) or not finite(aspect) or (yaw~=nil and not finite(yaw)) then return end
  local _,maximum=Progression.ZoomBounds(player:GetAttribute("ViewRange") or 25,Config.CameraHeight,Config.CameraFieldOfView)
- views[player]={Height=math.clamp(height,18,maximum),Aspect=math.clamp(aspect,.5,4)}
+ views[player]={Height=math.clamp(height,18,maximum),Aspect=math.clamp(aspect,.5,4),Yaw=(yaw or 0)%(2*math.pi)}
 end)
 Players.PlayerRemoving:Connect(function(player) views[player]=nil;reportTimes[player]=nil end)
 local function playerFootprints()
@@ -37,7 +37,7 @@ local function playerFootprints()
   local height=view and math.clamp(view.Height,18,maximum) or maximum
   local aspect=view and view.Aspect or 4
   local corners={}
-  for _,offset in ipairs(Rules.ScreenOffsets(height,Config.CameraBack*height/Config.CameraHeight,Config.CameraFieldOfView,aspect)) do
+  for _,offset in ipairs(Rules.ScreenOffsets(height,Config.CameraBack*height/Config.CameraHeight,Config.CameraFieldOfView,aspect,view and view.Yaw or 0)) do
    table.insert(corners,{X=root.Position.X+offset.X,Z=root.Position.Z+offset.Z})
   end
   corners.Center=root.Position;corners.Range=player:GetAttribute("ViewRange") or (10+3*(player:GetAttribute("Attention") or 5))

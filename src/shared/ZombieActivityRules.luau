@@ -2,7 +2,7 @@ local Rules = {}
 Rules.ActiveMargin = 50
 Rules.SleepMargin = 200
 Rules.TeleportInterval = 120
-function Rules.ScreenOffsets(height,back,fieldOfView,aspect)
+function Rules.ScreenOffsets(height,back,fieldOfView,aspect,yaw)
  local length=math.sqrt(height*height+back*back)
  local tangent=math.tan(math.rad(fieldOfView/2))
  local corners={}
@@ -10,7 +10,9 @@ function Rules.ScreenOffsets(height,back,fieldOfView,aspect)
   local dy=(-height+xy[2]*tangent*back)/length
   local dz=(-back-xy[2]*tangent*height)/length
   local distance=-height/dy
-  table.insert(corners,{X=xy[1]*tangent*aspect*distance,Z=back+dz*distance})
+  local x,z=xy[1]*tangent*aspect*distance,back+dz*distance
+  local sine,cosine=math.sin(yaw or 0),math.cos(yaw or 0)
+  table.insert(corners,{X=x*cosine+z*sine,Z=-x*sine+z*cosine})
  end
  return corners
 end
