@@ -82,8 +82,18 @@ function Service.Pickup(player, item)
  local params = RaycastParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = {character}
- local hit = workspace:Raycast(root.Position, delta, params)
- if hit and hit.Instance ~= item and not hit.Instance:IsDescendantOf(item) then return false end
+ local function clearFrom(origin)
+  local target = Interaction.NearestPoint(item,origin)
+  local hit = workspace:Raycast(origin, target-origin, params)
+  return not hit or hit.Instance == item or hit.Instance:IsDescendantOf(item)
+ end
+ -- A tabletop may block the waist-height ray while the item is in plain sight.
+ -- Keep the root-based reach limit and require an unobstructed ray from the
+ -- body or head; walls and closed furniture still block both paths.
+ if not clearFrom(root.Position) then
+  local head = character:FindFirstChild("Head")
+  if not head or not head:IsA("BasePart") or not clearFrom(head.Position) then return false end
+ end
  -- No yields between inventory grant and destruction: only one player can win.
  local conditions = nil
  local encoded = item:GetAttribute("Conditions")
