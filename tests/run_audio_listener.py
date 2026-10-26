@@ -29,7 +29,15 @@ local frames={}
 local RunService={BindToRenderStep=function(_,name,priority,fn) assert(name=="DeclineAudioListener" and priority==105);frames.step=fn end}
 local SoundService={SetListener=function(self,kind,frame) self.Kind=kind;self.Frame=frame end}
 local camera={CFrame=CFrame.new(Vector3.new(0,30,5)),DescendantAdded=signal()}
-local modern={Parent=camera,PositionType="Parent",PositionInstance=nil,IsA=function(_,kind) return kind=="AudioListener" end}
+local function modernListener()
+ return setmetatable({Parent=camera,IsA=function(_,kind) return kind=="AudioListener" end},{__index=function(_,key)
+  if key=="PositionType" or key=="PositionInstance" then error("AudioListener positioning property is not enabled") end
+ end,__newindex=function(object,key,value)
+  assert(key~="PositionType" and key~="PositionInstance","disabled positioning property must never be written")
+  rawset(object,key,value)
+ end})
+end
+local modern=modernListener()
 function camera:GetDescendants() return {modern} end
 local rootPart={Position=Vector3.new(3,1,4)}
 local head={Position=Vector3.new(3,2,4),IsA=function(_,kind) return kind=="BasePart" end}
@@ -39,7 +47,7 @@ local changed=signal()
 local workspace={CurrentCamera=camera,GetPropertyChangedSignal=function(_,name) assert(name=="CurrentCamera");return changed end}
 local services={Players={LocalPlayer=player},RunService=RunService,SoundService=SoundService,ReplicatedStorage={}}
 local game={GetService=function(_,name) return services[name] end}
-local Enum={RenderPriority={Camera={Value=100}},ListenerType={Camera="Camera",CFrame="CFrame"},ListenerPositionType={Instance="Instance"}}
+local Enum={RenderPriority={Camera={Value=100}},ListenerType={Camera="Camera",CFrame="CFrame"}}
 local Instance={new=function(kind) assert(kind=="Attachment");return {Destroy=function(self) self.Parent=nil;self.Destroyed=true end} end}
 '''
 cases='''
@@ -47,22 +55,22 @@ frames.step()
 assert(SoundService.Kind=="CFrame")
 near(SoundService.Frame.Position.Y,head.Position.Y)
 near(SoundService.Frame.RightVector.X,1)
-assert(modern.PositionType=="Instance" and modern.PositionInstance.Parent==rootPart)
-assert(modern.PositionInstance.WorldCFrame==SoundService.Frame,"both audio APIs use the same upright frame")
-local attachment=modern.PositionInstance
+assert(modern.Parent.Parent==rootPart)
+assert(modern.Parent.WorldCFrame==SoundService.Frame,"both audio APIs use the same upright frame")
+local attachment=modern.Parent
 camera.CFrame=CFrame.new(Vector3.new(0,200,30));frames.step()
-near(SoundService.Frame.Position.Y,2);assert(modern.PositionInstance==attachment,"zoom does not move hearing to camera")
+near(SoundService.Frame.Position.Y,2);assert(modern.Parent==attachment,"zoom does not move hearing to camera")
 camera.CFrame=CFrame.lookAt(Vector3.zero,Vector3.new(-1,0,0));frames.step()
 near(SoundService.Frame.RightVector.Z,-1)
-local late={Parent=camera,PositionType="Parent",IsA=modern.IsA}
+local late=modernListener()
 camera.DescendantAdded:Fire(late);frames.step()
-assert(late.PositionInstance==attachment,"late modern listeners are aligned without extra output wires")
+assert(late.Parent==attachment,"late modern listeners are aligned without extra output wires")
 player.Character=nil;frames.step()
-assert(SoundService.Kind=="Camera" and modern.PositionType=="Parent" and modern.PositionInstance==nil)
-assert(late.PositionType=="Parent")
+assert(SoundService.Kind=="Camera" and modern.Parent==camera)
+assert(late.Parent==camera)
 player.Character=character;player.CharacterAdded:Fire(character);frames.step()
-assert(attachment.Destroyed and modern.PositionInstance~=attachment,"respawn replaces local hearing attachment")
-changed:Fire();frames.step();assert(modern.PositionInstance.Parent==rootPart,"camera replacement rebinds listeners")
+assert(attachment.Destroyed and modern.Parent~=attachment,"respawn replaces local hearing attachment")
+changed:Fire();frames.step();assert(modern.Parent.Parent==rootPart,"camera replacement rebinds listeners")
 print("PASS: screen left/right across yaw and tilt, horizontal head, zoom-independent distance, legacy/modern parity, late listeners, fallback, respawn and camera replacement")
 '''
 with tempfile.TemporaryDirectory() as folder:

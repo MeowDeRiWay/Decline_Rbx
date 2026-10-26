@@ -10,8 +10,7 @@ local attachment,bound
 local function restore()
  for listener,saved in pairs(listeners) do
   if listener.Parent then
-   listener.PositionInstance=saved.Instance
-   listener.PositionType=saved.Type
+   listener.Parent=saved.Parent
   end
  end
  table.clear(listeners)
@@ -21,7 +20,8 @@ end
 local function register(object)
  if not object:IsA("AudioListener") or listeners[object] then return end
  -- Reuse existing engine-owned listeners/wires; never add a second output mix.
- listeners[object]={Type=object.PositionType,Instance=object.PositionInstance}
+ -- Parent-based positioning works even when PositionType is not enabled.
+ listeners[object]={Parent=object.Parent}
 end
 local function bind(camera,character)
  for _,connection in ipairs(connections) do connection:Disconnect() end
@@ -47,7 +47,7 @@ RunService:BindToRenderStep("DeclineAudioListener",Enum.RenderPriority.Camera.Va
   if bound then
    -- Restore modern defaults too while there is no character to listen from.
    for listener,saved in pairs(listeners) do
-    if listener.Parent then listener.PositionInstance=saved.Instance;listener.PositionType=saved.Type end
+    if listener.Parent then listener.Parent=saved.Parent end
    end
    SoundService:SetListener(Enum.ListenerType.Camera);bound=false
   end
@@ -64,8 +64,7 @@ RunService:BindToRenderStep("DeclineAudioListener",Enum.RenderPriority.Camera.Va
  attachment.WorldCFrame=frame
  for listener in pairs(listeners) do
   if listener.Parent then
-   if listener.PositionInstance~=attachment then listener.PositionInstance=attachment end
-   if listener.PositionType~=Enum.ListenerPositionType.Instance then listener.PositionType=Enum.ListenerPositionType.Instance end
+   if listener.Parent~=attachment then listener.Parent=attachment end
   else listeners[listener]=nil end
  end
 end)
