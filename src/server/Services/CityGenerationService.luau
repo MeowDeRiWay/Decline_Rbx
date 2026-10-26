@@ -165,12 +165,10 @@ end
 function Service.Start()
  if started then return end
  started = true
- workspace:SetAttribute("InitialCityReady",false)
  folder = workspace:FindFirstChild("GeneratedCityHouses")
  if not folder then folder = Instance.new("Folder"); folder.Name = "GeneratedCityHouses"; folder.Parent = workspace end
  folder:SetAttribute("GenerationSeed",seed)
  Service.Generate()
- workspace:SetAttribute("InitialCityReady",true)
  task.spawn(function()
   while true do task.wait(Config.RetryInterval); Service.Generate() end
  end)

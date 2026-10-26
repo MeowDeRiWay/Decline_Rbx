@@ -37,7 +37,11 @@
       "Loading": {
         "$path": "src/first/Loading.client.luau"
       },
-      "$ignoreUnknownInstances": true
+      "$ignoreUnknownInstances": true,
+      "SplashImages": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
+      }
     }
   }
 }
