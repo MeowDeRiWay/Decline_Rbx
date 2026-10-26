@@ -31,6 +31,13 @@
         "EnableDefaultVoice": true
       },
       "$ignoreUnknownInstances": true
+    },
+    "ReplicatedFirst": {
+      "$className": "ReplicatedFirst",
+      "Loading": {
+        "$path": "src/first/Loading.client.luau"
+      },
+      "$ignoreUnknownInstances": true
     }
   }
 }
