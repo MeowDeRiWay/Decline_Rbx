@@ -17,7 +17,7 @@ local folder
 local function generatedContent(object)
  local ancestor=object
  while ancestor and ancestor~=workspace do
-  if ancestor==folder or ancestor:GetAttribute("GeneratedCityHouse")==true then return true end
+  if ancestor==folder or ancestor.Name=="GeneratedFurniture" or ancestor:GetAttribute("GeneratedCityHouse")==true or ancestor:GetAttribute("GeneratedWallPiece")==true then return true end
   ancestor=ancestor.Parent
  end
  return false
@@ -49,13 +49,39 @@ local function plotOrder(a,b)
  for _, key in ipairs({"X","Z","Y"}) do if af.Position[key] ~= bf.Position[key] then return af.Position[key] < bf.Position[key] end end
  return a:GetFullName() < b:GetFullName()
 end
-local function roads()
- local result = {}
- for _, object in ipairs(workspace:GetDescendants()) do
-  if object:GetAttribute("Road") == true and box(object) then table.insert(result,object) end
+-- Keep authored candidates indexed; retry ticks never allocate a full world descendant list.
+local plotIndex,roadIndex,markerIndex={},{},{}
+local watchers={}
+local function untrack(object)
+ plotIndex[object],roadIndex[object],markerIndex[object]=nil,nil,nil
+ local connections=watchers[object]
+ if connections then for _,connection in ipairs(connections) do connection:Disconnect() end end
+ watchers[object]=nil
+end
+local function classify(object)
+ if not object:IsDescendantOf(workspace) or generatedContent(object) then
+  plotIndex[object],roadIndex[object],markerIndex[object]=nil,nil,nil;return
  end
- table.sort(result,plotOrder)
- return result
+ plotIndex[object]=object:IsA("Model") and ((object.Name=="YardPlace" and object:GetAttribute("ForZHouse")==true) or object:GetAttribute("ForInfrastructure")==true) or nil
+ roadIndex[object]=object:GetAttribute("Road")==true or nil
+ markerIndex[object]=(object.Name=="WallYard" or object.Name=="AutoPlacer" or typeof(object:GetAttribute("Replace"))=="string") or nil
+end
+local function track(object)
+ if not (object:IsA("Model") or object:IsA("BasePart")) or generatedContent(object) then return end
+ classify(object)
+ if not started or watchers[object] then return end
+ local connections={};watchers[object]=connections
+ for _,key in ipairs({"ForZHouse","ForInfrastructure","Road","Replace"}) do
+  table.insert(connections,object:GetAttributeChangedSignal(key):Connect(function() classify(object) end))
+ end
+ table.insert(connections,object:GetPropertyChangedSignal("Name"):Connect(function() classify(object) end))
+end
+local function roads()
+ local result={}
+ for object in pairs(roadIndex) do
+  if object:IsDescendantOf(workspace) and box(object) then table.insert(result,object) end
+ end
+ table.sort(result,plotOrder);return result
 end
 local function nearestRoad(plotFrame, list)
  local point, distance
@@ -148,15 +174,23 @@ local function place(plot, sources, roadList)
  hidePlot(plot)
  warnings[plot],busy[plot] = nil,nil
 end
-function Service.Generate()
- local sources,roadList,plots = {Houses=templates("Houses"),Stores=templates("Stores"),Factories=templates("Factories")},roads(),{}
- for _, object in ipairs(workspace:GetDescendants()) do
-  if object:IsA("Model") and not generatedContent(object) and ((object.Name == "YardPlace" and object:GetAttribute("ForZHouse") == true) or object:GetAttribute("ForInfrastructure")==true) then table.insert(plots,object) end
+function Service.Generate(incremental)
+ if not incremental then
+  plotIndex,roadIndex,markerIndex={},{},{}
+  for _,object in ipairs(workspace:GetDescendants()) do track(object) end
  end
+ local sources,roadList,plots={Houses=templates("Houses"),Stores=templates("Stores"),Factories=templates("Factories")},roads(),{}
+ for object in pairs(plotIndex) do if object:IsDescendantOf(workspace) then table.insert(plots,object) end end
  table.sort(plots,plotOrder)
  for _, plot in ipairs(plots) do place(plot,sources,roadList) end
- Walls.Fill(workspace)
- Furniture.Fill(workspace)
+ local markers={}
+ for object in pairs(markerIndex) do table.insert(markers,object) end
+ for _,object in ipairs(markers) do
+  if object:IsDescendantOf(workspace) and not generatedContent(object) then
+   if object.Name=="AutoPlacer" then Furniture.Fill(object)
+   else Walls.Fill(object) end
+  end
+ end
  -- Release markers that have been removed; do not leave their generated houses behind.
  for plot, house in pairs(generated) do
   if not plot:IsDescendantOf(workspace) then house:Destroy(); generated[plot],warnings[plot],busy[plot],categories[plot] = nil,nil,nil,nil end
@@ -168,9 +202,11 @@ function Service.Start()
  folder = workspace:FindFirstChild("GeneratedCityHouses")
  if not folder then folder = Instance.new("Folder"); folder.Name = "GeneratedCityHouses"; folder.Parent = workspace end
  folder:SetAttribute("GenerationSeed",seed)
+ workspace.DescendantAdded:Connect(track)
+ workspace.DescendantRemoving:Connect(untrack)
  Service.Generate()
  task.spawn(function()
-  while true do task.wait(Config.RetryInterval); Service.Generate() end
+  while true do task.wait(Config.RetryInterval); Service.Generate(true) end
  end)
 end
 return Service

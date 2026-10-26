@@ -84,3 +84,22 @@ is granted. The requester must still be alive, unaffiliated and at that gate whe
 approved. Other factions cannot request passage. Missing/offline mayor, denial,
 expiry or invalidated leadership leave gates shut. This is passage authorization,
 not a barrier against another player following someone through an open gate.
+
+## Incremental runtime retries
+
+The initial Generate pass discovers authored plots, roads and wall/furniture markers.
+Runtime retries use indexed candidates instead of enumerating Workspace descendants.
+DescendantAdded/Removing, relevant attribute changes and renaming maintain the index;
+generated buildings, wall pieces and furniture are excluded. Late/missing templates
+are retried on the existing interval. Explicit Generate() still performs a full
+rediscovery; the timer calls Generate(true). Per-object watchers are disconnected
+when objects leave Workspace.
+
+Client vision shade now uses241 rays at160degrees, at most30updates/sec while
+moving and10updates/sec while stationary. Idle refresh still reacts to moving
+blockers. View/camera/viewport/range/angle/KO changes invalidate the cached view.
+Two-pixel raster rows reduce mask count. Creature LOS remains separate, now30Hz;
+its sector and wall rules are unchanged. Moving shade ray budget is about81% below
+641rays at60Hz; this is a work-count reduction, not a measured FPS improvement.
+The MicroProfiler label Decline.VisionShade covers polygon/mask work. Live client
+frame times and visual edge quality need laptop verification.

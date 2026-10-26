@@ -108,12 +108,32 @@ large:Destroy();Service.Generate();assert(same.destroyed)
 print("PASS:40x40 infrastructure factory, explicit category, footprint rejection, idempotence and removal")
 
 print("PASS: template discovery by attribute, placement, source references, hidden markers, ZNumber preservation, idempotence and removed-plot cleanup")
+-- Retry ticks must not fall back to a full Workspace scan.
+local scans=0
+local originalDescendants=workspace.GetDescendants
+workspace.GetDescendants=function(self) scans+=1;return originalDescendants(self) end
+for _=1,3 do Service.Generate(true) end
+assert(scans==0,"incremental retries never enumerate the world")
+local late=make("Model","YardPlace",workspace)
+late.Size=Vector3.new(20,.2,20);make("Part","Part",late)
+workspace.DescendantAdded:Fire(late)
+Service.Generate(true);assert(not late:FindFirstChild("GeneratedHouse"))
+late:SetAttribute("ForZHouse",true)
+Service.Generate(true);assert(late:FindFirstChild("GeneratedHouse"),"late plot attribute changes update index")
+local lateHouse=late.GeneratedHouse.Value
+workspace.DescendantRemoving:Fire(late);late:Destroy();Service.Generate(true)
+assert(lateHouse.destroyed,"cached plot removal still cleans generated house")
+assert(scans==0,"addition, attribute updates and removal keep retries incremental")
+workspace.GetDescendants=originalDescendants
+print("PASS: incremental retries have zero full world scans; late plots, changed attributes and removals work")
+
 '''
 parts=[mock,geometry,(root/'tests/city_service.fixture.luau').read_text()]
 for name,var in [('CityGenerationConfig','Config'),('CityGenerationRules','Rules')]:
     parts.append('local '+var+'=(function()\n'+(root/f'src/shared/{name}.luau').read_text()+'\nend)()')
 parts.append('local Walls=(function()\n'+(root/'src/server/Services/WallReplacementService.luau').read_text()+'\nend)()')
 parts.append('local Furniture=(function()\n'+furniture+'\nend)()')
+parts.append('workspace.DescendantAdded=event();workspace.DescendantRemoving=event();function methods:GetPropertyChangedSignal(key) self.propertySignals=self.propertySignals or {};self.propertySignals[key]=self.propertySignals[key] or event();return self.propertySignals[key] end')
 parts.append('local Placement={Move=function(model,target) model:PivotTo(target) end}')
 parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])
 with tempfile.TemporaryDirectory(prefix='decline-city-service-') as directory:

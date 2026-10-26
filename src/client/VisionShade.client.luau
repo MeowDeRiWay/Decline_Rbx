@@ -13,7 +13,9 @@ gui.ResetOnSpawn = false
 gui.DisplayOrder = -10
 gui.Parent = player:WaitForChild("PlayerGui")
 local masks = {}
-local elapsed = Config.VisibilityInterval
+local elapsed = Config.VisionShadeInterval
+local idleElapsed=Config.VisionShadeIdleInterval
+local lastView
 local rowHeight = Config.VisionShadeRowHeight
 local function mask(index,x,y,width,height)
  local frame = masks[index]
@@ -26,9 +28,11 @@ local function mask(index,x,y,width,height)
   frame.Parent = gui
   masks[index] = frame
  end
- frame.Position = UDim2.fromOffset(x,y)
- frame.Size = UDim2.fromOffset(width,height)
- frame.Visible = true
+ if frame.BackgroundTransparency~=Config.UnseenShadeTransparency then frame.BackgroundTransparency=Config.UnseenShadeTransparency end
+ local position,size=UDim2.fromOffset(x,y),UDim2.fromOffset(width,height)
+ if frame.Position~=position then frame.Position=position end
+ if frame.Size~=size then frame.Size=size end
+ if not frame.Visible then frame.Visible=true end
 end
 local function planePoint(camera,x,y,height)
  local ray = camera:ViewportPointToRay(x,y)
@@ -54,17 +58,34 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
  gui.Enabled = root ~= nil and camera ~= nil
- if not gui.Enabled then return end
- elapsed += dt
- if elapsed < Config.VisibilityInterval then return end
- elapsed %= Config.VisibilityInterval
+ if not gui.Enabled then lastView=nil;return end
+ elapsed += dt;idleElapsed+=dt
+ if elapsed < Config.VisionShadeInterval then return end
+ elapsed %= Config.VisionShadeInterval
+ local knockout=character:GetAttribute("Knockout")==true
+ local range=player:GetAttribute("ViewRange") or (10+3*(player:GetAttribute("Attention") or 5))
+ local angle=player:GetAttribute("ViewAngleMultiplier") or 1
+ local unchanged=lastView and lastView.Character==character and lastView.Camera==camera
+  and (root.Position-lastView.Position).Magnitude<.001
+  and root.CFrame.LookVector:Dot(lastView.Forward)>.999999
+  and (camera.CFrame.Position-lastView.CameraPosition).Magnitude<.001
+  and camera.CFrame.LookVector:Dot(lastView.CameraForward)>.999999
+  and camera.CFrame.UpVector:Dot(lastView.CameraUp)>.999999
+  and camera.ViewportSize==lastView.Size and camera.FieldOfView==lastView.FOV
+  and range==lastView.Range and angle==lastView.Angle and knockout==lastView.Knockout
+ if unchanged and idleElapsed<Config.VisionShadeIdleInterval then return end
+ idleElapsed=0
+ lastView={Character=character,Camera=camera,Position=root.Position,Forward=root.CFrame.LookVector,
+  CameraPosition=camera.CFrame.Position,CameraForward=camera.CFrame.LookVector,CameraUp=camera.CFrame.UpVector,
+  Size=camera.ViewportSize,FOV=camera.FieldOfView,Range=range,Angle=angle,Knockout=knockout}
  local width,height = camera.ViewportSize.X,camera.ViewportSize.Y
  if character:GetAttribute("Knockout") then
   mask(1,0,0,width,height)
   masks[1].BackgroundTransparency=0
-  for i=2,#masks do masks[i].Visible=false end
+  for i=2,#masks do if masks[i].Visible then masks[i].Visible=false end end
   return
  end
+ debug.profilebegin("Decline.VisionShade")
  if masks[1] then masks[1].BackgroundTransparency=Config.UnseenShadeTransparency end
  local range = 10
  local screenCorners = {}
@@ -121,5 +142,6 @@ RunService:BindToRenderStep("DeclineVisionShade",Enum.RenderPriority.Camera.Valu
   end
   if cursor < width then used+=1; mask(used,cursor,y,width-cursor,math.min(rowHeight,height-y)) end
  end
- for i=used+1,#masks do masks[i].Visible = false end
+ for i=used+1,#masks do if masks[i].Visible then masks[i].Visible = false end end
+ debug.profileend()
 end)
