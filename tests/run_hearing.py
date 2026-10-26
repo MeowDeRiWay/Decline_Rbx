@@ -13,7 +13,14 @@ local function signal()
  return e
 end
 local deferred={};local task={defer=function(fn,...) table.insert(deferred,{fn,{...}}) end}
-local function flush() while #deferred>0 do local q=table.remove(deferred,1);q[1](table.unpack(q[2])) end end
+local deferredProperties=false
+local function flush()
+ local count=0
+ while #deferred>0 do
+  count+=1;assert(count<1000,"property feedback loop never settles")
+  local q=table.remove(deferred,1);q[1](table.unpack(q[2]))
+ end
+end
 local methods={};local meta={}
 local game
 function meta.__index(o,k) return methods[k] or o.props[k] end
@@ -25,7 +32,10 @@ function meta.__newindex(o,k,v)
   o.AncestryChanged:Fire()
   if v and game then game.DescendantAdded:Fire(o) end
  end
- if o.signals[k] then o.signals[k]:Fire() end
+ if o.signals[k] then
+  if deferredProperties then task.defer(function() o.signals[k]:Fire() end)
+  else o.signals[k]:Fire() end
+ end
 end
 function methods:IsA(c) return self.ClassName==c end
 function methods:IsDescendantOf(p) local a=self.Parent;while a do if a==p then return true end;a=a.Parent end;return false end
@@ -98,6 +108,22 @@ sound.Volume=.65;assert(sound.Volume==.15,"Roblox default sound script cannot re
 player.attrs.SkillSneak=30;player.Character.attrs.Running=false;player.Character:GetAttributeChangedSignal("Running"):Fire()
 assert(sound.RollOffMaxDistance==4 and math.abs(sound.Volume-.06)<1e-9,"Sneak quiet source combines with range-only hearing")
 print("PASS: Attention changes range only for legacy/centered audio and voice emitters; authored volumes and audio mix untouched, walking5/run10 scale with hearing")
+deferredProperties=true
+local delayed=Instance.new("Sound");delayed.Parent=workspace;flush()
+attention(10)
+assert(delayed.RollOffMaxDistance==200 and delayed.RollOffMinDistance==10,"deferred self-writes must not compound hearing gain")
+attention(1);assert(delayed.RollOffMaxDistance==20)
+delayed.RollOffMaxDistance=75;flush()
+assert(delayed.RollOffMaxDistance==15,"external authored edits still update the base with deferred signals")
+attention(10);assert(delayed.RollOffMaxDistance==150)
+delayed.Playing=false;flush();assert(delayed.RollOffMaxDistance==75)
+delayed.Playing=true;flush();assert(delayed.RollOffMaxDistance==150)
+emitter.DistanceAttenuationBounds=NumberRange.new(3,40);flush()
+assert(emitter.DistanceAttenuationBounds.Max==80,"deferred emitter edits scale exactly once")
+for _=1,20 do attention(10) end
+assert(delayed.RollOffMaxDistance==150 and emitter.DistanceAttenuationBounds.Max==80,"repeated refreshes settle without recursive property events")
+attention(5);assert(delayed.RollOffMaxDistance==75 and emitter.DistanceAttenuationBounds.Max==40)
+print("PASS: deferred Sound and AudioEmitter signals settle, preserve authored edits, playback resets and repeated refreshes")
 '''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'test.luau';p.write_text(mock+'\nlocal R=(function()\n'+(root/'src/shared/SensesRules.luau').read_text()+'\nend)()\n'+s+'\n'+cases.replace('FOOTSTEPS','local Noise=(function()\n'+(root/'src/shared/NoiseRules.luau').read_text()+'\nend)()\n'+footsteps));subprocess.run([sys.argv[1],str(p)],check=True)

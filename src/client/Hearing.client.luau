@@ -16,8 +16,14 @@ local function applySound(sound,r)
  local active=soundEligible(sound) and sound.Playing
  local maximum=sound:GetAttribute("FootstepBaseDistance") or r.Max
  local minimum=sound:GetAttribute("FootstepBaseMin") or r.Min
- sound.RollOffMaxDistance=maximum*(active and gain or 1)
- sound.RollOffMinDistance=math.min(minimum,sound.RollOffMaxDistance)
+ local maxDistance=maximum*(active and gain or 1)
+ if sound.RollOffMaxDistance~=maxDistance then sound.RollOffMaxDistance=maxDistance end
+ local minDistance=math.min(minimum,sound.RollOffMaxDistance)
+ if sound.RollOffMinDistance~=minDistance then sound.RollOffMinDistance=minDistance end
+ -- Signals can run after Busy is cleared. Remember engine-rounded values so
+ -- our own writes never become new authored bases and compound hearing gain.
+ r.AppliedMax=sound.RollOffMaxDistance
+ r.AppliedMin=sound.RollOffMinDistance
  r.Busy=false
 end
 local function applyEmitter(emitter,r)
@@ -25,7 +31,12 @@ local function applyEmitter(emitter,r)
  local scale=emitter:IsDescendantOf(workspace) and gain or 1
  pcall(function()
   if r.Mode==Enum.DistanceAttenuationMode.Custom then emitter:SetDistanceAttenuation(R.Curve(r.Curve,scale))
-  else emitter.DistanceAttenuationBounds=NumberRange.new(math.min(r.Bounds.Min,r.Bounds.Max*scale),r.Bounds.Max*scale) end
+  else
+   local minimum,maximum=math.min(r.Bounds.Min,r.Bounds.Max*scale),r.Bounds.Max*scale
+   local current=emitter.DistanceAttenuationBounds
+   if current.Min~=minimum or current.Max~=maximum then emitter.DistanceAttenuationBounds=NumberRange.new(minimum,maximum) end
+   r.AppliedBounds=emitter.DistanceAttenuationBounds
+  end
  end)
  r.Busy=false
 end
@@ -39,7 +50,10 @@ local function register(object)
   if not soundEligible(object) then return end
   local r={Min=object.RollOffMinDistance,Max=object.RollOffMaxDistance};sounds[object]=r
   for property,key in pairs({RollOffMinDistance="Min",RollOffMaxDistance="Max"}) do
-   object:GetPropertyChangedSignal(property):Connect(function() if not r.Busy then r[key]=object[property];applySound(object,r) end end)
+   object:GetPropertyChangedSignal(property):Connect(function()
+    local value=object[property]
+    if not r.Busy and value~=r["Applied"..key] then r[key]=value;applySound(object,r) end
+   end)
   end
   object:GetAttributeChangedSignal("FootstepBaseDistance"):Connect(function() applySound(object,r) end)
   object:GetAttributeChangedSignal("FootstepBaseMin"):Connect(function() applySound(object,r) end)
@@ -51,7 +65,10 @@ local function register(object)
   local ok,curve=pcall(function() return object:GetDistanceAttenuation() end)
   if not ok then return end
   local r={Curve=curve,Bounds=object.DistanceAttenuationBounds,Mode=object.DistanceAttenuationMode};emitters[object]=r
-  object:GetPropertyChangedSignal("DistanceAttenuationBounds"):Connect(function() if not r.Busy then r.Bounds=object.DistanceAttenuationBounds;applyEmitter(object,r) end end)
+  object:GetPropertyChangedSignal("DistanceAttenuationBounds"):Connect(function()
+   local value,applied=object.DistanceAttenuationBounds,r.AppliedBounds
+   if not r.Busy and (not applied or value.Min~=applied.Min or value.Max~=applied.Max) then r.Bounds=value;applyEmitter(object,r) end
+  end)
   object:GetPropertyChangedSignal("DistanceAttenuationMode"):Connect(function() if not r.Busy then r.Mode=object.DistanceAttenuationMode;applyEmitter(object,r) end end)
   object.AncestryChanged:Connect(function() applyEmitter(object,r) end)
   object.Destroying:Once(function() emitters[object]=nil end)
