@@ -1,3 +1,4 @@
+local Cursor=require(script.Parent.CursorQuery)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local RunService=game:GetService("RunService")
@@ -45,16 +46,14 @@ local function rayDistance(object,ray)
  end
  return low
 end
-RunService.RenderStepped:Connect(function()
+Cursor.Subscribe("Doors",2,function()
  hovered=nil;highlight.Enabled=false
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local camera=workspace.CurrentCamera
  if player:GetAttribute("GroupOpen") or not root or not camera or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") then return end
- local mouse=Input:GetMouseLocation()
- local ray=camera:ViewportPointToRay(mouse.X,mouse.Y)
- local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}
- local hit=workspace:Raycast(ray.Origin,ray.Direction*1000,params)
+ local sample=Cursor.Get();if not sample then return end
+ local ray,hit=sample.Ray,sample.Hit
  local limit=hit and (hit.Position-ray.Origin).Magnitude or 1000
  local target=hit and hit.Instance
  while target and target~=workspace and not doors[target] do target=target.Parent end

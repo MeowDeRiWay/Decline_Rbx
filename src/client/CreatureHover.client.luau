@@ -1,3 +1,4 @@
+local Cursor=require(script.Parent.CursorQuery)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Input = game:GetService("UserInputService")
@@ -55,7 +56,7 @@ local function creature(part)
  end
  return model,humanoid
 end
-RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Value+2,function()
+Cursor.Subscribe("Creatures",4,function()
  gui.Enabled = false
  local camera = workspace.CurrentCamera
  local character = player.Character
@@ -65,16 +66,7 @@ RunService:BindToRenderStep("DeclineCreatureHover",Enum.RenderPriority.Last.Valu
  local mouse = Input:GetMouseLocation()
  local size = camera.ViewportSize
  if mouse.X < 0 or mouse.Y < 0 or mouse.X > size.X or mouse.Y > size.Y then return end
- local ray = camera:ViewportPointToRay(mouse.X,mouse.Y)
- local params = RaycastParams.new()
- params.FilterType = Enum.RaycastFilterType.Include
- local candidates={}
- for model in pairs(View.Targets) do
-  if model~=character and model.Parent and model:GetAttribute("ClientVisible")==true then table.insert(candidates,model) end
- end
- if #candidates==0 then return end
- params.FilterDescendantsInstances=candidates
- local hit = workspace:Raycast(ray.Origin,ray.Direction*1000,params)
+ local hit=Cursor.CreatureHit()
  if not hit then return end
  local model,humanoid = creature(hit.Instance)
  if not model or not humanoid or humanoid.Health <= 0 or model:GetAttribute("ClientVisible") ~= true then return end

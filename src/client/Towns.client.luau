@@ -1,3 +1,5 @@
+local UI=require(script.Parent.UIUpdates)
+local Cursor=require(script.Parent.CursorQuery)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -318,18 +320,18 @@ hoverLabel.BackgroundTransparency, hoverLabel.BorderSizePixel = .1, 0
 hoverLabel.TextColor3 = Color3.fromRGB(240,240,235)
 hoverLabel.Font, hoverLabel.TextSize, hoverLabel.Visible = Theme.Font, 15, false
 hoverLabel.Parent = gui
-RunService.RenderStepped:Connect(function()
+Cursor.Subscribe("Towns",3,function()
  local time = workspace:GetServerTimeNow()
  for index = #queue,1,-1 do if queue[index].EndsAt <= time then table.remove(queue,index) end end
  local request = queue[1]
- notifications.Visible = request ~= nil or messageUntil > time
- answers.Visible = request ~= nil and not request.Answered and not request.Participating
- candidateList.Visible = request ~= nil and request.Kind == "Election" and request.Participating == true and not request.Answered
+ UI.Set(notifications,"Visible",request ~= nil or messageUntil > time)
+ UI.Set(answers,"Visible",request ~= nil and not request.Answered and not request.Participating)
+ UI.Set(candidateList,"Visible",request ~= nil and request.Kind == "Election" and request.Participating == true and not request.Answered)
  if request then
-  caption.Text = request.Text .. "\n" .. (request.Answered and "Your response has been recorded." or (request.Kind == "Election" and
+  UI.Set(caption,"Text",request.Text .. "\n" .. (request.Answered and "Your response has been recorded." or (request.Kind == "Election" and
    (request.Participating and "Choose the next mayor below. You may vote for yourself." or "Y — participate · N — skip") or
-   (request.Kind == "Vote" and "Y — remove the mayor · N — keep in office" or "Y — approve · N — decline"))) .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or "")
- else caption.Text = message end
+   (request.Kind == "Vote" and "Y — remove the mayor · N — keep in office" or "Y — approve · N — decline"))) .. "\n" .. math.ceil(request.EndsAt-time) .. " s" .. (#queue>1 and (" · Queued requests: " .. #queue) or ""))
+ else UI.Set(caption,"Text",message) end
  hovered, highlight.Enabled, hoverLabel.Visible = nil, false, false
  if panel.Visible or player:GetAttribute("GroupOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("InventoryOpen") or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local character, camera = player.Character, workspace.CurrentCamera
@@ -337,9 +339,8 @@ RunService.RenderStepped:Connect(function()
  if not root or not camera or character:GetAttribute("Knockout") then return end
  local mouse = UserInputService:GetMouseLocation()
  if mouse.X < 0 or mouse.Y < 0 or mouse.X > camera.ViewportSize.X or mouse.Y > camera.ViewportSize.Y then return end
- local ray = camera:ViewportPointToRay(mouse.X,mouse.Y)
- local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude; params.FilterDescendantsInstances = {character}
- local hit = workspace:Raycast(ray.Origin,ray.Direction*1000,params)
+ local sample=Cursor.Get();if not sample then return end
+ local hit=sample.Hit
  local object = hit and hit.Instance
  while object and object ~= workspace do
   if object:IsA("Model") and object.Name == "Flag" then

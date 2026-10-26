@@ -44,7 +44,7 @@ local flag=object("Model","Flag");flag.Parent=workspace;flag:SetAttribute("TownI
 local gate=object("Model","GateDoor");gate.Parent=workspace;gate:SetAttribute("TownID",1);gate:SetAttribute("TownGate",true);gate:SetAttribute("Door",true)
 local part=object("BasePart","Part");part.Parent=gate;part.Transparency=.25;part.CanCollide=true;part.CanQuery=true;part.CanTouch=false;part:SetAttribute("BlocksVision",true);gate.children={part}
 workspace.children={flag,gate,part}
-local player=object("Player","Guest");player.UserId=20
+local player=object("Player","Guest");player.UserId=20;player:SetAttribute("AttributesConfirmed",true)
 local position=setmetatable({}, {__sub=function(a,b) return a end})
 local character=object("Model","Character");character.children={{Name="HumanoidRootPart",Position=position}}
 function character:FindFirstChildOfClass() return {Health=100} end

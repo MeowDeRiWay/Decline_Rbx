@@ -1,3 +1,4 @@
+local UI=require(script.Parent.UIUpdates)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Run=game:GetService("RunService")
@@ -129,15 +130,15 @@ workspace.DescendantAdded:Connect(function(object) if object:IsA("Model") then t
 local elapsed=0
 Run.Heartbeat:Connect(function(dt)
  elapsed+=dt;if elapsed<.25 then return end;elapsed=0
- level.Visible=(player:GetAttribute("AttributePoints") or 0)>0 or (player:GetAttribute("SkillPoints") or 0)>0 or (player:GetAttribute("PerkPoints") or 0)>0
+ UI.Set(level,"Visible",(player:GetAttribute("AttributePoints") or 0)>0 or (player:GetAttribute("SkillPoints") or 0)>0 or (player:GetAttribute("PerkPoints") or 0)>0)
  local character=player.Character
- medicine.Text=character and character:GetAttribute("MedicineItem")=="Bandage" and ("Med [H] ×"..(character:GetAttribute("MedicineCount") or 0)) or "Med [H] —"
- medicine.TextColor3=player:GetAttribute("MedicalMode")=="Bandage" and Theme.Green or Theme.Text
- health.Text=string.format("HP %03d",character and character:GetAttribute("Health") or 0)
- armor.Text=string.format("AC %02d",math.floor((player:GetAttribute("DodgeChance") or 0)+.5))
+ UI.Set(medicine,"Text",character and character:GetAttribute("MedicineItem")=="Bandage" and ("Med [H] ×"..(character:GetAttribute("MedicineCount") or 0)) or "Med [H] —")
+ UI.Set(medicine,"TextColor3",player:GetAttribute("MedicalMode")=="Bandage" and Theme.Green or Theme.Text)
+ UI.Set(health,"Text",string.format("HP %03d",character and character:GetAttribute("Health") or 0))
+ UI.Set(armor,"Text",string.format("AC %02d",math.floor((player:GetAttribute("DodgeChance") or 0)+.5)))
  local remaining=character and character:GetAttribute("SprintRemaining") or (10+(player:GetAttribute("Agility") or 5))
  local maximum=character and character:GetAttribute("SprintMaximum") or (10+(player:GetAttribute("Agility") or 5))
- stamina.Size=UDim2.fromScale(math.clamp(remaining/math.max(1,maximum),0,1),1)
+ UI.Set(stamina,"Size",UDim2.fromScale(math.clamp(remaining/math.max(1,maximum),0,1),1))
 
  local fighting=false
  local camera=workspace.CurrentCamera
@@ -155,7 +156,7 @@ Run.Heartbeat:Connect(function(dt)
   end
   if fighting then break end
  end
- combat.BackgroundColor3=fighting and Theme.Danger or Theme.Card
+ UI.Set(combat,"BackgroundColor3",fighting and Theme.Danger or Theme.Card)
 end)
 local function playLevelUp()
  local sounds=ReplicatedStorage:FindFirstChild("Sounds")

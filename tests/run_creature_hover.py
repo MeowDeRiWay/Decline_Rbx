@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/client/CreatureHover.client.luau').read_text()
-source=re.sub(r'local (Theme|Accuracy|Affiliation|Items|View)=require[^\n]+\n','',source)
+source=re.sub(r'local (Theme|Accuracy|Affiliation|Items|View|Cursor)=require[^\n]+\n','',source)
 setup='''
 a:LoadCharacterAsync()
 local playerGui=make("PlayerGui","PlayerGui",a)
@@ -14,6 +14,7 @@ local Theme={Card={},Accent={},Text={},Font={}}
 local Accuracy={Chance=function() return 75 end,ForWeapon=function() return 50 end,NightMultiplier=function() return 1 end}
 local Affiliation={Friendly=function() return false end};local Items={};local View={Targets={[target]=true}}
 local render
+local Cursor={Subscribe=function(_,_,fn) render=fn end,CreatureHit=function() return workspace:Raycast() end}
 local Input={GetFocusedTextBox=function() end,GetMouseLocation=function() return {X=50,Y=50} end}
 local camera={ViewportSize={X=100,Y=100},ViewportPointToRay=function() return {Origin=Vector3.zero,Direction=Vector3.new(0,0,-1)} end}
 workspace.CurrentCamera=camera

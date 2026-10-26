@@ -1,3 +1,4 @@
+local UI=require(script.Parent.UIUpdates)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -107,7 +108,7 @@ end
 local statusElapsed=0
 RunService.RenderStepped:Connect(function(dt)
  local camera=workspace.CurrentCamera
- if camera then windowScale.Scale=math.min(1,camera.ViewportSize.X*.94/1060,camera.ViewportSize.Y*.85/600) end
+ if camera then UI.Set(windowScale,"Scale",math.min(1,camera.ViewportSize.X*.94/1060,camera.ViewportSize.Y*.85/600)) end
  if not gui.Enabled then return end
  statusElapsed+=dt
  if statusElapsed<.1 then return end
@@ -117,10 +118,10 @@ RunService.RenderStepped:Connect(function(dt)
   local value=character and character:GetAttribute(entry.Attribute)
   local maximum=entry.Attribute=="LoadKg" and (player:GetAttribute("CarryLimitKg") or (character and character:GetAttribute("CarryLimitKg")) or 20) or 100
   if typeof(value)=="number" then
-   entry.Value.Text=string.format(entry.Attribute=="LoadKg" and "%.1f / %.0f kg" or "%.0f / %.0f",value,maximum)
-   entry.Fill.Size=UDim2.fromScale(math.clamp(value/math.max(1,maximum),0,1),1)
-   entry.Fill.BackgroundColor3=(entry.Attribute=="Sick" or entry.Attribute=="LoadKg") and (value>(entry.Attribute=="Sick" and 0 or maximum) and Theme.Danger or Theme.Green) or Theme.Green
-  else entry.Value.Text="—";entry.Fill.Size=UDim2.fromScale(0,1) end
+   UI.Set(entry.Value,"Text",string.format(entry.Attribute=="LoadKg" and "%.1f / %.0f kg" or "%.0f / %.0f",value,maximum))
+   UI.Set(entry.Fill,"Size",UDim2.fromScale(math.clamp(value/math.max(1,maximum),0,1),1))
+   UI.Set(entry.Fill,"BackgroundColor3",(entry.Attribute=="Sick" or entry.Attribute=="LoadKg") and (value>(entry.Attribute=="Sick" and 0 or maximum) and Theme.Danger or Theme.Green) or Theme.Green)
+  else UI.Set(entry.Value,"Text","—");UI.Set(entry.Fill,"Size",UDim2.fromScale(0,1)) end
  end
 end)
 local function clear(frame)
@@ -492,6 +493,6 @@ RunService.RenderStepped:Connect(function()
  local craftStatus=snapshot.CookingRecipe and craftStatuses[snapshot.CookingRecipe]
  if cookingOpen and craftStatus and craftStatus.Parent and (snapshot.CookingEndsAt or 0)>0 then
   local remaining=math.max(0,math.ceil(snapshot.CookingEndsAt-workspace:GetServerTimeNow()))
-  craftStatus.Text=string.format("Cooking %d · %02d:%02d remaining",snapshot.CookingCount or 0,math.floor(remaining/60),remaining%60)
+  UI.Set(craftStatus,"Text",string.format("Cooking %d · %02d:%02d remaining",snapshot.CookingCount or 0,math.floor(remaining/60),remaining%60))
  end
 end)

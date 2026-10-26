@@ -1,3 +1,4 @@
+local Cursor=require(script.Parent.CursorQuery)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -31,7 +32,7 @@ label.Parent = gui
 local hovered, reachable, chestHovered = nil, false, false
 local stoveHovered=false
 local farmHovered=false
-RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value + 4, function()
+Cursor.Subscribe("WorldItems",1,function()
  hovered, reachable, chestHovered = nil, false, false
  stoveHovered=false;farmHovered=false
  highlight.Enabled, label.Visible = false, false
@@ -44,11 +45,8 @@ RunService:BindToRenderStep("WorldItemHover", Enum.RenderPriority.Camera.Value +
  -- GetMouseLocation already matches ViewportPointToRay coordinates.
  local viewportMouse = mouse
  if viewportMouse.X < 0 or viewportMouse.Y < 0 or viewportMouse.X > camera.ViewportSize.X or viewportMouse.Y > camera.ViewportSize.Y then return end
- local ray = camera:ViewportPointToRay(viewportMouse.X, viewportMouse.Y)
- local params = RaycastParams.new()
- params.FilterType = Enum.RaycastFilterType.Exclude
- params.FilterDescendantsInstances = {character}
- local hit = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+ local sample=Cursor.Get();if not sample then return end
+ local hit=sample.Hit
  if not hit then return end
  local chest = hit.Instance
  while chest and chest ~= workspace do
