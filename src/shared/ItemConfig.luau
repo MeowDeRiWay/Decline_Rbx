@@ -1,7 +1,7 @@
 -- Every new item must be registered here before any system grants it.
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
-ItemConfig.PickupDistance = 1
+ItemConfig.PickupDistance = 2
 ItemConfig.Slots = {"Head", "Body", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
  ZombieHand = {

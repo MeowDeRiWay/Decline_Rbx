@@ -1,6 +1,6 @@
 return {
  Radius = 200,
- InteractionDistance = 1,
+ InteractionDistance = 2,
  VoteDuration = 30,
  VoteCooldown = 600,
  ApprovalDuration = 60,
