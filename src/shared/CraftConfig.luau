@@ -53,6 +53,24 @@ local recipes = {
   Ingredients = {Scrap = 3}, Output = "ScrapKnife", OutputCount = 1,
   MaxBatch = 1, Duration = 15, RequiresPresence = true,
  },
+ MakeIronAxe = {
+  Name = "Make iron axe", Station = "Workstation",
+  Description = "Assemble an iron axe using a handle and three iron.",
+  Ingredients = {Handle = 1, Iron = 3}, Output = "IronAxe", OutputCount = 1,
+  MaxBatch = 1, Duration = 20, RequiresPresence = true,
+ },
+ MakeIronShovel = {
+  Name = "Make iron shovel", Station = "Workstation",
+  Description = "Assemble an iron shovel using a handle and three iron.",
+  Ingredients = {Handle = 1, Iron = 3}, Output = "IronShowel", OutputCount = 1,
+  MaxBatch = 1, Duration = 20, RequiresPresence = true,
+ },
+ MakeIronKnife = {
+  Name = "Make iron knife", Station = "Workstation",
+  Description = "Shape three iron into a knife.",
+  Ingredients = {Iron = 3}, Output = "IronKnife", OutputCount = 1,
+  MaxBatch = 1, Duration = 15, RequiresPresence = true,
+ },
  BoilPotatoes = {
   Name = "Boil potatoes", Food=true, Station = "Stove",
   Description = "Boil potatoes using one bottle of clean water per potato.",
@@ -76,7 +94,7 @@ local recipes = {
  },
 }
 
--- Repair gates for tool tiers and workshop components, including future iron recipes.
+-- Repair gates for tool tiers and workshop components, including iron recipes.
 local repairByOutput={StoneAxe=60,StoneShowel=60,ScrapAxe=100,ScrapShowel=100,ScrapKnife=100,
  IronAxe=150,IronShowel=150,IronKnife=150,EmptyBucket=100,Handle=60,Plank=60}
 for _,recipe in pairs(recipes) do
