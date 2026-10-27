@@ -4,7 +4,7 @@ This section supersedes earlier ammunition penetration descriptions below.
 
 For wall thickness 0.1 stud, both FMJ and AP follow identical rules:
 
-| Caliber | Glass / wood | Brick | Concrete |
+| Caliber | Glass / wood / aluminum | Brick | Concrete |
 | --- | --- | --- | --- |
 | 9 mm | Penetrates if budget remains | Stops | Stops |
 | .223 | Penetrates if budget remains | Penetrates if budget remains | Stops |
@@ -105,7 +105,13 @@ initial per-stud resistance. AP uses the same material resistance as FMJ; soft m
 use the same cost. Crossing reduces speed and damage via remaining budget.
 
 Set custom string `Material` on the Wall/Corner/DoorWay Model or individual Part:
-Wood,Glass,Brick,Concrete,Metal,ArmorSteel. Nearest attribute overrides ancestors.
+Wood,Aluminum,Glass,Brick,Concrete,Metal,ArmorSteel. Nearest attribute overrides ancestors.
+For household metal shelves, counters and other light aluminum props, add the
+string attribute `Material = "Aluminum"` to their Model or individual Parts.
+Aluminum uses the same resistance as Wood (180 per stud; 18.1 total budget at
+0.1 stud), so 9 mm, .223 and .308 can penetrate it while budget remains. This is
+a gameplay material, not an inventory resource. Native Roblox Metal remains
+heavy Metal unless overridden by this attribute; visual appearance is unchanged.
 Without an attribute, supported native Roblox materials are used; unknown ones
 stop bullets. Current thickness calculation supports BLOCK Parts. MeshParts,
 Unions,Terrain and non-block shapes stop bullets conservatively; their hollow

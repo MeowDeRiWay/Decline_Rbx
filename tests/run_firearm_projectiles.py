@@ -74,6 +74,17 @@ local function run(kind,ammo)
  return dealt
 end
 local clear=run(nil,"FMJ");assert(clear>0)
+for _,caliber in ipairs({"9mm","223","308"}) do
+ definition.Caliber=caliber
+ local wood=run("Wood","FMJ")
+ local aluminum=run("Aluminum","FMJ")
+ assert(aluminum>0 and math.abs(aluminum-wood)<1e-8,"aluminum has wood-level penetration and damage loss for "..caliber)
+ assert(math.abs(run("Aluminum","AP")-aluminum)<1e-8,"AP does not change aluminum penetration")
+ local impacts=0
+ for _,packet in ipairs(packets) do for _,e in ipairs(packet) do if e.Kind=="Impact" and e.Material=="Aluminum" then impacts+=1 end end end
+ assert(impacts==2,"aluminum emits one entry and one exit effect")
+end
+definition.Caliber="223"
 local fmj=run("Brick","FMJ");assert(fmj>0 and fmj<clear,"thin wall crossed with damage loss")
 local brick=0
 for _,packet in ipairs(packets) do for _,e in ipairs(packet) do if e.Kind=="Impact" and e.Material=="Brick" then brick+=1 end end end

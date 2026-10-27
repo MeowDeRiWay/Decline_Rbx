@@ -48,7 +48,7 @@ RunService.Heartbeat:Connect(function()
  end
 end)
 local traces={}
-local colors={Brick=Color3.fromRGB(160,95,70),Wood=Color3.fromRGB(150,110,65),Glass=Color3.fromRGB(185,220,230),Metal=Color3.fromRGB(255,210,100),ArmorSteel=Color3.fromRGB(255,210,100),Concrete=Color3.fromRGB(160,160,155),Flesh=Color3.fromRGB(125,55,50)}
+local colors={Brick=Color3.fromRGB(160,95,70),Wood=Color3.fromRGB(150,110,65),Aluminum=Color3.fromRGB(195,205,215),Glass=Color3.fromRGB(185,220,230),Metal=Color3.fromRGB(255,210,100),ArmorSteel=Color3.fromRGB(255,210,100),Concrete=Color3.fromRGB(160,160,155),Flesh=Color3.fromRGB(125,55,50)}
 local function effectPart()
  local part=Instance.new("Part")
  part.Anchored=true;part.CanCollide=false;part.CanTouch=false;part.CanQuery=false;part.CastShadow=false
