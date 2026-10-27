@@ -115,7 +115,7 @@ render = function()
  elseif session.Kind == "Flag" then
   local town = townByID(session.TownID)
   if not town then return end
-  if (section == "Diplomacy" or section == "Citizens") and town.LeaderID ~= player.UserId then section = nil end
+  if (section == "Diplomacy" or section == "Citizens" or section=="Market") and town.LeaderID ~= player.UserId then section = nil end
   if snapshot.TownID ~= town.ID and section ~= "Member" then section = nil end
   detail(town)
   if not section or section == "Member" then button("Membership",function() toggle("Member") end) end
@@ -138,6 +138,15 @@ render = function()
     else button("Start a vote",function() confirm("Start an anonymous vote to remove the mayor?", "Vote") end) end
    end
    if town.LeaderID == player.UserId then
+    if not section or section=="Market" then button("Market tax",function() toggle("Market") end) end
+    if section=="Market" then
+     local tax,maximum=town.MarketTax or 0,town.MaxMarketTax or 0
+     text(string.format("$%d per seller every 5 minutes. Maximum: $%d, based on town wall level. Multiple posts owned by one seller are taxed once.",tax,maximum))
+     button("− Tax",function() if tax>0 then send("MarketTax",tax-1) end end)
+     button("+ Tax",function() if tax<maximum then send("MarketTax",tax+1) end end)
+     local amount=Instance.new("TextBox");amount.Size=UDim2.new(1,-8,0,36);amount.BackgroundColor3=Theme.Card;amount.TextColor3=Theme.Text;amount.Font=Theme.Font;amount.TextSize=16;amount.ClearTextOnFocus=false;amount.Text=tostring(tax);amount.Parent=content
+     button("Set tax",function() local value=tonumber(amount.Text);if value then send("MarketTax",value) end end)
+    end
     if not section or section == "Citizens" then button("Citizens",function() expelTarget=nil;expelReason="";toggle("Citizens") end) end
     if section == "Citizens" then
      text("Expel a citizen from the faction. A reason is required and shared with every faction member.")
@@ -225,7 +234,7 @@ render = function()
      local function materials(cost)
       local parts={}
       for id,amount in pairs(cost or {}) do table.insert(parts,tostring(amount).." "..id) end
-      table.sort(parts);return table.concat(parts,", ")
+      table.sort(parts);return #parts==0 and "Free" or table.concat(parts,", ")
      end
      for _, option in ipairs(plot.Options) do
       local requirements={}
@@ -325,6 +334,7 @@ hoverLabel.TextColor3 = Color3.fromRGB(240,240,235)
 hoverLabel.Font, hoverLabel.TextSize, hoverLabel.Visible = Theme.Font, 15, false
 hoverLabel.Parent = gui
 Cursor.Subscribe("Towns",3,function()
+ if player:GetAttribute("TradeOpen") then hovered=nil;highlight.Enabled=false;hoverLabel.Visible=false;return end
  local time = workspace:GetServerTimeNow()
  for index = #queue,1,-1 do if queue[index].EndsAt <= time then table.remove(queue,index) end end
  local request = queue[1]
@@ -372,6 +382,7 @@ Cursor.Subscribe("Towns",3,function()
  end
 end)
 UserInputService.InputBegan:Connect(function(input,processed)
+ if player:GetAttribute("TradeOpen") then return end
  if player.Character and player.Character:GetAttribute("HospitalResting") then return end
  if processed or UserInputService:GetFocusedTextBox() then return end
  if queue[1] and (input.KeyCode == Enum.KeyCode.Y or input.KeyCode == Enum.KeyCode.N) then reply(input.KeyCode == Enum.KeyCode.Y)

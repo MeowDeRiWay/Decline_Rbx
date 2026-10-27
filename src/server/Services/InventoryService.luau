@@ -70,6 +70,7 @@ function Service.CorpseStorage(state)
  return state
 end
 function Service.Add(player, id, count, conditions,weaponData)
+ if ItemConfig.Items[id] and ItemConfig.Items[id].Currency then return require(script.Parent.EconomyService).Credit(player,count) end
  local state = states[player]
  if not state or not Rules.Add(state, ItemConfig.Items, id, count, conditions,weaponData) then return false end
  update(player)

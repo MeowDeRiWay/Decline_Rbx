@@ -29,6 +29,7 @@ local function object(class,name)
 end
 workspace=object("Workspace","Workspace");workspace.DescendantAdded=signal()
 local time=100
+local os={clock=function() return time end}
 function workspace:GetServerTimeNow() return time end
 function workspace:Raycast() return nil end
 local storage=object("ServerStorage","ServerStorage")
@@ -72,6 +73,14 @@ gate:SetAttribute("Co-OwnerID","20");assert(Service.Allowed(player,gate))
 gate:SetAttribute("Co-OwnerID","");player.UserId=10;assert(Service.Allowed(player,gate),"mayor access")
 player.UserId=30;assert(Service.Allowed(player,gate),"owner access")
 player:SetAttribute("TownID",2);assert(not Service.Allowed(player,gate),"other faction rejected")
+assert(Service.MaximumWallLevel(1)==0,"no built walls gives zero tax cap")
+local builtWall=object("Model","WallModelT1 (wood)");builtWall.Parent=workspace;builtWall:SetAttribute("TownID",1);builtWall:SetAttribute("WallLevel",1)
+workspace.DescendantAdded.callback(builtWall)
+assert(Service.MaximumWallLevel(1)==1,"T1 wall allows one-dollar cap")
+builtWall:SetAttribute("WallLevel",2);time+=1.1
+assert(Service.MaximumWallLevel(1)==2,"higher wall level updates cached cap")
+assert(Service.MaximumWallLevel(2)==0,"other town walls cannot raise cap")
+builtWall.Parent=nil;time+=1.1;assert(Service.MaximumWallLevel(1)==0,"removing wall lowers cap")
 print("PASS: guest requests, exact gate/town approval, hidden collision/query/vision, property restoration, owner/co-owner/mayor and faction access")
 '''
 with tempfile.TemporaryDirectory() as directory:

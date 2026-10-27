@@ -51,7 +51,7 @@ Cursor.Subscribe("Doors",2,function()
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local camera=workspace.CurrentCamera
- if player:GetAttribute("GroupOpen") or not root or not camera or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") then return end
+ if player:GetAttribute("TradeOpen") or player:GetAttribute("GroupOpen") or not root or not camera or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") then return end
  local sample=Cursor.Get();if not sample then return end
  local ray,hit=sample.Ray,sample.Hit
  local limit=hit and (hit.Position-ray.Origin).Magnitude or 1000
@@ -79,6 +79,7 @@ Cursor.Subscribe("Doors",2,function()
  if Interaction.Distance(target,root.Position)<=Config.InteractionDistance then hovered=target end
 end)
 Input.InputBegan:Connect(function(input,processed)
+ if player:GetAttribute("TradeOpen") then return end
  if player.Character and player.Character:GetAttribute("HospitalResting") then return end
  if processed or Input:GetFocusedTextBox() then return end
  if input.KeyCode==Enum.KeyCode.E and hovered then action:FireServer(hovered) end

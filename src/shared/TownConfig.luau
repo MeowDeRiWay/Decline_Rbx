@@ -6,6 +6,7 @@ return {
  ApprovalDuration = 60,
  Relations = {"Neutral", "Ally", "War"},
  Buildings = {
+  Market = {Name = "Market", Levels = {"Market (T1)"}, Costs = {{}}},
   Greenhouse = {Name = "Greenhouse", Levels = {"Greenhouse (T1)"}, Costs = {{TreeLog = 4, Stone = 4}}},
   Hospital = {Name = "Hospital", Levels = {"Hospital (T1)"}, Costs = {{TreeLog = 10, Rags = 10}}},
   Workbench = {Name = "Workshop", Levels = {"Workbench (T1)", "Workbench (T2)"}, Costs = {{TreeLog = 10, Scrap = 5}, {TreeLog = 10, Scrap = 5}}},

@@ -232,6 +232,7 @@ redraw=function()
  perkPanel.CanvasSize=UDim2.fromOffset(0,count*86)
 end
 setOpen=function(value,force)
+ if value and player:GetAttribute("TradeOpen") then return end
  if not force and not value and snapshot and not snapshot.Confirmed and player.Character then return end
  if value and (player:GetAttribute("InventoryOpen") or player:GetAttribute("TownMenuOpen") or player:GetAttribute("GroupOpen") or (player.Character and player.Character:GetAttribute("Knockout"))) then return end
  panel.Visible=value;player:SetAttribute("ProgressionOpen",value)

@@ -58,11 +58,13 @@ end
 cases='''
 Service.Start()
 local original=prepare(a);local originalPosition=original:GetPivot().Position
+a:SetAttribute("Money",45);a:SetAttribute("TradeOpen",true)
 Players.PlayerRemoving:Fire(a);a.Parent=nil;original:Destroy()
 local bodies=Service.OfflineCharacters();assert(#bodies==1)
 local waiting=bodies[1]
 assert(waiting.Parent.Name=="DisconnectedPlayers" and waiting.Humanoid.Health==42 and waiting:GetAttribute("Food")==37 and waiting.HumanoidRootPart.Anchored)
-local again=player(a.UserId);Players.PlayerAdded:Fire(again)
+local again=player(a.UserId);again:SetAttribute("Money",100);Players.PlayerAdded:Fire(again)
+assert(again:GetAttribute("Money")==100 and not again:GetAttribute("TradeOpen"),"session cannot overwrite wallet authority or reopen stale trade UI")
 assert(again.Character==waiting and not waiting.HumanoidRootPart.Anchored and again.Synced)
 assert(again:GetAttribute("TownID")==1 and again:GetAttribute("HasSpawned") and waiting:GetAttribute("ReturningSession"))
 assert(stock[again].Items.TreeLog==2 and stock[again].Magazine.Loaded==7 and stock[again].Magazine.Type=="AP")

@@ -12,6 +12,7 @@ local states={}
 local random=Random.new()
 local action=Instance.new("RemoteEvent");action.Name="FirearmAction";action.Parent=ReplicatedStorage
 local function context(player)
+ if player:GetAttribute("TradeOpen") then return end
  local character=player.Character
  local hp=character and character:FindFirstChildOfClass("Humanoid")
  local root=character and character:FindFirstChild("HumanoidRootPart")

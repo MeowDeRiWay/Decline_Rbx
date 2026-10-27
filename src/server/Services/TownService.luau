@@ -12,6 +12,11 @@ local Doors = require(script.Parent.TownDoors)
 local TextService=game:GetService("TextService")
 local Journal=require(script.Parent.JournalService)
 local Service = {}
+local marketObservers={}
+function Service.OnMarketEvent(callback) table.insert(marketObservers,callback) end
+local function marketEvent(kind,townID,userID)
+ for _,callback in ipairs(marketObservers) do callback(kind,townID,userID) end
+end
 local towns, plots, sessions, pending, lastAction = {}, {}, {}, {}, {}
 local spawnedPlayers = setmetatable({}, {__mode = "k"})
 local initializedCharacters = setmetatable({}, {__mode = "k"})
@@ -69,6 +74,16 @@ local function setLeader(town, id)
  end
  town.leader = id
  for _, flag in ipairs(town.flags) do flag:SetAttribute("LeaderID", id) end
+ marketEvent("Leader",town.id,id)
+end
+function Service.MaximumMarketTax(id)
+ return Doors.MaximumWallLevel and Doors.MaximumWallLevel(id) or 0
+end
+function Service.TradeTown(id)
+ local town=towns[id]
+ if not town then return nil end
+ local maximum=Service.MaximumMarketTax(id)
+ return {ID=id,LeaderID=town.leader,Tax=math.min(town.tax or 0,maximum),MaxTax=maximum}
 end
 local function cancelRequests(town)
  for id, request in pairs(pending) do
@@ -140,7 +155,8 @@ function Service.Snapshot(player)
   table.sort(people, function(a,b) return a.ID < b.ID end)
   table.insert(list, {ID = town.id, TeamID = town.teamID, Name = town.name, Count = #people,
    LeaderID = town.leader, LeaderName = nameOf(town.leader), Members = people, Relations = relations,
-   VoteEndsAt = town.vote and town.vote.endsAt, CooldownEndsAt = town.cooldown})
+   VoteEndsAt = town.vote and town.vote.endsAt, CooldownEndsAt = town.cooldown,
+   MarketTax=math.min(town.tax or 0,Service.MaximumMarketTax(town.id)),MaxMarketTax=Service.MaximumMarketTax(town.id)})
  end
  table.sort(list, function(a,b) return a.ID < b.ID end)
  local session = sessions[player]
@@ -187,6 +203,7 @@ local function templateFor(kind, level)
  local folder = ServerStorage:FindFirstChild("Buildings")
  local template = definition and folder and folder:FindFirstChild(definition.Levels[level])
  if not template and kind=="Kitchen" and level==1 and folder then template=folder:FindFirstChild("Kitchen_1") end
+ if not template and kind=="Market" and level==1 and folder then template=folder:FindFirstChild("Market") end
  return template and template:IsA("Model") and template:FindFirstChildWhichIsA("BasePart", true) and template or nil
 end
 local function build(plot, kind, level, player)
@@ -383,6 +400,7 @@ local function leaveTown(player,town)
    end
    player.Team, player.Neutral = nil, true
    player:SetAttribute("TownID", nil); player:SetAttribute("TeamID", nil)
+   marketEvent("Leave",town.id,player.UserId)
    sessions[player] = nil
 end
 local function handle(player, command, value, extra)
@@ -466,6 +484,10 @@ local function handle(player, command, value, extra)
   if townOf(player) ~= town then return end
   if command == "Leave" then
    leaveTown(player,town)
+  elseif command=="MarketTax" and mayor(player,town) then
+   if typeof(value)~="number" or value~=value or value<0 or value>Service.MaximumMarketTax(town.id) or value~=math.floor(value) then return end
+   town.tax=value
+   for _,flag in ipairs(town.flags) do flag:SetAttribute("MarketTax",value) end
   elseif command == "Expel" and mayor(player,town) then
    if not Rules.ValidID(value) or value==player.UserId or typeof(extra)~="string" or #extra>800 then return end
    local reason=extra:match("^%s*(.-)%s*$")
@@ -515,9 +537,11 @@ local function handle(player, command, value, extra)
    local materials={}
    for id,amount in pairs(costFor(value,level)) do table.insert(materials,tostring(amount).." "..id) end
    table.sort(materials)
+   local costText=#materials==0 and "Free." or (table.concat(materials,", ").." from the builder's inventory.")
    requestApproval(player, town, {kind = "Build", plot = plot, building = value, level = level,
-    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. ". Cost: " .. table.concat(materials,", ") .. " from the builder's inventory."})
+    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. ". Cost: " .. costText})
   elseif command == "Destroy" and plot.kind and owns(player, plot) then
+   if BuildingStorage.CanDestroy and not BuildingStorage.CanDestroy(plot.building) then tell(player,"Empty and release the trading posts before demolishing this building.");return end
    if plot.pending then pending[plot.pending] = nil; plot.pending = nil end
    destroyBuilding(plot)
   elseif command == "Owner" and plot.kind and mayor(player, town) then
@@ -537,6 +561,7 @@ local function handle(player, command, value, extra)
  Service.Publish()
 end
 function Service.Start()
+ if Service.Started then return end;Service.Started=true
  local folder = Instance.new("Folder"); folder.Name = "TownRemotes"; folder.Parent = ReplicatedStorage
  remote = Instance.new("RemoteEvent"); remote.Name = "State"; remote.Parent = folder
  notice = Instance.new("RemoteEvent"); notice.Name = "Notice"; notice.Parent = folder
@@ -562,6 +587,8 @@ function Service.Start()
   end
   if town.teamID ~= teamID then warn("[Decline] Conflicting Team for TownID " .. id); continue end
   table.insert(town.flags, flag); flag:SetAttribute("LeaderID", town.leader)
+  local tax=flag:GetAttribute("MarketTax")
+  if typeof(tax)=="number" and tax==tax and tax>=0 and tax<math.huge then town.tax=math.floor(tax) end
   local colorModel = flag:FindFirstChild("TeamColor")
   if colorModel then for _, part in ipairs(colorModel:GetDescendants()) do if part:IsA("BasePart") then part.Color = town.team.TeamColor.Color end end end
  end

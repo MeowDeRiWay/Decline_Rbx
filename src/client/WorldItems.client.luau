@@ -33,15 +33,17 @@ local hovered, reachable, chestHovered = nil, false, false
 local stoveHovered=false
 local farmHovered=false
 local bedHovered=false
+local tradeHovered=false
+local tradeAction=ReplicatedStorage:WaitForChild("TradeRemotes"):WaitForChild("Action")
 Cursor.Subscribe("WorldItems",1,function()
  hovered, reachable, chestHovered = nil, false, false
- stoveHovered=false;farmHovered=false;bedHovered=false
+ stoveHovered=false;farmHovered=false;bedHovered=false;tradeHovered=false
  highlight.Enabled, label.Visible = false, false
  label.Size=UDim2.fromOffset(200,44)
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
- if not root or not camera or character:GetAttribute("Knockout") or ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if not root or not camera or character:GetAttribute("Knockout") or (((player:GetAttribute("TradeOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  if character:GetAttribute("HospitalResting") then
   label.Text="Hospital bed\n[E] Get up"
@@ -56,13 +58,14 @@ Cursor.Subscribe("WorldItems",1,function()
  if not hit then return end
  local chest = hit.Instance
  while chest and chest ~= workspace do
-  if chest:IsA("Model") and (chest.Name == "GardenBed" or chest.Name == "Well" or chest.Name == "Chest" or chest:GetAttribute("HospitalBed")==true or Stations.Kind(chest) or chest:GetAttribute("IsCorpse") == true) then break end
+  if chest:IsA("Model") and (chest.Name == "GardenBed" or chest.Name == "Well" or chest.Name == "Chest" or chest:GetAttribute("HospitalBed")==true or chest.Name=="TradePost" or chest:GetAttribute("TradePost")==true or Stations.Kind(chest) or chest:GetAttribute("IsCorpse") == true) then break end
   chest = chest.Parent
  end
  if chest and chest ~= workspace then
   if chest:GetAttribute("IsCorpse") and chest:GetAttribute("ClientVisible") ~= true then return end
   local nearest = Interaction.NearestPoint(chest,root.Position)
   hovered, chestHovered = chest, true
+  tradeHovered=chest.Name=="TradePost" or chest:GetAttribute("TradePost")==true
   bedHovered=chest:GetAttribute("HospitalBed")==true
   stoveHovered=Stations.Kind(chest)~=nil
   farmHovered=chest.Name=="GardenBed" or chest.Name=="Well"
@@ -71,6 +74,7 @@ Cursor.Subscribe("WorldItems",1,function()
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
   label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and Stations.Label(chest) or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
+  if tradeHovered then label.Text="Trade post"..(reachable and "\n[E] Trade" or "\nToo far") end
   if bedHovered then
    local occupant=chest:GetAttribute("HospitalBedUserId")
    label.Text="Hospital bed"..(occupant and "\nOccupied" or reachable and "\n[E] Lie down" or "\nToo far")
@@ -105,6 +109,7 @@ Cursor.Subscribe("WorldItems",1,function()
  highlight.Adornee, highlight.Enabled = item, true
  local count = item:GetAttribute("Quantity") or 1
  local caption = (definition.Name or item.Name) .. (count > 1 and " ×" .. tostring(count) or "")
+ if definition.Currency then caption="$"..tostring((item:GetAttribute("BanknoteValue") or 0)*count).." banknote" end
  label.Text = caption .. (reachable and "\n[E] Pick up" or "\nToo far")
  label.Position = UDim2.fromOffset(math.clamp(mouse.X + 16, 0, math.max(0, camera.ViewportSize.X - 200)), math.clamp(mouse.Y + 16, 0, math.max(0, camera.ViewportSize.Y - 44)))
  label.Visible = true
@@ -114,7 +119,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
  if not processed and input.KeyCode==Enum.KeyCode.E and character and character:GetAttribute("HospitalResting") and not GuiService.MenuIsOpen and not UserInputService:GetFocusedTextBox() then
   action:FireServer("HospitalBed");return
  end
- if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
+ if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not (((player:GetAttribute("TradeOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
+  if tradeHovered then tradeAction:FireServer("Open",hovered);return end
   action:FireServer(bedHovered and "HospitalBed" or farmHovered and "Farm" or stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
  end
 end)

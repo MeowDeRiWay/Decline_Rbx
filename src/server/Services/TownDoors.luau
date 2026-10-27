@@ -7,6 +7,30 @@ local Access = require(ReplicatedStorage.Shared.DoorRules)
 local Config = require(ReplicatedStorage.Shared.TownConfig)
 local Service = {}
 local doors, lastAction = {}, {}
+local walls=setmetatable({},{__mode="k"})
+local wallCache={}
+local function trackWall(object)
+ if object.Name=="GeneratedWall" or object.Name=="WallYard" or object:GetAttribute("WallLevel")~=nil then walls[object]=true;table.clear(wallCache) end
+end
+function Service.MaximumWallLevel(townID)
+ local cached=wallCache[townID]
+ if cached and os.clock()<cached.Until then return cached.Level end
+ local maximum=0
+ for object in pairs(walls) do
+  if not object:IsDescendantOf(workspace) then walls[object]=nil;continue end
+  local ancestor,id,level,chosen=object,nil,1,false
+  while ancestor and ancestor~=workspace do
+   id=id or ancestor:GetAttribute("TownID")
+   local wallName=ancestor.Name:lower():find("wall",1,true) or ancestor.Name:lower():find("gate",1,true)
+   local template=ancestor:GetAttribute("WallTemplate")
+   local value=ancestor:GetAttribute("WallLevel") or (ancestor:GetAttribute("BuildingID")=="Wall" and ancestor:GetAttribute("BuildingLevel")) or (typeof(template)=="string" and tonumber(template:match("T(%d+)"))) or (wallName and tonumber(ancestor.Name:match("T(%d+)")))
+   if not chosen and typeof(value)=="number" and value==value and value<math.huge and value>=1 then level=math.floor(value);chosen=true end
+   ancestor=ancestor.Parent
+  end
+  if id==townID then maximum=math.max(maximum,level) end
+ end
+ wallCache[townID]={Level=maximum,Until=os.clock()+1};return maximum
+end
 local function physical(object)
  local parts = {}
  if object:IsA("BasePart") then table.insert(parts, object) end
@@ -107,8 +131,8 @@ local function generateWalls()
 end
 function Service.Start(requestPassage, tell)
  generateWalls()
- for _, object in ipairs(workspace:GetDescendants()) do register(object) end
- workspace.DescendantAdded:Connect(function(object) task.defer(function() if object:IsDescendantOf(workspace) then register(object) end end) end)
+ for _, object in ipairs(workspace:GetDescendants()) do register(object);trackWall(object) end
+ workspace.DescendantAdded:Connect(function(object) task.defer(function() if object:IsDescendantOf(workspace) then register(object);trackWall(object) end end) end)
  local folder=Instance.new("Folder");folder.Name="DoorRemotes";folder.Parent=ReplicatedStorage
  local action=Instance.new("RemoteEvent");action.Name="Action";action.Parent=folder
  action.OnServerEvent:Connect(function(player,door)

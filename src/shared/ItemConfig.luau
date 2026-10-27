@@ -4,6 +4,7 @@ local ItemConfig = {}
 ItemConfig.PickupDistance = 2
 ItemConfig.Slots = {"Body", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
+ Money = {Name="Banknote",Weight=0,Currency=true,Description="Money is credited directly to your protected account when picked up."},
  ZombieHand = {
   Name = "Zombie hand", Weight = 0, Slot = "Hands", Lootable = false,
   Description = "A zombie's right hand.",

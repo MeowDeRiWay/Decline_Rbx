@@ -9,7 +9,7 @@ local Towns=require(script.Parent.TownService)
 local Beds=require(script.Parent.HospitalBedService)
 local Service={}
 local records={}
-local transient={InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
+local transient={Money=true,TradeOpen=true,InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
 local function disconnect(record)
  if record.HealthConnection then record.HealthConnection:Disconnect();record.HealthConnection=nil end
 end

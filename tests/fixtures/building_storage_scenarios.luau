@@ -24,3 +24,17 @@ do
  assert(chest.Parent==nextBuilding and second.Parent==nextBuilding)
  print("PASS: upgrade preserves chest identity, contents and placement; missing chest rejected; multiple chests matched by StorageID")
 end
+
+local oldMarket=make("Model","OldMarket",workspace)
+local oldPost=make("Model","TradePost",oldMarket,{TradePostID="counter-1",TradeOwnerID=101,TradeHasStock=true})
+make("Part","Part",oldPost)
+local newMarket=make("Model","NewMarket",workspace)
+local newPost=make("Model","TradePost",newMarket,{TradePostID="counter-1"});make("Part","Part",newPost)
+newPost.CFrame=CFrame.new(Vector3.new(7,0,9))
+assert(not BuildingStorage.CanDestroy(oldMarket),"occupied trade post blocks destructive demolition")
+local migratePost=assert(BuildingStorage.PrepareUpgrade(oldMarket,newMarket));migratePost()
+assert(oldPost.Parent==newMarket and newPost.destroyed and oldPost:GetAttribute("TradeOwnerID")==101 and oldPost:GetAttribute("TradeHasStock"),"upgrade preserves live post identity and seller state")
+assert(oldPost:GetPivot().Position.X==7 and oldPost:GetPivot().Position.Z==9,"post moves to upgraded counter position")
+local missingPost=make("Model","MissingPost",workspace)
+assert(not BuildingStorage.PrepareUpgrade(newMarket,missingPost),"upgrade cannot silently discard trade stock")
+print("PASS: trade posts survive building upgrades, preserve ownership/state, reject missing replacements and block destructive demolition")

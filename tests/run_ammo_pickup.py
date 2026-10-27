@@ -3,6 +3,7 @@ import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/WorldItemService.luau').read_text()
 service=re.sub(r'local (ItemConfig|Inventory|Rules|Interaction|EquipmentVisuals|AmmoRules|Stations)\s*=\s*require[^\n]+\n','',service)
+service=service.replace('require(ReplicatedStorage.Shared.EconomyRules)','MoneyRules').replace('require(script.Parent.EconomyService)','Wallet')
 mock='''
 workspace.DescendantAdded=event()
 local world=make("Folder","WorldItems",workspace);world.ChildAdded=event()
@@ -74,6 +75,14 @@ Interaction.NearestPoint=function() return Vector3.new(3,0,0) end
 function workspace:Raycast() error("out-of-range pickup must not raycast") end
 assert(not Service.Pickup(a,blocked),"head fallback cannot extend the two-stud reach limit")
 Interaction.NearestPoint=nearest
+function workspace:Raycast() return nil end
+local banknote=make("Part","Money",world,{Item_ID="Money",Quantity=1,BanknoteValue=50})
+local beforeMoney=Wallet.Balance(a)
+assert(Service.Pickup(a,banknote) and Wallet.Balance(a)==beforeMoney+50 and not grants.Money,"banknote credits protected account instead of inventory")
+assert(not Service.Pickup(b,banknote) and Wallet.Balance(a)==beforeMoney+50,"banknote cannot be credited twice")
+local bad=make("Part","Money",world,{Item_ID="Money",Quantity=1,BanknoteValue=.5})
+assert(not Service.Pickup(a,bad) and not bad.destroyed,"invalid denomination stays uncollected")
+print("PASS: denomination-based protected money pickup, no inventory cash or double collection")
 print("PASS: box1..MaxAmmo rolls once, pickup grants loose rounds once, dropped-stack exact quantity")
 print("PASS: tabletop head ray, upper shelf item top/center, solid-wall rejection, root-based reach limit")
 '''
@@ -81,6 +90,6 @@ station_source='local Stations=(function()\n'+(root/'src/shared/CraftStations.lu
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),station_source]
 for variable,module in [('ItemConfig','ItemConfig'),('Rules','InventoryRules'),('AmmoRules','FirearmRules')]:
  parts.append(f'local {variable}=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
-parts += [mock,'local Service=(function()\n'+service+'\nend)()',cases]
+parts += ['local MoneyRules=(function()\n'+(root/'src/shared/EconomyRules.luau').read_text()+'\nend)()', 'local Wallet=(function()\n'+re.sub(r'local R=require[^\n]+\n','local R=MoneyRules\n',(root/'src/server/Services/EconomyService.luau').read_text())+'\nend)()',mock,'local Service=(function()\n'+service+'\nend)()',cases]
 with tempfile.TemporaryDirectory() as directory:
  p=Path(directory)/'ammo.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(p)],check=True)

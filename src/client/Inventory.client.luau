@@ -431,6 +431,7 @@ redraw = function()
  end
 end
 local function setOpen(open)
+ if open and player:GetAttribute("TradeOpen") then return end
  if open and (player:GetAttribute("TownMenuOpen") or (player.Character and player.Character:GetAttribute("Knockout"))) then return end
  if open and player:GetAttribute("ProgressionOpen") then return end
  if not open then
