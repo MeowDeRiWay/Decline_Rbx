@@ -102,7 +102,8 @@ function Service.Harvest(player,kind,count)
  if not player or player.Parent~=Players then return end
  local id=({Tree="Lumberjack",StoneVein="Miner",ScrapPile="Scavenger"})[kind]
  if id then Rules.Practice(stateFor(player),id,count) end
- Service.Award(player,count)
+ local perItem=({Tree=10,StoneVein=20,ScrapPile=50})[kind] or 0
+ Service.Award(player,count*perItem)
 end
 function Service.ZombieDied(model,items)
  local killer=Players:GetPlayerByUserId(model:GetAttribute("LastDamagerID") or 0)

@@ -132,6 +132,13 @@ assert(freePlayer:GetAttribute("Observant") and Service.Snapshot(freePlayer).Per
 local fresh=player(909);Players.PlayerAdded:Fire(fresh)
 assert(not Service.GrantLevels(fresh,2),"creation must be confirmed")
 print("PASS: exact admin levels, normal rewards, XP preserved, Good student ignored, automatic level30 perk")
+Service.ResetProgression(a)
+for kind,rate in pairs({Tree=10,StoneVein=20,ScrapPile=50}) do
+ local before=Service.Snapshot(a).XP
+ Service.Harvest(a,kind,3)
+ assert(Service.Snapshot(a).XP==before+3*rate,"character XP is per actual resource unit")
+end
+print("PASS: logs10, stone20 and scrap50 XP per unit; passive practice unchanged")
 print("PASS: actual immutable creation, forbidden legacy commands, INT skill points, derived stats, requirements, passive practice, minute regeneration, no revival, and respawn")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
