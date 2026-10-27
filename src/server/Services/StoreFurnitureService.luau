@@ -42,9 +42,14 @@ local function fill(marker)
  local root=ServerStorage:FindFirstChild("CityGeneration")
  local templates=root and root:FindFirstChild("StoreFurniture")
  local source=templates and templates:FindFirstChild(name)
+ -- Preserve existing store templates when both libraries contain the name.
+ if not source then
+  local furniture=root and root:FindFirstChild("Furniture")
+  source=furniture and furniture:FindFirstChild(name)
+ end
  local sourceFrame,sourceSize
  if source and (source:IsA("Model") or source:IsA("BasePart")) then sourceFrame,sourceSize=furnitureBox(source) end
- if not sourceFrame then warnOnce(marker,"Add a furniture Model or Part at ServerStorage/CityGeneration/StoreFurniture/"..name); return end
+ if not sourceFrame then warnOnce(marker,"Add a furniture Model or Part named "..name.." in ServerStorage/CityGeneration/StoreFurniture or ServerStorage/CityGeneration/Furniture"); return end
  local columns,rows=Rules.FurnitureGrid(zoneSize,sourceSize)
  if columns==0 or rows==0 then warnOnce(marker,string.format("%s footprint %.3fx%.3f does not fit %s area %.3fx%.3f",name,sourceSize.X,sourceSize.Z,marker:GetFullName(),zoneSize.X,zoneSize.Z)); return end
  local group=Instance.new("Folder"); group.Name="GeneratedFurniture"
