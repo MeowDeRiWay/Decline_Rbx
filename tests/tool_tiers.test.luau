@@ -24,7 +24,7 @@ for _,recipe in pairs(Recipes) do
  for id in pairs(recipe.Ingredients) do assert(Items[id],id) end
  for _,id in ipairs(Craft.Outputs(recipe)) do assert(Items[id],id) end
 end
-assert(Recipes.MakeAxe.Output=="StoneAxe" and Recipes.MakeShovel.Output=="StoneShowel")
+assert(Recipes.MakeAxe.Output=="StoneAxe" and Recipes.MakeShovel.Output=="StoneShovel")
 for _,id in ipairs({"MakeScrapAxe","MakeScrapShovel","MakeKnife"}) do
  local recipe=Recipes[id]
  local plan=assert(Craft.Plan({Scrap=3,Handle=1},recipe,1))
@@ -34,7 +34,7 @@ end
 for _,recipe in pairs(Recipes) do
  if recipe.Station=="Workstation" then
   assert(recipe.MaxBatch==1)
-  local items={TreeLog=100,Plank=100,Handle=100,Stone=100,Scrap=100,Rags=100,Coal=100,Chemicals=100}
+  local items={TreeLog=100,Plank=100,Handle=100,Stone=100,Scrap=100,Rags=100,Coal=100,Chemicals=100,Iron=100}
   assert(Craft.Batch(Craft.Available(items,recipe),"All",recipe.MaxBatch)==1)
   assert(Craft.Plan(items,recipe,2)==nil,"server must reject multi-item workstation batches")
  end
@@ -49,7 +49,7 @@ assert(plan.Ingredients.Potato==5 and plan.Ingredients.CleanWater==5 and plan.Ou
 assert(Craft.Plan({Potato=6,CleanWater=6},boil,6)==nil)
 print("PASS: 8 material tools/weapons, 5/10/15 resource damage, access tiers, knife damage/cooking and recipe costs")
 
-for id,repair in pairs({MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeBucket=100,MakeHandle=60,MakePlanks=60}) do
+for id,repair in pairs({MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeIronAxe=150,MakeIronShovel=150,MakeIronKnife=150,MakeBucket=100,MakeHandle=60,MakePlanks=60}) do
  assert(Recipes[id].Requirements.Skills.Repair==repair)
  assert(Recipes[id].Description:find("Requires Repair "..repair..".",1,true),"menu description matches authoritative requirement")
 end

@@ -32,7 +32,7 @@ local recipes = {
  MakeShovel = {
   Name = "Make stone shovel", Station = "Workstation",
   Description = "Assemble a shovel using a handle and one stone.",
-  Ingredients = {Handle = 1, Stone = 1}, Output = "StoneShowel", OutputCount = 1,
+  Ingredients = {Handle = 1, Stone = 1}, Output = "StoneShovel", OutputCount = 1,
   MaxBatch = 1, Duration = 20, RequiresPresence = true,
  },
  MakeScrapAxe = {
@@ -44,7 +44,7 @@ local recipes = {
  MakeScrapShovel = {
   Name = "Make scrap shovel", Station = "Workstation",
   Description = "Assemble a scrap shovel using a handle and three pieces of scrap.",
-  Ingredients = {Handle = 1, Scrap = 3}, Output = "ScrapShowel", OutputCount = 1,
+  Ingredients = {Handle = 1, Scrap = 3}, Output = "ScrapShovel", OutputCount = 1,
   MaxBatch = 1, Duration = 20, RequiresPresence = true,
  },
  MakeKnife = {
@@ -62,7 +62,7 @@ local recipes = {
  MakeIronShovel = {
   Name = "Make iron shovel", Station = "Workstation",
   Description = "Assemble an iron shovel using a handle and three iron.",
-  Ingredients = {Handle = 1, Iron = 3}, Output = "IronShowel", OutputCount = 1,
+  Ingredients = {Handle = 1, Iron = 3}, Output = "IronShovel", OutputCount = 1,
   MaxBatch = 1, Duration = 20, RequiresPresence = true,
  },
  MakeIronKnife = {
@@ -95,8 +95,8 @@ local recipes = {
 }
 
 -- Repair gates for tool tiers and workshop components, including iron recipes.
-local repairByOutput={StoneAxe=60,StoneShowel=60,ScrapAxe=100,ScrapShowel=100,ScrapKnife=100,
- IronAxe=150,IronShowel=150,IronKnife=150,EmptyBucket=100,Handle=60,Plank=60}
+local repairByOutput={StoneAxe=60,StoneShovel=60,ScrapAxe=100,ScrapShovel=100,ScrapKnife=100,
+ IronAxe=150,IronShovel=150,IronKnife=150,EmptyBucket=100,Handle=60,Plank=60}
 for _,recipe in pairs(recipes) do
  local repair=repairByOutput[recipe.Output]
  if repair then

@@ -20,6 +20,13 @@ for _,id in ipairs({"StoneAxe","StoneShowel","ScrapAxe","ScrapShowel","IronAxe",
  Visuals.CaptureTemplate(another,id)
  assert(ServerStorage.Items:FindFirstChild(id)==captured,"authored/existing template wins")
 end
+for _,material in ipairs({"Stone","Scrap","Iron"}) do
+ assert(Visuals.Validate(material.."Shovel"),"correct ID accepts old template")
+ local old=ServerStorage.Items:FindFirstChild(material.."Showel");old:Destroy()
+ local new=make("Model",material.."Shovel",ServerStorage.Items);make("Part","Part",new)
+ assert(Visuals.Template(material.."Showel")==new,"old ID resolves correct model spelling")
+ assert(Visuals.Template(material.."Shovel")==new,"correct ID resolves correct model spelling")
+end
 local stone=make("Model","Stone",world); make("Part","Part",stone)
 Visuals.CaptureTemplate(stone,"Stone")
 assert(not ServerStorage.Items:FindFirstChild("Stone"),"ordinary loot is not equipment")

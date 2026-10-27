@@ -124,6 +124,12 @@ for _,material in ipairs({"Scrap","Iron"}) do
    CanDamageStructures=false, Range=1.2, Width=.7, Thrust=.5},
  }
 end
+-- Correct shovel spelling while retaining old inventory IDs and authored templates.
+for _,material in ipairs({"Stone","Scrap","Iron"}) do
+ local shovel=ItemConfig.Items[material.."Showel"]
+ shovel.TemplateID=material.."Shovel"
+ ItemConfig.Items[material.."Shovel"]=shovel
+end
 -- Compatibility for already placed legacy models; new recipes use explicit material IDs.
 ItemConfig.Items.Axe=ItemConfig.Items.StoneAxe
 ItemConfig.Items.Showel=ItemConfig.Items.StoneShowel

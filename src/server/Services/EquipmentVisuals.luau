@@ -18,6 +18,11 @@ local function findTemplate(folder,id)
  end
 end
 local function templateFor(id)
+ if id:find("Shovel",1,true) then
+  local folder=ServerStorage:FindFirstChild("Items")
+  local template=findTemplate(folder,id) or findTemplate(folder,(id:gsub("Shovel","Showel")))
+  if template then return template end
+ end
  return findTemplate(ServerStorage:FindFirstChild("Items"),id) or (Items.Items[id] and Items.Items[id].TemplateID and findTemplate(ServerStorage:FindFirstChild("Items"),Items.Items[id].TemplateID))
 end
 Visuals.Template=templateFor
