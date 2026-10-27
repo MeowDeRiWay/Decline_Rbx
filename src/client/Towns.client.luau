@@ -234,6 +234,10 @@ render = function()
        table.insert(requirements,(ProgressionConfig.Names[id] or id).." "..amount)
       end
       table.sort(requirements)
+      local alternatives={}
+      for id,amount in pairs(rule.AnySkills or {}) do table.insert(alternatives,(ProgressionConfig.Names[id] or id).." "..amount) end
+      table.sort(alternatives)
+      if #alternatives>0 then table.insert(requirements,table.concat(alternatives," or ")) end
       local caption=(plot.BuildingID and "Upgrade: " or "Build: ") .. option.Name .. " · level " .. option.Level .. " · Cost: " .. materials(option.Cost)
       if #requirements>0 then caption..="\nRequires: "..table.concat(requirements,", ") end
       local locked=option.CanBuild==false

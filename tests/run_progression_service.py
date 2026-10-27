@@ -33,7 +33,7 @@ send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==29)
 for _=1,10 do Service.Harvest(a,"StoneVein",1) end
 assert(Service.Snapshot(a).Practice.Miner.Value==1 and Service.Snapshot(a).Practice.Lumberjack.Value==0)
 assert(not Service.CanBuild(a,"Kitchen") and not Service.CanBuild(a,"Workbench") and Service.CanStation(a,"Stove"))
-assert(not Service.CanBuild(a,"Hospital"),"hospital requires BOTH medical skills")
+assert(not Service.CanBuild(a,"Hospital"),"hospital needs at least one medical skill at100")
 Config.StationRequirements.Stove={Skills={Repair=32}}
 assert(not Service.CanStation(a,"Stove"));send("Skill","Repair");assert(Service.CanStation(a,"Stove"))
 local hp=a.Character.Humanoid;hp.Health=22;send("Request");assert(hp.Health==22,"request cannot repeat confirmation heal")
@@ -75,8 +75,8 @@ clock+=.2;action.OnServerEvent:Fire(med,"Confirm",{Stats={Strength=5,Attention=1
 Service.Award(med,20000)
 for _=1,65 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
 for _=1,69 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end
-assert(med:GetAttribute("SkillFirstAid")==100 and med:GetAttribute("SkillDoctor")==99 and not Service.CanBuild(med,"Hospital"))
-clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor");assert(Service.CanBuild(med,"Hospital"),"actual authority requires100 FirstAid AND100 Doctor")
+assert(med:GetAttribute("SkillFirstAid")==100 and med:GetAttribute("SkillDoctor")==99 and Service.CanBuild(med,"Hospital"),"FirstAid100 alone unlocks hospital")
+clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor");assert(Service.CanBuild(med,"Hospital"),"both100 still qualify")
 assert(not Service.CanBuild(med,"Kitchen") and not Service.CanBuild(med,"Workbench"))
 Service.Award(med,100000)
 for _=1,70 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Repair") end

@@ -68,6 +68,12 @@ doctor.Skills.Doctor=70;doctor.Skills.FirstAid=64
 assert(not R.Meets(doctor,requirements),"first aid99 cannot build hospital")
 doctor.Skills.FirstAid=65;assert(R.Meets(doctor,requirements),"100 in BOTH qualifies")
 doctor.Skills.Doctor=69;assert(not R.Meets(doctor,requirements),"doctor99 cannot build hospital")
+local either={AnySkills={Doctor=100,FirstAid=100}}
+doctor.Skills.FirstAid=64
+assert(not R.Meets(doctor,either),"both medical skills at99 fail the OR requirement")
+doctor.Skills.FirstAid=65;assert(R.Meets(doctor,either),"FirstAid100 alone satisfies OR")
+doctor.Skills.FirstAid=64;doctor.Skills.Doctor=70
+assert(R.Meets(doctor,either),"Doctor100 alone satisfies OR")
 
 assert(R.RequiredXP(0)==500 and R.RequiredXP(9)==5000)
 

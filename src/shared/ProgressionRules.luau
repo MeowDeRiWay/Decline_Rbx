@@ -158,6 +158,11 @@ function Rules.Meets(state,requirements)
  if not requirements then return true end
  local total=Rules.TotalSkills(state)
  for id,value in pairs(requirements.Skills or {}) do if (total[id] or 0)<value then return false end end
+ if requirements.AnySkills then
+  local matched=false
+  for id,value in pairs(requirements.AnySkills) do if (total[id] or 0)>=value then matched=true;break end end
+  if not matched then return false end
+ end
  for id,value in pairs(requirements.Attributes or {}) do if (state.Stats[id] or 0)<value then return false end end
  return true
 end
