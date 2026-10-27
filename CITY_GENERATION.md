@@ -47,6 +47,15 @@ Legacy objects named `AutoPlacer` still work when the Boolean attribute is absen
 explicit `AutoPlacer = false` disables a marker even with that legacy name.
 Changing the attribute during Play updates the incremental marker index.
 
+Furniture does not block world-item pickup reach rays. AutoPlacer clones receive
+Boolean `Furniture = true` automatically, and furniture inside organizational
+Folders named `Furniture`, `StoreFurniture`, or `GeneratedFurniture` is also ignored.
+For manually placed furniture elsewhere, set Boolean `Furniture = true` on its
+Model or Part. Apply this only to the furniture, not the whole building: unmarked
+walls and closed doors continue to block pickup, even behind ignored furniture.
+This affects pickup reach only, not movement collision, bullet penetration, or
+cursor targeting. The pickup distance remains 2 studs.
+
 The existing eligible YardPlace models (`ForZHouse=true`, including those in Workspace/Yards) now roll **Houses 95% / Stores 5%** independently. A small town is not guaranteed to have a store. Templates are:
 
 - `ServerStorage/CityGeneration/Houses/<any name>`: Model with ZHouse=true and an inner Yard.

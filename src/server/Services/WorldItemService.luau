@@ -69,6 +69,18 @@ local function aliveRoot(player)
  if not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") or not root then return end
  return root, character
 end
+local function furnitureAncestor(part)
+ local furniture
+ local ancestor=part
+ while ancestor and ancestor~=workspace do
+  if ancestor:GetAttribute("Furniture")==true or
+   (ancestor:IsA("Folder") and (ancestor.Name=="GeneratedFurniture" or ancestor.Name=="Furniture" or ancestor.Name=="StoreFurniture")) then
+   furniture=ancestor
+  end
+  ancestor=ancestor.Parent
+ end
+ return furniture
+end
 function Service.Pickup(player, item)
  if typeof(item) ~= "Instance" or item.Parent ~= folder then return false end
  if not item:IsA("Model") and not item:IsA("BasePart") then return false end
@@ -84,8 +96,16 @@ function Service.Pickup(player, item)
  params.FilterDescendantsInstances = {character}
  local function clearFrom(origin,target)
   target = target or Interaction.NearestPoint(item,origin)
-  local hit = workspace:Raycast(origin, target-origin, params)
-  return not hit or hit.Instance == item or hit.Instance:IsDescendantOf(item)
+  local excluded={character}
+  for _=1,32 do
+   params.FilterDescendantsInstances=excluded
+   local hit = workspace:Raycast(origin, target-origin, params)
+   if not hit or hit.Instance == item or hit.Instance:IsDescendantOf(item) then return true end
+   local furniture=furnitureAncestor(hit.Instance)
+   if not furniture then return false end
+   table.insert(excluded,furniture)
+  end
+  return false
  end
  -- A tabletop may block the waist-height ray while the item is in plain sight.
  -- Keep the root-based reach limit and require an unobstructed ray from the

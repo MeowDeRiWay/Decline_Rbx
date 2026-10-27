@@ -63,6 +63,7 @@ local function fill(marker)
  for x=1,columns do for z=1,rows do
   local target=Rules.FurnitureFrame(zoneFrame,zoneSize,sourceSize,columns,rows,x,z)
   local clone=source:Clone()
+  clone:SetAttribute("Furniture",true)
   clone:PivotTo(target*offset)
   if clone:IsA("BasePart") then clone.Anchored=true end
   for _,part in ipairs(clone:GetDescendants()) do if part:IsA("BasePart") then part.Anchored=true end end

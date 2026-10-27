@@ -49,6 +49,26 @@ assert(Service.Pickup(a,centered) and grants.Stone==3,"exposed center can be rea
 local blocked=make("Model","Stone",world,{Item_ID="Stone",Quantity=1})
 function workspace:Raycast() return {Instance=obstacle} end
 assert(not Service.Pickup(a,blocked) and not blocked.destroyed and grants.Stone==3,"solid wall blocks all item points without granting loot")
+obstacle:SetAttribute("Furniture",true)
+local furnitureLoot=make("Model","Stone",world,{Item_ID="Stone",Quantity=1})
+local wall=make("Part","Wall",workspace)
+local wallBehind=false
+function workspace:Raycast(_,_,params)
+ if not table.find(params.FilterDescendantsInstances,obstacle) then return {Instance=obstacle} end
+ return {Instance=wallBehind and wall or furnitureLoot}
+end
+wallBehind=true
+assert(not Service.Pickup(a,furnitureLoot) and grants.Stone==3,"wall behind ignored furniture still blocks pickup")
+wallBehind=false
+assert(Service.Pickup(a,furnitureLoot) and grants.Stone==4,"tagged furniture does not block pickup")
+local furnitureFolder=make("Folder","Furniture",workspace)
+local shelf=make("Model","Shelf",furnitureFolder);local shelfPart=make("Part","Part",shelf)
+local folderLoot=make("Model","Stone",world,{Item_ID="Stone",Quantity=1})
+function workspace:Raycast(_,_,params)
+ if not table.find(params.FilterDescendantsInstances,furnitureFolder) then return {Instance=shelfPart} end
+ return {Instance=folderLoot}
+end
+assert(Service.Pickup(a,folderLoot) and grants.Stone==5,"furniture folders ignore nested shelf parts")
 local nearest=Interaction.NearestPoint
 Interaction.NearestPoint=function() return Vector3.new(3,0,0) end
 function workspace:Raycast() error("out-of-range pickup must not raycast") end
