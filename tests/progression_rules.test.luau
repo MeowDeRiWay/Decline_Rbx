@@ -12,19 +12,19 @@ assert(not R.Confirm(s,draft),"cannot respec")
 assert(R.AddXP(s,500) and s.Level==1 and s.SkillPoints==22 and s.Points==0 and s.PerkPoints==0)
 assert(R.AddXP(s,1000) and s.Level==2 and s.SkillPoints==33 and s.PerkPoints==0)
 assert(not R.AddXP(s,math.huge) and not R.AddXP(s,0/0))
-assert(R.SpendSkill(s,"Melee") and s.SkillPoints==32 and R.TotalSkills(s).Melee==51)
+assert(R.SpendSkill(s,"Melee") and s.SkillPoints==32 and R.TotalSkills(s).Melee==31)
 assert(not R.SpendSkill(s,"Lumberjack") and not R.SpendSkill(s,"Fake"))
 s.SkillPoints=999
 for _=1,400 do R.SpendSkill(s,"Melee") end
 assert(R.TotalSkills(s).Melee==300)
 local b=R.Bonuses(s.Stats)
 assert(b.CarryLimitKg==50 and b.MaxHealth==40 and b.MeleeBonus==10)
-assert(b.WalkBonus==1 and b.RunBonus==2 and b.DodgeChance==25 and b.Regeneration==5 and b.CriticalChance==.05)
+assert(b.WalkBonus==1 and b.RunBonus==3 and b.DodgeChance==15 and b.Regeneration==5 and b.CriticalChance==.05)
 assert(b.LuckChance==0 and b.ViewRange==25 and b.HearingMultiplier==1)
 local v=R.TotalSkills(s)
-assert(v.LightWeapons==30 and v.HeavyWeapons==45 and v.Unarmed==90 and v.Throwing==55 and v.Repair==30)
-assert(R.Meets(s,{Skills={Repair=30},Attributes={Strength=10}}))
-assert(not R.Meets(s,{Skills={Repair=31}}))
+assert(v.LightWeapons==15 and v.HeavyWeapons==30 and v.Unarmed==30 and v.Throwing==30 and v.Repair==18)
+assert(R.Meets(s,{Skills={Repair=18},Attributes={Strength=10}}))
+assert(not R.Meets(s,{Skills={Repair=19}}))
 assert(R.Practice(s,"Miner",10) and s.Practice.Miner.Value==1)
 assert(s.Practice.Lumberjack.Value==0 and not R.Practice(s,"Melee",10))
 for _,bad in ipairs({0,11,5.5,0/0}) do
@@ -36,10 +36,10 @@ local outputs={Potato=5};assert(R.CraftOutputs(outputs).Potato==5 and R.CraftEff
 print("PASS: six immutable1–10 attributes,36-point budget, INT level points, all skill bonuses/caps, requirements, passive practice and locked attributes")
 
 local minimum=R.Bonuses({Strength=1,Attention=1,Endurance=1,Intelligence=1,Agility=1,Luck=1})
-assert(minimum.MaxHealth==6 and minimum.CarryLimitKg==5 and minimum.MeleeBonus==1 and minimum.DodgeChance==5)
-assert(minimum.WalkBonus==.2 and minimum.RunBonus==.4 and minimum.Regeneration==1 and minimum.CriticalChance==.01)
+assert(minimum.MaxHealth==6 and minimum.CarryLimitKg==5 and minimum.MeleeBonus==1 and minimum.DodgeChance==3)
+assert(minimum.WalkBonus==.2 and minimum.RunBonus==.6 and minimum.Regeneration==1 and minimum.CriticalChance==.01)
 
-assert(R.TotalSkills(s).FirstAid==40 and R.TotalSkills(s).Doctor==45 and R.TotalSkills(s).Cook==29)
+assert(R.TotalSkills(s).FirstAid==23 and R.TotalSkills(s).Doctor==18 and R.TotalSkills(s).Cook==23)
 assert(s.PerkPoints==0 and not R.SpendPerk(s,"RangedDamage"))
 local perks=R.New();local all={Strength=7,Attention=7,Endurance=7,Intelligence=1,Agility=7,Luck=7}
 assert(R.Confirm(perks,all));perks.PerkPoints=10
@@ -64,10 +64,10 @@ print("PASS: initial INT skill bundle; perk points every3levels; 500*level XP; p
 
 local requirements={Skills={Doctor=100,FirstAid=100}}
 local doctor=R.New();assert(R.Confirm(doctor,{Strength=5,Attention=5,Endurance=5,Intelligence=10,Agility=6,Luck=5}))
-doctor.Skills.Doctor=35;doctor.Skills.FirstAid=39
+doctor.Skills.Doctor=70;doctor.Skills.FirstAid=64
 assert(not R.Meets(doctor,requirements),"first aid99 cannot build hospital")
-doctor.Skills.FirstAid=40;assert(R.Meets(doctor,requirements),"100 in BOTH qualifies")
-doctor.Skills.Doctor=34;assert(not R.Meets(doctor,requirements),"doctor99 cannot build hospital")
+doctor.Skills.FirstAid=65;assert(R.Meets(doctor,requirements),"100 in BOTH qualifies")
+doctor.Skills.Doctor=69;assert(not R.Meets(doctor,requirements),"doctor99 cannot build hospital")
 
 assert(R.RequiredXP(0)==500 and R.RequiredXP(9)==5000)
 
@@ -75,7 +75,7 @@ for _,case in ipairs({{0,0,1},{100,0,1.5},{0,200,2},{200,200,2},{300,100,2},{50,
  assert(R.MovementMultiplier({Unarmed=case[1],Melee=case[2]})==case[3])
 end
 local fast=R.Bonuses({Strength=5,Attention=5,Endurance=5,Intelligence=5,Agility=5,Luck=5},{FastFeet=1},1,{Unarmed=200,Melee=300})
-assert(math.abs(fast.WalkBonus-2.4)<1e-9 and math.abs(fast.RunBonus-6.8)<1e-9,"whole movement including Fast feet doubles once")
+assert(math.abs(fast.WalkBonus-2.4)<1e-9 and math.abs(fast.RunBonus-9.2)<1e-9,"whole movement including Fast feet doubles once")
 local Z=require("../src/shared/ZombieStats")
 assert(Z.Infection(6)==0,"zombie infection temporarily disabled")
 Z.InfectionPerStrength=1;assert(Z.Infection(6)==6,"restore switch preserves Strength infection");Z.InfectionPerStrength=0
@@ -96,7 +96,7 @@ for id,v in pairs(capped.Skills) do assert(v==0) end
 for id,v in pairs(capped.Practice) do assert(v.Value==0 and v.XP==0) end
 for id,v in pairs(stats) do assert(capped.Stats[id]==v) end
 assert(capped.SkillPoints==20 and capped.PerkPoints==0 and capped.TaggedSkills.Melee and capped.TagsConfirmed and capped.Confirmed)
-assert(R.TotalSkills(capped).Melee==25,"reset retains only attribute-derived skill values")
+assert(R.TotalSkills(capped).Melee==15,"reset retains only attribute-derived skill values")
 assert(R.ResetProgression(capped) and capped.SkillPoints==20,"repeat reset cannot accumulate points")
 assert(not R.ResetProgression(R.New()))
 print("PASS: hard level30 cap, no surplus XP/rewards, fixed HP per level, additive Lifegiver, complete level1 progression reset")
@@ -145,3 +145,14 @@ do
  assert(R.Bonuses(farmer.Stats,{},1,R.TotalSkills(farmer)).PlantKnowledge==false)
  print("PASS: Botanist uses one perk point and enables plant knowledge only while selected")
 end
+
+local baseline={Strength=5,Attention=5,Endurance=5,Intelligence=5,Agility=5,Luck=5}
+local baseSkills=R.SkillValues(baseline)
+local deltas={Strength={HeavyWeapons=3,Unarmed=3,Melee=3,Throwing=3},Attention={LightWeapons=3,Traps=2},Endurance={FirstAid=1,Cook=1},Intelligence={FirstAid=3,Doctor=3,Repair=3,Cook=3},Agility={Sneak=3},Luck={}}
+for attribute,expected in pairs(deltas) do
+ local changed=table.clone(baseline);changed[attribute]+=1
+ for skill,value in pairs(R.SkillValues(changed)) do
+  assert(value-baseSkills[skill]==(expected[skill] or 0),attribute.." must only grant the configured "..skill.." bonus")
+ end
+end
+print("PASS: every attribute skill delta matches new balance; removed cross-attribute bonuses remain zero")

@@ -20,7 +20,7 @@ assert(not Service.Snapshot(a).Confirmed,"invalid duplicate main skills cannot u
 send("Confirm",draft)
 assert(a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CarryLimitKg")==25 and a.Character.Humanoid.MaxHealth==34)
 assert(not a.Character.HumanoidRootPart.Anchored and not a.Character:FindFirstChild("CreationProtection") and a.Character.Humanoid.Health==34,"confirmation releases and fills health")
-assert(a:GetAttribute("SkillUnarmed")==65 and a:GetAttribute("SkillRepair")==50)
+assert(a:GetAttribute("SkillUnarmed")==15 and a:GetAttribute("SkillRepair")==30)
 send("Spend","Strength");send("Choose","Hunter");send("Talent","Automatics")
 assert(a:GetAttribute("Strength")==5 and a:GetAttribute("CriticalChance")==.05 and a:GetAttribute("AutomaticAccuracyBonus")==0)
 draft.Strength=10;send("Confirm",draft);assert(a:GetAttribute("Strength")==5)
@@ -28,13 +28,13 @@ assert(Service.Snapshot(a).NextXP==500)
 Service.Award(a,500);assert(a:GetAttribute("CharacterLevel")==1 and a:GetAttribute("SkillPoints")==30)
 assert(Service.Snapshot(a).NextXP==1000)
 assert(math.abs(a:GetAttribute("CombatMovementMultiplier")-(1+a:GetAttribute("SkillUnarmed")/200))<1e-9)
-send("Skill","Repair");assert(a:GetAttribute("SkillRepair")==51 and a:GetAttribute("SkillPoints")==29)
+send("Skill","Repair");assert(a:GetAttribute("SkillRepair")==31 and a:GetAttribute("SkillPoints")==29)
 send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==29)
 for _=1,10 do Service.Harvest(a,"StoneVein",1) end
 assert(Service.Snapshot(a).Practice.Miner.Value==1 and Service.Snapshot(a).Practice.Lumberjack.Value==0)
 assert(not Service.CanBuild(a,"Kitchen") and not Service.CanBuild(a,"Workbench") and Service.CanStation(a,"Stove"))
 assert(not Service.CanBuild(a,"Hospital"),"hospital requires BOTH medical skills")
-Config.StationRequirements.Stove={Skills={Repair=52}}
+Config.StationRequirements.Stove={Skills={Repair=32}}
 assert(not Service.CanStation(a,"Stove"));send("Skill","Repair");assert(Service.CanStation(a,"Stove"))
 local hp=a.Character.Humanoid;hp.Health=22;send("Request");assert(hp.Health==22,"request cannot repeat confirmation heal")
 hp.Health=10
@@ -69,16 +69,16 @@ local oldXP=Service.Snapshot(a).XP;Service.ZombieDied(zombie,{})
 assert(Service.Snapshot(a).XP==oldXP+150,"kill XP derives from max HP, not health remaining")
 local med=player(700);Players.PlayerAdded:Fire(med);med:LoadCharacterAsync()
 clock+=.2;action.OnServerEvent:Fire(med,"Confirm",{Stats={Strength=5,Attention=10,Endurance=5,Intelligence=10,Agility=5,Luck=1},TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})
-Service.Award(med,6000)
-for _=1,30 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
-for _=1,19 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end
+Service.Award(med,20000)
+for _=1,65 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
+for _=1,69 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end
 assert(med:GetAttribute("SkillFirstAid")==100 and med:GetAttribute("SkillDoctor")==99 and not Service.CanBuild(med,"Hospital"))
 clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor");assert(Service.CanBuild(med,"Hospital"),"actual authority requires100 FirstAid AND100 Doctor")
 assert(not Service.CanBuild(med,"Kitchen") and not Service.CanBuild(med,"Workbench"))
 Service.Award(med,100000)
-for _=1,50 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Repair") end
+for _=1,70 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Repair") end
 assert(Service.CanBuild(med,"Workbench") and not Service.CanBuild(med,"Kitchen"),"Repair100 unlocks workshop only")
-for _=1,50 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Cook") end
+for _=1,65 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Cook") end
 assert(Service.CanBuild(med,"Kitchen"),"Cook100 unlocks kitchen")
 a:SetAttribute("ScroungerMultiplier",1.25)
 local extra=Service.ZombieDied(zombie,{Ammo9mmFMJ=4,Rags=3})
@@ -105,7 +105,7 @@ assert(Service.Snapshot(a).Practice.Miner.XP==minerXP+2,"Good student practice c
 assert(Service.ResetProgression(a))
 local reset=Service.Snapshot(a)
 assert(reset.Level==1 and reset.XP==0 and reset.SkillPoints==30 and reset.PerkPoints==0 and next(reset.Perks)==nil)
-assert(a:GetAttribute("SkillRepair")==50 and not a:GetAttribute("Observant") and a.Character.Humanoid.MaxHealth==38 and a:GetAttribute("CarryLimitKg")==26)
+assert(a:GetAttribute("SkillRepair")==30 and not a:GetAttribute("Observant") and a.Character.Humanoid.MaxHealth==38 and a:GetAttribute("CarryLimitKg")==26)
 assert(reset.Practice.Miner.Value==0 and reset.Practice.Miner.XP==0 and reset.TaggedSkills.LightWeapons and reset.TagsConfirmed)
 assert(not reset.Perks.GoodStudent and a:GetAttribute("ExperienceMultiplier")==1)
 Service.Award(a,1000);assert(Service.Snapshot(a).Level==2 and a.Character.Humanoid.MaxHealth==42 and a:GetAttribute("CarryLimitKg")==27)

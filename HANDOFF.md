@@ -1,3 +1,14 @@
+## Attribute balance and zombie parity — 27 October 2026 (latest)
+
+All actors share attribute bonuses again, including HP. Removed the temporary
+zombie HP exception below. Zombies use the player formula at level0, plus their
+existing night +2 attributes and existing extra100 Unarmed; neither is removed.
+Per-point skills: STR +3 HeavyWeapons/Unarmed/Melee/Throwing; ATT +3 LightWeapons,
++2 Traps only; END +1 Cook/FirstAid; INT +3 FirstAid/Doctor/Repair/Cook; AGI +3 Sneak
+only. AGI now +3 AC and +0.6 sprint speed; walk +0.2 and sprint duration unchanged.
+Other direct bonuses and the latest player HP/Lifegiver formula remain unchanged.
+Current PROGRESSION_SETUP table and in-game hover descriptions reflect this.
+
 ## Player HP balance — 27 October 2026 (supersedes earlier HP formulas)
 
 Player MaxHealth = 4*Endurance + 2*Strength + level*(4 + LifegiverRanks).

@@ -28,12 +28,12 @@ local function model()
 end
 local m,hp=model();local base={Strength=4,Attention=4,Endurance=4,Intelligence=1,Agility=2,Luck=5}
 baseStats[m]=base
-applyDayStats(m,hp,base);assert(hp.MaxHealth==40 and m.attrs.Intelligence==1 and m.attrs.SkillUnarmed==142,"zombie has100 extra unarmed")
+applyDayStats(m,hp,base);assert(hp.MaxHealth==24 and m.attrs.Intelligence==1 and m.attrs.SkillUnarmed==112,"zombie has100 extra unarmed")
 clock=1500;beat(1);assert(Lighting.ClockTime==18 and workspace.attrs.IsNight)
-assert(hp.MaxHealth==60 and hp.Health==60 and m.attrs.Intelligence==3 and m.attrs.Luck==7 and m.attrs.Strength==6)
-hp.Health=30
+assert(hp.MaxHealth==36 and hp.Health==36 and m.attrs.Intelligence==3 and m.attrs.Luck==7 and m.attrs.Strength==6)
+hp.Health=18
 clock=3300;beat(1);assert(Lighting.ClockTime==6 and not workspace.attrs.IsNight)
-assert(hp.MaxHealth==40 and hp.Health==20 and m.attrs.Intelligence==1,"transition preserves health fraction and base attributes")
+assert(hp.MaxHealth==24 and hp.Health==12 and m.attrs.Intelligence==1,"transition preserves health fraction and base attributes")
 clock=3600;beat(1);assert(Lighting.ClockTime==8,"full day lasts exactly3600seconds")
 hp.Health=0;clock=5100;beat(1);assert(hp.Health==0,"night cannot revive a corpse")
 print("PASS: one-hour day cycle, dawn/dusk, all zombie attributes +2, health fraction, no corpse revival")

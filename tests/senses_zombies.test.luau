@@ -13,8 +13,8 @@ for _=1,1000 do
  local t=Z.Roll(random);local d=P.Bonuses(t);local skills=P.SkillValues(t)
  assert(t.Strength>=3 and t.Strength<=6 and t.Attention>=3 and t.Attention<=6)
  assert(t.Endurance>=3 and t.Endurance<=5 and t.Agility>=1 and t.Agility<=3 and t.Intelligence==1 and t.Luck==5)
- assert(d.MaxHealth==4*t.Endurance+2*t.Strength and d.ViewRange>=19 and d.ViewRange<=28 and d.DodgeChance>=5 and d.DodgeChance<=15)
- assert(skills.Unarmed==t.Strength*5+t.Attention*3+t.Agility*5 and d.CriticalChance==.05)
+ assert(d.MaxHealth==4*t.Endurance+2*t.Strength and d.ViewRange>=19 and d.ViewRange<=28 and d.DodgeChance==3*t.Agility)
+ assert(skills.Unarmed==t.Strength*3 and d.CriticalChance==.05)
 end
 print("PASS: exact vision/hearing multipliers, scaled curves,5%floor,90%resistance and randomized zombie attributes/derived combat stats")
 

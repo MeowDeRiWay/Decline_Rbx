@@ -81,10 +81,11 @@ function Rules.Confirm(state,stats,tags)
  return true
 end
 function Rules.SkillValues(stats)
- return {LightWeapons=5*stats.Attention+stats.Agility,HeavyWeapons=3*stats.Strength+3*stats.Attention,
-  Unarmed=5*stats.Strength+3*stats.Attention+5*stats.Agility,Melee=5*stats.Strength,
-  Throwing=3*stats.Strength+5*stats.Agility,FirstAid=5*stats.Intelligence+2*stats.Attention,Doctor=5*stats.Intelligence+3*stats.Attention,
-  Sneak=5*stats.Agility,Traps=5*stats.Attention,Repair=5*stats.Intelligence,Cook=4*stats.Intelligence+stats.Attention}
+ return {LightWeapons=3*stats.Attention,HeavyWeapons=3*stats.Strength,
+  Unarmed=3*stats.Strength,Melee=3*stats.Strength,Throwing=3*stats.Strength,
+  FirstAid=3*stats.Intelligence+stats.Endurance,Doctor=3*stats.Intelligence,
+  Sneak=3*stats.Agility,Traps=2*stats.Attention,Repair=3*stats.Intelligence,
+  Cook=3*stats.Intelligence+stats.Endurance}
 end
 function Rules.TotalSkills(state)
  local values=Rules.SkillValues(state.Stats)
@@ -144,8 +145,8 @@ function Rules.Bonuses(stats,perks,level,total)
  local hearing=stats.Attention+2*(p.Hearing or 0)
  local playerLevel=math.clamp(level or 0,0,Rules.MaxLevel)
  return {CarryLimitKg=5*stats.Strength+playerLevel+10*(p.StrongBack or 0),MeleeBonus=stats.Strength*(1+(p.StrongArm or 0)),MaxHealth=4*stats.Endurance+2*stats.Strength+playerLevel*(4+(p.Lifegiver or 0)),
-  WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)*movement,RunBonus=(.4*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0))*movement,CombatMovementMultiplier=movement,Regeneration=(stats.Endurance+4*(p.QuickRecovery or 0))*(1+(p.Regeneration or 0)),
-  DodgeChance=5*stats.Agility+20*(p.Dodger or 0),CriticalChance=.01*stats.Luck*2^(p.Criticals or 0),
+  WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)*movement,RunBonus=(.6*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0))*movement,CombatMovementMultiplier=movement,Regeneration=(stats.Endurance+4*(p.QuickRecovery or 0))*(1+(p.Regeneration or 0)),
+  DodgeChance=3*stats.Agility+20*(p.Dodger or 0),CriticalChance=.01*stats.Luck*2^(p.Criticals or 0),
   ViewRange=10+3*stats.Attention+10*(p.TunnelVision or 0),ViewAngleMultiplier=(p.TunnelVision or 0)>0 and .5 or 1,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,
   UnarmedArmorClass=15*(p.UnarmedEvade or 0),ReviveLockReduction=180*(p.QuickRecovery or 0),ReviveHealthBonus=.2*(p.QuickRecovery or 0),MeleeIgnoreAbsorption=2*(p.PiercingStrike or 0),MeleeIgnoreResistance=.1*(p.PiercingStrike or 0),SniperCriticalBonus=.1*(p.Sniper or 0),CowboyMultiplier=(p.Cowboy or 0)>0 and 1.15 or 1,ScroungerMultiplier=(p.Scrounger or 0)>0 and 1.25 or 1,PlantKnowledge=(p.Botanist or 0)>0,GreenhouseYieldMultiplier=(p.KhersonMelons or 0)>0 and 1.5 or 1,
   BackstabCritical=(p.SilentDeath or 0)>0,UnarmedDamageBonus=10*(p.UnarmedDamage or 0),ArmorBypassChance=(p.LivingAnatomy or 0)>0 and .1 or 0,

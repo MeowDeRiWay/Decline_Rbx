@@ -17,7 +17,7 @@ local plain=R.TotalSkills(s).Cook
 assert(R.SpendSkill(s,"Cook") and R.TotalSkills(s).Cook==plain+1 and s.SkillPoints==8)
 local function at(value,tagged)
  local t=R.New();t.Confirmed=true;t.Stats={Strength=1,Attention=1,Endurance=1,Intelligence=1,Agility=1,Luck=1}
- t.Skills.Repair=value-5;t.SkillPoints=100;t.TaggedSkills=tagged and {Repair=true} or {}
+ t.Skills.Repair=value-3;t.SkillPoints=100;t.TaggedSkills=tagged and {Repair=true} or {}
  return t
 end
 for _,case in ipairs({{0,1},{99,1},{100,2},{199,2},{200,3},{299,3}}) do
