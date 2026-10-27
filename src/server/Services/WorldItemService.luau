@@ -82,17 +82,25 @@ function Service.Pickup(player, item)
  local params = RaycastParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = {character}
- local function clearFrom(origin)
-  local target = Interaction.NearestPoint(item,origin)
+ local function clearFrom(origin,target)
+  target = target or Interaction.NearestPoint(item,origin)
   local hit = workspace:Raycast(origin, target-origin, params)
   return not hit or hit.Instance == item or hit.Instance:IsDescendantOf(item)
  end
  -- A tabletop may block the waist-height ray while the item is in plain sight.
  -- Keep the root-based reach limit and require an unobstructed ray from the
- -- body or head; walls and closed furniture still block both paths.
+ -- body or head. Try exposed item points too: the nearest bounding-box edge
+ -- can touch the shelf even when the center or top of the item is accessible.
  if not clearFrom(root.Position) then
   local head = character:FindFirstChild("Head")
-  if not head or not head:IsA("BasePart") or not clearFrom(head.Position) then return false end
+  if not head or not head:IsA("BasePart") then return false end
+  if not clearFrom(head.Position) then
+   local frame,size
+   if item:IsA("Model") then frame,size=item:GetBoundingBox() else frame,size=item.CFrame,item.Size end
+   local up=frame.UpVector
+   local top=frame.Position+Vector3.new(up.X*size.Y*.5,up.Y*size.Y*.5,up.Z*size.Y*.5)
+   if not clearFrom(head.Position,frame.Position) and not clearFrom(head.Position,top) then return false end
+  end
  end
  -- No yields between inventory grant and destruction: only one player can win.
  local conditions = nil

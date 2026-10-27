@@ -31,16 +31,31 @@ function workspace:Raycast(origin)
  return {Instance=stone}
 end
 assert(Service.Pickup(a,stone) and rays==2 and grants.Stone==1,"head ray reaches table loot when body ray hits the tabletop")
+local shelfLoot=make("Model","Stone",world,{Item_ID="Stone",Quantity=1})
+shelfLoot.CFrame=CFrame.new(Vector3.new(1,1,0));shelfLoot.Size=Vector3.new(.2,.2,.2)
+function workspace:Raycast(origin,delta)
+ local destination=origin+delta
+ if destination.Y>1.05 then return {Instance=shelfLoot} end
+ return {Instance=obstacle}
+end
+assert(Service.Pickup(a,shelfLoot) and grants.Stone==2,"visible top can be reached when shelf blocks nearest edge and center")
+local centered=make("Model","Stone",world,{Item_ID="Stone",Quantity=1})
+centered.CFrame=CFrame.new(Vector3.new(1,1,0))
+function workspace:Raycast(origin,delta)
+ if (origin+delta).X>.5 then return {Instance=centered} end
+ return {Instance=obstacle}
+end
+assert(Service.Pickup(a,centered) and grants.Stone==3,"exposed center can be reached without ignoring shelf geometry")
 local blocked=make("Model","Stone",world,{Item_ID="Stone",Quantity=1})
 function workspace:Raycast() return {Instance=obstacle} end
-assert(not Service.Pickup(a,blocked) and not blocked.destroyed and grants.Stone==1,"solid wall blocks both rays without granting loot")
+assert(not Service.Pickup(a,blocked) and not blocked.destroyed and grants.Stone==3,"solid wall blocks all item points without granting loot")
 local nearest=Interaction.NearestPoint
 Interaction.NearestPoint=function() return Vector3.new(3,0,0) end
 function workspace:Raycast() error("out-of-range pickup must not raycast") end
 assert(not Service.Pickup(a,blocked),"head fallback cannot extend the two-stud reach limit")
 Interaction.NearestPoint=nearest
 print("PASS: box1..MaxAmmo rolls once, pickup grants loose rounds once, dropped-stack exact quantity")
-print("PASS: tabletop head ray, solid-wall rejection, root-based reach limit")
+print("PASS: tabletop head ray, upper shelf item top/center, solid-wall rejection, root-based reach limit")
 '''
 station_source='local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()'
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),station_source]
