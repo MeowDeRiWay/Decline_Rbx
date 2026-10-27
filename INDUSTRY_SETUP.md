@@ -203,3 +203,13 @@ The current Pistol9mm and SMG9mm crafting recipes are removed. The items remain
 available as existing gear/loot/admin grants. 9 mm ammunition remains at Workstation.
 Future homemade single-shot pistol/rifle models and recipes will be added
 separately; no placeholder weapons or invented recipes are added.
+
+## Workshop Repair requirements — 27 October 2026
+
+Stone tool/weapon recipes require Repair60; scrap tools/weapons require Repair100;
+iron tools/weapons require Repair150. Empty bucket requires Repair100, handle60,
+and planks60. Requirements are enforced before ingredients are consumed and shown
+in recipe descriptions/menu locks. These are crafting requirements, not equipment
+requirements. The iron tool items already exist but their recipes have not yet
+been defined; their150 gate is prepared for those future recipes. Existing factory
+.223 firearms/ammunition retain their separately specified Repair170 requirement.

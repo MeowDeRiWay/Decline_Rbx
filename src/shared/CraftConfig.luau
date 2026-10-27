@@ -9,7 +9,7 @@ local recipes = {
  MakeAssaultRifle223={Name="Make .223 assault rifle",Station="ArmsBench",Description="Assemble a .223 assault rifle. Requires Repair 170.",Ingredients={Iron=25},Output="AssaultRifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
  MakeLSW223={Name="Make .223 light support weapon",Station="ArmsBench",Description="Assemble a .223 light support weapon. Requires Repair 170.",Ingredients={Iron=25},Output="LSW223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
  MakeServiceRifle223={Name="Make .223 service rifle",Station="ArmsBench",Description="Assemble a .223 service rifle. Requires Repair 170.",Ingredients={Iron=25},Output="ServiceRifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
- MakeBucket={Name="Make empty bucket",Station="Workstation",Description="Shape scrap into a watering bucket. Requires Repair 80.",Ingredients={Scrap=3},Output="EmptyBucket",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Repair=80}}},
+ MakeBucket={Name="Make empty bucket",Station="Workstation",Description="Shape scrap into a watering bucket. Requires Repair 100.",Ingredients={Scrap=3},Output="EmptyBucket",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Repair=100}}},
  MakeBandage={Name="Make bandage",Station="MedStation",Description="Prepare a bandage from five rags at a medical station. Requires Doctor 100.",Ingredients={Rags=5},Output="Bandage",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Doctor=100}}},
  MakePlanks = {
   Name = "Make planks", Station = "Workstation",
@@ -75,6 +75,19 @@ local recipes = {
   OutputCount = 1, MaxBatch = 1, Duration = 20, RequiresPresence = true,
  },
 }
+
+-- Repair gates for tool tiers and workshop components, including future iron recipes.
+local repairByOutput={StoneAxe=60,StoneShowel=60,ScrapAxe=100,ScrapShowel=100,ScrapKnife=100,
+ IronAxe=150,IronShowel=150,IronKnife=150,EmptyBucket=100,Handle=60,Plank=60}
+for _,recipe in pairs(recipes) do
+ local repair=repairByOutput[recipe.Output]
+ if repair then
+  recipe.Requirements=recipe.Requirements or {}
+  recipe.Requirements.Skills=recipe.Requirements.Skills or {}
+  recipe.Requirements.Skills.Repair=repair
+  recipe.Description=recipe.Description:gsub(" Requires Repair %d+%.","").." Requires Repair "..repair.."."
+ end
+end
 
 -- Stove food is exclusively boiled; frying/baking belongs at another station.
 -- Fuel is per queued batch, not per serving.

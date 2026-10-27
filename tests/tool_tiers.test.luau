@@ -48,3 +48,8 @@ local plan=assert(Craft.Plan({Potato=5,CleanWater=5,TreeLog=1},boil,5))
 assert(plan.Ingredients.Potato==5 and plan.Ingredients.CleanWater==5 and plan.Outputs.BoiledPotato==5)
 assert(Craft.Plan({Potato=6,CleanWater=6},boil,6)==nil)
 print("PASS: 8 material tools/weapons, 5/10/15 resource damage, access tiers, knife damage/cooking and recipe costs")
+
+for id,repair in pairs({MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeBucket=100,MakeHandle=60,MakePlanks=60}) do
+ assert(Recipes[id].Requirements.Skills.Repair==repair)
+ assert(Recipes[id].Description:find("Requires Repair "..repair..".",1,true),"menu description matches authoritative requirement")
+end

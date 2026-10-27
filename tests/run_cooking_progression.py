@@ -21,8 +21,9 @@ function task.delay(duration,fn) table.insert(callbacks,fn); table.insert(durati
 local cookState={Profession="Cook",Talents={}}
 local allowed=false
 local doctor=false
+local repair=300
 local xp,bonuses=0,0
-local Progression={Meets=function() return doctor end,CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
+local Progression={Meets=function(_,requirement) if requirement.Skills.Repair then return repair>=requirement.Skills.Repair end;return doctor end,CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
  CraftXP=function(_,recipe,count) xp+=ProgressionRules.CraftExperience(recipe,count) end,
  Loot=function(_,items) bonuses+=1; return items end}
 local stock={Potato=10,CleanWater=10,TreeLog=5}
@@ -99,13 +100,13 @@ assert(Service.Cook(a,"BoilPotatoes",1));callbacks[#callbacks]()
 assert(Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==1,"cook quality persists in station output")
 assert(Service.CollectRecipe(a,"BoilPotatoes","All") and stock.Ramsay_BoiledPotato==1,"collect all preserves Ramsay food variant")
 Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=3;a:SetAttribute("CraftCostMultiplier",1)
-assert(Recipes.MakeBucket.Requirements.Skills.Repair==80)
-doctor=false;assert(not Service.Cook(a,"MakeBucket",1),"bucket skill requirement checked")
-doctor=true;assert(not Service.Cook(a,"MakeBucket",2))
+assert(Recipes.MakeBucket.Requirements.Skills.Repair==100)
+repair=99;assert(not Service.Cook(a,"MakeBucket",1),"bucket skill requirement checked")
+repair=100;assert(not Service.Cook(a,"MakeBucket",2))
 assert(Service.Cook(a,"MakeBucket",1) and stock.Scrap==0 and durations[#durations]==20)
 callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.EmptyBucket==1,"bucket craft output")
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
-local repair=99
+repair=99
 Progression.Meets=function(_,requirement)
  return not requirement.Skills.Repair or repair>=requirement.Skills.Repair
 end
@@ -154,6 +155,16 @@ assert(Service.Cook(a,"BoilPotatoesCoal",5) and stock.Coal==0 and durations[#dur
 Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,stove))
 assert(Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==5 and not Service.Snapshot(a).CookingReady.Coal,"coal cooks twice as fast without producing charcoal")
 print("PASS: one fuel for five servings, one wood charcoal byproduct, wood60s versus coal30s, no unfueled bypass")
+Service.Close(a);assert(Service.Open(a,bench))
+for id,required in pairs({MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeBucket=100,MakeHandle=60,MakePlanks=60}) do
+ for item,count in pairs(Recipes[id].Ingredients) do stock[item]=count end
+ repair=required-1
+ assert(not Service.Cook(a,id,1),id.." must reject Repair one below threshold")
+ for item,count in pairs(Recipes[id].Ingredients) do assert(stock[item]==count,"failed Repair check consumes nothing") end
+ repair=required
+ assert(Service.Cook(a,id,1),id.." must accept exact Repair threshold");callbacks[#callbacks]()
+end
+print("PASS: actual tool/component craft Repair boundaries60/100 and no ingredients lost on rejection")
 print("PASS: industrial recipe inputs, Repair gates, exact XP/output, town/factory separation, Furnace T2 gate, unattended processing, charcoal fuel and food byproducts")
 
 '''
