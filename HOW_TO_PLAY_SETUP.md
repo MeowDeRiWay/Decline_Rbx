@@ -3,6 +3,12 @@
 Rojo automatically maps `src/client/HowToPlay.client.luau` and
 `src/server/HowToPlay.server.luau`; no manual GUI/model setup is required.
 
+The English guide has a left sidebar: Controls (the default on each opening),
+Getting started & builds, Society and Resources. The right pane scrolls only the
+selected page. Canvas height is measured from wrapped text at the same logical
+width/font size as the displayed label, so the scrollbar covers all paragraphs.
+Doctor [4] and keypad 4 are included in the guide and blocked while it is open.
+
 The English guide opens once per login after the splash and mandatory town /
 character creation panels. Closing it without checking the box leaves automatic
 help enabled. **Don't show on login** persists per Roblox UserId across servers

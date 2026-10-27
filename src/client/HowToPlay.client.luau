@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Context=game:GetService("ContextActionService")
 local Run=game:GetService("RunService")
+local TextService=game:GetService("TextService")
 local player=Players.LocalPlayer
 local Theme=require(ReplicatedStorage.Shared.UITheme)
 local Layout=require(script.Parent.HUDLayout)
@@ -24,32 +25,124 @@ end
 local gui=make("ScreenGui",player:WaitForChild("PlayerGui"),{Name="HowToPlay",ResetOnSpawn=false,DisplayOrder=80,Enabled=false})
 local overlay=make("TextButton",gui,{Size=UDim2.fromScale(1,1),BackgroundColor3=Color3.new(),
  BackgroundTransparency=.35,Text="",AutoButtonColor=false,Modal=true,Selectable=false})
+-- Fixed logical dimensions keep text measurement and scrolling independent of UIScale.
+local PANEL_WIDTH,PANEL_HEIGHT=900,620
+local CONTENT_WIDTH=656
+local BODY_WIDTH=CONTENT_WIDTH-40
 local panel=make("Frame",overlay,{AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),
- Size=UDim2.fromOffset(660,540),BackgroundColor3=Theme.Panel})
+ Size=UDim2.fromOffset(PANEL_WIDTH,PANEL_HEIGHT),BackgroundColor3=Theme.Panel})
 Theme.Bevel(panel)
 local scale=make("UIScale",panel,{Scale=1})
-label(panel,"HOW TO PLAY",UDim2.fromOffset(24,18),UDim2.fromOffset(550,32),24).TextColor3=Theme.Accent
-label(panel,"Build a home. Find your role. Survive together.",UDim2.fromOffset(24,57),UDim2.fromOffset(610,30),14)
+label(panel,"HOW TO PLAY",UDim2.fromOffset(24,18),UDim2.fromOffset(800,32),24).TextColor3=Theme.Accent
+label(panel,"Build a home. Find your role. Write your own story.",UDim2.fromOffset(24,57),UDim2.fromOffset(820,30),14)
 local close=button(panel,"X",UDim2.new(1,-52,0,18),UDim2.fromOffset(28,28))
-local scroll=make("ScrollingFrame",panel,{Position=UDim2.fromOffset(24,100),Size=UDim2.new(1,-48,1,-205),
- BackgroundColor3=Theme.Card,BorderSizePixel=0,ScrollBarThickness=5,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y})
-make("UIPadding",scroll,{PaddingTop=UDim.new(0,12),PaddingBottom=UDim.new(0,12),PaddingLeft=UDim.new(0,14),PaddingRight=UDim.new(0,18)})
-make("UIListLayout",scroll,{Padding=UDim.new(0,14),SortOrder=Enum.SortOrder.LayoutOrder})
-local sections={
- {"CONTROLS","WASD: Move   |   Shift: Run   |   Mouse: Face / aim\nLMB: Attack   |   RMB: Aim   |   E: Interact\nQ: Inventory / close container   |   C: Character   |   T: Skills\nR: Reload   |   V: Fire mode   |   B: Ammo type\nMouse wheel: Zoom   |   Hold MMB + move mouse: Rotate camera"},
- {"1. CHOOSE YOUR TOWN","Join a town at a flag. Cooperate with its residents, build your home and watch your relations with other towns."},
- {"2. FIND SUPPLIES","Collect food, water and materials. Open your inventory, select an item to inspect it, equip it or consume it. Carrying too much slows you down."},
- {"3. CRAFT AND BUILD","Press E near a workstation to see recipes and their requirements. Help develop your town; construction may require the mayor's approval."},
- {"4. STAY ALIVE","Watch your health, hunger, thirst and energy. Keep useful equipment ready. Zombies and hostile players can kill you, and your belongings can be looted."},
- {"5. DEVELOP YOUR CHARACTER","Use skills to improve them. Open Character [C] and Skills [T] to inspect your stats, spend available points and choose perks."},
+local navigation=make("Frame",panel,{Name="HelpTabs",Position=UDim2.fromOffset(24,100),
+ Size=UDim2.new(0,180,1,-210),BackgroundColor3=Theme.Card,BorderSizePixel=0})
+local page=make("Frame",panel,{Name="HelpPage",Position=UDim2.fromOffset(220,100),
+ Size=UDim2.new(0,CONTENT_WIDTH,1,-210),BackgroundColor3=Theme.Card,BorderSizePixel=0})
+local heading=label(page,"",UDim2.fromOffset(18,14),UDim2.new(1,-40,0,30),20)
+heading.Name="PageHeading";heading.TextColor3=Theme.Accent
+local scroll=make("ScrollingFrame",page,{Name="HelpScroll",Position=UDim2.fromOffset(0,54),Size=UDim2.new(1,0,1,-54),
+ BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=7,ScrollBarImageColor3=Theme.Accent,
+ ScrollingDirection=Enum.ScrollingDirection.Y,VerticalScrollBarInset=Enum.ScrollBarInset.Always,
+ Active=true,ClipsDescendants=true,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.None})
+local body=label(scroll,"",UDim2.fromOffset(18,0),UDim2.fromOffset(BODY_WIDTH,0),16)
+body.Name="PageBody"
+local pages={
+ {Name="Controls",Title="CONTROLS",Text=[[MOVEMENT
+WASD - Move
+Shift - Run
+Mouse - Face / aim
+
+COMBAT
+LMB - Attack
+RMB - Aim
+R - Reload
+V - Change fire mode
+B - Change ammunition type
+
+INTERACTION & MENUS
+E - Interact
+Q - Inventory / close container
+C - Character and attributes
+T - Skills and perks
+G - Group
+H - Use an equipped bandage
+4 - Doctor: click a nearby knocked-out player to try to revive them. Press 4 again to cancel.
+
+CAMERA
+Mouse wheel - Zoom
+Hold MMB and move the mouse - Rotate camera]]},
+ {Name="Getting started\n& builds",Title="GETTING STARTED & BUILDS",Text=[[Before you begin, take a good look at the available skills, perks and attributes. A thoughtful combination can make your life a lot more comfortable.
+
+Your role will usually be a specialized one. You cannot be everyone at once. The development paths currently available are:
+
+- Crafter
+- Doctor
+- Cook
+- Farmer
+- Resource gatherer
+- Melee fighter
+- Ranged fighter
+
+Of course, you can mix in a few skills for convenience and greater independence. Just remember: every point spent on a side job is a point you are not putting into your main specialty.
+
+If you plan to build a workshop, a hospital or another specialist building, check its requirements BEFORE spending your skill points.]]},
+ {Name="Society",Title="SOCIETY",Text=[[THE MAYOR
+The first player in a town becomes its mayor. Residents can elect a replacement: approach the town flag and choose the relevant voting option.
+
+YOUR STORY
+Your actions are a mirror of your soul. Do what you need to do: play a raider, or become someone your community can rely on. Your in-game choices are yours to make. You write your own story.
+
+TOWN LIFE
+While there is only one town in the game, the mayor has no other towns to conduct foreign policy with. Inside the town, however, the mayor decides which buildings get approved and which do not.
+
+PLAN BEFORE YOU BUILD
+If you want a workshop, a hospital or something similar, read the requirements first and only then allocate your skills. A poor build means grinding more levels - or leaving for 10-15 minutes so the server has time to clear your character after reconnect protection expires.
+
+Reconnect protection is there to save your character if you lose your connection.
+
+A LITTLE MEDICAL ADVICE
+If you find someone's body, take a moment to try your Doctor skill with 4: activate it, then click the nearby knocked-out player. You might save someone a lot of time and earn a pleasant "Thank you!"
+
+If they are from another settlement... well, you could always wait out the two-minute knockout and loot them instead.
+
+Patience and looting solve a surprising number of problems.]]},
+ {Name="Resources",Title="RESOURCES",Text=[[YES, IT STARTS WITH TREES
+Sorry I could not think of a better opening than chopping wood. Cliche? Absolutely. Guilty as charged. I will come up with something better later.
+
+For now, a good start is to send your strongest resident to chop trees for the town. Send your fastest resident to loot buildings and haul everything back to the settlement.
+
+WANT TO MAKE SOME MONEY?
+Build a Market - it is a free town building - and sell your resources there.
+
+Keep in mind that passive income is $1 x player level per payout. That very important crafter might not have any money at the start...
+
+Help the people who know how to make things, and they will help you.]]},
 }
-for index,section in ipairs(sections) do
- local row=make("Frame",scroll,{Size=UDim2.new(1,0,0,0),AutomaticSize=Enum.AutomaticSize.Y,BackgroundTransparency=1,LayoutOrder=index})
- make("UIListLayout",row,{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder})
- local title=label(row,section[1],UDim2.new(),UDim2.new(1,0,0,22),16);title.LayoutOrder=1;title.TextColor3=Theme.Accent
- local body=label(row,section[2],UDim2.new(),UDim2.new(1,0,0,0),14);body.LayoutOrder=2;body.AutomaticSize=Enum.AutomaticSize.Y
+local tabs={}
+local function setPage(index)
+ local selected=pages[index]
+ heading.Text=selected.Title;body.Text=selected.Text
+ -- Measure wrapped text at its actual logical width instead of nesting automatic
+ -- canvas sizing and automatic row heights (which produced the broken scrollbar).
+ local bounds=TextService:GetTextSize(selected.Text,body.TextSize,body.Font,Vector2.new(BODY_WIDTH,100000))
+ body.Size=UDim2.fromOffset(BODY_WIDTH,math.ceil(bounds.Y)+4)
+ scroll.CanvasSize=UDim2.fromOffset(0,math.ceil(bounds.Y)+24)
+ scroll.CanvasPosition=Vector2.zero
+ for tabIndex,tab in ipairs(tabs) do
+  tab.TextColor3=tabIndex==index and Theme.Accent or Theme.Text
+  tab.BackgroundColor3=tabIndex==index and Theme.Button or Theme.Card
+  tab:SetAttribute("Selected",tabIndex==index)
+ end
 end
-local check=button(panel,"[ ]  Don't show on login",UDim2.new(0,24,1,-87),UDim2.fromOffset(380,30))
+for index,entry in ipairs(pages) do
+ local tab=button(navigation,entry.Name,UDim2.fromOffset(8,8+(index-1)*62),UDim2.fromOffset(164,54))
+ tab.Name="HelpTab"..index;tab.TextWrapped=true;tabs[index]=tab
+ tab.Activated:Connect(function() setPage(index) end)
+end
+setPage(1)
+local check=button(panel,"[ ]  Don't show on login",UDim2.new(0,24,1,-87),UDim2.fromOffset(380,34))
 check.TextXAlignment=Enum.TextXAlignment.Left
 local done=button(panel,"Got it",UDim2.new(1,-144,1,-87),UDim2.fromOffset(120,34))
 local notice=label(panel,"",UDim2.new(0,24,1,-43),UDim2.new(1,-48,0,30),12)
@@ -75,13 +168,13 @@ for _,name in ipairs({"HelpHidden","HelpPreferenceReady","HelpPreferenceStatus"}
 refreshPreference()
 local shown=false
 local function setOpen(value)
- if value then shown=true end
+ if value then shown=true;setPage(1) end
  gui.Enabled=value;player:SetAttribute("HelpOpen",value)
  if value then
   player:SetAttribute("MedicalMode",nil)
   Context:BindActionAtPriority("HelpBlockInput",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+10,
    Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump,
-   Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.R,Enum.KeyCode.V,Enum.KeyCode.B,Enum.KeyCode.F6)
+   Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.R,Enum.KeyCode.V,Enum.KeyCode.B,Enum.KeyCode.F6,Enum.KeyCode.Four,Enum.KeyCode.KeypadFour)
   Run:BindToRenderStep("HelpStopMovement",Enum.RenderPriority.Camera.Value+4,function()
    local character=player.Character
    local humanoid=character and character:FindFirstChildOfClass("Humanoid")
@@ -101,7 +194,7 @@ help.Activated:Connect(function() if gui.Enabled then setOpen(false) elseif not 
 Run.RenderStepped:Connect(function()
  if not gui.Enabled then return end
  local camera=workspace.CurrentCamera
- if camera then scale.Scale=math.min(1,(camera.ViewportSize.X-24)/660,(camera.ViewportSize.Y-24)/540) end
+ if camera then scale.Scale=math.min(1,(camera.ViewportSize.X-24)/PANEL_WIDTH,(camera.ViewportSize.Y-24)/PANEL_HEIGHT) end
 end)
 task.spawn(function()
  -- Show once per login, after the splash and mandatory character creation screens.
