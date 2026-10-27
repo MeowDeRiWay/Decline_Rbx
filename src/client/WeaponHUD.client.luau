@@ -53,7 +53,12 @@ local function preview(model)
  end
  local parts = copy:GetDescendants()
  if copy:IsA("BasePart") then table.insert(parts,copy) end
- for _,part in ipairs(parts) do if part:IsA("BasePart") then part.Anchored = true end end
+ for _,part in ipairs(parts) do
+  if part:IsA("BasePart") then
+   part.Anchored = true
+   if part.Name == "InvisibleHelper" then part.Transparency = 1 end
+  end
+ end
  copy:PivotTo(CFrame.identity)
  copy.Parent = world
  local box,size
