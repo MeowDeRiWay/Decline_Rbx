@@ -39,6 +39,14 @@ Luau compilation and Rojo build are also checked. These tests do not replace che
 
 ## Stores and AutoPlacer
 
+Furniture placers are identified by the Boolean attribute **`AutoPlacer = true`**
+on a Model or BasePart. Its name can be anything, for example `KitchenShelves`.
+The string attribute **`StoreFurniture`** selects the template by name from
+`StoreFurniture` or `Furniture` under `ServerStorage/CityGeneration`.
+Legacy objects named `AutoPlacer` still work when the Boolean attribute is absent;
+explicit `AutoPlacer = false` disables a marker even with that legacy name.
+Changing the attribute during Play updates the incremental marker index.
+
 The existing eligible YardPlace models (`ForZHouse=true`, including those in Workspace/Yards) now roll **Houses 95% / Stores 5%** independently. A small town is not guaranteed to have a store. Templates are:
 
 - `ServerStorage/CityGeneration/Houses/<any name>`: Model with ZHouse=true and an inner Yard.
@@ -47,7 +55,7 @@ The existing eligible YardPlace models (`ForZHouse=true`, including those in Wor
 
 If the rolled category has no fitting template, a fitting template from the other category is used. If neither fits, generation retries as before. The category roll is retained across unsuccessful retries; filled plots never reroll within the session. Generated stores share Workspace/GeneratedCityHouses for compatibility, with `GenerationCategory="Stores"` (houses use "Houses"). Existing GeneratedHouse/GenerationSource links and removal cleanup are unchanged. Adding Stores later does not replace already spawned houses; restart Play to regenerate.
 
-For shelves, create **`ServerStorage/CityGeneration/StoreFurniture/Shelf`** or **`ServerStorage/CityGeneration/Furniture/Shelf`** as a Model or BasePart with the intended dimensions. `StoreFurniture` is searched first; if both folders contain the same name, its template wins. Inside a store template place a **Model or Part named `AutoPlacer`**, with a string attribute **`StoreFurniture = "Shelf"`**. The same attribute selects from either folder. Its bounding box is the rectangular placement region. A Model region should contain only its authored flat marker Parts; use a sensible pivot/PrimaryPart so its box axes follow the desired orientation.
+For shelves, create **`ServerStorage/CityGeneration/StoreFurniture/Shelf`** or **`ServerStorage/CityGeneration/Furniture/Shelf`** as a Model or BasePart with the intended dimensions. `StoreFurniture` is searched first; if both folders contain the same name, its template wins. Inside a store template place a **Model or Part with Boolean `AutoPlacer = true`**, with a string attribute **`StoreFurniture = "Shelf"`**. The same attribute selects from either folder. Its bounding box is the rectangular placement region. A Model region should contain only its authored flat marker Parts; use a sensible pivot/PrimaryPart so its box axes follow the desired orientation.
 
 The filler tiles the named furniture's bounding-box footprint without overlap: a 1x10 area gets ten 1x1 shelves or one 1x10 shelf; a 1x1 area cannot hold a 1x10 shelf. Whole objects only, with any unused strip centered around the grid. Furniture bounds are measured from all part corners in upright (world-Y) axes while retaining the template pivot's yaw. Pitch or roll in the template pivot does not turn its height into footprint depth. The box-to-pivot offset remains preserved, so physically upright templates stay upright. Each furniture bounding box follows the region's rotation; its bottom sits on the marker's top surface. Template offsets between pivot and bounding box are preserved. Furniture templates should have their box axes/front aligned consistently; rotate the AutoPlacer to turn the shelves.
 

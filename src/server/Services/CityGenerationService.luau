@@ -64,14 +64,14 @@ local function classify(object)
  end
  plotIndex[object]=object:IsA("Model") and ((object.Name=="YardPlace" and object:GetAttribute("ForZHouse")==true) or object:GetAttribute("ForInfrastructure")==true) or nil
  roadIndex[object]=object:GetAttribute("Road")==true or nil
- markerIndex[object]=(object.Name=="WallYard" or object.Name=="AutoPlacer" or typeof(object:GetAttribute("Replace"))=="string") or nil
+ markerIndex[object]=(object.Name=="WallYard" or Furniture.IsMarker(object) or typeof(object:GetAttribute("Replace"))=="string") or nil
 end
 local function track(object)
  if not (object:IsA("Model") or object:IsA("BasePart")) or generatedContent(object) then return end
  classify(object)
  if not started or watchers[object] then return end
  local connections={};watchers[object]=connections
- for _,key in ipairs({"ForZHouse","ForInfrastructure","Road","Replace"}) do
+ for _,key in ipairs({"ForZHouse","ForInfrastructure","Road","Replace","AutoPlacer"}) do
   table.insert(connections,object:GetAttributeChangedSignal(key):Connect(function() classify(object) end))
  end
  table.insert(connections,object:GetPropertyChangedSignal("Name"):Connect(function() classify(object) end))
@@ -187,7 +187,7 @@ function Service.Generate(incremental)
  for object in pairs(markerIndex) do table.insert(markers,object) end
  for _,object in ipairs(markers) do
   if object:IsDescendantOf(workspace) and not generatedContent(object) then
-   if object.Name=="AutoPlacer" then Furniture.Fill(object)
+   if Furniture.IsMarker(object) then Furniture.Fill(object)
    else Walls.Fill(object) end
   end
  end

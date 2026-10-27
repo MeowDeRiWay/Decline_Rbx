@@ -2,6 +2,12 @@ local ServerStorage=game:GetService("ServerStorage")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Rules=require(ReplicatedStorage.Shared.CityGenerationRules)
 local Service={}
+function Service.IsMarker(object)
+ if not object:IsA("Model") and not object:IsA("BasePart") then return false end
+ local enabled=object:GetAttribute("AutoPlacer")
+ if enabled~=nil then return enabled==true end
+ return object.Name=="AutoPlacer" -- Compatibility with existing authored maps.
+end
 local warnings=setmetatable({},{__mode="k"})
 local function box(object)
  if object:IsA("Model") and object:FindFirstChildWhichIsA("BasePart",true) then return object:GetBoundingBox() end
@@ -68,8 +74,8 @@ local function fill(marker)
 end
 function Service.Fill(root)
  local markers={}
- if root.Name=="AutoPlacer" then table.insert(markers,root) end
- for _,object in ipairs(root:GetDescendants()) do if object.Name=="AutoPlacer" then table.insert(markers,object) end end
+ if Service.IsMarker(root) then table.insert(markers,root) end
+ for _,object in ipairs(root:GetDescendants()) do if Service.IsMarker(object) then table.insert(markers,object) end end
  for _,marker in ipairs(markers) do
   local ancestor=marker.Parent
   local generated=false
