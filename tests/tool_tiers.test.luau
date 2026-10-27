@@ -53,3 +53,8 @@ for id,repair in pairs({MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapShove
  assert(Recipes[id].Requirements.Skills.Repair==repair)
  assert(Recipes[id].Description:find("Requires Repair "..repair..".",1,true),"menu description matches authoritative requirement")
 end
+
+for tier,material in ipairs({"Stone","Scrap","Iron"}) do
+ assert(Rules.HarvestDamage(Config.Tree,Items[material.."Axe"],10)==15*tier,"axe applies strength before tier multiplier")
+ assert(Rules.HarvestDamage(Config.ScrapPile,Items[material.."Showel"],10)==Rules.HarvestDamage(Config.ScrapPile,Items[material.."Showel"]),"shovel balance unchanged")
+end

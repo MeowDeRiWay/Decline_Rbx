@@ -187,7 +187,7 @@ function Service.Hit(player,model,weapon)
   -- A real tool impact costs exactly one use, including an unsuitable tool.
   if not Inventory.UseWeapon(player) then return false end
   if not Rules.CanDamage(resource,definition) then return true end
-  damage=Rules.HarvestDamage(resource,definition)
+  damage=Rules.HarvestDamage(resource,definition,player:GetAttribute("MeleeBonus"))
  end
  local previousHealth = node.Health
  node.Health = Rules.Damage(node.Health,damage)

@@ -60,6 +60,7 @@ local target=generated[1]
 assert(target:GetAttribute("Health")==100 and target:GetAttribute("ResourceMaterial")=="Stone")
 assert(target.Part.Anchored and target.Part.CanQuery)
 local player={Character=make("Model","Character")}
+function player:GetAttribute() return 0 end
 player.Character:SetAttribute("HandsItem","StoneAxe")
 assert(Service.Hit(player,target,weapon) and target:GetAttribute("Health")==100 and used==1,"wrong tool wears but cannot mine")
 player.Character:SetAttribute("HandsItem","StoneShowel")
