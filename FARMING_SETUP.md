@@ -50,3 +50,6 @@ The second farm stage will include a farmer workstation to mill wheat into flour
 This is a reserved future feature: wheat/flour items, station model, recipes,
 processing costs/times and second-stage building costs are not defined yet.
 No placeholder craft or upgrade is added by the Farmer skill migration.
+
+Building the Greenhouse/farm requires **Farmer 50** in addition to its existing
+4 TreeLog + 4 Stone cost and normal mayor approval.

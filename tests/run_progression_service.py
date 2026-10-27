@@ -53,6 +53,7 @@ assert(Service.Snapshot(a).XP==farmBefore.XP+75 and Service.Snapshot(a).Practice
 Service.FarmXP(a,0,2)
 assert(Service.Snapshot(a).XP==farmBefore.XP+75 and Service.Snapshot(a).Practice.Farmer==nil and Service.Snapshot(a).Skills.Farmer==15,"zero-yield bushes do not grant passive Farmer practice")
 send("Skill","Farmer");assert(a:GetAttribute("SkillFarmer")==16,"Farmer is purchased through the authoritative manual skill command")
+assert(not Service.CanBuild(a,"Greenhouse"),"farm requires Farmer50")
 b:LoadCharacterAsync()
 local bd=table.clone(Service.Snapshot(b).Stats);bd.Strength=7;bd.Attention=7;bd.Luck=7
 clock+=.2;action.OnServerEvent:Fire(b,"Confirm",{Stats=bd,TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})
@@ -74,6 +75,10 @@ assert(Service.Snapshot(a).XP==oldXP+150,"kill XP derives from max HP, not healt
 local med=player(700);Players.PlayerAdded:Fire(med);med:LoadCharacterAsync()
 clock+=.2;action.OnServerEvent:Fire(med,"Confirm",{Stats={Strength=5,Attention=10,Endurance=5,Intelligence=10,Agility=5,Luck=1},TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})
 Service.Award(med,20000)
+for _=1,34 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Farmer") end
+assert(med:GetAttribute("SkillFarmer")==49 and not Service.CanBuild(med,"Greenhouse"),"Farmer49 cannot build farm")
+clock+=.2;action.OnServerEvent:Fire(med,"Skill","Farmer")
+assert(med:GetAttribute("SkillFarmer")==50 and Service.CanBuild(med,"Greenhouse"),"Farmer50 unlocks farm")
 for _=1,14 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
 for _=1,19 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end
 assert(not Service.CanBuild(med,"Hospital"),"both49 cannot build hospital")
