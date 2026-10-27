@@ -24,7 +24,7 @@ end
 local s=fresh();s.Perks={Lifegiver=2,GoodStudent=1,Criticals=2,Armadillo=2,HardCriticals=1,DoctorFortune=1,SilentRun=1,Economist=1,CatEyes=1,Duelist=1,DroppedIt=1,WeaponPart=1,NotSoEasy=1}
 local b=R.Bonuses(s.Stats,s.Perks,5)
 assert(b.MaxHealth==90 and R.Bonuses(s.Stats,s.Perks,6).MaxHealth==96,"lifegiver scales every level per rank")
-assert(b.Regeneration==10 and b.CriticalMin==1.5 and b.CriticalMax==2.5 and b.CriticalChance==.4)
+assert(b.Regeneration==10 and b.CriticalMin==2.5 and b.CriticalMax==2.5 and b.CriticalChance==.4)
 assert(b.DoctorFortuneChance==.2 and b.PistolCriticalBonus==.1 and b.DisarmChance==.1)
 assert(b.DamageAbsorption==4 and b.DamageResistance==.2 and b.LowHealthResistance==.1)
 assert(b.NightAccuracyMultiplier==.9 and b.SilentRunning and b.CraftCostMultiplier==.8 and b.EquippedWeaponWeightMultiplier==0)
@@ -33,7 +33,7 @@ assert(R.Practice(s,"Miner",5) and s.Practice.Miner.Value==1,"student applies to
 s.Level=29;s.XP=14999;assert(R.AddXP(s,1) and s.Level==30 and s.Perks.Observant==1,"automatic level30 perk")
 local recipe=C.Discount(recipes.MakeBandage,.8)
 assert(recipe.Ingredients.Rags==4 and recipes.MakeBandage.Ingredients.Rags==5)
-assert(recipe.MaxBatch==1 and recipe.Duration==20 and recipe.Requirements.Skills.Doctor==100)
+assert(recipe.MaxBatch==1 and recipe.Duration==20 and recipe.Requirements.Skills.FirstAid==50)
 assert(C.Plan({Rags=4},recipe,1).Ingredients.Rags==4 and not C.Plan({Rags=4},recipe,2))
 assert(C.Discount(recipes.MakePlanks,.8).Ingredients.TreeLog==1,"no free ingredient via rounding")
 assert(Noise.StepRadius(30,true,nil,true)==7 and Noise.StepRadius(30,true)==10 and Noise.StepRadius(30,false)==2)

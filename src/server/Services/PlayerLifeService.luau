@@ -123,7 +123,7 @@ function Service.Knockout(player,character)
   if player.Parent==Players and player.Character==character and knocked[character]==record and character:GetAttribute("Knockout") then Service.Finish(player,character) end
  end)
 end
-function Service.Revive(player,lockSeconds)
+function Service.Revive(player,lockSeconds,healingBonus)
  local character=player.Character
  local record=character and knocked[character]
  local hp=character and character:FindFirstChildOfClass("Humanoid")
@@ -134,7 +134,7 @@ function Service.Revive(player,lockSeconds)
  for part,flags in pairs(record.Parts) do
   if part.Parent then part.Anchored=flags.Anchored;part.CanCollide=flags.CanCollide;part.CanQuery=flags.CanQuery end
  end
- hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0))
+ hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0)+(healingBonus or 0))
  hp:ChangeState(Enum.HumanoidStateType.GettingUp)
  character:SetAttribute("Knockout",false);character:SetAttribute("KnockoutEndsAt",nil)
  character:SetAttribute("Health",hp.Health);character:SetAttribute("BlocksVision",record.BlocksVision)

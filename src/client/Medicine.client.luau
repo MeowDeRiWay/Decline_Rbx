@@ -66,7 +66,7 @@ Run.RenderStepped:Connect(function()
  if mode=="Doctor" then
   local cooldown=math.max(0,math.ceil((player:GetAttribute("DoctorReadyAt") or 0)-workspace:GetServerTimeNow()))
   text=cooldown>0 and ("Doctor · ready in "..cooldown.."s") or string.format("Doctor · %g%% chance · 4 to cancel\nClick a nearby knocked-out player",Rules.ReviveChance(player:GetAttribute("SkillDoctor"))*100)
- else text=string.format("First aid · %g HP · H to cancel\nClick yourself or a nearby player",Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),(selected or player):GetAttribute("Endurance"),character:GetAttribute("MedicineItem"))) end
+ else text=string.format("First aid · %g HP · H to cancel\nClick yourself or a nearby player",Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),(selected or player):GetAttribute("Endurance"),character:GetAttribute("MedicineItem"),player:GetAttribute("MedicalHealingBonus"))) end
  if selected then
   local body=selected.Character:FindFirstChild("HumanoidRootPart")
   if body and (body.Position-root.Position).Magnitude>3 then text="Move closer to "..selected.Name end

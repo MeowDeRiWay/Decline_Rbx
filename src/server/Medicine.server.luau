@@ -34,7 +34,7 @@ remote.OnServerEvent:Connect(function(player,mode,target)
   if patient:GetAttribute("Knockout") or health.Health>=health.MaxHealth then return end
   local medicine=character:GetAttribute("MedicineItem")
   if not Inventory.UseMedicine(player) then Journal.Send(player,"Equip a bandage in the Medicine slot first.");return end
-  local amount=math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine))
+  local amount=math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine,player:GetAttribute("MedicalHealingBonus")))
   health.Health+=amount;patient:SetAttribute("Health",health.Health)
   Journal.Send(player,string.format("You restored %g HP to %s.",amount,target==player and "yourself" or target.Name))
   if target~=player then
@@ -48,7 +48,7 @@ remote.OnServerEvent:Connect(function(player,mode,target)
   doctorReady[player]=now+10;player:SetAttribute("DoctorReadyAt",now+10)
   if random:NextNumber()>=Rules.ReviveChance(player:GetAttribute("SkillDoctor")) then Journal.Send(player,"Your revival attempt failed.");return end
   local fortunate=random:NextNumber()<(player:GetAttribute("DoctorFortuneChance") or 0)
-  if Life.Revive(target,fortunate and 0 or (player:GetAttribute("ReviveLockSeconds") or 600)) then
+  if Life.Revive(target,fortunate and 0 or (player:GetAttribute("ReviveLockSeconds") or 600),player:GetAttribute("MedicalHealingBonus")) then
    if fortunate then health.Health=health.MaxHealth;patient:SetAttribute("Health",health.Health);target:SetAttribute("ReviveLockedUntil",0) end
    Progression.Award(player,100)
    Journal.Send(player,"You revived "..target.Name..".")

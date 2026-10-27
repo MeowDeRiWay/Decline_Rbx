@@ -87,9 +87,14 @@ Life.Knockout(b,b.Character);clock+=10;roll=.17
 use("Doctor",b)
 assert(b.Character.Humanoid.Health==2 and b:GetAttribute("ReviveLockedUntil")==clock+300,"fortune boundary does not trigger")
 clock=b:GetAttribute("ReviveLockedUntil")+1
-Life.Knockout(b,b.Character);a:SetAttribute("DoctorFortuneChance",0);b:SetAttribute("ReviveHealthBonus",.2);b:SetAttribute("ReviveLockReduction",180);roll=.5
+Life.Knockout(b,b.Character);a:SetAttribute("MedicalHealingBonus",10);a:SetAttribute("DoctorFortuneChance",0);b:SetAttribute("ReviveHealthBonus",.2);b:SetAttribute("ReviveLockReduction",180);roll=.5
 use("Doctor",b)
-assert(b.Character.Humanoid.Health==22 and b:GetAttribute("ReviveLockedUntil")==clock+120,"patient gets +20percentHP and field hospital300 minus180 seconds")
+assert(b.Character.Humanoid.Health==32 and b:GetAttribute("ReviveLockedUntil")==clock+120,"patient gets +20percentHP plus healer paramedic10 and field hospital300 minus180 seconds")
+a:SetAttribute("FirstAidMultiplier",1);equipped=2
+b.Character.Humanoid.Health=50;use("Bandage",b)
+assert(b.Character.Humanoid.Health==72,"paramedic adds ten to ordinary bandage")
+a.Character:SetAttribute("MedicineItem","GreatBandage");b.Character.Humanoid.Health=50;use("Bandage",b)
+assert(b.Character.Humanoid.Health==84,"paramedic adds ten, not twenty, to great bandage")
 a.Character:SetAttribute("Knockout",true);b.Character.Humanoid.Health=50;before=equipped;use("Bandage",b);assert(equipped==before,"incapacitated healer denied")
 print("PASS: medical authority, self/other actual HP XP, medicine consumption, overheal, wall/range guards; doctor chance, both cooldowns, restoration and stale knockout timer safety")
 '''

@@ -13,8 +13,8 @@ Rules.Perks={
  {ID="Lifegiver",Name="Lifegiver",Max=2,Attributes={Endurance=7},Description="+1 maximum HP per character level, per rank."},
  {ID="Criticals",Name="More criticals",Max=2,Attributes={Luck=7},Description="Doubles Luck-based critical chance per rank."},
  {ID="FieldHospital",Name="Field hospital",Max=1,Skills={Doctor=100},Description="Patients you revive can be revived again after 5 minutes instead of 10."},
- {ID="Medic",Name="Paramedic",Max=1,Skills={FirstAid=150},Description="Doubles HP restored by first aid."},
- {ID="HardCriticals",Name="Brutal criticals",Max=1,Attributes={Luck=7},Skills={Doctor=150},Description="Raises the maximum critical damage multiplier from 2 to 2.5. Criticals roll between 1.5 and 2.5."},
+ {ID="Medic",Name="Paramedic",Max=1,Skills={FirstAid=150},Description="Adds 10 HP to all first aid and revival operations."},
+ {ID="HardCriticals",Name="Brutal criticals",Max=1,Attributes={Luck=7},Skills={Doctor=150},Description="Sets critical damage to a fixed 2.5 multiplier."},
  {ID="DoctorFortune",Name="Fortune favors doctors",Max=1,Attributes={Luck=7},Skills={Doctor=200},Description="Luck + 10% chance on a successful revival to restore full health and remove the patient's revival lock."},
  {ID="SilentRun",Name="Silent running",Max=1,Attributes={Agility=7},Skills={Sneak=150},Description="Sneak also reduces running noise."},
  {ID="Economist",Name="Economist",Max=1,Skills={Repair=150},Description="Crafting uses 20% fewer ingredients, rounded up per ingredient."},
@@ -156,8 +156,8 @@ function Rules.Bonuses(stats,perks,level,total)
   ViewRange=10+3*stats.Attention+10*(p.TunnelVision or 0),ViewAngleMultiplier=(p.TunnelVision or 0)>0 and .5 or 1,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,
   UnarmedArmorClass=15*(p.UnarmedEvade or 0),ReviveLockReduction=180*(p.QuickRecovery or 0),ReviveHealthBonus=.2*(p.QuickRecovery or 0),MeleeIgnoreAbsorption=2*(p.PiercingStrike or 0),MeleeIgnoreResistance=.1*(p.PiercingStrike or 0),SniperCriticalBonus=.1*(p.Sniper or 0),CowboyMultiplier=(p.Cowboy or 0)>0 and 1.15 or 1,ScroungerMultiplier=(p.Scrounger or 0)>0 and 1.25 or 1,PlantKnowledge=(p.Botanist or 0)>0,GreenhouseYieldMultiplier=(p.KhersonMelons or 0)>0 and 1.5 or 1,
   BackstabCritical=(p.SilentDeath or 0)>0,UnarmedDamageBonus=10*(p.UnarmedDamage or 0),ArmorBypassChance=(p.LivingAnatomy or 0)>0 and .1 or 0,
-  CriticalMin=1.5,CriticalMax=(p.HardCriticals or 0)>0 and 2.5 or 2,DoctorFortuneChance=(p.DoctorFortune or 0)>0 and (.1+.01*stats.Luck) or 0,SilentRunning=(p.SilentRun or 0)>0,CraftCostMultiplier=(p.Economist or 0)>0 and .8 or 1,ExperienceMultiplier=1+(p.GoodStudent or 0),NightAccuracyMultiplier=(p.CatEyes or 0)>0 and .9 or .5,Observant=(p.Observant or 0)>0,DamageAbsorption=2*(p.Armadillo or 0),DamageResistance=.1*(p.Armadillo or 0),LowHealthResistance=(p.NotSoEasy or 0)>0 and .1 or 0,PistolCriticalBonus=(p.Duelist or 0)>0 and .1 or 0,DisarmChance=(p.DroppedIt or 0)>0 and .1 or 0,EquippedWeaponWeightMultiplier=(p.WeaponPart or 0)>0 and 0 or 1,
-  RangedDamageBonus=2*(p.RangedDamage or 0),FirstAidMultiplier=1+(p.Medic or 0),ReviveLockSeconds=(p.FieldHospital or 0)>0 and 300 or 600}
+  CriticalMin=(p.HardCriticals or 0)>0 and 2.5 or 1.5,CriticalMax=(p.HardCriticals or 0)>0 and 2.5 or 2,DoctorFortuneChance=(p.DoctorFortune or 0)>0 and (.1+.01*stats.Luck) or 0,SilentRunning=(p.SilentRun or 0)>0,CraftCostMultiplier=(p.Economist or 0)>0 and .8 or 1,ExperienceMultiplier=1+(p.GoodStudent or 0),NightAccuracyMultiplier=(p.CatEyes or 0)>0 and .9 or .5,Observant=(p.Observant or 0)>0,DamageAbsorption=2*(p.Armadillo or 0),DamageResistance=.1*(p.Armadillo or 0),LowHealthResistance=(p.NotSoEasy or 0)>0 and .1 or 0,PistolCriticalBonus=(p.Duelist or 0)>0 and .1 or 0,DisarmChance=(p.DroppedIt or 0)>0 and .1 or 0,EquippedWeaponWeightMultiplier=(p.WeaponPart or 0)>0 and 0 or 1,
+  RangedDamageBonus=2*(p.RangedDamage or 0),FirstAidMultiplier=1,MedicalHealingBonus=10*(p.Medic or 0),ReviveLockSeconds=(p.FieldHospital or 0)>0 and 300 or 600}
 end
 function Rules.Meets(state,requirements)
  if not state.Confirmed then return false end
@@ -187,9 +187,9 @@ function Rules.SpendPerk(state,id)
  end
  return false
 end
-function Rules.FirstAid(skill,multiplier,endurance,medicine)
+function Rules.FirstAid(skill,multiplier,endurance,medicine,bonus)
  local quality=medicine=="GreatBandage" and 2 or 1
- return quality*((endurance or 0)+math.floor(math.clamp(skill or 0,0,300)/20))*(multiplier or 1)
+ return quality*((endurance or 0)+math.floor(math.clamp(skill or 0,0,300)/20))*(multiplier or 1)+(bonus or 0)
 end
 function Rules.ReviveChance(skill) return math.clamp((skill or 0)/200,0,1) end
 function Rules.CraftExperience(recipe,count) return (recipe.XP or 50)*count end
