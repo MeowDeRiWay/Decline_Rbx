@@ -8,6 +8,7 @@ local Inventory = require(script.Parent.InventoryService)
 local WorldItems = require(script.Parent.WorldItemService)
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
 local Progression = require(script.Parent.ProgressionService)
+local Journal = require(script.Parent.JournalService)
 local Service = {}
 local random = Random.new()
 local nodes, zones = {}, {}
@@ -211,6 +212,11 @@ function Service.Hit(player,model,weapon)
    if not next(state.Nodes) then state.NextAt = os.clock()+random:NextInteger(resource.RespawnMin,resource.RespawnMax) end
   end
   model:Destroy()
+ end
+ if damage>0 then
+  local name=({Tree="Tree",StoneVein="Stone vein",ScrapPile="Scrap pile"})[node.Kind] or "Resource"
+  local remaining=math.ceil(node.Health/damage)
+  Journal.Send(player,string.format("%s: %s%d hits remaining.",name,not definition and remaining>0 and "about " or "",remaining))
  end
  return true
 end

@@ -5,10 +5,12 @@ import sys
 import tempfile
 root = Path(__file__).resolve().parents[1]
 service = (root/'src/server/Services/ResourceService.luau').read_text()
-for name in ['Config', 'Rules', 'CombatRules', 'Area', 'Inventory', 'WorldItems', 'Items', 'Progression']:
+for name in ['Config', 'Rules', 'CombatRules', 'Journal', 'Area', 'Inventory', 'WorldItems', 'Items', 'Progression']:
     import re
     service = re.sub(rf'local {name} = require\([^\n]+\)\n', '', service)
 setup = 'local CombatRules=(function()\n'+(root/'src/shared/CombatRules.luau').read_text()+'\nend)()\n' + '''
+local messages={}
+local Journal={Send=function(_,message) table.insert(messages,message) end}
 local xp=0
 local Progression={Loot=function(_,items) return items end,Harvest=function(_,kind,count) assert(kind=="StoneVein" and count==1);xp+=count end}
 
@@ -64,7 +66,10 @@ function player:GetAttribute() return 0 end
 player.Character:SetAttribute("HandsItem","StoneAxe")
 assert(Service.Hit(player,target,weapon) and target:GetAttribute("Health")==100 and used==1,"wrong tool wears but cannot mine")
 player.Character:SetAttribute("HandsItem","StoneShowel")
-for _=1,20 do assert(Service.Hit(player,target,weapon)) end
+assert(#messages==0,"unsuitable tool does not claim progress")
+assert(Service.Hit(player,target,weapon) and messages[#messages]=="Stone vein: 19 hits remaining.")
+for _=2,20 do assert(Service.Hit(player,target,weapon)) end
+assert(messages[#messages]=="Stone vein: 0 hits remaining.")
 assert(target.destroyed and lootCalls==1 and used==21,"twenty stone shovel hits drop stone once")
 assert(not Service.Hit(player,target,weapon) and lootCalls==1,"no duplicate loot")
 assert(#workspace.Resources:GetChildren()==99)
@@ -85,6 +90,7 @@ function player:GetAttribute(id) return ({MeleeBonus=10,UnarmedDamageBonus=10})[
 local usedBefore=used
 assert(Service.Hit(player,tree,weapon) and tree:GetAttribute("Health")==82.5,"tree receives actual unarmed damage including flat perk bonus")
 assert(Service.Hit(player,tree,weapon) and tree:GetAttribute("Health")==65 and used==usedBefore,"fists do not consume weapon durability")
+assert(messages[#messages]=="Tree: about 4 hits remaining.","variable unarmed damage is labelled approximate")
 assert(not Service.Hit(player,generated[4],weapon) and generated[4]:GetAttribute("Health")==100,"hands cannot mine stone")
 print("PASS: bare hands damage trees using combat rolls and bonuses, without tool wear or stone mining")
 print("PASS: real resource service generates StoneYard by cells, skips duplicate markers, anchors veins, requires shovel and drops stone once")
