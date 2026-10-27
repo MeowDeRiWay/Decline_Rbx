@@ -1,5 +1,6 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 local recipes = {
+ BoilWater={Name="Boil water",Station="Stove",Boiled=true,Description="Boil one to five bottles of dirty water into clean water. One fuel per batch; no experience. You may leave.",Ingredients={DirtyWater=1},Output="CleanWater",OutputCount=1,MaxBatch=5,Duration=60,XP=0},
  MakePipePistol9mm={Name="Make 9 mm pipe pistol",Station="Workstation",Description="Assemble a single-shot pipe pistol. Requires Repair 60.",Ingredients={Plank=1,Scrap=3},Output="PipePistol9mm",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={Repair=60}}},
  MakePipeRifle9mm={Name="Make 9 mm pipe rifle",Station="Workstation",Description="Assemble a single-shot pipe rifle. Requires Repair 60.",Ingredients={Plank=2,Scrap=5},Output="PipeRifle9mm",OutputCount=1,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=60}}},
  MakeAmmo9mm={Name="Make 9 mm FMJ ammunition",Station="Workstation",Description="Produce 50 standard 9 mm rounds. Requires Repair 100.",Ingredients={Coal=1,Chemicals=1,Scrap=1},Output="Ammo9mmFMJ",OutputCount=50,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=100}}},
@@ -126,7 +127,7 @@ recipes.SmeltIron.Description="Smelt five scrap per iron, up to five iron per ba
 -- Fuel is per queued batch, not per serving.
 local charcoalVariants={}
 for id,recipe in pairs(recipes) do
- if recipe.Station=="Stove" and recipe.Food then
+ if recipe.Station=="Stove" and (recipe.Food or recipe.Boiled) then
   recipe.Fuel={ID="TreeLog",Count=1};recipe.FuelTab="Wood";recipe.FuelByproducts={Coal=1}
   local coal=table.clone(recipe)
   coal.Fuel={ID="Coal",Count=1};coal.FuelTab="Coal";coal.FuelByproducts=nil;coal.Duration=recipe.Duration/2

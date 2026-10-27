@@ -35,3 +35,18 @@ assert(medic.CriticalMin==2.5 and medic.CriticalMax==2.5)
 assert(P.FirstAid(100,medic.FirstAidMultiplier,7,"Bandage",medic.MedicalHealingBonus)==22)
 assert(P.FirstAid(100,medic.FirstAidMultiplier,7,"GreatBandage",medic.MedicalHealingBonus)==34)
 print("PASS: per-result XP, weapon costs, reusable sewing tool, first aid thresholds/formulas and all 1-5 smelting/burning batches")
+
+for _,id in ipairs({"BoilWater","BoilWaterCoal"}) do
+ local recipe=C[id]
+ assert(recipe.XP==0 and not recipe.Food and not recipe.RequiresPresence)
+ for count=1,5 do
+  local items={DirtyWater=count};items[recipe.Fuel.ID]=1
+  local plan=assert(R.Plan(items,recipe,count))
+  assert(plan.Ingredients.DirtyWater==count and plan.Ingredients[recipe.Fuel.ID]==1 and plan.Outputs.CleanWater==count)
+  assert(P.CraftExperience(recipe,count)==0)
+  assert(P.CraftOutputs(plan.Outputs,recipe,{Ramsay=true}).CleanWater==count,"water keeps ordinary ID even for master cooks")
+ end
+ assert(not R.Plan({DirtyWater=5},recipe,1),"fuel is required")
+end
+assert(C.BoilWater.Duration==60 and C.BoilWaterCoal.Duration==30)
+print("PASS: boil 1-5 water bottles, one fuel, no XP or Ramsay water alias, coal twice as fast")
