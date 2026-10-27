@@ -10,7 +10,7 @@ local recipes = {
  MakeLSW223={Name="Make .223 light support weapon",Station="ArmsBench",Description="Assemble a .223 light support weapon. Requires Repair 170.",Ingredients={Iron=25},Output="LSW223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
  MakeServiceRifle223={Name="Make .223 service rifle",Station="ArmsBench",Description="Assemble a .223 service rifle. Requires Repair 170.",Ingredients={Iron=25},Output="ServiceRifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
  MakeBucket={Name="Make empty bucket",Station="Workstation",Description="Shape scrap into a watering bucket. Requires Repair 80.",Ingredients={Scrap=3},Output="EmptyBucket",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Repair=80}}},
- MakeBandage={Name="Make bandage",Station="MedStation",StationLevel=1,Description="Prepare a bandage from five rags at a medical station. Requires Doctor 100.",Ingredients={Rags=5},Output="Bandage",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Doctor=100}}},
+ MakeBandage={Name="Make bandage",Station="MedStation",Description="Prepare a bandage from five rags at a medical station. Requires Doctor 100.",Ingredients={Rags=5},Output="Bandage",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Doctor=100}}},
  MakePlanks = {
   Name = "Make planks", Station = "Workstation",
   Description = "Cut one tree log into three planks.",

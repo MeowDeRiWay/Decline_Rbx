@@ -173,24 +173,33 @@ be near zero. The regression fixture preserves the supplied factory's 603 physic
 parts and 183 shared PrimaryPart references, tested at four orientations. Actual
 Roblox Studio placement still requires verification.
 
-## Station tiers and medical crafting
+## Station attributes and medical crafting
 
-Every crafting station supports numeric `StationLevel` (1 = T1, 2 = T2, etc.).
-Default is T1. A station may also be named `Workstation (T2)` or `MedStation (T1)`;
-its suffix supplies the tier when StationLevel is absent. The optional string
-`CraftStation` still selects its kind independently of its display name.
-Recipes can require a minimum `StationLevel`; both the menu and server enforce it.
-The tier is shown in the hover caption and crafting menu. Station tiers are
-separate from the existing Workshop building-level requirement on iron smelting.
+Station models may have any name. Set one Boolean function attribute to true:
 
-Place a Model named `MedStation` (or set `CraftStation = "MedStation"`) with at
-least one BasePart in the hospital. Bandages now belong exclusively here: five
-rags, Doctor 100, 20 seconds, one per queue; existing perk discounts still apply.
+| Attribute | Function |
+| --- | --- |
+| Workstation | General tools and materials; currently also 9 mm ammunition |
+| MedStation | Medicines and medical materials; currently bandages |
+| ArmorStation | Armor crafting; recipes to be added |
+| WeaponStation | Weapon crafting; existing ArmsBench/.223 recipes |
+| ChemistryStation | Chemistry; recipes to be added |
+
+Stove, CuttingBoard and Furnace Boolean attributes are supported too. Set one
+function attribute per model. Attributes take priority over old names and the
+legacy CraftStation string. Existing named stations and CraftStation strings
+continue working. WeaponStation maps to the existing ArmsBench recipe category.
+Station tiers are not used: StationLevel has no effect. The Workshop building
+level requirement for iron smelting remains a separate existing building rule.
+
+Each station must be a Model with at least one BasePart. Put MedStation=true on
+the hospital's medical table. Bandages belong exclusively here: five rags,
+Doctor 100, 20 seconds, one per queue; existing perk discounts still apply.
 Future medicines and medical materials belong here too. Advanced medical recipes
 may consume needles/syringes produced at a specialized workshop station; no such
 items or recipes are added until their definitions are supplied.
 
 The current Pistol9mm and SMG9mm crafting recipes are removed. The items remain
 available as existing gear/loot/admin grants. 9 mm ammunition remains at Workstation.
-T1/T2 weapon crafting is reserved for future homemade single-shot pistol/rifle
-models and recipes; no placeholder weapons or invented recipes are added.
+Future homemade single-shot pistol/rifle models and recipes will be added
+separately; no placeholder weapons or invented recipes are added.

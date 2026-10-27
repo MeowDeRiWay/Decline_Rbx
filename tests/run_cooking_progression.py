@@ -36,13 +36,17 @@ function Inventory.Add(_,id,n) stock[id]=(stock[id] or 0)+n; return true end
 '''
 cases='''
 a:LoadCharacterAsync()
-local tiered=make("Model","Workstation (T2)",workspace)
-assert(Stations.Kind(tiered)=="Workstation" and Stations.Level(tiered)==2,"named station tier recognized")
-tiered:SetAttribute("StationLevel",3);assert(Stations.Level(tiered)==3,"numeric attribute overrides suffix")
-for _,invalid in ipairs({0,-1,math.huge,"T2"}) do tiered:SetAttribute("StationLevel",invalid);assert(Stations.Level(tiered)==1,"invalid tiers default to T1") end
-tiered:Destroy()
+for _,kind in ipairs({"MedStation","Workstation","ArmorStation","WeaponStation","ChemistryStation"}) do
+ local station=make("Model","Any convenient model name",workspace)
+ station:SetAttribute(kind,false);assert(Stations.Kind(station)==nil,"false attribute is inactive")
+ station:SetAttribute(kind,true)
+ assert(Stations.Kind(station)==(kind=="WeaponStation" and "ArmsBench" or kind),"Boolean attribute defines station regardless of name")
+ station:SetAttribute("StationLevel",99)
+ assert(not Stations.Label(station):find("T99",1,true),"station tiers are not displayed")
+ station:Destroy()
+end
 local stove=make("Model","Stove",workspace); make("Part","Part",stove)
-local bench=make("Model","Workstation",workspace); make("Part","Part",bench)
+local bench=make("Model","Workshop table",workspace,{Workstation=true}); make("Part","Part",bench)
 assert(not Service.Open(a,stove),"station requirements block cooking access")
 assert(Service.Open(a,bench))
 assert(Service.Cook(a,"MakePlanks",1))
@@ -81,9 +85,9 @@ assert(Service.Snapshot(a).CookingReady.Plank==3 and xp==650,"one log to three b
 Service.Close(a);assert(Service.Open(a,bench))
 stock.Rags=4;a:SetAttribute("CraftCostMultiplier",.8)
 assert(not Service.Cook(a,"MakeBandage",1),"workstation cannot craft medicines")
-local med=make("Model","MedStation (T1)",workspace);make("Part","Part",med)
+local med=make("Model","Medical table",workspace,{MedStation=true});make("Part","Part",med)
 Service.Close(a);assert(Service.Open(a,med) and Service.Snapshot(a).CookingStation=="MedStation")
-assert(Service.Snapshot(a).CookingStationLevel==1 and not Service.Cook(a,"MakePlanks",1),"medical station is T1 and cannot craft workshop recipes")
+assert(not Service.Cook(a,"MakePlanks",1),"medical station cannot craft workshop recipes")
 assert(not Service.Cook(a,"MakeBandage",1),"Doctor requirement enforced")
 doctor=true
 assert(not Service.Cook(a,"MakeBandage",2),"one bandage per queue")
@@ -98,13 +102,8 @@ Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=3;a:SetAttribute("Cra
 assert(Recipes.MakeBucket.Requirements.Skills.Repair==80)
 doctor=false;assert(not Service.Cook(a,"MakeBucket",1),"bucket skill requirement checked")
 doctor=true;assert(not Service.Cook(a,"MakeBucket",2))
-Recipes.MakeBucket.StationLevel=2
-assert(not Service.Cook(a,"MakeBucket",1) and stock.Scrap==3,"station tier requirement enforced server-side before ingredients")
-bench:SetAttribute("StationLevel",2)
-assert(Service.Snapshot(a).CookingStationLevel==2,"station tier replicated to menu")
 assert(Service.Cook(a,"MakeBucket",1) and stock.Scrap==0 and durations[#durations]==20)
 callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.EmptyBucket==1,"bucket craft output")
-Recipes.MakeBucket.StationLevel=nil
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
 local repair=99
 Progression.Meets=function(_,requirement)
@@ -118,7 +117,7 @@ local before=xp
 assert(Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==99 and stock.Coal==9 and stock.Chemicals==9)
 callbacks[#callbacks]();assert(xp==before+100 and Service.Snapshot(a).CookingReady.Ammo9mmFMJ==50)
 assert(not Service.Cook(a,"MakeRifle223",1),"factory recipe unavailable on town bench")
-local arms=make("Model","Custom weapons machine",workspace,{CraftStation="ArmsBench"});make("Part","Part",arms)
+local arms=make("Model","Custom weapons machine",workspace,{WeaponStation=true});make("Part","Part",arms)
 Service.Close(a);assert(Service.Open(a,arms));stock.Iron=100
 repair=169;assert(not Service.Cook(a,"MakeAmmo223",1));repair=170
 for _,id in ipairs({"MakeAmmo223","MakeRifle223","MakeAssaultRifle223"}) do

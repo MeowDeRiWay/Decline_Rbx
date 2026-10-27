@@ -1,20 +1,20 @@
 local Stations={}
-local supported={Stove=true,CuttingBoard=true,Workstation=true,MedStation=true,ArmsBench=true,Furnace=true}
+local supported={Stove=true,CuttingBoard=true,Workstation=true,MedStation=true,ArmorStation=true,ChemistryStation=true,ArmsBench=true,Furnace=true}
+local attributes={"MedStation","ArmorStation","WeaponStation","ChemistryStation","Workstation","Stove","CuttingBoard","Furnace"}
+local function canonical(kind) return kind=="WeaponStation" and "ArmsBench" or kind end
 function Stations.Kind(model)
  if not model or not model:IsA("Model") then return nil end
- local kind=model:GetAttribute("CraftStation") or model.Name
- if typeof(kind)=="string" then kind=kind:match("^(.-) %(T%d+%)$") or kind end
+ for _,attribute in ipairs(attributes) do
+  if model:GetAttribute(attribute)==true then return canonical(attribute) end
+ end
+ -- Keep existing named stations and CraftStation strings working.
+ local kind=canonical(model:GetAttribute("CraftStation") or model.Name)
  return supported[kind] and kind or nil
-end
-function Stations.Level(model)
- local level=model:GetAttribute("StationLevel")
- if level==nil then level=tonumber(model.Name:match(" %(T(%d+)%)$")) or 1 end
- if typeof(level)~="number" or level~=level or level==math.huge or level<1 then return 1 end
- return math.floor(level)
 end
 function Stations.Label(model)
  local kind=Stations.Kind(model)
- return string.format("%s (T%d)",kind=="ArmsBench" and "Arms Bench" or kind=="MedStation" and "Medical station" or kind or model.Name,Stations.Level(model))
+ local names={ArmsBench="Weapons station",MedStation="Medical station",ArmorStation="Armor station",ChemistryStation="Chemistry station"}
+ return names[kind] or kind or model.Name
 end
 function Stations.Matches(recipe,kind)
  if recipe.Station==kind then return true end
@@ -29,7 +29,6 @@ function Stations.WorkshopLevel(model)
  return 0
 end
 function Stations.Allowed(model,recipe)
- return (not recipe.StationLevel or Stations.Level(model)>=recipe.StationLevel)
-  and (not recipe.WorkshopLevel or Stations.WorkshopLevel(model)>=recipe.WorkshopLevel)
+ return not recipe.WorkshopLevel or Stations.WorkshopLevel(model)>=recipe.WorkshopLevel
 end
 return Stations
