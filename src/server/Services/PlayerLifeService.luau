@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Inventory = require(script.Parent.InventoryService)
 local Chests = require(script.Parent.ChestService)
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
+local Beds=require(script.Parent.HospitalBedService)
 local Service = {}
 local knocked=setmetatable({},{__mode="k"})
 local finished = setmetatable({},{__mode="k"})
@@ -63,6 +64,7 @@ local function fall(character)
 end
 function Service.Finish(player,character)
  if finished[character] or player.Character~=character then return end
+ Beds.Leave(player,true)
  finished[character]=true
  character:SetAttribute("IsDead",true)
  character:SetAttribute("Knockout",false)
@@ -99,6 +101,7 @@ function Service.Finish(player,character)
 end
 function Service.Knockout(player,character)
  if character:GetAttribute("Knockout") or finished[character] then return end
+ Beds.Leave(player,true)
  local record={Pivot=character:GetPivot(),Parts={},BlocksVision=character:GetAttribute("BlocksVision")}
  for _,part in ipairs(character:GetDescendants()) do
   if part:IsA("BasePart") then record.Parts[part]={Anchored=part.Anchored,CanCollide=part.CanCollide,CanQuery=part.CanQuery} end

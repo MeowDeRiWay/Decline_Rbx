@@ -368,6 +368,7 @@ Cursor.Subscribe("Towns",3,function()
  end
 end)
 UserInputService.InputBegan:Connect(function(input,processed)
+ if player.Character and player.Character:GetAttribute("HospitalResting") then return end
  if processed or UserInputService:GetFocusedTextBox() then return end
  if queue[1] and (input.KeyCode == Enum.KeyCode.Y or input.KeyCode == Enum.KeyCode.N) then reply(input.KeyCode == Enum.KeyCode.Y)
  elseif input.KeyCode == Enum.KeyCode.E and hovered then hidden = false; section, confirmation = nil,nil; send("Open",hovered)

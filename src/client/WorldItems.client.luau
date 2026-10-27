@@ -32,9 +32,10 @@ label.Parent = gui
 local hovered, reachable, chestHovered = nil, false, false
 local stoveHovered=false
 local farmHovered=false
+local bedHovered=false
 Cursor.Subscribe("WorldItems",1,function()
  hovered, reachable, chestHovered = nil, false, false
- stoveHovered=false;farmHovered=false
+ stoveHovered=false;farmHovered=false;bedHovered=false
  highlight.Enabled, label.Visible = false, false
  label.Size=UDim2.fromOffset(200,44)
  local character = player.Character
@@ -42,6 +43,11 @@ Cursor.Subscribe("WorldItems",1,function()
  local camera = workspace.CurrentCamera
  if not root or not camera or character:GetAttribute("Knockout") or ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
+ if character:GetAttribute("HospitalResting") then
+  label.Text="Hospital bed\n[E] Get up"
+  label.Position=UDim2.fromOffset(mouse.X+16,mouse.Y+16);label.Visible=true
+  return
+ end
  -- GetMouseLocation already matches ViewportPointToRay coordinates.
  local viewportMouse = mouse
  if viewportMouse.X < 0 or viewportMouse.Y < 0 or viewportMouse.X > camera.ViewportSize.X or viewportMouse.Y > camera.ViewportSize.Y then return end
@@ -50,13 +56,14 @@ Cursor.Subscribe("WorldItems",1,function()
  if not hit then return end
  local chest = hit.Instance
  while chest and chest ~= workspace do
-  if chest:IsA("Model") and (chest.Name == "GardenBed" or chest.Name == "Well" or chest.Name == "Chest" or Stations.Kind(chest) or chest:GetAttribute("IsCorpse") == true) then break end
+  if chest:IsA("Model") and (chest.Name == "GardenBed" or chest.Name == "Well" or chest.Name == "Chest" or chest:GetAttribute("HospitalBed")==true or Stations.Kind(chest) or chest:GetAttribute("IsCorpse") == true) then break end
   chest = chest.Parent
  end
  if chest and chest ~= workspace then
   if chest:GetAttribute("IsCorpse") and chest:GetAttribute("ClientVisible") ~= true then return end
   local nearest = Interaction.NearestPoint(chest,root.Position)
   hovered, chestHovered = chest, true
+  bedHovered=chest:GetAttribute("HospitalBed")==true
   stoveHovered=Stations.Kind(chest)~=nil
   farmHovered=chest.Name=="GardenBed" or chest.Name=="Well"
   reachable = (nearest-root.Position).Magnitude <= Config.PickupDistance
@@ -64,6 +71,11 @@ Cursor.Subscribe("WorldItems",1,function()
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
   label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and Stations.Label(chest) or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
+  if bedHovered then
+   local occupant=chest:GetAttribute("HospitalBedUserId")
+   label.Text="Hospital bed"..(occupant and "\nOccupied" or reachable and "\n[E] Lie down" or "\nToo far")
+   if occupant then reachable=false end
+  end
   if farmHovered then
    label.Text=(chest.Name=="Well" and "Well" or "Garden bed")
    if chest.Name=="GardenBed" then
@@ -98,7 +110,11 @@ Cursor.Subscribe("WorldItems",1,function()
  label.Visible = true
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
+ local character=player.Character
+ if not processed and input.KeyCode==Enum.KeyCode.E and character and character:GetAttribute("HospitalResting") and not GuiService.MenuIsOpen and not UserInputService:GetFocusedTextBox() then
+  action:FireServer("HospitalBed");return
+ end
  if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not ((player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
-  action:FireServer(farmHovered and "Farm" or stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
+  action:FireServer(bedHovered and "HospitalBed" or farmHovered and "Farm" or stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
  end
 end)

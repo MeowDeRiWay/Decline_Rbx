@@ -7,6 +7,7 @@ medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight)=require
 life=(root/'src/server/Services/PlayerLifeService.luau').read_text()
 life=life[life.index('function Service.Knockout'):life.index('function Service.Damage')]
 setup='''
+local Beds={Leave=function() end}
 a:LoadCharacterAsync();b:LoadCharacterAsync();c:LoadCharacterAsync()
 Enum.HumanoidStateType={GettingUp=1}
 for _,p in ipairs({a,b,c}) do

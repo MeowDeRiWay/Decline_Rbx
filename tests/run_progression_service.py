@@ -41,6 +41,9 @@ hp.Health=10
 clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==16,"END6 heals6 per minute")
 a.Character:SetAttribute("Knockout",true);clock+=60;assert(coroutine.resume(loops[1]));assert(hp.Health==16,"regeneration cannot revive knockout")
 a.Character:SetAttribute("Knockout",false);hp.Health=37;assert(coroutine.resume(loops[1]));assert(hp.Health==38,"heal capped at max")
+hp.Health=10;a.Character:SetAttribute("HospitalResting",true);clock+=60
+assert(coroutine.resume(loops[1]));assert(hp.Health==10,"ordinary regeneration does not double-heal hospital patients")
+a.Character:SetAttribute("HospitalResting",false)
 hp.Health=0;assert(coroutine.resume(loops[1]));assert(hp.Health==0,"cannot revive dead")
 a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("Strength")==5 and a.Character.Humanoid.MaxHealth==38,"immutable creation survives respawn")
 assert(Service.Loot(a,{Rags=1}).Rags==1)

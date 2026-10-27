@@ -5,6 +5,7 @@ local WorldItems = require(script.Parent.Services.WorldItemService)
 local Chests = require(script.Parent.Services.ChestService)
 local Crafting = require(script.Parent.Services.CraftingService)
 local Farming=require(script.Parent.Services.FarmingService)
+local Beds=require(script.Parent.Services.HospitalBedService)
 local Consumables = require(script.Parent.Services.ConsumableService)
 local folder = Instance.new("Folder")
 folder.Name, folder.Parent = "InventoryRemotes", ReplicatedStorage
@@ -38,6 +39,8 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  if not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return end
+ if command=="HospitalBed" then Crafting.Close(player);Chests.Close(player);Beds.Use(player,value);return end
+ if character:GetAttribute("HospitalResting") then return end
  local key
  if typeof(value)=="table" then
   if typeof(value.ID)~="string" or typeof(value.Key)~="string" or #value.Key>160 then return end

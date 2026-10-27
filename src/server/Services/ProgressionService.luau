@@ -141,7 +141,7 @@ function Service.Start()
    task.wait(60)
    for player,state in pairs(states) do
     local character=player.Character;local hp=character and character:FindFirstChildOfClass("Humanoid")
-    if state.Confirmed and hp and hp.Health>0 and not character:GetAttribute("Knockout") and not character:GetAttribute("IsDead") then
+    if state.Confirmed and hp and hp.Health>0 and not character:GetAttribute("Knockout") and not character:GetAttribute("IsDead") and not character:GetAttribute("HospitalResting") then
      hp.Health=math.min(hp.MaxHealth,hp.Health+Rules.Bonuses(state.Stats,state.Perks,state.Level).Regeneration)
      character:SetAttribute("Health",hp.Health)
     end

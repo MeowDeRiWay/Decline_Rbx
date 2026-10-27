@@ -6,6 +6,7 @@ local Inventory=require(script.Parent.InventoryService)
 local Progression=require(script.Parent.ProgressionService)
 local Life=require(script.Parent.PlayerLifeService)
 local Towns=require(script.Parent.TownService)
+local Beds=require(script.Parent.HospitalBedService)
 local Service={}
 local records={}
 local transient={InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
@@ -21,6 +22,7 @@ local function corpse(record)
  record.Inventory=nil
 end
 local function leave(player)
+ Beds.Leave(player)
  local record={UserID=player.UserId,DisplayName=player.DisplayName,Attributes=player:GetAttributes(),Team=player.Team,Inventory=Inventory.Export(player)}
  records[player.UserId]=record
  local character=player.Character

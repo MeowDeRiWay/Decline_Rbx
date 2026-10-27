@@ -79,6 +79,7 @@ Cursor.Subscribe("Doors",2,function()
  if Interaction.Distance(target,root.Position)<=Config.InteractionDistance then hovered=target end
 end)
 Input.InputBegan:Connect(function(input,processed)
+ if player.Character and player.Character:GetAttribute("HospitalResting") then return end
  if processed or Input:GetFocusedTextBox() then return end
  if input.KeyCode==Enum.KeyCode.E and hovered then action:FireServer(hovered) end
 end)

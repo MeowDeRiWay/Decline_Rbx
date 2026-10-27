@@ -17,7 +17,7 @@ local function context(player)
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local id=character and character:GetAttribute("HandsItem")
  local definition=id and Items[id]
- if not root or not hp or hp.Health<=0 or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or not definition or not definition.Firearm then return end
+ if not root or not hp or hp.Health<=0 or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or character:GetAttribute("HospitalResting") or not definition or not definition.Firearm then return end
  if definition.Requirements and not Progression.Meets(player,definition.Requirements) then return end
  return character,root,id,definition.Firearm
 end

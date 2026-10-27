@@ -20,7 +20,7 @@ attack.OnServerEvent:Connect(function(player)
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local held = character and character:FindFirstChild("HeldItem")
  local motor = held and held:FindFirstChild("WeaponGrip")
- if not root or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return end
+ if not root or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") or character:GetAttribute("HospitalResting") then return end
  local now = os.clock()
  if now < (ready[player] or 0) then return end
  local weapon = Inventory.GetWeapon(player)
@@ -35,7 +35,7 @@ attack.OnServerEvent:Connect(function(player)
  ready[player] = now + cooldown
  Motion.Play(motor,motionWeapon)
  task.delay(Motion.HitDelay(motionWeapon),function()
- if player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or (motor and (motor.Parent ~= held or held.Parent ~= character)) or Inventory.GetWeapon(player) ~= weapon then return end
+ if player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or character:GetAttribute("HospitalResting") or (motor and (motor.Parent ~= held or held.Parent ~= character)) or Inventory.GetWeapon(player) ~= weapon then return end
  local params = OverlapParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = {character}
