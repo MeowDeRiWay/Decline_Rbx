@@ -1,5 +1,7 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 local recipes = {
+ MakePipePistol9mm={Name="Make 9 mm pipe pistol",Station="Workstation",Description="Assemble a single-shot pipe pistol. Requires Repair 60.",Ingredients={Plank=1,Scrap=3},Output="PipePistol9mm",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={Repair=60}}},
+ MakePipeRifle9mm={Name="Make 9 mm pipe rifle",Station="Workstation",Description="Assemble a single-shot pipe rifle. Requires Repair 60.",Ingredients={Plank=2,Scrap=5},Output="PipeRifle9mm",OutputCount=1,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=60}}},
  MakeAmmo9mm={Name="Make 9 mm FMJ ammunition",Station="Workstation",Description="Produce 50 standard 9 mm rounds. Requires Repair 100.",Ingredients={Coal=1,Chemicals=1,Scrap=1},Output="Ammo9mmFMJ",OutputCount=50,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=100}}},
  BurnLogs={FuelTab="Wood",Name="Burn logs into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn five logs into five charcoal. No matches needed yet; you may leave.",Ingredients={TreeLog=1},Output="Coal",OutputCount=1,MaxBatch=5,Duration=60},
  BurnLogsWithCoal={FuelTab="Coal",Name="Burn logs with charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Use one charcoal to burn five logs faster. You may leave.",Ingredients={TreeLog=1},Fuel={ID="Coal",Count=1},Output="Coal",OutputCount=1,MaxBatch=5,Duration=30},

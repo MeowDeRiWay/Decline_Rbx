@@ -157,6 +157,14 @@ ItemConfig.Items.Pistol9mm={Name="9 mm pistol",Weight=.9,Slot="Hands",
  Description="Semi-automatic pistol. R reloads available ammo; B selects FMJ/AP.",
  Firearm={Category="Pistol",Skill="LightWeapons",SingleOnly=true,HoldHeightRatio=.4,Caliber="9mm",ShotDistance=60,Magazine=15,ReloadTime=1.8,Speed=350,Range=180,Damage=15,DamageMin=10,DamageMax=15,RPM=300},
  Weapon={Damage=15,DamageMin=10,DamageMax=15,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
+ItemConfig.Items.PipePistol9mm={Name="9 mm pipe pistol",Weight=1,Slot="Hands",
+ Description="Single-shot improvised pistol. R manually reloads one 9 mm round; B selects FMJ/AP.",
+ Firearm={Category="Pistol",Skill="LightWeapons",SingleOnly=true,ManualReload=true,HoldHeightRatio=.4,Caliber="9mm",ShotDistance=60,Magazine=1,ReloadTime=2,Speed=350,Range=180,Damage=16,DamageMin=12,DamageMax=16,RPM=60},
+ Weapon={Damage=16,DamageMin=12,DamageMax=16,DamageType="Bullet",MaxUses=1000,AttacksPerMinute=60}}
+ItemConfig.Items.PipeRifle9mm={Name="9 mm pipe rifle",Weight=2,Slot="Hands",
+ Description="Single-shot improvised rifle. R manually reloads one 9 mm round; B selects FMJ/AP.",
+ Firearm={Category="Rifle",Skill="LightWeapons",SingleOnly=true,ManualReload=true,BoltAction=false,HoldHeightRatio=.4,Caliber="9mm",ShotDistance=60,Magazine=1,ReloadTime=3,Speed=350,Range=200,Damage=22,DamageMin=18,DamageMax=22,RPM=60},
+ Weapon={Damage=22,DamageMin=18,DamageMax=22,DamageType="Bullet",MaxUses=1000,AttacksPerMinute=60}}
 ItemConfig.Items.SMG9mm={Name="9 mm submachine gun",Weight=2.5,Slot="Hands",
  Description="Submachine gun. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
  Firearm={Category="Automatic",Skill="LightWeapons",HoldHeightRatio=.4,Caliber="9mm",ShotDistance=60,Magazine=30,ReloadTime=2.2,Speed=350,Range=200,Damage=15,DamageMin=10,DamageMax=15,RPM=750},

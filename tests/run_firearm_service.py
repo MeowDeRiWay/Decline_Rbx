@@ -45,7 +45,7 @@ function Inventory.SaveMagazine(_,loaded,kind,mode,ready)
  changed.callback(player)
 end
 function Inventory.ReloadMagazine()
- local id="Ammo223"..magazine.Type
+ local id="Ammo"..Items[character:GetAttribute("HandsItem")].Firearm.Caliber..magazine.Type
  local count=math.min(Items[character:GetAttribute("HandsItem")].Firearm.Magazine-magazine.Loaded,rounds[id] or 0)
  rounds[id]-=count;magazine.Loaded+=count;changed.callback(player)
 end
@@ -139,6 +139,19 @@ fire(player,"Reload");advance(2.5);assert(magazine.Loaded==30,"LSW30-round reloa
 fire(player,"Fire",direction);assert(magazine.Loaded==29)
 advance(.08);fire(player,"Fire",direction);assert(magazine.Loaded==29)
 advance(.007);fire(player,"Fire",direction);assert(magazine.Loaded==28,"LSW700RPM")
+for index,id in ipairs({"PipePistol9mm","PipeRifle9mm"}) do
+ advance(5);character:SetAttribute("HandsItem",id);magazine={UID=200+index,Type="FMJ",Loaded=0,Mode="Auto"};rounds.Ammo9mmFMJ=10
+ changed.callback(player)
+ local gun=Items[id].Firearm
+ assert(gun.Magazine==1 and gun.SingleOnly and gun.ManualReload and gun.Skill=="LightWeapons")
+ fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single")
+ fire(player,"Reload");advance(gun.ReloadTime-.1);assert(magazine.Loaded==0)
+ advance(.11);assert(magazine.Loaded==1 and rounds.Ammo9mmFMJ==9)
+ fire(player,"Fire",direction);assert(magazine.Loaded==0)
+ advance(5);fire(player,"Fire",direction);assert(magazine.Loaded==0 and rounds.Ammo9mmFMJ==9,"empty gun cannot fire or reload itself")
+ fire(player,"Reload");advance(gun.ReloadTime+.1);assert(magazine.Loaded==1 and rounds.Ammo9mmFMJ==8)
+end
+print("PASS: both pipe guns load exactly one 9mm round and require reload between shots")
 print("PASS: SR20 semi-auto and LSW30/700RPM reload, mode and fire timing")
 print("PASS: persistent per-weapon charge, independent identical guns, loose/loaded conservation, holster cooldown, reload cancellation, RPM/wall/direction guards, mode, sound, durability and empty notice")
 '''

@@ -41,7 +41,8 @@ RunService.Heartbeat:Connect(function()
  if direction.Magnitude<.05 then return end
  ready=os.clock()+60/definition.Firearm.RPM
  if (character:GetAttribute("MagazineAmmo") or 0)<=0 then
-  ready=os.clock()+.25;action:FireServer("Reload")
+  ready=os.clock()+.25
+  if definition.Firearm.ManualReload then firing=false else action:FireServer("Reload") end
  else
   action:FireServer("Fire",direction.Unit)
   if definition.Firearm.SingleOnly or character:GetAttribute("FireMode")=="Single" then firing=false end
