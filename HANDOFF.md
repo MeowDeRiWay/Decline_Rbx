@@ -1,3 +1,13 @@
+## Player HP balance — 27 October 2026 (supersedes earlier HP formulas)
+
+Player MaxHealth = 4*Endurance + 2*Strength + level*(4 + LifegiverRanks).
+Creation is level0. Lifegiver remains max2 but now gives +1 HP per level per rank,
+including levels already earned. Other attribute/perk bonuses stay unchanged.
+Zombie.server explicitly keeps zombie MaxHealth=10*Endurance so this player-only
+balance does not change zombie day/night HP. ProgressionPresentation and current
+PROGRESSION_SETUP formula/table are updated. Rules/service tests cover creation,
+level growth, perks, cap30, admin reset, respawn and health clamping.
+
 # Decline — передача контексту наступному чату
 
 Оновлено: 13 жовтня 2026, після додавання міст і будівництва.

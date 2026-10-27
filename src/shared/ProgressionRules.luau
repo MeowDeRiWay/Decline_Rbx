@@ -10,7 +10,7 @@ Rules.Perks={
  {ID="Hearing",Name="Bonus awareness",Max=1,Attributes={Attention=7},Description="+2 Attention for hearing only. Can exceed 10."},
  {ID="StrongArm",Name="Strong arm",Max=1,Attributes={Strength=7},Description="Doubles the Strength damage bonus for melee and unarmed attacks."},
  {ID="StrongBack",Name="Strong back",Max=2,Attributes={Strength=6,Endurance=6},Description="+10 kg carrying capacity."},
- {ID="Lifegiver",Name="Lifegiver",Max=2,Attributes={Endurance=7},Description="+4 maximum HP per character level, per rank."},
+ {ID="Lifegiver",Name="Lifegiver",Max=2,Attributes={Endurance=7},Description="+1 maximum HP per character level, per rank."},
  {ID="Criticals",Name="More criticals",Max=2,Attributes={Luck=7},Description="Doubles Luck-based critical chance per rank."},
  {ID="FieldHospital",Name="Field hospital",Max=1,Skills={Doctor=100},Description="Patients you revive can be revived again after 5 minutes instead of 10."},
  {ID="Medic",Name="Paramedic",Max=1,Skills={FirstAid=150},Description="Doubles HP restored by first aid."},
@@ -143,7 +143,7 @@ function Rules.Bonuses(stats,perks,level,total)
  local movement=Rules.MovementMultiplier(total or {})
  local hearing=stats.Attention+2*(p.Hearing or 0)
  local playerLevel=math.clamp(level or 0,0,Rules.MaxLevel)
- return {CarryLimitKg=5*stats.Strength+playerLevel+10*(p.StrongBack or 0),MeleeBonus=stats.Strength*(1+(p.StrongArm or 0)),MaxHealth=10*stats.Endurance+playerLevel*(stats.Endurance+4*(p.Lifegiver or 0)),
+ return {CarryLimitKg=5*stats.Strength+playerLevel+10*(p.StrongBack or 0),MeleeBonus=stats.Strength*(1+(p.StrongArm or 0)),MaxHealth=4*stats.Endurance+2*stats.Strength+playerLevel*(4+(p.Lifegiver or 0)),
   WalkBonus=.2*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)*movement,RunBonus=(.4*stats.Agility*((p.FastFeet or 0)>0 and 1.2 or 1)+(p.FastFeet or 0))*movement,CombatMovementMultiplier=movement,Regeneration=(stats.Endurance+4*(p.QuickRecovery or 0))*(1+(p.Regeneration or 0)),
   DodgeChance=5*stats.Agility+20*(p.Dodger or 0),CriticalChance=.01*stats.Luck*2^(p.Criticals or 0),
   ViewRange=10+3*stats.Attention+10*(p.TunnelVision or 0),ViewAngleMultiplier=(p.TunnelVision or 0)>0 and .5 or 1,HearingAttention=hearing,HearingMultiplier=hearing/5,ViewBonus=0,LuckChance=0,LuckAmount=0,

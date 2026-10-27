@@ -1,4 +1,4 @@
-# Current progression update — 23 October 2026
+# Current progression update — 27 October 2026
 
 This section supersedes the historical profession/talent notes below.
 
@@ -11,9 +11,13 @@ This section supersedes the historical profession/talent notes below.
 - **Overly observant** is free to select after confirming Attention 8, even with
   zero perk points or ten selected normal perk ranks. It is also granted
   automatically at level 30 regardless of Attention, without duplicates or cost.
-- Maximum HP is `10 × Endurance + level × (Endurance + 4 × Lifegiver ranks)`.
-  Every earned level adds Endurance maximum HP, plus the existing Lifegiver
-  bonus of 4 per rank. Endurance 7 gives +7 HP/level without Lifegiver.
+- Player maximum HP is `4 × Endurance + 2 × Strength + level × (4 + Lifegiver ranks)`.
+  Creation is level 0: each Endurance point grants 4 HP and each Strength point
+  grants 2 HP. Every earned level grants 4 HP regardless of Endurance.
+  Lifegiver retains two ranks, each adding 1 HP per current character level;
+  selecting the perk also includes levels already earned. STR5/END7 at level30
+  gives 158 HP, or 188/218 with one/two Lifegiver ranks. No other attribute bonus
+  changes. Zombies retain their separate `10 × Endurance` HP, including night stats.
   Increasing maximum HP preserves current HP; reducing it clamps current HP.
 - Carrying capacity is `5 × Strength + level + 10 × Strong back ranks` kg.
   Each earned level adds 1 kg; admin reset recalculates it at level 1.
@@ -36,11 +40,29 @@ Tests: progression_rules.test.luau, new_perks.test.luau,
 run_progression_service.py, run_admin.py, run_skill_hold.py. Compilation and Rojo
 build pass; live Roblox Studio mouse/touch and multiplayer QA remains pending.
 
+## Current attribute bonuses (per point; no perks)
+
+| Attribute | Direct bonuses | Starting skill bonuses |
+| --- | --- | --- |
+| Strength | +2 creation HP, +5 kg carry, +1 melee/unarmed damage contribution | +3 HeavyWeapons, +5 Unarmed, +5 Melee, +3 Throwing |
+| Attention | +3 studs vision (10 base), +20% of base hearing range (5 Attention = 100%) | +5 LightWeapons, +5 Traps, +3 HeavyWeapons, +3 Unarmed, +2 FirstAid, +3 Doctor, +1 Cook |
+| Endurance | +4 creation HP, +1 HP/min regeneration | None |
+| Intelligence | +1 unspent skill point at creation and per level (5 + INT total) | +5 FirstAid, +5 Doctor, +5 Repair, +4 Cook |
+| Agility | +5 armor class, +0.2 walk speed, +0.4 sprint speed, +1 second sprint duration (10 base) | +5 Unarmed, +5 Throwing, +5 Sneak, +1 LightWeapons |
+| Luck | +1 percentage point critical chance | None |
+
+The unarmed Strength damage contribution rolls from 75% to 120%; perks may
+modify it. Movement skills/perks still modify the existing speed bonuses.
+Each level also continues granting +1 kg carrying capacity.
+
+
 ---
 
 # Progression, professions and talents
 
 Press **C** for the two-column Character menu: attributes on the left, final statistics on the right. Press **T** for talents. The appearance matches Inventory. Attribute effects and caps appear only while hovering the relevant card. Choose Cook or Worker; selection lasts for the server session. Progression survives respawn, but has no DataStore persistence yet.
+
+
 
 ## Levels and points
 

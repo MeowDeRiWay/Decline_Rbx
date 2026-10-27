@@ -28,6 +28,8 @@ local function applyDayStats(model,hp,base)
  local stats=table.clone(base)
  if workspace:GetAttribute("IsNight") then for id,value in pairs(stats) do stats[id]=value+2 end end
  local derived=Progression.Bonuses(stats)
+ -- Player creation/level HP balance does not change zombie endurance scaling.
+ derived.MaxHealth=10*stats.Endurance
  local skills=Progression.SkillValues(stats)
  local ratio=hp.MaxHealth>0 and hp.Health/hp.MaxHealth or 1
  for id,value in pairs(stats) do model:SetAttribute(id,value) end

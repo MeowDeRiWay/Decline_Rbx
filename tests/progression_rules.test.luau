@@ -18,7 +18,7 @@ s.SkillPoints=999
 for _=1,400 do R.SpendSkill(s,"Melee") end
 assert(R.TotalSkills(s).Melee==300)
 local b=R.Bonuses(s.Stats)
-assert(b.CarryLimitKg==50 and b.MaxHealth==50 and b.MeleeBonus==10)
+assert(b.CarryLimitKg==50 and b.MaxHealth==40 and b.MeleeBonus==10)
 assert(b.WalkBonus==1 and b.RunBonus==2 and b.DodgeChance==25 and b.Regeneration==5 and b.CriticalChance==.05)
 assert(b.LuckChance==0 and b.ViewRange==25 and b.HearingMultiplier==1)
 local v=R.TotalSkills(s)
@@ -36,7 +36,7 @@ local outputs={Potato=5};assert(R.CraftOutputs(outputs).Potato==5 and R.CraftEff
 print("PASS: six immutable1–10 attributes,36-point budget, INT level points, all skill bonuses/caps, requirements, passive practice and locked attributes")
 
 local minimum=R.Bonuses({Strength=1,Attention=1,Endurance=1,Intelligence=1,Agility=1,Luck=1})
-assert(minimum.MaxHealth==10 and minimum.CarryLimitKg==5 and minimum.MeleeBonus==1 and minimum.DodgeChance==5)
+assert(minimum.MaxHealth==6 and minimum.CarryLimitKg==5 and minimum.MeleeBonus==1 and minimum.DodgeChance==5)
 assert(minimum.WalkBonus==.2 and minimum.RunBonus==.4 and minimum.Regeneration==1 and minimum.CriticalChance==.01)
 
 assert(R.TotalSkills(s).FirstAid==40 and R.TotalSkills(s).Doctor==45 and R.TotalSkills(s).Cook==29)
@@ -52,7 +52,7 @@ assert(perks.PerkPoints==0 and not R.SpendPerk(perks,"Observant"),"Attention7 ca
 perks.Stats.Attention=8;assert(R.SpendPerk(perks,"Observant") and perks.PerkPoints==0 and R.PerkCount(perks)==10,"observant free outside cap at zero points")
 assert(not R.SpendPerk(perks,"Observant") and perks.PerkPoints==0,"free perk cannot be taken twice")
 local bonus=R.Bonuses(perks.Stats,perks.Perks,3)
-assert(bonus.RangedDamageBonus==4 and bonus.MaxHealth==115 and bonus.MeleeBonus==14 and bonus.CarryLimitKg==48)
+assert(bonus.RangedDamageBonus==4 and bonus.MaxHealth==60 and bonus.MeleeBonus==14 and bonus.CarryLimitKg==48)
 assert(bonus.CriticalChance==.14 and bonus.Regeneration==14 and bonus.FirstAidMultiplier==2 and bonus.ReviveLockSeconds==300)
 local high=R.Bonuses({Strength=1,Attention=10,Endurance=1,Intelligence=1,Agility=1,Luck=1},{Hearing=1})
 assert(high.HearingAttention==12 and high.ViewRange==40)
@@ -84,8 +84,8 @@ local capped=R.New();assert(R.Confirm(capped,{Strength=5,Attention=5,Endurance=5
 assert(R.AddXP(capped,1e12) and capped.Level==30 and capped.XP==0 and capped.Perks.Observant==1)
 local sp,pp=capped.SkillPoints,capped.PerkPoints
 assert(not R.AddXP(capped,1e12) and capped.Level==30 and capped.SkillPoints==sp and capped.PerkPoints==pp and capped.XP==0)
-assert(R.Bonuses(capped.Stats,{},0).MaxHealth==50 and R.Bonuses(capped.Stats,{},1).MaxHealth==55 and R.Bonuses(capped.Stats,{},30).MaxHealth==200)
-assert(R.Bonuses(capped.Stats,{Lifegiver=2},30).MaxHealth==440,"base growth and both Lifegiver ranks stack")
+assert(R.Bonuses(capped.Stats,{},0).MaxHealth==30 and R.Bonuses(capped.Stats,{},1).MaxHealth==34 and R.Bonuses(capped.Stats,{},30).MaxHealth==150)
+assert(R.Bonuses(capped.Stats,{Lifegiver=2},30).MaxHealth==210,"base growth and both Lifegiver ranks stack")
 assert(R.Bonuses(capped.Stats,{},0).CarryLimitKg==25 and R.Bonuses(capped.Stats,{},1).CarryLimitKg==26 and R.Bonuses(capped.Stats,{},30).CarryLimitKg==55)
 assert(R.Bonuses(capped.Stats,{StrongBack=2},30).CarryLimitKg==75,"level carry bonus adds to Strength and Strong back")
 assert(R.Practice(capped,"Miner",10) and capped.Practice.Miner.Value==1,"practice continues at max character level")
@@ -99,21 +99,26 @@ assert(capped.SkillPoints==20 and capped.PerkPoints==0 and capped.TaggedSkills.M
 assert(R.TotalSkills(capped).Melee==25,"reset retains only attribute-derived skill values")
 assert(R.ResetProgression(capped) and capped.SkillPoints==20,"repeat reset cannot accumulate points")
 assert(not R.ResetProgression(R.New()))
-print("PASS: hard level30 cap, no surplus XP/rewards, Endurance HP per level, additive Lifegiver, complete level1 progression reset")
+print("PASS: hard level30 cap, no surplus XP/rewards, fixed HP per level, additive Lifegiver, complete level1 progression reset")
 
 for endurance=1,10 do
  local stats={Strength=5,Attention=5,Endurance=endurance,Intelligence=5,Agility=5,Luck=5}
  for rank=0,2 do
   for level=0,30 do
    local hp=R.Bonuses(stats,{Lifegiver=rank},level).MaxHealth
-   assert(hp==10*endurance+level*(endurance+4*rank))
-   if level>0 then assert(hp-R.Bonuses(stats,{Lifegiver=rank},level-1).MaxHealth==endurance+4*rank) end
+   assert(hp==4*endurance+10+level*(4+rank))
+   if level>0 then assert(hp-R.Bonuses(stats,{Lifegiver=rank},level-1).MaxHealth==4+rank) end
   end
  end
 end
+for strength=1,10 do
+ local stats={Strength=strength,Attention=5,Endurance=7,Intelligence=5,Agility=5,Luck=5}
+ assert(R.Bonuses(stats,{},0).MaxHealth==28+2*strength,"each creation Strength point gives two HP")
+ assert(R.Bonuses(stats,{Lifegiver=2},30).MaxHealth==208+2*strength,"Strength contribution does not scale with level")
+end
 local seven={Strength=5,Attention=5,Endurance=7,Intelligence=5,Agility=5,Luck=5}
-assert(R.Bonuses(seven,{},0).MaxHealth==70 and R.Bonuses(seven,{},1).MaxHealth==77 and R.Bonuses(seven,{},30).MaxHealth==280)
-print("PASS: Endurance1-10 adds its own value per level0-30; Lifegiver adds4 per rank; END7 gives7HP per level")
+assert(R.Bonuses(seven,{},0).MaxHealth==38 and R.Bonuses(seven,{},1).MaxHealth==42 and R.Bonuses(seven,{},30).MaxHealth==158)
+print("PASS: END gives4 base HP, STR gives2 base HP, levels give4 HP, Lifegiver gives1 per level per rank")
 
 local schedule=R.New();schedule.Confirmed=true
 assert(schedule.PerkPoints==0)
