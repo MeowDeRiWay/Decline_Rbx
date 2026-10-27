@@ -154,7 +154,7 @@ end
 
 local baseline={Strength=5,Attention=5,Endurance=5,Intelligence=5,Agility=5,Luck=5}
 local baseSkills=R.SkillValues(baseline)
-local deltas={Strength={HeavyWeapons=3,Unarmed=3,Melee=3,Throwing=3},Attention={LightWeapons=3,Traps=2},Endurance={FirstAid=1,Cook=1},Intelligence={FirstAid=3,Doctor=3,Repair=3,Cook=3},Agility={Sneak=3},Luck={}}
+local deltas={Strength={HeavyWeapons=3,Unarmed=3,Melee=3,Throwing=3,Farmer=3},Attention={LightWeapons=3,Traps=2},Endurance={FirstAid=1,Cook=1},Intelligence={FirstAid=3,Doctor=3,Repair=3,Cook=3},Agility={Sneak=3},Luck={}}
 for attribute,expected in pairs(deltas) do
  local changed=table.clone(baseline);changed[attribute]+=1
  for skill,value in pairs(R.SkillValues(changed)) do
@@ -162,3 +162,8 @@ for attribute,expected in pairs(deltas) do
  end
 end
 print("PASS: every attribute skill delta matches new balance; removed cross-attribute bonuses remain zero")
+
+local legacy=R.New();legacy.Skills.Farmer=nil;legacy.Practice.Farmer={Value=17,XP=8}
+R.MigrateFarming(legacy)
+assert(legacy.Skills.Farmer==17 and legacy.Practice.Farmer==nil and R.TotalSkills(legacy).Farmer==32,"legacy farming ranks become trained skill points plus Strength base")
+R.MigrateFarming(legacy);assert(legacy.Skills.Farmer==17,"migration is idempotent")

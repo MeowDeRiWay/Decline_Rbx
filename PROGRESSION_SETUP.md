@@ -40,11 +40,22 @@ Tests: progression_rules.test.luau, new_perks.test.luau,
 run_progression_service.py, run_admin.py, run_skill_hold.py. Compilation and Rojo
 build pass; live Roblox Studio mouse/touch and multiplayer QA remains pending.
 
+## Building requirements and Farmer — 27 October 2026
+
+Workshop requires Repair50; Kitchen requires Cook50; Hospital requires FirstAid50
+OR Doctor50. Craft recipe requirements are unchanged by this building update.
+Farmer is manually trained, supports tagged skills, and starts at 3×Strength.
+Harvest retains 25 character XP per potato but no longer grants Farmer practice.
+The remaining passive skills are Lumberjack, Miner and Scavenger. Old earned
+Farmer ranks migrate once into invested Farmer points; fractional passive XP has
+no manual-skill equivalent. The normal skill cap and point costs apply.
+A wheat-to-flour workstation is planned for farm stage2, with models/recipes TBD.
+
 ## Current attribute bonuses (per point; no perks)
 
 | Attribute | Direct bonuses | Starting skill bonuses |
 | --- | --- | --- |
-| Strength | +2 creation HP, +5 kg carry, +1 melee/unarmed damage contribution | +3 HeavyWeapons, +3 Unarmed, +3 Melee, +3 Throwing |
+| Strength | +2 creation HP, +5 kg carry, +1 melee/unarmed damage contribution | +3 HeavyWeapons, +3 Unarmed, +3 Melee, +3 Throwing, +3 Farmer |
 | Attention | +3 studs vision (10 base), +20% of base hearing range (5 Attention = 100%) | +3 LightWeapons, +2 Traps |
 | Endurance | +4 creation HP, +1 HP/min regeneration | +1 Cook, +1 FirstAid |
 | Intelligence | +1 unspent skill point at creation and per level (5 + INT total) | +3 FirstAid, +3 Doctor, +3 Repair, +3 Cook |

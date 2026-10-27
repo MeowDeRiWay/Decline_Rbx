@@ -5,7 +5,7 @@ local function fresh()
  return s,attrs
 end
 local main={"LightWeapons","Doctor","Repair"}
-for _,invalid in ipairs({{}, {"Doctor","Repair"},{"Doctor","Doctor","Repair"},{"Doctor","Repair","Miner"},{"Doctor","Repair","Farmer"},{"Doctor","Repair","Fake"},{"Doctor","Repair","LightWeapons","Cook"}}) do
+for _,invalid in ipairs({{}, {"Doctor","Repair"},{"Doctor","Doctor","Repair"},{"Doctor","Repair","Miner"},{"Doctor","Repair","Fake"},{"Doctor","Repair","LightWeapons","Cook"}}) do
  local s,attrs=fresh();assert(not R.Confirm(s,attrs,invalid) and not s.Confirmed and not s.TagsConfirmed)
 end
 local s,attrs=fresh();assert(R.Confirm(s,attrs,main));assert(s.TagsConfirmed and s.TaggedSkills.Doctor)
@@ -38,3 +38,8 @@ assert(R.SelectTags(legacy,{"Cook","Melee","Doctor"}))
 for id,value in pairs(attrsBefore) do assert(legacy.Stats[id]==value) end
 assert(not R.SelectTags(legacy,{"Repair","Melee","Doctor"}))
 print("PASS: exactly three immutable tags, legacy selection, +2 gains, base skills unchanged, all tier boundaries, affordability, cap300 and passive exclusion")
+
+local farmer,fa=fresh();assert(R.Confirm(farmer,fa,{"Farmer","Repair","Doctor"}))
+local before=R.TotalSkills(farmer).Farmer
+assert(R.SpendSkill(farmer,"Farmer") and R.TotalSkills(farmer).Farmer==before+2,"farming supports tagged manual training")
+assert(not R.Practice(farmer,"Farmer",100),"harvest no longer levels farming passively")

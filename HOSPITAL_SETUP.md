@@ -1,6 +1,6 @@
 # Hospital beds
 
-Building a Hospital requires **First aid 100 OR Doctor 100**; either skill is
+Building a Hospital requires **First aid 50 OR Doctor 50**; either skill is
 sufficient. This is a building requirement, not an extra condition for bed use.
 
 Create an anchored bed Model anywhere in the hospital. Its name is arbitrary.

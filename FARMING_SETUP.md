@@ -20,7 +20,7 @@ Aim and press E. Server checks reach, line of sight, life, knockout and creation
 - E with empty hands opens the crop menu. Select Plant potatoes to fill free slots. The menu shows the base growth time and water requirements. No seeds or raw potatoes consumed. Potato is the only crop currently available.
 - Only a DirtyWaterBucket equipped in hands waters. Pocket buckets are never used. Each use adds up to100units, capped by MaxWatering, and returns an empty bucket. A full bed does not consume a bucket.
 - Each bush consumes20units gradually across its complete growth, not upfront. Five bushes therefore need100units total. Water is shared across growing bushes; ripe/rotten bushes stop consuming it.
-- Empty hands harvest ripe bushes and clear rotten ones, leaving immature bushes. Each ripe bush rolls0–4potatoes independently, before greenhouse yield bonuses. Zero yield is valid. Harvest grants 25 character XP per actual potato and 1 Farmer practice XP per harvested ripe bush (including zero-yield bushes). Rotten clearing grants no XP. Good student applies as before.
+- Empty hands harvest ripe bushes and clear rotten ones, leaving immature bushes. Each ripe bush rolls0–4potatoes independently, before greenhouse yield bonuses. Zero yield is valid. Harvest grants 25 character XP per actual potato. Farmer is manually trained and receives no passive harvest practice. Rotten clearing grants no XP. Good student applies as before.
 
 ## Water and rot
 
@@ -38,8 +38,15 @@ Stages1and2 each take120seconds at full watering (240seconds total). Each minute
 
 The owner's Kherson watermelons perk multiplies yield by1.5, with fair fractional rounding. Set OwnerID on Greenhouse or parent BuildingSpace. The owner's bonus is cached through disconnect and reset on transfer. No farming perk requirements have been invented yet.
 
-Farmer remains passive like Miner: one practiceXP per harvested ripe bush, 10×next-rank thresholds, no manual/tagged training. Farming bonuses still need review. Access is physical/public like chests. Crop and water state lasts only within the running server; crop/water persistence across server restarts and greenhouse upgrades remain pending.
+Farmer is a manually trained skill, with a base of 3×Strength and the normal cap300. It can be selected as one of the three tagged skills. Harvest no longer trains it passively; previously earned passive ranks migrate to invested Farmer points. Farming bonuses still need review. Access is physical/public like chests. Crop and water state lasts only within the running server; crop/water persistence across server restarts and greenhouse upgrades remain pending.
 
 Botanist (Рослинознавець) costs one normal perk point, with no additional requirement. It reveals each plant's stage and estimated harvest time in the bed menu and hover. Estimates use current watering and change as water falls; dry plants show paused. Missing stage models warn once and are retried.
 
 Filled bottles and buckets have Drink and Pour out actions in the inventory. Pour out empties one container without nutrition/sickness effects and returns its empty version; a held bucket stays equipped as EmptyBucket. Equip is shown independently from consumption. Food uses Consume.
+
+## Planned second-stage farm workstation
+
+The second farm stage will include a farmer workstation to mill wheat into flour.
+This is a reserved future feature: wheat/flour items, station model, recipes,
+processing costs/times and second-stage building costs are not defined yet.
+No placeholder craft or upgrade is added by the Farmer skill migration.

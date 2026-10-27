@@ -1,6 +1,6 @@
 local P={}
 local bonuses={
- Strength="+2 base HP; +5 kg carrying capacity; +3 heavy weapons, unarmed, melee and throwing; +1 melee / unarmed damage",
+ Strength="+2 base HP; +5 kg carrying capacity; +3 heavy weapons, unarmed, melee, throwing and farmer; +1 melee / unarmed damage",
  Attention="+3 light weapons; +2 traps; +3 studs view (10 base); +20% hearing range",
  Endurance="+4 base HP; +1 HP regeneration per minute; +1 cook and first aid",
  Intelligence="+3 first aid, doctor, repair and cook; +1 skill point at creation and per level",

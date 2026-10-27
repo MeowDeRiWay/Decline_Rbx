@@ -1,7 +1,7 @@
 local Rules={}
 Rules.MaxLevel=30
 local attributes={"Strength","Attention","Endurance","Intelligence","Agility","Luck"}
-local skills={LightWeapons=true,HeavyWeapons=true,Unarmed=true,Melee=true,Throwing=true,FirstAid=true,Doctor=true,Sneak=true,Traps=true,Repair=true,Cook=true}
+local skills={LightWeapons=true,HeavyWeapons=true,Unarmed=true,Melee=true,Throwing=true,FirstAid=true,Doctor=true,Sneak=true,Traps=true,Repair=true,Cook=true,Farmer=true}
 Rules.Perks={
  {ID="Botanist",Name="Botanist",Max=1,Description="Shows each plant's growth stage and estimated time until harvest."},
  {ID="TunnelVision",Name="Tunnel vision",Max=1,Attributes={Attention=7},Description="Halves your vision angle and adds 10 studs of view range."},
@@ -40,12 +40,18 @@ Rules.Perks={
  {ID="Scrounger",Name="Scrounger",Max=1,Attributes={Luck=7,Attention=6},Description="25% more ammunition in loot from zombies you kill, when ammunition drops."},
  {ID="KhersonMelons",Name="Kherson watermelons",Max=1,Description="Garden beds in your greenhouse yield 50% more crops."},
 }
-local passive={Lumberjack=true,Miner=true,Scavenger=true,Farmer=true}
+local passive={Lumberjack=true,Miner=true,Scavenger=true}
 function Rules.New()
  local stats={};for _,id in ipairs(attributes) do stats[id]=5 end
  local ranks={};for id in pairs(skills) do ranks[id]=0 end
  local practice={};for id in pairs(passive) do practice[id]={Value=0,XP=0} end
  return {Level=0,XP=0,Points=6,SkillPoints=0,PerkPoints=0,Confirmed=false,Stats=stats,Skills=ranks,Practice=practice,Perks={},TaggedSkills={},TagsConfirmed=false}
+end
+function Rules.MigrateFarming(state)
+ local legacy=state.Practice and state.Practice.Farmer
+ if not legacy then return end
+ if state.Skills.Farmer==nil then state.Skills.Farmer=math.clamp(math.floor(legacy.Value or 0),0,300) end
+ state.Practice.Farmer=nil
 end
 local function validTags(tags)
  if typeof(tags)~="table" or #tags~=3 then return nil end
@@ -85,7 +91,7 @@ function Rules.SkillValues(stats)
   Unarmed=3*stats.Strength,Melee=3*stats.Strength,Throwing=3*stats.Strength,
   FirstAid=3*stats.Intelligence+stats.Endurance,Doctor=3*stats.Intelligence,
   Sneak=3*stats.Agility,Traps=2*stats.Attention,Repair=3*stats.Intelligence,
-  Cook=3*stats.Intelligence+stats.Endurance}
+  Cook=3*stats.Intelligence+stats.Endurance,Farmer=3*stats.Strength}
 end
 function Rules.TotalSkills(state)
  local values=Rules.SkillValues(state.Stats)

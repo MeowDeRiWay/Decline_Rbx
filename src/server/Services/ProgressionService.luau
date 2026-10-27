@@ -32,6 +32,7 @@ local function creationLock(player,character,confirmed)
 end
 local function stateFor(player)
  if not states[player] then states[player]=disconnected[player.UserId] or Rules.New();disconnected[player.UserId]=nil end
+ Rules.MigrateFarming(states[player])
  return states[player]
 end
 function Service.Snapshot(player)
@@ -95,7 +96,7 @@ function Service.CraftXP(player,recipe,count) Service.Award(player,Rules.CraftEx
 function Service.Loot(_,items) return items end
 function Service.FarmXP(player,count,bushes)
  if not player or player.Parent~=Players then return end
- Rules.Practice(stateFor(player),"Farmer",bushes);Service.Award(player,count*25)
+ Service.Award(player,count*25)
 end
 function Service.Harvest(player,kind,count)
  if not player or player.Parent~=Players then return end

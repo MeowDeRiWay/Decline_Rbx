@@ -5,7 +5,7 @@ local Noise=require("../src/shared/NoiseRules")
 local I=require("../src/shared/InventoryRules")
 local Items=require("../src/shared/ItemConfig")
 local function fresh()
- local s=R.New();s.Confirmed=true;s.PerkPoints=100;s.Practice.Farmer.Value=150
+ local s=R.New();s.Confirmed=true;s.PerkPoints=100;s.Skills.Farmer=150
  for id in pairs(s.Stats) do s.Stats[id]=10 end
  for id in pairs(s.Skills) do s.Skills[id]=250 end
  return s
@@ -57,7 +57,7 @@ local food=Items.Items.Ramsay_BoiledPotato
 assert(food.Consume.Food==7.5 and food.Consume.Health==5 and Items.Items.BoiledPotato.Consume.Food==5)
 local mixed=C.Plan({BoiledPotato=0,Ramsay_BoiledPotato=1,SausageSlice=1,Plate=1},recipes.MashedPotatoesWithSausage,1)
 assert(mixed and mixed.Ingredients.Ramsay_BoiledPotato==1 and not mixed.Ingredients.BoiledPotato,"quality food usable in later recipes")
-local farmer=R.New();farmer.Confirmed=true;assert(farmer.Practice.Farmer.Value==0 and R.Practice(farmer,"Farmer",10) and farmer.Practice.Farmer.Value==1)
+local farmer=R.New();farmer.Confirmed=true;assert(farmer.Practice.Farmer==nil and R.TotalSkills(farmer).Farmer==15 and not R.Practice(farmer,"Farmer",10))
 print("PASS: new perk authority/ranks, level-scaled health, automatic perk, doubled XP, craft discount, bandage limits, stealth running and equipped weight")
 
 assert(Combat.UnarmedDamage(10,0,0)==7.5 and Combat.UnarmedDamage(10,0,1)==12)

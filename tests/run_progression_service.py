@@ -33,7 +33,7 @@ send("Skill","Miner");assert(a:GetAttribute("SkillPoints")==29)
 for _=1,10 do Service.Harvest(a,"StoneVein",1) end
 assert(Service.Snapshot(a).Practice.Miner.Value==1 and Service.Snapshot(a).Practice.Lumberjack.Value==0)
 assert(not Service.CanBuild(a,"Kitchen") and not Service.CanBuild(a,"Workbench") and Service.CanStation(a,"Stove"))
-assert(not Service.CanBuild(a,"Hospital"),"hospital needs at least one medical skill at100")
+assert(not Service.CanBuild(a,"Hospital"),"hospital needs at least one medical skill at50")
 Config.StationRequirements.Stove={Skills={Repair=32}}
 assert(not Service.CanStation(a,"Stove"));send("Skill","Repair");assert(Service.CanStation(a,"Stove"))
 local hp=a.Character.Humanoid;hp.Health=22;send("Request");assert(hp.Health==22,"request cannot repeat confirmation heal")
@@ -49,9 +49,10 @@ a:LoadCharacterAsync();assert(Service.Snapshot(a).Confirmed and a:GetAttribute("
 assert(Service.Loot(a,{Rags=1}).Rags==1)
 local farmBefore=Service.Snapshot(a)
 Service.FarmXP(a,3,5)
-assert(Service.Snapshot(a).XP==farmBefore.XP+75 and Service.Snapshot(a).Practice.Farmer.XP==5,"25 character XP per potato, one practice per harvested bush")
+assert(Service.Snapshot(a).XP==farmBefore.XP+75 and Service.Snapshot(a).Practice.Farmer==nil and Service.Snapshot(a).Skills.Farmer==15,"25 character XP per potato, Farmer remains a manually trained skill")
 Service.FarmXP(a,0,2)
-assert(Service.Snapshot(a).XP==farmBefore.XP+75 and Service.Snapshot(a).Practice.Farmer.XP==7,"zero-yield ripe bushes still grant practice")
+assert(Service.Snapshot(a).XP==farmBefore.XP+75 and Service.Snapshot(a).Practice.Farmer==nil and Service.Snapshot(a).Skills.Farmer==15,"zero-yield bushes do not grant passive Farmer practice")
+send("Skill","Farmer");assert(a:GetAttribute("SkillFarmer")==16,"Farmer is purchased through the authoritative manual skill command")
 b:LoadCharacterAsync()
 local bd=table.clone(Service.Snapshot(b).Stats);bd.Strength=7;bd.Attention=7;bd.Luck=7
 clock+=.2;action.OnServerEvent:Fire(b,"Confirm",{Stats=bd,TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})
@@ -73,16 +74,18 @@ assert(Service.Snapshot(a).XP==oldXP+150,"kill XP derives from max HP, not healt
 local med=player(700);Players.PlayerAdded:Fire(med);med:LoadCharacterAsync()
 clock+=.2;action.OnServerEvent:Fire(med,"Confirm",{Stats={Strength=5,Attention=10,Endurance=5,Intelligence=10,Agility=5,Luck=1},TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})
 Service.Award(med,20000)
-for _=1,65 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
-for _=1,69 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end
-assert(med:GetAttribute("SkillFirstAid")==100 and med:GetAttribute("SkillDoctor")==99 and Service.CanBuild(med,"Hospital"),"FirstAid100 alone unlocks hospital")
-clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor");assert(Service.CanBuild(med,"Hospital"),"both100 still qualify")
+for _=1,14 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid") end
+for _=1,19 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor") end
+assert(not Service.CanBuild(med,"Hospital"),"both49 cannot build hospital")
+clock+=.2;action.OnServerEvent:Fire(med,"Skill","FirstAid")
+assert(med:GetAttribute("SkillFirstAid")==50 and med:GetAttribute("SkillDoctor")==49 and Service.CanBuild(med,"Hospital"),"FirstAid50 alone unlocks hospital")
+clock+=.2;action.OnServerEvent:Fire(med,"Skill","Doctor");assert(Service.CanBuild(med,"Hospital"),"both50 still qualify")
 assert(not Service.CanBuild(med,"Kitchen") and not Service.CanBuild(med,"Workbench"))
 Service.Award(med,100000)
-for _=1,70 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Repair") end
-assert(Service.CanBuild(med,"Workbench") and not Service.CanBuild(med,"Kitchen"),"Repair100 unlocks workshop only")
-for _=1,65 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Cook") end
-assert(Service.CanBuild(med,"Kitchen"),"Cook100 unlocks kitchen")
+for _=1,20 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Repair") end
+assert(Service.CanBuild(med,"Workbench") and not Service.CanBuild(med,"Kitchen"),"Repair50 unlocks workshop only")
+for _=1,15 do clock+=.2;action.OnServerEvent:Fire(med,"Skill","Cook") end
+assert(Service.CanBuild(med,"Kitchen"),"Cook50 unlocks kitchen")
 a:SetAttribute("ScroungerMultiplier",1.25)
 local extra=Service.ZombieDied(zombie,{Ammo9mmFMJ=4,Rags=3})
 assert(extra.Ammo9mmFMJ==5 and extra.Rags==3,"scrounger changes ammo quantity only")
