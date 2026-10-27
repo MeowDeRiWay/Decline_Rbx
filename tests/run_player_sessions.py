@@ -94,6 +94,18 @@ assert(adopted.Character==downed and adopted.Record.Parts[downed.HumanoidRootPar
 local dead=player(999);local deadChar=prepare(dead);deadChar:SetAttribute("IsDead",true);stock[dead]={Items={}}
 local count=consumed;Players.PlayerRemoving:Fire(dead);dead.Parent=nil
 advance(300);assert(consumed==count,"already dead player's existing corpse is not recreated")
+local loner=player(1001);local lonerBody=prepare(loner)
+loner:SetAttribute("TownID",nil);loner:SetAttribute("TeamID",nil)
+lonerBody:SetAttribute("Knockout",true);lonerBody:SetAttribute("KnockoutEndsAt",clock+120)
+ko[lonerBody]={Pivot=lonerBody:GetPivot(),Parts={},BlocksVision=true}
+Players.PlayerRemoving:Fire(loner);loner.Parent=nil;lonerBody:Destroy()
+local beforeLoads=loads;advance(120)
+local lonerBack=player(1001);Players.PlayerAdded:Fire(lonerBack)
+assert(lonerBack:GetAttribute("OutcastEnd")==true and lonerBack.Character==nil and loads==beforeLoads,"offline neutral death restores ending instead of spawning")
+Players.PlayerRemoving:Fire(lonerBack);lonerBack.Parent=nil
+local endingAgain=player(1001);Players.PlayerAdded:Fire(endingAgain)
+assert(endingAgain:GetAttribute("OutcastEnd")==true,"logging out from the ending cannot bypass it")
+print("PASS: offline unaffiliated death and repeated reconnect preserve ending")
 print("PASS: actual reconnect clone/health/needs/position/inventory, timeout/death single loot transfer, late fresh spawn, old-timer cancellation and knockout adoption")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),setup,'local Service=(function()\n'+source+'\nend)()',cases]

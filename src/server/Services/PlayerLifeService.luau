@@ -95,6 +95,12 @@ function Service.Finish(player,character)
  -- Hide the old character during the normal respawn delay; the persistent clone
  -- is the sole corpse and is not destroyed by LoadCharacterAsync.
  for _,part in ipairs(character:GetDescendants()) do if part:IsA("BasePart") then part.Transparency=1; part.CanQuery=false end end
+ if not player:GetAttribute("TownID") then
+  -- The existing 120-second knockout has ended. Only an acknowledgement may
+  -- release this player into town selection and a completely new character.
+  player:SetAttribute("OutcastEnd",true)
+  return
+ end
  task.delay(Players.RespawnTime,function()
   if player.Parent==Players and player.Character==character then require(script.Parent.TownService).LoadCharacter(player) end
  end)
@@ -166,6 +172,23 @@ function Service.OfflineCorpse(character,storage,userID,displayName)
  local folder=workspace:FindFirstChild("PlayerCorpses")
  if not folder then folder=Instance.new("Folder");folder.Name="PlayerCorpses";folder.Parent=workspace end
  character.Parent=folder
+end
+-- Server-authorized acknowledgement; ordinary living players cannot reset a build.
+function Service.RestartOutcast(player)
+ if player.Parent~=Players or player:GetAttribute("OutcastEnd")~=true or player:GetAttribute("TownID") then return false end
+ local character=player.Character
+ if character and not character:GetAttribute("IsDead") then return false end
+ -- Detach the dead shell before Sync, so creation protection cannot revive it.
+ player.Character=nil
+ if character then character:Destroy() end
+ require(script.Parent.CraftingService).Close(player)
+ Inventory.Reset(player)
+ require(script.Parent.ProgressionService).NewCharacter(player)
+ require(script.Parent.EconomyService).Reset(player)
+ for _,key in ipairs({"DoctorReadyAt","ReviveLockedUntil","MedicalMode","Running"}) do player:SetAttribute(key,nil) end
+ require(script.Parent.TownService).ResetForCreation(player)
+ player:SetAttribute("OutcastEnd",nil)
+ return true
 end
 function Service.Damage(player,humanoid,amount,hitChecked,defenseChecked)
  if player:GetAttribute("AttributesConfirmed")==false then return 0 end

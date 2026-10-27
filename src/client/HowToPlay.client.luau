@@ -107,7 +107,10 @@ If you find someone's body, take a moment to try your Doctor skill with 4: activ
 
 If they are from another settlement... well, you could always wait out the two-minute knockout and loot them instead.
 
-Patience and looting solve a surprising number of problems.]]},
+Patience and looting solve a surprising number of problems.
+
+THE PRICE OF GOING ALONE
+If you die without belonging to a town, your character's story ends. Someone can still revive you during the two-minute knockout. Once that time is up, you must choose a town and create a new character.]]},
  {Name="Resources",Title="RESOURCES",Text=[[YES, IT STARTS WITH TREES
 Sorry I could not think of a better opening than chopping wood. Cliche? Absolutely. Guilty as charged. I will come up with something better later.
 
@@ -183,7 +186,7 @@ local function setOpen(value)
  else Context:UnbindAction("HelpBlockInput");Run:UnbindFromRenderStep("HelpStopMovement") end
 end
 local function busy()
- for _,name in ipairs({"LoadingScreenOpen","TownMenuOpen","ProgressionOpen","InventoryOpen","TradeOpen","GroupOpen","AdminOpen","FarmMenuOpen","CharacterLoading"}) do
+ for _,name in ipairs({"LoadingScreenOpen","TownMenuOpen","ProgressionOpen","InventoryOpen","TradeOpen","GroupOpen","AdminOpen","FarmMenuOpen","CharacterLoading","OutcastEnd"}) do
   if player:GetAttribute(name) then return true end
  end
  return false

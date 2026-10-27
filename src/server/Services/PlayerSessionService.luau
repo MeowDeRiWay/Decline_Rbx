@@ -20,6 +20,8 @@ local function corpse(record)
  Inventory.ForgetOffline(record.UserID,record.Inventory)
  Life.OfflineCorpse(body,Inventory.CorpseStorage(record.Inventory),record.UserID,record.DisplayName)
  record.Inventory=nil
+ -- Offline death of an unaffiliated character also ends that character's run.
+ if not record.Attributes.TownID then record.Attributes.OutcastEnd=true end
 end
 local function leave(player)
  Beds.Leave(player)

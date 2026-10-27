@@ -8,6 +8,11 @@ local function sync(id)
  if player then player:SetAttribute("Money",balances[id] or 0) end
 end
 function Service.Balance(owner) return balances[idOf(owner)] or 0 end
+function Service.Reset(player)
+ balances[player.UserId]=0
+ nextIncome[player.UserId]=os.clock()+R.IncomeInterval
+ sync(player.UserId)
+end
 function Service.Credit(owner,amount)
  local id=idOf(owner)
  if not R.Integer(id,1,R.Maximum) or not R.Integer(amount,1,R.Maximum) or Service.Balance(id)+amount>R.Maximum then return false end

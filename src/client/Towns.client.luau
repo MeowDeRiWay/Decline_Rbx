@@ -83,7 +83,7 @@ render = function()
  for _, child in ipairs(scroll:GetChildren()) do if child ~= layout then child:Destroy() end end
  local session = snapshot.Session
  local choosing = not snapshot.TownID
- panel.Visible = (choosing and not hidden) or session ~= nil
+ panel.Visible = not player:GetAttribute("OutcastEnd") and ((choosing and not hidden) or session ~= nil)
  player:SetAttribute("TownMenuOpen", panel.Visible)
  if not panel.Visible then return end
  title.Text = if confirmation then "Confirm action" elseif not session then "Choose a town" elseif session.Kind == "Flag" then "Town" else "Construction"
@@ -415,5 +415,9 @@ state.OnClientEvent:Connect(function(data)
  end)
  updateCandidates(data.Election)
  snapshot = data; render()
+end)
+player:GetAttributeChangedSignal("OutcastEnd"):Connect(function()
+ if not player:GetAttribute("OutcastEnd") then hidden=false end
+ render()
 end)
 send("Request")

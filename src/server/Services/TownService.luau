@@ -236,6 +236,7 @@ local function destroyBuilding(plot)
  syncPlot(plot)
 end
 local function join(player, town)
+ if player:GetAttribute("OutcastEnd") then return end
  if player.Character and not alive(player) then tell(player, "Please wait until you respawn."); return end
  if townOf(player) then tell(player, "Leave your current team at its flag first."); return end
  local hasSpawn = false
@@ -260,6 +261,7 @@ end
 -- CharacterAdded fires before Roblox finishes moving a newly loaded character.
 -- Position only after LoadCharacterAsync completes, for both joining and respawning.
 function Service.LoadCharacter(player)
+ if player:GetAttribute("OutcastEnd") then return false end
  if player.Parent ~= Players or player:GetAttribute("CharacterLoading") or player:GetAttribute("Reconnecting") then return end
  player:SetAttribute("CharacterLoading", true)
  local ok, err = pcall(function() player:LoadCharacterAsync() end)
@@ -271,6 +273,12 @@ function Service.LoadCharacter(player)
  end
  if player.Parent == Players and player.Character then Service.PlaceCharacter(player, player.Character) end
  return true
+end
+function Service.ResetForCreation(player)
+ spawnedPlayers[player]=nil
+ sessions[player]=nil
+ player:SetAttribute("HasSpawned",nil)
+ Service.Publish()
 end
 function Service.PlaceCharacter(player, character)
  if character:GetAttribute("ReturningSession") then return end

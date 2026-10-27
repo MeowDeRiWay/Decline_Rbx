@@ -139,6 +139,13 @@ for kind,rate in pairs({Tree=10,StoneVein=20,ScrapPile=50}) do
  assert(Service.Snapshot(a).XP==before+3*rate,"character XP is per actual resource unit")
 end
 print("PASS: logs10, stone20 and scrap50 XP per unit; passive practice unchanged")
+a.Character=nil
+Service.NewCharacter(a)
+local newborn=Service.Snapshot(a)
+assert(newborn.Level==0 and newborn.XP==0 and not newborn.Confirmed and not newborn.TagsConfirmed)
+assert(next(newborn.Perks)==nil and next(newborn.TaggedSkills)==nil and newborn.PerkPoints==0,"new life clears perks and tags")
+for _,practice in pairs(newborn.Practice) do assert(practice.Value==0,"new life clears passive practice") end
+print("PASS: fresh character clears progression, confirmation, tagged skills and passive practice")
 print("PASS: actual immutable creation, forbidden legacy commands, INT skill points, derived stats, requirements, passive practice, minute regeneration, no revival, and respawn")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]

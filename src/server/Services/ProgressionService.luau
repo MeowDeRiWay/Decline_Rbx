@@ -83,6 +83,13 @@ function Service.GrantLevels(player,count)
  Journal.Send(player,string.format("Admin granted you %d level(s).",count))
  return true,count
 end
+function Service.NewCharacter(player)
+ if not player or player.Parent~=Players then return false end
+ states[player]=Rules.New()
+ disconnected[player.UserId]=nil
+ Service.Sync(player)
+ return true
+end
 function Service.ResetProgression(player)
  if not player or player.Parent~=Players or not Rules.ResetProgression(stateFor(player)) then return false end
  Service.Sync(player)
@@ -121,6 +128,7 @@ function Service.Start()
  local action=Instance.new("RemoteEvent");action.Name="Action";action.Parent=folder
  local last={}
  action.OnServerEvent:Connect(function(player,command,value)
+  if player:GetAttribute("OutcastEnd") then return end
   local now=os.clock();if now-(last[player] or -math.huge)<.1 then return end;last[player]=now
   local state=stateFor(player)
   if command=="Confirm" then

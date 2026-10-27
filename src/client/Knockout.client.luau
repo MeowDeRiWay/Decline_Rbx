@@ -29,7 +29,7 @@ end,false,Enum.ContextActionPriority.High.Value+10,Enum.PlayerActions.CharacterF
 RunService.RenderStepped:Connect(function()
  local character=player.Character
  label.Visible=character~=nil and character:GetAttribute("Knockout")==true
- local allowed=not label.Visible
+ local allowed=not label.Visible and not player:GetAttribute("OutcastEnd")
  if resetAllowed~=allowed then
   local ok=pcall(function() StarterGui:SetCore("ResetButtonCallback",allowed) end)
   if ok then resetAllowed=allowed end
