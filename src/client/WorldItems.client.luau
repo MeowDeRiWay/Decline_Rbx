@@ -63,7 +63,7 @@ Cursor.Subscribe("WorldItems",1,function()
   highlight.FillColor = Color3.fromRGB(80,190,110)
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
-  label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and (Stations.Kind(chest)=="ArmsBench" and "Arms Bench" or Stations.Kind(chest)) or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
+  label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("DisplayName") or "Zombie") .. " corpse") or (stoveHovered and Stations.Label(chest) or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
   if farmHovered then
    label.Text=(chest.Name=="Well" and "Well" or "Garden bed")
    if chest.Name=="GardenBed" then

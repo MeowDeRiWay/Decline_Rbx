@@ -36,6 +36,11 @@ function Inventory.Add(_,id,n) stock[id]=(stock[id] or 0)+n; return true end
 '''
 cases='''
 a:LoadCharacterAsync()
+local tiered=make("Model","Workstation (T2)",workspace)
+assert(Stations.Kind(tiered)=="Workstation" and Stations.Level(tiered)==2,"named station tier recognized")
+tiered:SetAttribute("StationLevel",3);assert(Stations.Level(tiered)==3,"numeric attribute overrides suffix")
+for _,invalid in ipairs({0,-1,math.huge,"T2"}) do tiered:SetAttribute("StationLevel",invalid);assert(Stations.Level(tiered)==1,"invalid tiers default to T1") end
+tiered:Destroy()
 local stove=make("Model","Stove",workspace); make("Part","Part",stove)
 local bench=make("Model","Workstation",workspace); make("Part","Part",bench)
 assert(not Service.Open(a,stove),"station requirements block cooking access")
@@ -75,6 +80,10 @@ callbacks[6]()
 assert(Service.Snapshot(a).CookingReady.Plank==3 and xp==650,"one log to three boards awards one craft operation")
 Service.Close(a);assert(Service.Open(a,bench))
 stock.Rags=4;a:SetAttribute("CraftCostMultiplier",.8)
+assert(not Service.Cook(a,"MakeBandage",1),"workstation cannot craft medicines")
+local med=make("Model","MedStation (T1)",workspace);make("Part","Part",med)
+Service.Close(a);assert(Service.Open(a,med) and Service.Snapshot(a).CookingStation=="MedStation")
+assert(Service.Snapshot(a).CookingStationLevel==1 and not Service.Cook(a,"MakePlanks",1),"medical station is T1 and cannot craft workshop recipes")
 assert(not Service.Cook(a,"MakeBandage",1),"Doctor requirement enforced")
 doctor=true
 assert(not Service.Cook(a,"MakeBandage",2),"one bandage per queue")
@@ -88,22 +97,25 @@ assert(Service.CollectRecipe(a,"BoilPotatoes","All") and stock.Ramsay_BoiledPota
 Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=3;a:SetAttribute("CraftCostMultiplier",1)
 assert(Recipes.MakeBucket.Requirements.Skills.Repair==80)
 doctor=false;assert(not Service.Cook(a,"MakeBucket",1),"bucket skill requirement checked")
-doctor=true;assert(not Service.Cook(a,"MakeBucket",2));assert(Service.Cook(a,"MakeBucket",1) and stock.Scrap==0 and durations[#durations]==20)
+doctor=true;assert(not Service.Cook(a,"MakeBucket",2))
+Recipes.MakeBucket.StationLevel=2
+assert(not Service.Cook(a,"MakeBucket",1) and stock.Scrap==3,"station tier requirement enforced server-side before ingredients")
+bench:SetAttribute("StationLevel",2)
+assert(Service.Snapshot(a).CookingStationLevel==2,"station tier replicated to menu")
+assert(Service.Cook(a,"MakeBucket",1) and stock.Scrap==0 and durations[#durations]==20)
 callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.EmptyBucket==1,"bucket craft output")
+Recipes.MakeBucket.StationLevel=nil
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
 local repair=99
 Progression.Meets=function(_,requirement)
  return not requirement.Skills.Repair or repair>=requirement.Skills.Repair
 end
 Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=100;stock.Coal=10;stock.Chemicals=10
-assert(not Service.Cook(a,"MakePistol9mm",1) and stock.Scrap==100)
-repair=100;local before=xp
-assert(Service.Cook(a,"MakePistol9mm",1) and stock.Scrap==80)
-callbacks[#callbacks]();assert(xp==before+200 and Service.Snapshot(a).CookingReady.Pistol9mm==1)
-assert(not Service.Cook(a,"MakeSMG9mm",1));repair=120
-before=xp;assert(Service.Cook(a,"MakeSMG9mm",1) and stock.Scrap==50)
-callbacks[#callbacks]();assert(xp==before+200)
-before=xp;assert(Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==49 and stock.Coal==9 and stock.Chemicals==9)
+assert(Recipes.MakePistol9mm==nil and Recipes.MakeSMG9mm==nil,"factory-made 9mm weapon recipes removed")
+assert(not Service.Cook(a,"MakePistol9mm",1) and not Service.Cook(a,"MakeSMG9mm",1) and stock.Scrap==100)
+repair=100
+local before=xp
+assert(Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==99 and stock.Coal==9 and stock.Chemicals==9)
 callbacks[#callbacks]();assert(xp==before+100 and Service.Snapshot(a).CookingReady.Ammo9mmFMJ==50)
 assert(not Service.Cook(a,"MakeRifle223",1),"factory recipe unavailable on town bench")
 local arms=make("Model","Custom weapons machine",workspace,{CraftStation="ArmsBench"});make("Part","Part",arms)

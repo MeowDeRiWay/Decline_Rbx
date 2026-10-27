@@ -35,13 +35,14 @@ factory leaves the plot unfilled and retries; it never silently becomes a house.
 
 | Model name | Optional String attribute for a differently named Model | Location / purpose |
 | --- | --- | --- |
-| Workstation | CraftStation = Workstation | Existing city crafting, including 9 mm |
+| Workstation | CraftStation = Workstation | City tools, materials and 9 mm ammunition |
+| MedStation | CraftStation = MedStation | Medicines and medical materials; currently bandages |
 | ArmsBench | CraftStation = ArmsBench | Factory weapons station, displayed as Arms Bench |
 | Stove | CraftStation = Stove | Kitchen cooking and burning logs |
 | Furnace | CraftStation = Furnace | Workshop furnace for charcoal and iron |
 
 Each station needs a physical BasePart and uses the existing **E** interaction,
-1-stud reach, obstruction checks, inventory and recipe UI. Put `ArmsBench` inside
+2-stud reach, obstruction checks, inventory and recipe UI. Put `ArmsBench` inside
 the factory template. Merely putting a normal Workstation there does not change
 its recipes; station kind selects the recipe catalog.
 
@@ -80,8 +81,6 @@ world box; AP recipes were not specified and have not been invented.
 
 | Station | Recipe | Inputs | Output | Repair | XP | Seconds |
 | --- | --- | --- | --- | --- | --- | --- |
-| Workstation | 9 mm pistol | 20 Scrap | 1 Pistol9mm | 100 | 200 | 60 |
-| Workstation | 9 mm SMG | 30 Scrap | 1 SMG9mm | 120 | 200 | 90 |
 | Workstation | 9 mm rounds | 1 Coal + 1 Chemicals + 1 Scrap | 50 Ammo9mmFMJ | 100 | 100 | 30 |
 | ArmsBench | .223 rounds | 1 Iron + 1 Coal + 1 Chemicals | 50 Ammo223FMJ | 170 | 200 | 60 |
 | ArmsBench | .223 bolt-action rifle | 25 Iron | 1 Rifle223 | 170 | 500 | 120 |
@@ -173,3 +172,25 @@ and GenerationAnchorError (studs between the placed Yard and plot). Error should
 be near zero. The regression fixture preserves the supplied factory's 603 physical
 parts and 183 shared PrimaryPart references, tested at four orientations. Actual
 Roblox Studio placement still requires verification.
+
+## Station tiers and medical crafting
+
+Every crafting station supports numeric `StationLevel` (1 = T1, 2 = T2, etc.).
+Default is T1. A station may also be named `Workstation (T2)` or `MedStation (T1)`;
+its suffix supplies the tier when StationLevel is absent. The optional string
+`CraftStation` still selects its kind independently of its display name.
+Recipes can require a minimum `StationLevel`; both the menu and server enforce it.
+The tier is shown in the hover caption and crafting menu. Station tiers are
+separate from the existing Workshop building-level requirement on iron smelting.
+
+Place a Model named `MedStation` (or set `CraftStation = "MedStation"`) with at
+least one BasePart in the hospital. Bandages now belong exclusively here: five
+rags, Doctor 100, 20 seconds, one per queue; existing perk discounts still apply.
+Future medicines and medical materials belong here too. Advanced medical recipes
+may consume needles/syringes produced at a specialized workshop station; no such
+items or recipes are added until their definitions are supplied.
+
+The current Pistol9mm and SMG9mm crafting recipes are removed. The items remain
+available as existing gear/loot/admin grants. 9 mm ammunition remains at Workstation.
+T1/T2 weapon crafting is reserved for future homemade single-shot pistol/rifle
+models and recipes; no placeholder weapons or invented recipes are added.

@@ -273,6 +273,8 @@ local function renderItems(frame, items, side)
 end
 local function renderRecipes()
  table.clear(craftStatuses)
+ local stationTitle=text(equipment,string.format("%s · T%d",snapshot.CookingStation=="MedStation" and "Medical station" or snapshot.CookingStation or "Station",snapshot.CookingStationLevel or 1),UDim2.fromOffset(8,0),UDim2.new(1,-16,0,30))
+ stationTitle.LayoutOrder=-1
  if snapshot.CookingStation=="Stove" then
   local tabs=Instance.new("Frame");tabs.Size=UDim2.new(1,-8,0,38);tabs.BackgroundTransparency=1;tabs.LayoutOrder=0;tabs.Parent=equipment
   for index,entry in ipairs({{ID="Wood",Name="Wood"},{ID="Coal",Name="Charcoal (2x)"}}) do
@@ -305,7 +307,7 @@ local function renderRecipes()
   end)
   -- Only the selected recipe creates its description and crafting controls.
   if not expanded then continue end
-  local description=text(card,recipe.Description,UDim2.fromOffset(10,56),UDim2.new(1,-20,0,46))
+  local description=text(card,recipe.Description..(recipe.StationLevel and string.format(" Requires station T%d.",recipe.StationLevel) or ""),UDim2.fromOffset(10,56),UDim2.new(1,-20,0,46))
   description.TextWrapped=true
   local ingredients={}
   for item,count in pairs(recipe.Ingredients) do table.insert(ingredients,string.format("%d %s (%d owned)",count,ItemConfig.Items[item].Name,CraftRules.Count(snapshot.Items,item))) end
@@ -350,7 +352,7 @@ local function renderRecipes()
   local cook=button(card,"Craft",UDim2.fromOffset(10,267),UDim2.new(.5,-15,0,32))
   local all=button(card,string.format("Craft all (max %d)",recipe.MaxBatch),UDim2.new(.5,5,0,267),UDim2.new(.5,-15,0,32))
   local busy=(snapshot.CookingEndsAt or 0)>0
-  local eligible=not recipe.WorkshopLevel or (snapshot.CookingWorkshopLevel or 0)>=recipe.WorkshopLevel
+  local eligible=(not recipe.WorkshopLevel or (snapshot.CookingWorkshopLevel or 0)>=recipe.WorkshopLevel) and (not recipe.StationLevel or (snapshot.CookingStationLevel or 1)>=recipe.StationLevel)
   for skill,value in pairs(recipe.Requirements and recipe.Requirements.Skills or {}) do if (player:GetAttribute("Skill"..skill) or 0)<value then eligible=false end end
   local enabled=eligible and not busy and available>0 and speed~=nil
   cook.Active,all.Active=enabled,enabled

@@ -70,7 +70,7 @@ function Service.Snapshot(player)
  local stove=sessions[player]
  local state=stove and states[stove]
  local job=state and state.Job
- return {CookingOpen=stove~=nil,CookingStation=stove and Stations.Kind(stove),CookingWorkshopLevel=stove and Stations.WorkshopLevel(stove) or 0,CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,CookingRequiresPresence=job and job.RequiresPresence or false,CookingCount=job and job.Count or 0}
+ return {CookingOpen=stove~=nil,CookingStation=stove and Stations.Kind(stove),CookingStationLevel=stove and Stations.Level(stove) or 1,CookingWorkshopLevel=stove and Stations.WorkshopLevel(stove) or 0,CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,CookingRequiresPresence=job and job.RequiresPresence or false,CookingCount=job and job.Count or 0}
 end
 function Service.Cook(player,id,requested)
  local stove=sessions[player]
