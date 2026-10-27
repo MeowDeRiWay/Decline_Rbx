@@ -47,7 +47,7 @@ b.Character.HumanoidRootPart.Position=Vector3.new(1000,0,1000)
 assert(Service.Snapshot(b).Session==nil,"walking away keeps menu closed")
 call(a,"Reply",approval,true)
 b.Character.HumanoidRootPart.Position=Vector3.zero
-assert(logs[102]==25 and scrap[102]==85 and menu.Parent==nil and plot:FindFirstChild("Kitchen (T1)").BuildingMenu,"consume5logs/15scrap and use kitchen sign")
+assert(logs[102]==25 and scrap[102]==89 and menu.Parent==nil and plot:FindFirstChild("Kitchen (T1)").BuildingMenu,"consume5logs/11scrap and use kitchen sign")
 assert(plot:GetAttribute("BuildingID")=="Kitchen" and plot:GetAttribute("OwnerID")==102 and space.Parent==nil)
 call(a,"Open",flagA); call(a,"OwnAll")
 assert(plot:GetAttribute("OwnerID")==102,"removed bulk ownership action must have no effect")
@@ -118,7 +118,7 @@ assert(not plot:GetAttribute("BuildingID") and logs[102]==25,"decline does not c
 call(b,"Build","Kitchen")
 for _,item in ipairs(notices) do if item.player==b and item.data.Kind=="Approval" then selfRequest=item.data.ID end end
 call(b,"Reply",selfRequest,true)
-assert(plot:GetAttribute("BuildingID")=="Kitchen" and logs[102]==20 and scrap[102]==70,"self-approval consumes5logs/15scrap")
+assert(plot:GetAttribute("BuildingID")=="Kitchen" and logs[102]==20 and scrap[102]==78,"self-approval consumes5logs/11scrap")
 call(b,"Reply",selfRequest,true); assert(logs[102]==20,"repeated approval cannot charge twice")
 call(b,"Open",plot); call(b,"Destroy")
 assert(menu.Parent==plot,"demolition restores empty plot sign")
