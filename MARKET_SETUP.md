@@ -12,19 +12,10 @@ needed, inside the market, hospital, farm, workshop, kitchen or other buildings.
 
 ## Trading post models
 
-Inside a building, create this authored structure:
-
-```text
-TradePost (Model)
-  Active (Model)       -- claimed shop, including inherited/reserved shops
-  Inactive (Model)     -- unclaimed shop
-```
-
-Both visual models must contain anchored Parts and be positioned at the intended
-counter position. Author their normal visible transparency/collision/query/touch
-and BlocksVision values. The server hides and disables the unused version,
-restoring the selected version's authored values. Do not save either version
-already completely invisible: both should be visible while authoring.
+Inside a building, add one Model **`TradePost`** containing the anchored parts of
+the counter. One model is used for both vacant and occupied posts; ownership is
+shown in the trading menu. No `Active` or `Inactive` child models are needed.
+The server does not change the authored appearance or collision of the counter.
 
 Model name `TradePost` identifies it. A differently named Model may instead use
 Boolean **`TradePost = true`**. TownID is inherited from the containing building;
@@ -32,8 +23,7 @@ standalone posts require a matching numeric TownID on the model or an ancestor.
 `Furniture = true` is optional for ignoring the counter in loot pickup checks.
 Never mark the entire building as furniture.
 
-An optional small invisible, non-colliding but queryable Part outside Active and
-Inactive can provide a consistent click/hover target. It must remain inside the
+An optional small invisible, non-colliding but queryable Part can provide a consistent click/hover target. It must remain inside the
 TradePost model. Keep the model's bounds close to the physical counter.
 
 For buildings with multiple posts, set unique string **`TradePostID`** attributes

@@ -21,16 +21,6 @@ local function townID(object)
  end
 end
 local function visual(record)
- local active=record.Owner>0 or record.Inherited
- for _,entry in ipairs(record.Visuals) do
-  local shown=entry.Active==active
-  local p=entry.Part
-  if p.Parent then
-   p.Transparency=shown and entry.Transparency or 1
-   p.CanCollide=shown and entry.CanCollide or false;p.CanQuery=shown and entry.CanQuery or false;p.CanTouch=shown and entry.CanTouch or false
-   if shown then p:SetAttribute("BlocksVision",entry.BlocksVision) else p:SetAttribute("BlocksVision",false) end
-  end
- end
  record.Model:SetAttribute("TradeOwnerID",record.Owner)
  record.Model:SetAttribute("TradeInherited",record.Inherited)
  record.Model:SetAttribute("TradeHasStock",next(record.Storage.Items)~=nil)
@@ -39,14 +29,7 @@ function Service.Register(object)
  if not isPost(object) or posts[object] or not object:FindFirstChildWhichIsA("BasePart",true) then return end
  local parent=object.Parent
  while parent and parent~=workspace do if isPost(parent) then return end;parent=parent.Parent end
- local record={Model=object,Owner=0,Inherited=false,Storage=Rules.New(),Prices={},Visuals={}}
- for _,name in ipairs({"Active","Inactive"}) do
-  local model=object:FindFirstChild(name)
-  if model then
-   local parts=model:IsA("BasePart") and {model} or model:GetDescendants()
-   for _,p in ipairs(parts) do if p:IsA("BasePart") then table.insert(record.Visuals,{Part=p,Active=name=="Active",Transparency=p.Transparency,CanCollide=p.CanCollide,CanQuery=p.CanQuery,CanTouch=p.CanTouch,BlocksVision=p:GetAttribute("BlocksVision")}) end end
-  end
- end
+ local record={Model=object,Owner=0,Inherited=false,Storage=Rules.New(),Prices={}}
  posts[object]=record;visual(record)
 end
 local function near(player,post)

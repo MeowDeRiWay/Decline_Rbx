@@ -42,7 +42,7 @@ assert(Rules.Add(own(a),Items.Items,"AssaultRifle223",1,{17},{{Loaded=7,Type="AP
 '''
 cases='''
 Service.Start()
-assert(first.Active.Part.Transparency==1 and first.Inactive.Part.Transparency==0,"unclaimed visual selected")
+assert(first.Active.Part.Transparency==0 and first.Inactive.Part.Transparency==0,"unclaimed appearance unchanged")
 assert(Wallet.Credit(b,100))
 local balance=Wallet.Balance(b)
 b:SetAttribute("Money",999999);assert(Wallet.Balance(b)==balance,"replicated display attribute is not the account authority")
@@ -54,7 +54,7 @@ assert(not Wallet.Credit(b,0/0) and not Wallet.Credit(b,1.5))
 assert(Service.Open(b,first) and not Service.Command(b,"Claim"),"outsider may browse but cannot claim")
 blocked=true;assert(not Service.Open(a,first),"wall blocks post access");blocked=false
 assert(Service.Open(a,first) and Service.Command(a,"Claim"))
-assert(first.Active.Part.Transparency==0 and first.Inactive.Part.Transparency==1,"claimed visual selected")
+assert(first.Active.Part.Transparency==0 and first.Inactive.Part.Transparency==0,"claimed appearance unchanged")
 assert(not Service.Command(b,"Put","Plank",1) and not Service.Command(b,"Price","Plank",1),"outsider cannot change seller stock/prices")
 assert(Service.Command(a,"Put","Plank",10))
 assert(not Service.Command(a,"Price","Plank",0/0) and not Service.Command(a,"Price","Plank",.5))
@@ -101,7 +101,7 @@ b:SetAttribute("TownID",1);assert(Service.Open(b,fourth) and Service.Command(b,"
 local remaining=Wallet.Balance(b);assert(Wallet.Transfer(b,d,remaining));assert(Wallet.Credit(b,1))
 local mayorMoney=Wallet.Balance(d);clock+=300;Service.Step()
 assert(Wallet.Balance(b)==0 and Wallet.Balance(d)==mayorMoney+1,"insolvent seller pays available dollar without debt")
-assert(Service.Command(b,"Release") and fourth:GetAttribute("TradeOwnerID")==0 and fourth.Inactive.Part.Transparency==0,"empty post can be released and returns to inactive visual")
+assert(Service.Command(b,"Release") and fourth:GetAttribute("TradeOwnerID")==0 and fourth.Inactive.Part.Transparency==0,"empty post can be released and keeps authored appearance")
 print("PASS: actual wallet income, foreign buyers/member claims, quantity/price/funds guards, atomic sales, weapon metadata, one tax per seller, grace/rejoin/timeout, mayor inheritance and leadership changes")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
