@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Items=require(ReplicatedStorage.Shared.ItemConfig)
 local Interaction=require(ReplicatedStorage.Shared.Interaction)
+local Journal=require(script.Parent.JournalService)
 local Service={}
 local patients,occupied={},{}
 local function multiplier(bed)
@@ -64,7 +65,9 @@ function Service.Step()
    record.NextTick=now+60/multiplier(record.Bed)
    local amount=character:GetAttribute("Regeneration") or 0
    if typeof(amount)=="number" and amount==amount and amount>0 and amount<math.huge then
+    local before=hp.Health
     hp.Health=math.min(hp.MaxHealth,hp.Health+amount)
+    if hp.Health>before then Journal.Send(player,string.format("Regeneration restored %g HP.",hp.Health-before)) end
     character:SetAttribute("Health",hp.Health)
     character:SetAttribute("Sick",math.max(0,(character:GetAttribute("Sick") or 0)-amount))
    end

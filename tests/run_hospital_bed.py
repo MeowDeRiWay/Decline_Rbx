@@ -3,8 +3,10 @@ from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/HospitalBedService.luau').read_text()
-source=re.sub(r'local (Items|Interaction)=require[^\n]+\n','',source)
+source=re.sub(r'local (Items|Interaction|Journal)=require[^\n]+\n','',source)
 setup='''
+local regenMessages={}
+local Journal={Send=function(_,text) table.insert(regenMessages,text) end}
 local Items={PickupDistance=2}
 local Interaction={NearestPoint=function(object) return object.Position or Vector3.zero end}
 local oldNew=CFrame.new
@@ -37,9 +39,12 @@ assert(not a.Character.HumanoidRootPart.CanCollide and bed:GetAttribute("Hospita
 assert(not Beds.Use(b,bed),"one patient per bed")
 clock+=19;Beds.Step();assert(a.Character.Humanoid.Health==20)
 clock+=1;Beds.Step();assert(a.Character.Humanoid.Health==26 and a.Character:GetAttribute("Sick")==34,"default3x means6HP and6Sick every20seconds")
+assert(regenMessages[#regenMessages]=="Regeneration restored 6 HP.")
 a.Character.Humanoid.Health=49;clock+=20;Beds.Step()
+assert(regenMessages[#regenMessages]=="Regeneration restored 1 HP.","reports actual healing, not requested amount")
+local messageCount=#regenMessages
 assert(a.Character.Humanoid.Health==50 and a.Character:GetAttribute("Sick")==28,"Sick uses full regeneration even when HP is capped")
-clock+=20;Beds.Step();assert(a.Character:GetAttribute("Sick")==22,"Sick treatment continues at full HP")
+clock+=20;Beds.Step();assert(#regenMessages==messageCount,"full HP does not spam healed messages");assert(a.Character:GetAttribute("Sick")==22,"Sick treatment continues at full HP")
 assert(Beds.Use(a,nil) and a.Character:GetPivot()==start and not a.Character.HumanoidRootPart.Anchored)
 assert(a.Character.HumanoidRootPart.CanCollide and a.Character.Humanoid.AutoRotate and not bed:GetAttribute("HospitalBedUserId"),"get up restores pose, controls and vacancy")
 bed:SetAttribute("HospitalRegenMultiplier",6)

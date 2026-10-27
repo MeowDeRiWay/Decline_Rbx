@@ -2,6 +2,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.ResourceConfig)
 local Rules = require(ReplicatedStorage.Shared.ResourceRules)
+local CombatRules = require(ReplicatedStorage.Shared.CombatRules)
 local Area = require(script.Parent.AreaService)
 local Inventory = require(script.Parent.InventoryService)
 local WorldItems = require(script.Parent.WorldItemService)
@@ -174,13 +175,22 @@ function Service.Hit(player,model,weapon)
  local character = player.Character
  local id = character and character:GetAttribute("HandsItem")
  local definition = id and Items.Items[id]
- if not definition or not definition.Weapon or Inventory.GetWeapon(player) ~= weapon then return false end
- -- A real tool impact costs exactly one use, including an unsuitable tool.
- if not Inventory.UseWeapon(player) then return false end
+ if Inventory.GetWeapon(player) ~= weapon then return false end
  local resource = Config[node.Kind]
- if not Rules.CanDamage(resource,definition) then return true end
+ local damage
+ if not definition then
+  -- Empty hands use the same damage roll and bonuses as an unarmed combat hit.
+  if node.Kind~="Tree" then return false end
+  damage=CombatRules.UnarmedDamage(player:GetAttribute("MeleeBonus"),player:GetAttribute("UnarmedDamageBonus"),random:NextNumber())
+ else
+  if not definition.Weapon then return false end
+  -- A real tool impact costs exactly one use, including an unsuitable tool.
+  if not Inventory.UseWeapon(player) then return false end
+  if not Rules.CanDamage(resource,definition) then return true end
+  damage=Rules.HarvestDamage(resource,definition)
+ end
  local previousHealth = node.Health
- node.Health = Rules.Damage(node.Health,Rules.HarvestDamage(resource,definition))
+ node.Health = Rules.Damage(node.Health,damage)
  model:SetAttribute("Health",node.Health)
  if node.Health == 0 then
   local loot = {}

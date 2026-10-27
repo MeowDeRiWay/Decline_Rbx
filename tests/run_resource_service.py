@@ -5,10 +5,10 @@ import sys
 import tempfile
 root = Path(__file__).resolve().parents[1]
 service = (root/'src/server/Services/ResourceService.luau').read_text()
-for name in ['Config', 'Rules', 'Area', 'Inventory', 'WorldItems', 'Items', 'Progression']:
+for name in ['Config', 'Rules', 'CombatRules', 'Area', 'Inventory', 'WorldItems', 'Items', 'Progression']:
     import re
     service = re.sub(rf'local {name} = require\([^\n]+\)\n', '', service)
-setup = '''
+setup = 'local CombatRules=(function()\n'+(root/'src/shared/CombatRules.luau').read_text()+'\nend)()\n' + '''
 local xp=0
 local Progression={Loot=function(_,items) return items end,Harvest=function(_,kind,count) assert(kind=="StoneVein" and count==1);xp+=count end}
 
@@ -76,6 +76,16 @@ player.Character:SetAttribute("HandsItem","IronShowel")
 for _=1,7 do assert(Service.Hit(player,ironTarget,weapon)) end
 assert(xp==3,"one XP per actual resource, no XP per hit")
 assert(ironTarget.destroyed and lootCalls==3,"iron multiplier mines in seven hits")
+Enum.Material={Wood="Wood"}
+local tree=make("Model","Tree_1",workspace);tree.CFrame=CFrame.new();tree.Size=Vector3.new(1,3,1);make("Part","Part",tree)
+workspace.DescendantAdded:Fire(tree)
+player.Character:SetAttribute("HandsItem","")
+function player:GetAttribute(id) return ({MeleeBonus=10,UnarmedDamageBonus=10})[id] end
+local usedBefore=used
+assert(Service.Hit(player,tree,weapon) and tree:GetAttribute("Health")==82.5,"tree receives actual unarmed damage including flat perk bonus")
+assert(Service.Hit(player,tree,weapon) and tree:GetAttribute("Health")==65 and used==usedBefore,"fists do not consume weapon durability")
+assert(not Service.Hit(player,generated[4],weapon) and generated[4]:GetAttribute("Health")==100,"hands cannot mine stone")
+print("PASS: bare hands damage trees using combat rolls and bonuses, without tool wear or stone mining")
 print("PASS: real resource service generates StoneYard by cells, skips duplicate markers, anchors veins, requires shovel and drops stone once")
 '''
 parts = [(root/'tests/fixtures/town_mock.luau').read_text(), (root/'tests/city_geometry.fixture.luau').read_text(), setup]

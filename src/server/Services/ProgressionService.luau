@@ -143,7 +143,9 @@ function Service.Start()
    for player,state in pairs(states) do
     local character=player.Character;local hp=character and character:FindFirstChildOfClass("Humanoid")
     if state.Confirmed and hp and hp.Health>0 and not character:GetAttribute("Knockout") and not character:GetAttribute("IsDead") and not character:GetAttribute("HospitalResting") then
+     local before=hp.Health
      hp.Health=math.min(hp.MaxHealth,hp.Health+Rules.Bonuses(state.Stats,state.Perks,state.Level).Regeneration)
+     if hp.Health>before then Journal.Send(player,string.format("Regeneration restored %g HP.",hp.Health-before)) end
      character:SetAttribute("Health",hp.Health)
     end
    end
