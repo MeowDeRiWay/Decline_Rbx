@@ -126,6 +126,19 @@ function Rules.Unequip(state, definitions, slots, slot)
  state.Equipment[slot] = nil
  return true
 end
+-- Return items from retired slots to inventory without losing their metadata.
+function Rules.ReconcileEquipment(state,definitions,slots)
+ for slot,id in pairs(state.Equipment) do
+  if not table.find(slots,slot) and definitions[id] then
+   local condition=state.EquipmentCondition[slot]
+   local data=state.EquipmentWeapon and state.EquipmentWeapon[slot]
+   if Rules.Add(state,definitions,id,1,condition~=nil and {condition} or nil,data and {data} or nil) then
+    state.Equipment[slot]=nil;state.EquipmentCondition[slot]=nil
+    if state.EquipmentWeapon then state.EquipmentWeapon[slot]=nil end
+   end
+  end
+ end
+end
 function Rules.Weight(state, definitions, ammoMultiplier,equippedMultiplier)
  local total = 0
  for id, count in pairs(state.Items) do total += (definitions[id].Weight or 0) * count * (definitions[id].Ammo and (ammoMultiplier or 1) or 1) end

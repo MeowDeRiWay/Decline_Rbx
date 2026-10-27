@@ -20,11 +20,11 @@ Service.Changed = changed.Event
 local function update(player)
  local state = states[player]
  if not state then return end
+ Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots)
  local absorption,resistance=0,0
- for _,id in pairs(state.Equipment) do
-  local armor=ItemConfig.Items[id].Armor
-  if armor then absorption+=armor.Absorption or 0;resistance+=armor.Resistance or 0 end
- end
+ local body=state.Equipment.Body and ItemConfig.Items[state.Equipment.Body]
+ local armor=body and body.Armor
+ if armor then absorption=armor.Absorption or 0;resistance=armor.Resistance or 0 end
  player:SetAttribute("HandsEquipped",state.Equipment.Hands or "");player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,.9))
  if player.Character then
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")))
@@ -43,6 +43,7 @@ end
 function Service.ExtractAll(player)
  holstered[player]=nil
  local state=states[player] or Rules.New()
+ Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots)
  for _,slot in ipairs(ItemConfig.Slots) do
   if state.Equipment[slot] then Rules.Unequip(state,ItemConfig.Items,ItemConfig.Slots,slot) end
  end
@@ -62,6 +63,7 @@ function Service.ForgetOffline(userID,state)
 end
 function Service.CorpseStorage(state)
  state=state or Rules.New()
+ Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots)
  for _,slot in ipairs(ItemConfig.Slots) do
   if state.Equipment[slot] then Rules.Unequip(state,ItemConfig.Items,ItemConfig.Slots,slot) end
  end

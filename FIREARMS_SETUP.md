@@ -190,3 +190,13 @@ bolt-action Sniper/disarm effects, including the character panel's critical chan
 New SR and LSW recipes use ArmsBench, 25 Iron, Repair170, 120seconds, 500XP,
 matching the current .223 weapon crafting tier. SR300RPM, LSW6kg and existing
 .223 range/reload defaults are initial tuning values.
+
+## Player equipment slots — 27 October 2026
+
+Equipment uses exactly Body, Hands, Back, Additional and Medicine. There is no
+Head equipment slot; the character's physical Head remains for aiming/hearing.
+Armor suits use `Slot = "Body"` and their Armor absorption/resistance are the only
+equipment armor values counted. Back/Additional/Hands/Medicine remain usable for
+their own items but do not add separate armor layers. Items in retired equipment
+slots are returned to inventory with their condition and weapon/ammo metadata
+preserved when inventory state is refreshed or extracted into a corpse.

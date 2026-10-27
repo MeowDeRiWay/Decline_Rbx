@@ -127,12 +127,29 @@ local corpseInventory=Service.ExtractAll(a)
 local foundLoaded=false
 for _,stack in ipairs(Rules.Stacks(corpseInventory,ItemConfig.Items)) do if stack.ID=="AssaultRifle223" and stack.Loaded==24 and stack.AmmoType=="AP" then foundLoaded=true end end
 assert(foundLoaded and not Service.GetMagazine(a),"death inventory extraction retains charged gun in corpse, clears player")
-ItemConfig.Items.Apron.Armor={Absorption=3,Resistance=.2}
+assert(#ItemConfig.Slots==5 and not table.find(ItemConfig.Slots,"Head"),"exactly five equipment slots, no Head")
+ItemConfig.Items.TestArmor={Name="Armor suit",Weight=2,Slot="Body",Armor={Absorption=3,Resistance=.2}}
+ItemConfig.Items.Apron.Armor={Absorption=10,Resistance=.5}
 assert(Service.Add(a,"Apron",1) and Service.Equip(a,"Apron"))
-assert(a:GetAttribute("ArmorAbsorption")==3 and a:GetAttribute("ArmorResistance")==.2,"equipped armor feeds authoritative totals")
-Service.Unequip(a,"Additional")
-assert(a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==0,"removing armor removes its bonuses")
-print("PASS: equipped armor totals update and clear")
+assert(a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==0,"accessories cannot add a second armor layer")
+assert(Service.Add(a,"TestArmor",1) and Service.Equip(a,"TestArmor"))
+assert(a:GetAttribute("ArmorAbsorption")==3 and a:GetAttribute("ArmorResistance")==.2,"only Body armor feeds authoritative totals")
+Service.Unequip(a,"Body")
+assert(a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==0,"removing body armor clears defense despite accessory")
+local legacy=Service.Export(a)
+legacy.Equipment.Head="AssaultRifle223";legacy.EquipmentCondition.Head=17
+legacy.EquipmentWeapon.Head={Loaded=7,Type="AP",UID="retired-slot-item"}
+Service.Refresh(a)
+assert(not legacy.Equipment.Head and not legacy.EquipmentCondition.Head and not legacy.EquipmentWeapon.Head,"retired slot is cleared")
+local recovered=false
+for _,stack in ipairs(Service.Snapshot(a).Stacks) do if stack.ID=="AssaultRifle223" and stack.Condition==17 and stack.Loaded==7 and stack.AmmoType=="AP" then recovered=true end end
+assert(recovered,"retired slot item returns to inventory with condition and ammunition")
+local count=Service.Snapshot(a).Items.AssaultRifle223
+Service.Refresh(a);assert(Service.Snapshot(a).Items.AssaultRifle223==count,"slot migration cannot duplicate item")
+ItemConfig.Items.TestHelmet={Name="Old helmet",Weight=1,Slot="Head"}
+assert(Service.Add(a,"TestHelmet",1) and not Service.Equip(a,"TestHelmet") and not Service.Unequip(a,"Head"),"client cannot equip or address removed slot")
+ItemConfig.Items.Apron.Armor=nil
+print("PASS: five slots, Body-only armor, retired-slot recovery without duplication, removed-slot commands rejected")
 print("PASS: actual world drop/pickup preserves condition, loaded rounds, ammo type and total mass without duplicate pickup")
 '''
 world_cases+='''

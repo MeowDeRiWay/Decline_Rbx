@@ -2,7 +2,7 @@
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
 ItemConfig.PickupDistance = 2
-ItemConfig.Slots = {"Head", "Body", "Hands", "Back", "Additional", "Medicine"}
+ItemConfig.Slots = {"Body", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
  ZombieHand = {
   Name = "Zombie hand", Weight = 0, Slot = "Hands", Lootable = false,
