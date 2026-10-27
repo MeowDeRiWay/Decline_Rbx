@@ -56,7 +56,7 @@ assert(bonus.RangedDamageBonus==4 and bonus.MaxHealth==60 and bonus.MeleeBonus==
 assert(bonus.CriticalChance==.14 and bonus.Regeneration==14 and bonus.FirstAidMultiplier==2 and bonus.ReviveLockSeconds==300)
 local high=R.Bonuses({Strength=1,Attention=10,Endurance=1,Intelligence=1,Agility=1,Luck=1},{Hearing=1})
 assert(high.HearingAttention==12 and high.ViewRange==40)
-assert(R.FirstAid(19)==11 and R.FirstAid(20,2)==24 and R.ReviveChance(20)==.1 and R.ReviveChance(200)==1)
+assert(R.FirstAid(19,1,7)==7 and R.FirstAid(20,2,7)==16 and R.FirstAid(100,1,7,"GreatBandage")==24 and R.ReviveChance(20)==.1 and R.ReviveChance(200)==1)
 assert(R.CraftExperience({},5)==250 and R.CraftExperience({OutputCount=3},1)==50 and R.CraftExperience({XP=80},2)==160)
 assert(R.KillExperience(20)==50 and R.KillExperience(60)==150)
 assert(R.AddXP(s,.5) and s.XP==.5,"healing grants exact actual HP including fractions")

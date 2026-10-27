@@ -32,8 +32,9 @@ remote.OnServerEvent:Connect(function(player,mode,target)
  end
  if mode=="Bandage" then
   if patient:GetAttribute("Knockout") or health.Health>=health.MaxHealth then return end
+  local medicine=character:GetAttribute("MedicineItem")
   if not Inventory.UseMedicine(player) then Journal.Send(player,"Equip a bandage in the Medicine slot first.");return end
-  local amount=math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier")))
+  local amount=math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine))
   health.Health+=amount;patient:SetAttribute("Health",health.Health)
   Journal.Send(player,string.format("You restored %g HP to %s.",amount,target==player and "yourself" or target.Name))
   if target~=player then

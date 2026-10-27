@@ -110,7 +110,7 @@ button("Cha [C]",792,94,88,function() Layout.Character:Fire() end)
 local medicine=button("Medicine [H]",792,4,110,function()
  local c=player.Character
  if player:GetAttribute("MedicalMode") then player:SetAttribute("MedicalMode",nil)
- elseif c and c:GetAttribute("MedicineItem")=="Bandage" then player:SetAttribute("MedicalMode","Bandage")
+ elseif c and (c:GetAttribute("MedicineItem")=="Bandage" or c:GetAttribute("MedicineItem")=="GreatBandage") then player:SetAttribute("MedicalMode","Bandage")
  else Layout.Log:Fire("Equip a bandage in the Medicine slot first.") end
 end)
 local combat=Instance.new("Frame")
@@ -133,7 +133,7 @@ Run.Heartbeat:Connect(function(dt)
  elapsed+=dt;if elapsed<.25 then return end;elapsed=0
  UI.Set(level,"Visible",(player:GetAttribute("AttributePoints") or 0)>0 or (player:GetAttribute("SkillPoints") or 0)>0 or (player:GetAttribute("PerkPoints") or 0)>0)
  local character=player.Character
- UI.Set(medicine,"Text",character and character:GetAttribute("MedicineItem")=="Bandage" and ("Med [H] ×"..(character:GetAttribute("MedicineCount") or 0)) or "Med [H] —")
+ UI.Set(medicine,"Text",character and (character:GetAttribute("MedicineItem")=="Bandage" or character:GetAttribute("MedicineItem")=="GreatBandage") and ("Med [H] ×"..(character:GetAttribute("MedicineCount") or 0)) or "Med [H] —")
  UI.Set(medicine,"TextColor3",player:GetAttribute("MedicalMode")=="Bandage" and Theme.Green or Theme.Text)
  UI.Set(health,"Text",string.format("HP %03d",character and character:GetAttribute("Health") or 0))
  UI.Set(money,"Text","$"..tostring(player:GetAttribute("Money") or 0))

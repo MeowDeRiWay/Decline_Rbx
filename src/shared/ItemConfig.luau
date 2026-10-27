@@ -35,6 +35,7 @@ ItemConfig.Items = {
  Chemicals = {Name="Chemicals",Weight=.2,Description="Scavenged chemical compounds used to produce ammunition."},
  Iron = {Name="Iron",Weight=1,ResourceMaterial="Iron",Description="Smelted iron used for industrial firearms and ammunition."},
  Apron = {Name = "Apron", Weight = 0.5, Slot = "Additional", Description = "An apron worn over clothing."},
+ SewingKit={Name="Sewing kit",Weight=0.2,CraftTool="SewingKit",CraftSpeed=1,Description="A reusable tool required to craft items from cloth and rags. Keep it in your inventory."},
  Cloth = {
   Name = "Cloth", Weight = 0.2,
   Description = "Fabric used for construction and crafting.",
@@ -164,7 +165,8 @@ ItemConfig.Items.MachineGun308={Name=".308 machine gun",Weight=9,Slot="Hands",
  Description="Heavy machine gun. Uses Heavy weapons. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
  Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="308",ShotDistance=100,Magazine=60,ReloadTime=5,Speed=750,Range=450,Damage=30,DamageMin=25,DamageMax=30,RPM=600},
  Weapon={Damage=30,DamageMin=25,DamageMax=30,DamageType="Bullet",MaxUses=5000,AttacksPerMinute=600}}
-ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Equip in Medicine. H, then click yourself or a nearby player to apply first aid."}
+ItemConfig.Items.GreatBandage={Name="Great bandage",Weight=.1,Slot="Medicine",Description="Restores twice the target Endurance plus 2 HP per 20 First Aid of the healer. Equip in Medicine."}
+ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Restores target Endurance plus 1 HP per 20 First Aid of the healer. Equip in Medicine. H, then click yourself or a nearby player."}
 for _,kind in ipairs({"FMJ","AP"}) do
  local role=if kind=="FMJ" then "Full metal jacket: a standard round for everyday firefights." else "Armor-piercing: ignores target armor according to caliber. Wall penetration is identical to FMJ."
  for _,ammo in ipairs({{ID="223",Name=".223",Weight=.012,Use="rifles"},{ID="9mm",Name="9 mm",Weight=.008,Use="pistols and submachine guns"},{ID="308",Name=".308",Weight=.024,Use="rifles and machine guns"}}) do

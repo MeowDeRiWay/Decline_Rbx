@@ -187,7 +187,10 @@ function Rules.SpendPerk(state,id)
  end
  return false
 end
-function Rules.FirstAid(skill,multiplier) return (10+math.floor(math.clamp(skill or 0,0,300)/10))*(multiplier or 1) end
+function Rules.FirstAid(skill,multiplier,endurance,medicine)
+ local quality=medicine=="GreatBandage" and 2 or 1
+ return quality*((endurance or 0)+math.floor(math.clamp(skill or 0,0,300)/20))*(multiplier or 1)
+end
 function Rules.ReviveChance(skill) return math.clamp((skill or 0)/200,0,1) end
 function Rules.CraftExperience(recipe,count) return (recipe.XP or 50)*count end
 function Rules.KillExperience(health) return math.max(0,math.floor((health or 0)*2.5+.5)) end

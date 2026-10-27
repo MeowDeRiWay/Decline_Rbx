@@ -1,16 +1,19 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 local recipes = {
  MakeAmmo9mm={Name="Make 9 mm FMJ ammunition",Station="Workstation",Description="Produce 50 standard 9 mm rounds. Requires Repair 100.",Ingredients={Coal=1,Chemicals=1,Scrap=1},Output="Ammo9mmFMJ",OutputCount=50,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=100}}},
- BurnLogs={FuelTab="Wood",Name="Burn logs into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn five logs into five charcoal. No matches needed yet; you may leave.",Ingredients={TreeLog=5},Output="Coal",OutputCount=5,MaxBatch=1,Duration=60},
- BurnLogsWithCoal={FuelTab="Coal",Name="Burn logs with charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Use one charcoal to burn five logs faster. You may leave.",Ingredients={TreeLog=5,Coal=1},Output="Coal",OutputCount=5,MaxBatch=1,Duration=30},
- SmeltIron={Name="Smelt iron",Station="Furnace",WorkshopLevel=2,Description="Smelt 25 scrap with one charcoal into five iron. Requires a Workshop T2 furnace; you may leave.",Ingredients={Scrap=25,Coal=1},Output="Iron",OutputCount=5,MaxBatch=1,Duration=120},
+ BurnLogs={FuelTab="Wood",Name="Burn logs into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn five logs into five charcoal. No matches needed yet; you may leave.",Ingredients={TreeLog=1},Output="Coal",OutputCount=1,MaxBatch=5,Duration=60},
+ BurnLogsWithCoal={FuelTab="Coal",Name="Burn logs with charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Use one charcoal to burn five logs faster. You may leave.",Ingredients={TreeLog=1},Fuel={ID="Coal",Count=1},Output="Coal",OutputCount=1,MaxBatch=5,Duration=30},
+ SmeltIron={Name="Smelt iron",Station="Furnace",WorkshopLevel=2,Description="Smelt 25 scrap with one charcoal into five iron. Requires a Workshop T2 furnace; you may leave.",Ingredients={Scrap=5},Fuel={ID="Coal",Count=1},Output="Iron",OutputCount=1,MaxBatch=5,Duration=120},
  MakeAmmo223={Name="Make .223 FMJ ammunition",Station="ArmsBench",Description="Produce 50 standard .223 rounds. Requires Repair 170.",Ingredients={Iron=1,Coal=1,Chemicals=1},Output="Ammo223FMJ",OutputCount=50,MaxBatch=1,Duration=60,RequiresPresence=true,XP=200,Requirements={Skills={Repair=170}}},
- MakeRifle223={Name="Make .223 bolt-action rifle",Station="ArmsBench",Description="Assemble a .223 bolt-action rifle. Requires Repair 170.",Ingredients={Iron=25},Output="Rifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
- MakeAssaultRifle223={Name="Make .223 assault rifle",Station="ArmsBench",Description="Assemble a .223 assault rifle. Requires Repair 170.",Ingredients={Iron=25},Output="AssaultRifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
- MakeLSW223={Name="Make .223 light support weapon",Station="ArmsBench",Description="Assemble a .223 light support weapon. Requires Repair 170.",Ingredients={Iron=25},Output="LSW223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
- MakeServiceRifle223={Name="Make .223 service rifle",Station="ArmsBench",Description="Assemble a .223 service rifle. Requires Repair 170.",Ingredients={Iron=25},Output="ServiceRifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=170}}},
+ MakeRifle223={Name="Make .223 bolt-action rifle",Station="ArmsBench",Description="Assemble a .223 bolt-action rifle. Requires Repair 150.",Ingredients={Iron=10,Plank=2},Output="Rifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=150}}},
+ MakeAssaultRifle223={Name="Make .223 assault rifle",Station="ArmsBench",Description="Assemble a .223 assault rifle. Requires Repair 150.",Ingredients={Iron=10,Plank=2},Output="AssaultRifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=150}}},
+ MakeLSW223={Name="Make .223 light support weapon",Station="ArmsBench",Description="Assemble a .223 light support weapon. Requires Repair 150.",Ingredients={Iron=10,Plank=2},Output="LSW223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=150}}},
+ MakeServiceRifle223={Name="Make .223 service rifle",Station="ArmsBench",Description="Assemble a .223 service rifle. Requires Repair 150.",Ingredients={Iron=10,Plank=2},Output="ServiceRifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=150}}},
  MakeBucket={Name="Make empty bucket",Station="Workstation",Description="Shape scrap into a watering bucket. Requires Repair 100.",Ingredients={Scrap=3},Output="EmptyBucket",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Repair=100}}},
- MakeBandage={Name="Make bandage",Station="MedStation",Description="Prepare a bandage from five rags at a medical station. Requires Doctor 100.",Ingredients={Rags=5},Output="Bandage",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Doctor=100}}},
+ MakeBandage={Name="Make bandage",Station="MedStation",Description="Prepare a bandage from five rags at a medical station. Requires First Aid 50.",Ingredients={Rags=5},Output="Bandage",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=50,Requirements={Skills={FirstAid=50}}},
+ MakeSewingKit={Name="Make sewing kit",Station="Workstation",Description="Make a reusable sewing kit from five scrap. Requires Repair 80.",Ingredients={Scrap=5},Output="SewingKit",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,Requirements={Skills={Repair=80}}},
+ MakeCloth={Name="Make cloth",Station="MedStation",Description="Sew two rags into one cloth using a sewing kit.",Ingredients={Rags=2},Output="Cloth",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=25},
+ MakeGreatBandage={Name="Make great bandage",Station="MedStation",Description="Prepare a great bandage from five cloth. Requires First Aid 100.",Ingredients={Cloth=5},Output="GreatBandage",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={FirstAid=100}}},
  MakePlanks = {
   Name = "Make planks", Station = "Workstation",
   Description = "Cut one tree log into three planks.",
@@ -106,6 +109,16 @@ for _,recipe in pairs(recipes) do
   recipe.Description=recipe.Description:gsub(" Requires Repair %d+%.","").." Requires Repair "..repair.."."
  end
 end
+
+-- Character XP per finished result; sewing tools are reusable inventory requirements.
+local outputXP={Plank=75,Handle=25,StoneAxe=50,StoneShovel=50,ScrapAxe=100,ScrapShovel=100,ScrapKnife=100,IronAxe=200,IronShovel=200,IronKnife=200,EmptyBucket=100}
+for _,recipe in pairs(recipes) do
+ if outputXP[recipe.Output] then recipe.XP=outputXP[recipe.Output] end
+ if recipe.Ingredients.Cloth or recipe.Ingredients.Rags then recipe.Tool="SewingKit" end
+end
+recipes.BurnLogs.Description="Burn one to five logs into the same amount of charcoal. You may leave."
+recipes.BurnLogsWithCoal.Description="Use one charcoal per batch to burn one to five logs faster. You may leave."
+recipes.SmeltIron.Description="Smelt five scrap per iron, up to five iron per batch, using one charcoal. Requires a Workshop T2 furnace; you may leave."
 
 -- Stove food is exclusively boiled; frying/baking belongs at another station.
 -- Fuel is per queued batch, not per serving.

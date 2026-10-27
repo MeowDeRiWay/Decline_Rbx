@@ -35,6 +35,7 @@ local wall=false
 local Sight={Cast=function() return wall and {Instance={IsDescendantOf=function() return false end}} or nil end}
 local roll=0
 local Random={new=function() return {NextNumber=function() return roll end} end}
+a:SetAttribute("Endurance",11);b:SetAttribute("Endurance",11);a.Character:SetAttribute("MedicineItem","Bandage")
 a:SetAttribute("SkillFirstAid",25);a:SetAttribute("FirstAidMultiplier",1);a:SetAttribute("SkillDoctor",20)
 '''
 cases='''
@@ -53,6 +54,12 @@ a:SetAttribute("FirstAidMultiplier",2);use("Bandage",b);assert(b.Character.Human
 b.Character.HumanoidRootPart.Position=Vector3.new(4,0,0);local before=equipped;use("Bandage",b);assert(equipped==before,"range enforced by server")
 b.Character.HumanoidRootPart.Position=Vector3.zero;wall=true;use("Bandage",b);assert(equipped==before,"cannot heal through walls");wall=false
 b.Character.Humanoid.Health=99.5;use("Bandage",b);assert(xp==54.5,"fractional missing HP grants exact XP")
+a.Character:SetAttribute("MedicineItem","GreatBandage");a:SetAttribute("FirstAidMultiplier",1)
+b.Character.Humanoid.Health=50;local oldXP=xp;local oldCount=equipped
+use("Bandage",b)
+assert(b.Character.Humanoid.Health==74 and xp==oldXP+24 and equipped==oldCount-1,"great bandage doubles target Endurance and skill contribution")
+xp=oldXP;b.Character.Humanoid.Health=99.5;equipped=oldCount
+a.Character:SetAttribute("MedicineItem","Bandage")
 local standing=b.Character:GetPivot()
 Life.Knockout(b,b.Character);local oldTimer=timers[#timers].Run
 assert(b.Character:GetAttribute("Knockout") and b.Character.HumanoidRootPart.Anchored)

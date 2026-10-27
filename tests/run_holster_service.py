@@ -161,7 +161,12 @@ assert(Service.UseMedicine(a) and Service.Snapshot(a).Items.Bandage==1 and Servi
 assert(math.abs(Service.Snapshot(a).Weight-(medWeight-.1))<1e-9,"one bandage consumed, next automatically equipped")
 assert(Service.UseMedicine(a) and Service.UseMedicine(a) and not Service.UseMedicine(a))
 assert(Service.Snapshot(a).Equipment.Medicine==nil and a.Character:GetAttribute("MedicineCount")==0)
-print("PASS: medicine slot, exact consumption, automatic pocket refill and empty-state synchronization")
+assert(Service.Add(a,"GreatBandage",2) and Service.Equip(a,"GreatBandage"))
+assert(a.Character:GetAttribute("MedicineCount")==2)
+assert(Service.UseMedicine(a) and Service.Snapshot(a).Equipment.Medicine=="GreatBandage" and a.Character:GetAttribute("MedicineCount")==1)
+assert(Service.UseMedicine(a) and not Service.UseMedicine(a) and a.Character:GetAttribute("MedicineCount")==0)
+assert(Service.Add(a,"SewingKit",1) and Service.Snapshot(a).CraftTools.SewingKit==1,"sewing kit works from inventory")
+print("PASS: both bandage qualities, exact consumption, automatic pocket refill, sewing kit inventory tool and empty-state synchronization")
 '''
 world_cases+='''
 assert(Service.Add(a,"EmptyBucket",1) and Service.Equip(a,"EmptyBucket"))

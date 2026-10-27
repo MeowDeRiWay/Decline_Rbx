@@ -21,13 +21,14 @@ function task.delay(duration,fn) table.insert(callbacks,fn); table.insert(durati
 local cookState={Profession="Cook",Talents={}}
 local allowed=false
 local doctor=false
+local sewing=true
 local repair=300
 local xp,bonuses=0,0
 local Progression={Meets=function(_,requirement) if requirement.Skills.Repair then return repair>=requirement.Skills.Repair end;return doctor end,CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
  CraftXP=function(_,recipe,count) xp+=ProgressionRules.CraftExperience(recipe,count) end,
  Loot=function(_,items) bonuses+=1; return items end}
 local stock={Potato=10,CleanWater=10,TreeLog=5}
-function Inventory.Snapshot() return {Items=table.clone(stock),CraftTools={Knife=1}} end
+function Inventory.Snapshot() return {Items=table.clone(stock),CraftTools={Knife=1,SewingKit=sewing and 1 or nil}} end
 function Inventory.ConsumeIngredients(_,recipe,count)
  for id,n in pairs(recipe.Ingredients) do if (stock[id] or 0)<n*count then return false end end
  for id,n in pairs(recipe.Ingredients) do stock[id]-=n*count end
@@ -82,15 +83,16 @@ cookState.Profession="Worker"; cookState.Talents={GoldenHands=10}
 assert(Service.Open(a,bench) and Service.Cook(a,"MakePlanks",1))
 assert(math.abs(durations[6]-10)<1e-6,"retired crafting perks have no effect")
 callbacks[6]()
-assert(Service.Snapshot(a).CookingReady.Plank==3 and xp==650,"one log to three boards awards one craft operation")
+assert(Service.Snapshot(a).CookingReady.Plank==3 and xp==675,"one log to three boards awards 25 XP per plank")
 Service.Close(a);assert(Service.Open(a,bench))
 stock.Rags=4;a:SetAttribute("CraftCostMultiplier",.8)
 assert(not Service.Cook(a,"MakeBandage",1),"workstation cannot craft medicines")
 local med=make("Model","Medical table",workspace,{MedStation=true});make("Part","Part",med)
 Service.Close(a);assert(Service.Open(a,med) and Service.Snapshot(a).CookingStation=="MedStation")
 assert(not Service.Cook(a,"MakePlanks",1),"medical station cannot craft workshop recipes")
-assert(not Service.Cook(a,"MakeBandage",1),"Doctor requirement enforced")
+assert(not Service.Cook(a,"MakeBandage",1),"First Aid requirement enforced")
 doctor=true
+sewing=false;assert(not Service.Cook(a,"MakeBandage",1) and stock.Rags==4,"missing sewing kit consumes nothing");sewing=true
 assert(not Service.Cook(a,"MakeBandage",2),"one bandage per queue")
 assert(Service.Cook(a,"MakeBandage",1) and stock.Rags==0 and durations[#durations]==20,"discounted rags consumed,20second craft")
 callbacks[#callbacks]()
@@ -119,31 +121,31 @@ assert(Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==99 and stock.Coal==9 and
 callbacks[#callbacks]();assert(xp==before+100 and Service.Snapshot(a).CookingReady.Ammo9mmFMJ==50)
 assert(not Service.Cook(a,"MakeRifle223",1),"factory recipe unavailable on town bench")
 local arms=make("Model","Custom weapons machine",workspace,{WeaponStation=true});make("Part","Part",arms)
-Service.Close(a);assert(Service.Open(a,arms));stock.Iron=100
+Service.Close(a);assert(Service.Open(a,arms));stock.Iron=100;stock.Plank=10
 repair=169;assert(not Service.Cook(a,"MakeAmmo223",1));repair=170
 for _,id in ipairs({"MakeAmmo223","MakeRifle223","MakeAssaultRifle223"}) do
  before=xp;local recipe=Recipes[id]
  assert(Service.Cook(a,id,1));callbacks[#callbacks]()
  assert(xp==before+recipe.XP and Service.Snapshot(a).CookingReady[recipe.Output]==recipe.OutputCount)
 end
-assert(stock.Iron==49 and not Service.Cook(a,"MakePistol9mm",1))
+assert(stock.Iron==79 and not Service.Cook(a,"MakePistol9mm",1))
 local workshop=make("Model","Workbench (T2)",workspace,{BuildingID="Workbench",BuildingLevel=1})
 local furnace=make("Model","Furnace",workshop);make("Part","Part",furnace)
 Service.Close(a);assert(Service.Open(a,furnace));stock.Scrap=25;stock.Coal=1
 assert(not Service.Cook(a,"SmeltIron",1),"tier1 cannot smelt iron")
 workshop:SetAttribute("BuildingLevel",2)
-assert(Service.Snapshot(a).CookingWorkshopLevel==2 and Service.Cook(a,"SmeltIron",1))
+assert(Service.Snapshot(a).CookingWorkshopLevel==2 and Service.Cook(a,"SmeltIron",5))
 assert(stock.Scrap==0 and stock.Coal==0 and durations[#durations]==120 and not Service.Snapshot(a).CookingRequiresPresence)
 Service.Close(a);a.Character.HumanoidRootPart.Position=Vector3.new(100,0,0)
 callbacks[#callbacks]();a.Character.HumanoidRootPart.Position=Vector3.zero
 assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Iron==5,"furnace completes after closing and leaving")
-assert(Service.CollectRecipe(a,"SmeltIron","All") and stock.Iron==54)
+assert(Service.CollectRecipe(a,"SmeltIron","All") and stock.Iron==84)
 stock.TreeLog=5;stock.Coal=0
-assert(Service.Cook(a,"BurnLogs",1) and durations[#durations]==60);Service.Close(a);callbacks[#callbacks]()
+assert(Service.Cook(a,"BurnLogs",5) and durations[#durations]==60);Service.Close(a);callbacks[#callbacks]()
 assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Coal==5)
 assert(Service.CollectRecipe(a,"BurnLogs","All") and stock.Coal==5)
 stock.TreeLog=5
-assert(Service.Cook(a,"BurnLogsWithCoal",1) and stock.Coal==4 and durations[#durations]==30)
+assert(Service.Cook(a,"BurnLogsWithCoal",5) and stock.Coal==4 and durations[#durations]==30)
 Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Coal==5)
 Service.Close(a);assert(Service.Open(a,stove));stock.TreeLog=1;stock.Potato=5;stock.CleanWater=5;cookState.Ramsay=1
 assert(Service.Cook(a,"BoilPotatoes",5));Service.Close(a);callbacks[#callbacks]()

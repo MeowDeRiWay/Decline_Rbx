@@ -13,6 +13,7 @@ local Layout=require(script.Parent.HUDLayout)
 local highlight=Instance.new("Highlight");highlight.Name="MedicalTarget";highlight.DepthMode=Enum.HighlightDepthMode.Occluded;highlight.FillTransparency=.65;highlight.OutlineTransparency=0;highlight.Enabled=false;highlight.Parent=workspace
 local gui=Instance.new("ScreenGui");gui.Name="MedicalAim";gui.ResetOnSpawn=false;gui.IgnoreGuiInset=true;gui.Parent=player:WaitForChild("PlayerGui")
 local hint=Instance.new("TextLabel");hint.Size=UDim2.fromOffset(250,58);hint.BackgroundColor3=Theme.Card;hint.TextColor3=Theme.Text;hint.Font=Theme.Font;hint.TextSize=14;hint.TextWrapped=true;hint.Visible=false;hint.Parent=gui
+local function bandage(id) return id=="Bandage" or id=="GreatBandage" end
 local selected
 local function blocked()
  return GuiService.MenuIsOpen or Input:GetFocusedTextBox() or (player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen")
@@ -23,7 +24,7 @@ Input.InputBegan:Connect(function(key,processed)
  if key.KeyCode==Enum.KeyCode.H and not blocked() then
   if player:GetAttribute("MedicalMode")=="Bandage" then cancel();return end
   local c=player.Character
-  if not c or c:GetAttribute("MedicineItem")~="Bandage" then Layout.Log:Fire("Equip a bandage in the Medicine slot first.");return end
+  if not c or not bandage(c:GetAttribute("MedicineItem")) then Layout.Log:Fire("Equip a bandage in the Medicine slot first.");return end
   player:SetAttribute("MedicalMode","Bandage")
  elseif (key.KeyCode==Enum.KeyCode.Four or key.KeyCode==Enum.KeyCode.KeypadFour) and not blocked() then
   if player:GetAttribute("MedicalMode")=="Doctor" then cancel();return end
@@ -41,7 +42,7 @@ Run.RenderStepped:Connect(function()
  if not mode then return end
  local character=player.Character;local hp=character and character:FindFirstChildOfClass("Humanoid")
  if not character or not hp or hp.Health<=0 or character:GetAttribute("Knockout") then cancel();return end
- if mode=="Bandage" and character:GetAttribute("MedicineItem")~="Bandage" then cancel();return end
+ if mode=="Bandage" and not bandage(character:GetAttribute("MedicineItem")) then cancel();return end
  if blocked() then cancel();return end
  local camera=workspace.CurrentCamera;local root=character:FindFirstChild("HumanoidRootPart")
  if not camera or not root then return end
@@ -65,7 +66,7 @@ Run.RenderStepped:Connect(function()
  if mode=="Doctor" then
   local cooldown=math.max(0,math.ceil((player:GetAttribute("DoctorReadyAt") or 0)-workspace:GetServerTimeNow()))
   text=cooldown>0 and ("Doctor · ready in "..cooldown.."s") or string.format("Doctor · %g%% chance · 4 to cancel\nClick a nearby knocked-out player",Rules.ReviveChance(player:GetAttribute("SkillDoctor"))*100)
- else text=string.format("First aid · %g HP · H to cancel\nClick yourself or a nearby player",Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"))) end
+ else text=string.format("First aid · %g HP · H to cancel\nClick yourself or a nearby player",Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),(selected or player):GetAttribute("Endurance"),character:GetAttribute("MedicineItem"))) end
  if selected then
   local body=selected.Character:FindFirstChild("HumanoidRootPart")
   if body and (body.Position-root.Position).Magnitude>3 then text="Move closer to "..selected.Name end

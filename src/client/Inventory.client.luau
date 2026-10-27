@@ -326,7 +326,8 @@ local function renderRecipes()
   for output,count in pairs(recipe.FuelByproducts or {}) do extras..=string.format(" + %d %s per batch",count,ItemConfig.Items[output].Name) end
   local ingredientsText=text(card,table.concat(ingredients,"\n")..string.format("\n→ %d %s",recipe.OutputCount or 1,(recipe.Output and ItemConfig.Items[recipe.Output].Name or "Meal matching the plate")..extras),UDim2.fromOffset(10,104),UDim2.new(1,-20,0,74))
   ingredientsText.TextSize=14; ingredientsText.TextWrapped=true
-  local tool=recipe.Tool and (speed and string.format("Knife required · Speed ×%g",speed) or "Knife required · Missing usable knife") or "No tool required"
+  local toolName=recipe.Tool=="SewingKit" and "Sewing kit" or "Knife"
+  local tool=recipe.Tool and (speed and string.format("%s required · Speed ×%g",toolName,speed) or toolName.." required · Missing usable tool") or "No tool required"
   text(card,string.format("Batch: 1–%d · Time: %g seconds\n%s",recipe.MaxBatch,recipe.Duration/(speed or 1),tool .. (recipe.RequiresPresence and " · Stay here" or "")),UDim2.fromOffset(10,181),UDim2.new(1,-20,0,44)).TextSize=14
   local amount=Instance.new("TextBox")
   amount.Size=UDim2.new(.4,-12,0,30)
