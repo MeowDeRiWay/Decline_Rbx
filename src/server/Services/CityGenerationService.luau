@@ -15,6 +15,7 @@ local generated, busy, warnings = {}, {}, {}
 local categories=setmetatable({},{__mode="k"})
 local folder
 local hiddenPlots,boundsCache,retryAt={},{},{}
+local plotDue,markerDue={},{}
 local hidePlot
 local deadline=0
 local generating=false
@@ -109,20 +110,40 @@ local function sortPlots(list)
   return ak.Name<bk.Name
  end)
 end
+local function sortNearby(list,distances)
+ sortPlots(list)
+ local rank={};for i,object in ipairs(list) do rank[object]=i end
+ table.sort(list,function(a,b)
+  return distances[a]==distances[b] and rank[a]<rank[b] or distances[a]<distances[b]
+ end)
+end
+-- Each newly discovered nearby batch gets its own stable 30-second window.
+-- Polling/movement must not push deadlines back for jobs already in the queue.
+local function schedule(list,due,now)
+ local present,new={},{}
+ for _,object in ipairs(list) do
+  present[object]=true
+  if due[object]==nil then table.insert(new,object) end
+ end
+ for object in pairs(due) do if not present[object] then due[object]=nil end end
+ for i,object in ipairs(new) do
+  due[object]=now+(#new>1 and Config.ZoneLoadSeconds*(i-1)/(#new-1) or 0)
+ end
+end
 -- Keep authored candidates indexed; retry ticks never allocate a full world descendant list.
 local plotIndex,roadIndex,markerIndex={},{},{}
 local watchers={}
 local function untrack(object)
  if not watchers[object] and not boundsCache[object] then return end
  invalidateBounds(object)
- hiddenPlots[object],retryAt[object]=nil,nil
+ hiddenPlots[object],retryAt[object],plotDue[object],markerDue[object]=nil,nil,nil,nil
  plotIndex[object],roadIndex[object],markerIndex[object]=nil,nil,nil
  local connections=watchers[object]
  if connections then for _,connection in ipairs(connections) do connection:Disconnect() end end
  watchers[object]=nil
 end
 local function classify(object)
- retryAt[object]=nil
+ retryAt[object],plotDue[object],markerDue[object]=nil,nil,nil
  if not object:IsDescendantOf(workspace) or generatedContent(object) then
   plotIndex[object],roadIndex[object],markerIndex[object]=nil,nil,nil;return
  end
@@ -273,37 +294,59 @@ local function generate(incremental)
    if gap<=Config.GenerationRadius*Config.GenerationRadius then table.insert(plots,object);distances[object]=gap end
   end
  end
- -- Only pending nearby plots need road/template discovery. Closest plots go
- -- first; coordinate ordering resolves ties, independent plot RNG keeps the seed
- -- reproducible when players visit towns in a different order.
- if #plots>0 then
+ sortNearby(plots,distances)
+ local now=os.clock()
+ schedule(plots,plotDue,now)
+ local ready={}
+ for _,plot in ipairs(plots) do if plotDue[plot]<=now then table.insert(ready,plot) end end
+ local jobsDone=0
+ local function betweenJobs()
+  if jobsDone>0 and Config.ZoneLoadSeconds>0 then task.wait();deadline=os.clock()+.002 end
+  jobsDone+=1
+ end
+ -- Template and road work only runs when a scheduled plot is actually due.
+ if #ready>0 then
   local sources={Houses=templates("Houses"),Stores=templates("Stores"),Factories=templates("Factories")}
   local roadList=roads()
-  sortPlots(plots)
-  local rank={};for i,plot in ipairs(plots) do rank[plot]=i end
-  table.sort(plots,function(a,b) return distances[a]==distances[b] and rank[a]<rank[b] or distances[a]<distances[b] end)
-  for i,plot in ipairs(plots) do
+  for i,plot in ipairs(ready) do
    if i>Config.PlotsPerStep then break end
    if nearby(plot) then
+    betweenJobs()
+    if not nearby(plot) then continue end
     place(plot,sources,roadList)
     if generated[plot] and generated[plot]:IsDescendantOf(workspace) then retryAt[plot]=nil
     else retryAt[plot]=os.clock()+Config.RetryInterval end
+    plotDue[plot]=nil
    end
    budget()
   end
  end
+ local markers,markerDistances={},{}
  if #points>0 then
-  local markers={}
-  for object in pairs(markerIndex) do table.insert(markers,object) end
-  local processed=0
-  for _,object in ipairs(markers) do
+  for object in pairs(markerIndex) do
    budget()
-   if processed>=Config.PlotsPerStep then break end
-   if object:IsDescendantOf(workspace) and not generatedContent(object) and os.clock()>=(retryAt[object] or 0) and nearby(object) then
-    if Furniture.IsMarker(object) then Furniture.Fill(object) else Walls.Fill(object) end
-    retryAt[object]=os.clock()+Config.RetryInterval
-    processed+=1
+   if object:IsDescendantOf(workspace) and not generatedContent(object) and os.clock()>=(retryAt[object] or 0) and not (Furniture.IsMarker(object) and object:FindFirstChild("GeneratedFurniture")) then
+    local gap=distance(object,points)
+    if gap<=Config.GenerationRadius*Config.GenerationRadius then table.insert(markers,object);markerDistances[object]=gap end
    end
+  end
+ end
+ sortNearby(markers,markerDistances)
+ now=os.clock()
+ schedule(markers,markerDue,now)
+ local processed=0
+ for _,object in ipairs(markers) do
+  budget()
+  if processed>=Config.PlotsPerStep then break end
+  local dueAt=markerDue[object]
+  if dueAt and dueAt<=now and nearby(object) then
+   betweenJobs()
+   if not object:IsDescendantOf(workspace) or not nearby(object) then continue end
+   if Furniture.IsMarker(object) then Furniture.Fill(object) else Walls.Fill(object) end
+   if object:IsDescendantOf(workspace) then retryAt[object]=os.clock()+Config.RetryInterval
+   else retryAt[object]=nil end
+   markerDue[object]=nil
+   processed+=1
   end
  end
  -- Release markers that have been removed; do not leave their generated houses behind.
@@ -326,6 +369,7 @@ function Service.Start()
  folder:SetAttribute("GenerationSeed",seed)
  folder:SetAttribute("GenerationMode","NearbyPlots")
  folder:SetAttribute("GenerationRadius",Config.GenerationRadius)
+ folder:SetAttribute("GenerationLoadSeconds",Config.ZoneLoadSeconds)
  workspace.DescendantAdded:Connect(track)
  workspace.DescendantRemoving:Connect(untrack)
  Service.Generate()

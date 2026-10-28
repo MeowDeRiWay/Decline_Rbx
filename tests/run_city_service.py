@@ -14,6 +14,10 @@ service=service.replace('local Walls=require(script.Parent.WallReplacementServic
 service=service.replace('local Placement=require(script.Parent.StaticPlacement)','')
 furniture=(root/'src/server/Services/StoreFurnitureService.luau').read_text().replace('local Rules=require(ReplicatedStorage.Shared.CityGenerationRules)','')
 cases='''
+assert(Config.ZoneLoadSeconds==30)
+-- Legacy placement/geometry regressions run without pacing; timed cases below
+-- restore the real setting and exercise the scheduler with a controlled clock.
+Config.ZoneLoadSeconds=0
 local observer=make("Player","Observer",Players)
 observer.Character=make("Model","ObserverCharacter",workspace)
 local observerRoot=make("Part","HumanoidRootPart",observer.Character);observerRoot.Position=Vector3.zero
@@ -279,6 +283,64 @@ assert(farFurniture:FindFirstChild("GeneratedFurniture") and farWall.destroyed,"
 assert(workspace.GeneratedCityHouses:GetAttribute("GenerationMode")=="NearbyPlots")
 assert(workspace.GeneratedCityHouses:GetAttribute("GenerationRadius")==Config.GenerationRadius)
 print("PASS: lazy city generation, hidden markers, no-player/dead-player guards, multiple towns/players, state retention, closest-first bounded queue and moved geometry")
+Config.ZoneLoadSeconds=30
+addRoad(70000,30)
+local paced={addPlot(70000,0),addPlot(70020,0),addPlot(70040,0)}
+observerRoot.Position=Vector3.new(70000,0,0)
+Service.Generate(true)
+assert(paced[1]:FindFirstChild("GeneratedHouse") and not paced[2]:FindFirstChild("GeneratedHouse") and not paced[3]:FindFirstChild("GeneratedHouse"),"30-second batch starts with its nearest plot only")
+local firstHouse=paced[1].GeneratedHouse.Value
+-- Polling does not restart the original deadlines.
+for _=1,3 do Service.Generate(true) end
+tick(14.75)
+assert(not paced[2]:FindFirstChild("GeneratedHouse"),"middle plot cannot start early")
+tick(.25)
+assert(paced[2]:FindFirstChild("GeneratedHouse") and not paced[3]:FindFirstChild("GeneratedHouse"),"middle plot loads at 15 seconds")
+tick(14.75)
+assert(not paced[3]:FindFirstChild("GeneratedHouse"),"last plot cannot start before the 30-second deadline")
+tick(.25)
+assert(paced[3]:FindFirstChild("GeneratedHouse"),"last plot loads at 30 seconds")
+assert(paced[1].GeneratedHouse.Value==firstHouse,"pacing never replaces finished state")
+addRoad(80000,30)
+local moved={addPlot(80000,0),addPlot(80020,0),addPlot(80040,0)}
+observerRoot.Position=Vector3.new(80000,0,0);Service.Generate(true)
+assert(moved[1]:FindFirstChild("GeneratedHouse") and not moved[2]:FindFirstChild("GeneratedHouse"))
+observerRoot.Position=Vector3.new(70000,0,0);Service.Generate(true)
+tick(40)
+assert(not moved[2]:FindFirstChild("GeneratedHouse") and not moved[3]:FindFirstChild("GeneratedHouse"),"leaving cancels the distant pending batch")
+observerRoot.Position=Vector3.new(80000,0,0);Service.Generate(true)
+assert(moved[2]:FindFirstChild("GeneratedHouse") and not moved[3]:FindFirstChild("GeneratedHouse"),"returning schedules unfinished work afresh without catch-up burst")
+tick(30)
+assert(moved[3]:FindFirstChild("GeneratedHouse"),"remaining work finishes in its new window")
+-- Missed deadlines are caught up across frames, rather than cloning in a burst.
+addRoad(90000,30)
+local delayed={addPlot(90000,0),addPlot(90020,0),addPlot(90040,0),addPlot(90060,0)}
+observerRoot.Position=Vector3.new(90000,0,0);Service.Generate(true)
+clock+=31
+local finished=false
+task.spawn(function() Service.Generate(true);finished=true end)
+assert(delayed[2]:FindFirstChild("GeneratedHouse") and not delayed[3]:FindFirstChild("GeneratedHouse") and not finished,"catch-up yields before creating another house")
+tick(0)
+assert(delayed[3]:FindFirstChild("GeneratedHouse") and not delayed[4]:FindFirstChild("GeneratedHouse"),"catch-up clones at most one house per resumed frame")
+tick(0)
+assert(delayed[4]:FindFirstChild("GeneratedHouse") and finished,"serialized catch-up completes without duplicate generation")
+for i=#loops,1,-1 do if coroutine.status(loops[i])=="dead" then table.remove(loops,i) end end
+-- Standalone furniture follows the same window instead of creating a new burst.
+local furnitureBatch={}
+for i=1,3 do
+ local marker=make("Part","AutoPlacer",workspace,{StoreFurniture="Chair"})
+ marker.CFrame=CFrame.new(Vector3.new(100000+(i-1)*20,0,0));marker.Size=Vector3.new(1,.2,1)
+ workspace.DescendantAdded:Fire(marker);furnitureBatch[i]=marker
+end
+observerRoot.Position=Vector3.new(100000,0,0);Service.Generate(true)
+assert(furnitureBatch[1]:FindFirstChild("GeneratedFurniture") and not furnitureBatch[2]:FindFirstChild("GeneratedFurniture"))
+tick(15)
+assert(furnitureBatch[2]:FindFirstChild("GeneratedFurniture") and not furnitureBatch[3]:FindFirstChild("GeneratedFurniture"))
+tick(15)
+assert(furnitureBatch[3]:FindFirstChild("GeneratedFurniture"))
+print("PASS: missed-deadline catch-up yields between buildings and standalone furniture uses 30-second pacing")
+print("PASS: 30-second pacing, nearest-first slots at 0/15/30 seconds, stable polling deadlines, departure cancellation and paced re-entry")
+
 
 
 '''

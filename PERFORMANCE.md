@@ -159,3 +159,29 @@ removed plots/houses and no full-world retry scans. Resource generation and
 zombie-home scheduler regressions pass. Source compilation and Rojo build pass.
 This changes generation workload; the remaining Studio-only periodic stalls
 have not been demonstrated to be caused by building generation.
+
+# Thirty-second zone loading window — 28 October 2026
+
+ZoneLoadSeconds=30 now paces newly eligible nearby plots across a stable
+first-to-last 30-second window. Closest is due immediately; N>1 jobs use evenly
+spaced deadlines through the end of the window. A singleton is immediate. The
+setting is a pacing target, not a blocking startup delay or a hard wall-clock
+completion guarantee for arbitrarily costly templates. Existing four-per-pass
+and cooperative work limits still apply. Due jobs are selected before template/
+road preparation, so waiting polls do not prepare placements unnecessarily.
+
+Existing pending deadlines survive repeated polling. Distant/finished jobs are
+pruned; returning unfinished work forms a fresh batch, avoiding overdue bursts.
+Newly encountered plots form their own batch as the player moves. Standalone
+furniture/wall markers have equivalent pacing. Already-filled furniture markers
+are skipped, and removed replacement markers do not retain retry state. Catch-up
+work yields a frame between jobs, including across plot and standalone marker
+work. GeneratedCityHouses.GenerationLoadSeconds advertises the startup setting.
+
+The engine-mock service tests assert three-plot creation at 0/15/30 seconds,
+no early work or sliding deadlines, departure cancellation, paced re-entry,
+state retention, missed-deadline catch-up across frames, serialized generation,
+and standalone furniture timing. Existing placement, resource and zombie-home
+regressions, source compilation and Rojo build pass. This does not subdivide a
+single template's synchronous clone/internal assembly; that remains a possible
+source of a short per-building hitch and requires live Studio comparison.
