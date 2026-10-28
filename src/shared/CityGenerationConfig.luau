@@ -5,5 +5,10 @@ return {
  StoreChance = 0.05,
  PlotSize = 20,
  FitTolerance = 0.05,
+ -- Distance from the plot footprint, in horizontal studs.
+ GenerationRadius = 240,
+ CheckInterval = 0.25,
+ PlotsPerStep = 4,
+ -- Failed/missing-template plots and standalone markers retry at this interval.
  RetryInterval = 5,
 }

@@ -14,6 +14,10 @@ service=service.replace('local Walls=require(script.Parent.WallReplacementServic
 service=service.replace('local Placement=require(script.Parent.StaticPlacement)','')
 furniture=(root/'src/server/Services/StoreFurnitureService.luau').read_text().replace('local Rules=require(ReplicatedStorage.Shared.CityGenerationRules)','')
 cases='''
+local observer=make("Player","Observer",Players)
+observer.Character=make("Model","ObserverCharacter",workspace)
+local observerRoot=make("Part","HumanoidRootPart",observer.Character);observerRoot.Position=Vector3.zero
+local observerHP=make("Humanoid","Humanoid",observer.Character);observerHP.Health=100
 assert(Config.StoreChance==.05)
 local library=make("Folder","CityGeneration",ServerStorage)
 local templates=make("Folder","Houses",library)
@@ -181,6 +185,100 @@ local removed=pendingPlot.GeneratedHouse.Value
 removed:Destroy();Service.Generate(true)
 assert(pendingPlot.GeneratedHouse.Value~=removed and not pendingPlot.GeneratedHouse.Value.destroyed,"removed generated buildings can be regenerated")
 print("PASS: 120-road regression has no settled-town geometry work, linear pending-sort queries and removed-house recovery")
+
+
+-- Real service proximity, bounded queue and state preservation.
+local function addPlot(x,z)
+ local plot=make("Model","YardPlace",workspace,{ForZHouse=true})
+ plot.CFrame=CFrame.new(Vector3.new(x,0,z));plot.Size=Vector3.new(20,.2,20)
+ local part=make("Part","Part",plot)
+ workspace.DescendantAdded:Fire(plot)
+ workspace.DescendantAdded:Fire(part)
+ return plot,part
+end
+local function addRoad(x,z)
+ local r=make("Model","Road",workspace,{Road=true})
+ r.CFrame=CFrame.new(Vector3.new(x,0,z));r.Size=Vector3.new(20,.2,20);make("Part","Part",r)
+ workspace.DescendantAdded:Fire(r)
+ return r
+end
+addRoad(10000,30)
+local far,farPart=addPlot(10000,0)
+Service.Generate(true)
+assert(not far:FindFirstChild("GeneratedHouse"),"distant plots remain ungenerated")
+assert(farPart.Transparency==1 and farPart.CanCollide==false,"pending plot markers are hidden before building")
+local nearEmpty=addPlot(0,0)
+local originalCharacter=observer.Character
+observer.Character=nil
+Service.Generate(true)
+assert(not nearEmpty:FindFirstChild("GeneratedHouse"),"world without living players generates no houses")
+observer.Character=originalCharacter;observerHP.Health=0
+Service.Generate(true)
+assert(not nearEmpty:FindFirstChild("GeneratedHouse"),"dead players cannot activate plots")
+observerHP.Health=100;observerRoot.Position=Vector3.new(10000,0,0)
+Service.Generate(true)
+assert(far:FindFirstChild("GeneratedHouse") and not nearEmpty:FindFirstChild("GeneratedHouse"),"approaching one town does not generate another")
+local persistent=far.GeneratedHouse.Value;persistent:SetAttribute("LootProbe",true)
+observerRoot.Position=Vector3.zero;Service.Generate(true)
+assert(nearEmpty:FindFirstChild("GeneratedHouse"))
+observerRoot.Position=Vector3.new(10000,0,0);Service.Generate(true)
+assert(far.GeneratedHouse.Value==persistent and persistent:GetAttribute("LootProbe"),"re-entry preserves house and its state")
+local second=make("Player","SecondObserver",Players)
+second.Character=make("Model","SecondCharacter",workspace)
+local secondRoot=make("Part","HumanoidRootPart",second.Character);secondRoot.Position=Vector3.new(20000,0,0)
+local secondHP=make("Humanoid","Humanoid",second.Character);secondHP.Health=100
+addRoad(20000,30)
+local otherTown=addPlot(20000,0)
+Service.Generate(true)
+assert(otherTown:FindFirstChild("GeneratedHouse"),"all living players activate their nearby plots")
+secondHP.Health=0;observerRoot.Position=Vector3.new(30000,0,0)
+addRoad(30000,30)
+local queued={}
+for i=1,10 do queued[i]=addPlot(30000+(i-1)*20,0) end
+Service.Generate(true)
+local count=0
+for _,p in ipairs(queued) do if p:FindFirstChild("GeneratedHouse") then count+=1 end end
+assert(count==Config.PlotsPerStep,"one pass respects the building limit")
+assert(queued[1]:FindFirstChild("GeneratedHouse") and not queued[10]:FindFirstChild("GeneratedHouse"),"nearest plots generate first")
+Service.Generate(true);Service.Generate(true)
+for _,p in ipairs(queued) do assert(p:FindFirstChild("GeneratedHouse"),"later passes finish the nearby queue") end
+-- Moving an authored part invalidates cached model bounds (mock geometry moved explicitly).
+local moving,movingPart=addPlot(50000,0)
+Service.Generate(true);assert(not moving:FindFirstChild("GeneratedHouse"))
+moving.CFrame=CFrame.new(Vector3.new(30000,0,60))
+movingPart:GetPropertyChangedSignal("CFrame"):Fire()
+Service.Generate(true)
+assert(moving:FindFirstChild("GeneratedHouse"),"geometry changes invalidate proximity bounds")
+local seeds={}
+local originalNew=Random.new
+Random.new=function(value) table.insert(seeds,value);return originalNew(value) end
+local seeded=addPlot(30000,100)
+Service.Generate(true)
+local firstSeed=seeds[#seeds]
+seeded.GeneratedHouse.Value:Destroy()
+Service.Generate(true)
+assert(seeds[#seeds]==firstSeed,"per-plot random seed survives different visits and house replacement")
+Random.new=originalNew
+-- Large markers activate by distance from their edge, including rotated plots.
+local radius=Config.GenerationRadius
+local edge=CFrame.new(Vector3.new(0,0,0))
+assert(Rules.DistanceSquared(edge,Vector3.new(40,.2,20),Vector3.new(20+radius,1000,0))==radius*radius)
+assert(Rules.DistanceSquared(edge,Vector3.new(40,.2,20),Vector3.new(21+radius,0,0))>radius*radius)
+assert(Rules.DistanceSquared(cf(Vector3.zero,math.pi/2),Vector3.new(40,.2,20),Vector3.new(0,0,20+radius))<=radius*radius+.001)
+local farFurniture=make("Part","AutoPlacer",workspace,{StoreFurniture="Chair"})
+farFurniture.CFrame=CFrame.new(Vector3.new(60000,0,0));farFurniture.Size=Vector3.new(1,.2,1)
+workspace.DescendantAdded:Fire(farFurniture)
+local farWall=make("Model","FarWall",workspace,{Replace="Wall (brick)"})
+farWall.CFrame=CFrame.new(Vector3.new(60000,0,10));make("Part","Part",farWall)
+workspace.DescendantAdded:Fire(farWall)
+Service.Generate(true)
+assert(not farFurniture:FindFirstChild("GeneratedFurniture") and not farWall.destroyed,"standalone furniture and wall markers stay deferred at distance")
+observerRoot.Position=Vector3.new(60000,0,0)
+Service.Generate(true)
+assert(farFurniture:FindFirstChild("GeneratedFurniture") and farWall.destroyed,"standalone furniture and wall replacements activate nearby")
+assert(workspace.GeneratedCityHouses:GetAttribute("GenerationMode")=="NearbyPlots")
+assert(workspace.GeneratedCityHouses:GetAttribute("GenerationRadius")==Config.GenerationRadius)
+print("PASS: lazy city generation, hidden markers, no-player/dead-player guards, multiple towns/players, state retention, closest-first bounded queue and moved geometry")
 
 
 '''

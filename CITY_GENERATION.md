@@ -120,3 +120,27 @@ its sector and wall rules are unchanged. Moving shade ray budget is about81% bel
 641rays at60Hz; this is a work-count reduction, not a measured FPS improvement.
 The MicroProfiler label Decline.VisionShade covers polygon/mask work. Live client
 frame times and visual edge quality need laptop verification.
+
+## Генерація поблизу гравців
+
+Будинки, магазини та фабрики створюються, коли живий персонаж підходить на
+240 studs до меж майданчика. Без живих гравців будинки не генеруються.
+Черга перевіряється кожні 0,25 с; найближчі майданчики першими, максимум
+4 будинки за прохід, із паузами за часовим бюджетом між операціями.
+Маркери ділянок приховані від початку, навіть коли будинку ще немає.
+
+Стіни та меблі всередині шаблону створюються разом із будинком. Окремі
+маркери меблів/заміни стін поза шаблонами також чекають наближення гравця.
+Невдалі спроби (наприклад, відсутній шаблон) повторюються через RetryInterval.
+
+Створені будинки залишаються на сервері після відходу гравців, зберігаючи
+поточні об'єкти й стан. StreamingEnabled керує доставкою та вивантаженням
+далеких об'єктів на клієнті. Серверного знищення будинків при відході немає.
+
+Налаштування у Shared/CityGenerationConfig: GenerationRadius, CheckInterval,
+PlotsPerStep, RetryInterval. У Workspace/GeneratedCityHouses під час Play:
+GenerationMode = NearbyPlots, GenerationRadius = 240.
+
+Вибір шаблону використовує окремий seed для кожного майданчика, прив'язаний
+до seed сервера, координат і повного імені майданчика: порядок відвідування
+міст не змінює його початковий випадковий вибір.

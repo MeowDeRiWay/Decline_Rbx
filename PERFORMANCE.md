@@ -129,3 +129,33 @@ geometry fixtures pass; source compilation and Rojo build pass. No post-fix
 Studio measurement is available yet. Other costs in the capture, including
 StandardAdorns and frame presentation, have not been attributed to a game script
 or changed without evidence.
+
+
+# Nearby city generation — 28 October 2026
+
+CityGeneration now places only pending plots within 240 horizontal studs of a
+living player's plot-boundary distance. Every 0.25 seconds a single serialized
+worker considers all players and places at most four houses, nearest first.
+Existing cooperative 2ms checkpoints remain; a single clone or internal wall/
+furniture fill can exceed that budget. Empty/dead-player worlds do not clone
+buildings. Roads and authored plot bounds are cached with geometry/add/remove
+invalidation; no recurring full-world scans were added. Completed plots retain
+their existing objects and state. Server objects are not unloaded on departure.
+
+Authored plot markers are hidden on discovery rather than waiting for a house.
+Houses/stores/factories assemble their walls and furniture on demand. Standalone
+furniture/wall-replacement markers also require proximity and are capped per
+pass. Failed placements and standalone marker retries retain the five-second
+retry delay. Geometry changes, new plots and removed generated houses continue
+to work. Per-plot RNG derived from server seed/position/path makes the initial
+choice independent of player visit order. GenerationMode=NearbyPlots on the
+GeneratedCityHouses folder identifies the running version.
+
+Validation: actual service engine mocks cover distant/no-player/dead-player
+suppression, independent towns and multiple players, nearest-first queue limits,
+re-entry without duplication or state replacement, hidden pending markers,
+bounds invalidation, seeded replacement, existing furniture/factory placement,
+removed plots/houses and no full-world retry scans. Resource generation and
+zombie-home scheduler regressions pass. Source compilation and Rojo build pass.
+This changes generation workload; the remaining Studio-only periodic stalls
+have not been demonstrated to be caused by building generation.

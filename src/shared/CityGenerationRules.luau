@@ -52,4 +52,10 @@ function Rules.RoadPoint(frame, size, position)
  local point = frame:PointToObjectSpace(position)
  return frame:PointToWorldSpace(Vector3.new(math.clamp(point.X,-size.X/2,size.X/2),0,math.clamp(point.Z,-size.Z/2,size.Z/2)))
 end
+-- Squared horizontal distance to an oriented plot footprint.
+function Rules.DistanceSquared(frame,size,position)
+ local point=frame:PointToObjectSpace(position)
+ local x,z=math.max(0,math.abs(point.X)-size.X/2),math.max(0,math.abs(point.Z)-size.Z/2)
+ return x*x+z*z
+end
 return Rules
