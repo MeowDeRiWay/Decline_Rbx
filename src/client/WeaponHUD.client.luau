@@ -44,10 +44,13 @@ panel.MouseEnter:Connect(function() hint.Visible=true end)
 panel.MouseLeave:Connect(function() hint.Visible=false end)
 local character,held,connections
 connections = {}
+local heldConnections={}
+local previewQueued=false
 local function preview(model)
  world:ClearAllChildren()
  if not model then return end
  local copy = model:Clone()
+ if not copy then return end
  for _,object in ipairs(copy:GetDescendants()) do
   if object:IsA("LuaSourceContainer") or object:IsA("JointInstance") or object:IsA("WeldConstraint") then object:Destroy() end
  end
@@ -56,17 +59,36 @@ local function preview(model)
  for _,part in ipairs(parts) do
   if part:IsA("BasePart") then
    part.Anchored = true
+   part.LocalTransparencyModifier = 0
    if part.Name == "InvisibleHelper" then part.Transparency = 1 end
   end
  end
  copy:PivotTo(CFrame.identity)
  copy.Parent = world
  local box,size
+ if copy:IsA("Model") and not copy:FindFirstChildWhichIsA("BasePart",true) then return end
  if copy:IsA("Model") then box,size = copy:GetBoundingBox() else box,size = copy.CFrame,copy.Size end
  -- View the authored model from its right (+X) side.
  local extent = math.max(size.Y,size.Z*96/246,.1)
  local distance = extent/(2*math.tan(math.rad(camera.FieldOfView/2))) + size.X/2
  camera.CFrame = CFrame.lookAt(box.Position+Vector3.new(distance*1.04,0,0),box.Position,Vector3.yAxis)
+end
+-- HeldItem can replicate before all of its descendants. Rebuild once at the
+-- end of a change burst instead of keeping the first incomplete clone forever.
+local function queuePreview()
+ if previewQueued then return end
+ previewQueued=true
+ task.defer(function()
+  previewQueued=false
+  preview(held)
+ end)
+end
+local function watchHeld(model)
+ for _,connection in ipairs(heldConnections) do connection:Disconnect() end
+ table.clear(heldConnections)
+ if not model then return end
+ table.insert(heldConnections,model.DescendantAdded:Connect(queuePreview))
+ table.insert(heldConnections,model.DescendantRemoving:Connect(queuePreview))
 end
 local function refresh()
  local id = character and character:GetAttribute("HandsItem")
@@ -74,8 +96,8 @@ local function refresh()
  local weapon = definition and definition.Weapon
  local currentHeld = character and character:FindFirstChild("HeldItem")
  panel.Visible = true
- if not weapon then hint.Visible=false; held = nil; world:ClearAllChildren();ammoCount.Visible=false;ammoCount.Text="";return end
- if held ~= currentHeld then held = currentHeld; preview(held) end
+ if not weapon then hint.Visible=false;held=nil;watchHeld(nil);world:ClearAllChildren();ammoCount.Visible=false;ammoCount.Text="";return end
+ if held ~= currentHeld then held=currentHeld;watchHeld(held);queuePreview() end
  hint.Text=definition.Name or id
  ammoCount.Visible=definition.Firearm~=nil
  if definition.Firearm then
@@ -89,6 +111,7 @@ end
 local function bind(model)
  for _,connection in ipairs(connections) do connection:Disconnect() end
  table.clear(connections)
+ watchHeld(nil)
  character,held = model,nil
  for _,attribute in ipairs({"HandsItem","WeaponCondition","MagazineAmmo","ReserveAmmo","AmmoType","Reloading","FireMode"}) do table.insert(connections,model:GetAttributeChangedSignal(attribute):Connect(refresh)) end
  table.insert(connections,model.ChildAdded:Connect(refresh))
