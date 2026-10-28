@@ -64,7 +64,7 @@ An empty server should settle to Cold records; the root containers and prototype
 are intentionally still present in ServerStorage.
 
 The manager currently covers generated city buildings/resources, world pickups
-and registered NPCs. Authored roads/terrain, arbitrary town construction and roots
+registered NPCs and anchored road segments. Authored terrain, arbitrary town construction and roots
 with runnable scripts are not automatically unloaded. This is session memory:
 no new cross-server persistence or DataStore format is introduced.
 
@@ -78,3 +78,27 @@ Validation at this change: 156 source files compile and Rojo builds. 79 of 82
 automated runners pass. The three failures (`stove_fuel.test.luau:25`,
 `resource_rules.test.luau:37`, `progression_rules.test.luau:56`) reproduce
 unchanged on the previous commit; no affected-service regression failed.
+
+## Road segments
+
+Anchored road Parts/Models tagged `Road = true`, or directly inside a Folder
+named `roads` (case-insensitive), now join the same lifecycle. Nested segments
+already owned by a managed road root are not registered twice. Roots containing
+runnable scripts and unanchored roads remain active. Enroll roads with their
+attributes and Anchored properties set before parenting them into Workspace.
+
+Each authored segment sleeps beyond 180 studs after 10 seconds and wakes within
+140 studs. Its actual parts are retained in ServerStorage: this removes distant
+collision/render replication work, but does not claim a reduction in their RAM.
+Cold road records do not clone duplicate geometry prototypes. Footprint metadata
+remains available to the city generator and map, including full index rebuilds
+and roads originally identified by their folder. Destroying a sleeping road
+removes that metadata. New town spawns and reconnects restore immediate surfaces
+before placement; normal proximity wake prioritizes the nearest roots before
+spending the transition budget on distant cleanup.
+
+Keep long roads in independent, reasonably sized segments (the existing 20x20
+layout is suitable). A single very long Part/Model remains active whenever any
+player is near any part of its footprint; this update does not split authored
+geometry automatically. The benefit of hiding simple road slabs is expected to
+be smaller than hiding detailed houses and should be measured in Studio.

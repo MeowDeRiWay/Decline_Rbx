@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -299,6 +300,8 @@ function Service.PlaceCharacter(player, character)
  if player.Character ~= character or not hp or not root then return end
  local frame, size
  if target:IsA("Model") then frame, size = target:GetBoundingBox() else frame, size = target.CFrame, target.Size end
+ WorldActivity.Ensure(frame.Position,4)
+ if player.Character ~= character or townOf(player) ~= town then return end
  local radius = math.abs(frame.RightVector.Y)*size.X/2 + math.abs(frame.UpVector.Y)*size.Y/2 + math.abs(frame.LookVector.Y)*size.Z/2
  character:PivotTo(CFrame.new(frame.Position + Vector3.new(0, radius + root.Size.Y/2 + hp.HipHeight + .1, 0)))
  root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero

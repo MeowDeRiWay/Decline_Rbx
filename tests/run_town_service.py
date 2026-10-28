@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 root = Path(__file__).resolve().parents[1]
-service = (root / 'src/server/Services/TownService.luau').read_text()
+service = (root / 'src/server/Services/TownService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Ensure=function(position) table.insert(restoredSurfaces,position) end}')
 service = service.replace('local TextService=game:GetService("TextService")', '')
 service = service.replace('local Journal=require(script.Parent.JournalService)', '')
 service = service.replace('local Doors = require(script.Parent.TownDoors)', '')
@@ -40,6 +40,7 @@ local marketPlot=make("Model","BuildingSpace",workspace,{TownID=1,TeamID=10,Owne
 local marketSpace=make("Model","Space",marketPlot);make("Part","Floor",marketSpace)
 local marketMenu=make("Model","BuildingMenu",marketPlot);make("Part","Sign",marketMenu)
 ''')
+parts.append('local restoredSurfaces={}')
 parts.extend(['local Service = (function()\n' + service + '\nend)()', (root / 'tests/fixtures/town_scenarios.luau').read_text(), (root / 'tests/fixtures/building_storage_scenarios.luau').read_text(), (root / 'tests/fixtures/expulsion_scenarios.luau').read_text()])
 parts.append('''
 local existingRemotes=ReplicatedStorage.TownRemotes
@@ -74,6 +75,7 @@ newborn:SetAttribute("HasSpawned",true)
 Service.ResetForCreation(newborn);newborn:SetAttribute("OutcastEnd",nil)
 call(newborn,"Join",1)
 assert(newborn.Character and newborn.Character.Humanoid.Health==newborn.Character.Humanoid.MaxHealth,"new life joins town with full initial health")
+assert(#restoredSurfaces>0,"town placement restores target surfaces before spawning")
 print("PASS: ending blocks spawn/join and fresh creation resets initial spawn health")
 print("PASS: free market construction/approval, mayor tax limits and wall-tier cap")
 ''')

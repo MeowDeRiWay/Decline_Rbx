@@ -6,7 +6,7 @@ import sys
 root=Path(__file__).resolve().parents[1]
 mock=(root/'tests/fixtures/town_mock.luau').read_text()
 geometry=(root/'tests/city_geometry.fixture.luau').read_text()
-service=(root/'src/server/Services/CityGenerationService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
+service=(root/'src/server/Services/CityGenerationService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function(o) return o and o:GetAttribute("WorldDormant")==true end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end,Footprint=function(o) return o.StoredFrame,o.StoredSize end,Roads=function() return sleepingRoads or {} end,IsRoad=function(o) return o:GetAttribute("Road")==true end,RegisterRoad=function() end}')
 service=service.replace('local Config = require(ReplicatedStorage.Shared.CityGenerationConfig)','')
 service=service.replace('local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)','')
 service=service.replace('local Furniture=require(script.Parent.StoreFurnitureService)','')
@@ -338,6 +338,21 @@ tick(5)
 assert(furnitureBatch[2]:FindFirstChild("GeneratedFurniture") and not furnitureBatch[3]:FindFirstChild("GeneratedFurniture"))
 tick(5)
 assert(furnitureBatch[3]:FindFirstChild("GeneratedFurniture"))
+-- A road can be physically asleep while still orienting new nearby houses.
+Config.ZoneLoadSeconds=0
+local rememberedRoad=addRoad(110000,30)
+rememberedRoad.StoredFrame,rememberedRoad.StoredSize=rememberedRoad.CFrame,rememberedRoad.Size
+rememberedRoad:SetAttribute("WorldDormant",true);rememberedRoad.Parent=ServerStorage
+workspace.DescendantRemoving:Fire(rememberedRoad)
+table.insert(sleepingRoads,rememberedRoad)
+observerRoot.Position=Vector3.new(110000,0,0)
+local besideSleeping=addPlot(110000,0)
+Service.Generate(true)
+assert(besideSleeping:FindFirstChild("GeneratedHouse"),"incremental generation retains sleeping road index")
+local afterRebuild=addPlot(110020,0)
+Service.Generate(false)
+assert(afterRebuild:FindFirstChild("GeneratedHouse"),"full rebuild discovers sleeping road footprints")
+print("PASS: sleeping roads orient houses after incremental and full index rebuilds")
 print("PASS: missed-deadline catch-up yields between buildings and standalone furniture uses 10-second pacing")
 print("PASS: 10-second pacing, nearest-first slots at 0/5/10 seconds, stable polling deadlines, departure cancellation and paced re-entry")
 
@@ -351,6 +366,7 @@ parts.append('local Walls=(function()\n'+(root/'src/server/Services/WallReplacem
 parts.append('local Furniture=(function()\n'+furniture+'\nend)()')
 parts.append('workspace.DescendantAdded=event();workspace.DescendantRemoving=event();function methods:GetPropertyChangedSignal(key) self.propertySignals=self.propertySignals or {};self.propertySignals[key]=self.propertySignals[key] or event();return self.propertySignals[key] end')
 parts.append('local Placement={Move=function(model,target) model:PivotTo(target) end}')
+parts.append('local sleepingRoads={}')
 parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])
 with tempfile.TemporaryDirectory(prefix='decline-city-service-') as directory:
     path=Path(directory)/'test.luau'

@@ -2,14 +2,26 @@
 from pathlib import Path
 import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-source=(root/'src/server/Services/MapService.luau').read_text().replace('local Rules=require(ReplicatedStorage.Shared.MapRules)','')
+source=(root/'src/server/Services/MapService.luau').read_text().replace('local Rules=require(ReplicatedStorage.Shared.MapRules)','').replace('local WorldActivity=require(script.Parent.WorldActivityService)','')
 setup='''
+local sleepingRoads={}
+local WorldActivity={
+ IsDormant=function(o) return o:GetAttribute("WorldDormant")==true end,
+ Footprint=function(o) return o.StoredFrame,o.StoredSize end,
+ Roads=function() return sleepingRoads end,
+ IsRoad=function(o) return o:GetAttribute("Road")==true or o.StoredRoad==true end,
+}
+
 local Run={Heartbeat=event()};local baseGet=game.GetService
 function game:GetService(name) if name=="RunService" then return Run end;return baseGet(self,name) end
 workspace.DescendantAdded=event();workspace.DescendantRemoving=event()
 local anchor=make("Model","YardPlace",workspace)
 anchor.CFrame=CFrame.new(Vector3.new(10,0,10));anchor.Size=Vector3.new(20,1,20);make("Part","Floor",anchor)
 local road=make("Part","Road",workspace,{Road=true});road.CFrame=CFrame.new(Vector3.new(10,0,10));road.Size=Vector3.new(20,1,100)
+road.StoredFrame,road.StoredSize=road.CFrame,road.Size
+road:SetAttribute("Road",nil);road.StoredRoad=true
+road:SetAttribute("WorldDormant",true);road.Parent=ServerStorage
+road.Destroying=event();table.insert(sleepingRoads,road)
 local home=make("Model","GeneratedHome",workspace,{GeneratedCityHouse=true,GenerationCategory="Houses"})
 home.CFrame=CFrame.new(Vector3.new(30,0,10));home.Size=Vector3.new(20,20,20);make("Part","Wall",home)
 local factory=make("Model","Factory",workspace,{GeneratedCityHouse=true,GenerationCategory="Factories"})
@@ -48,6 +60,12 @@ for _,cell in ipairs(state.sent[#state.sent].data.Cells) do assert(cell.X<3,"old
 a.Parent=nil;local again=player(a.UserId);Players.PlayerAdded:Fire(again);again:SetAttribute("MapExplorationVersion",1)
 clock+=2;request.OnServerEvent:Fire(again)
 local latest=state.sent[#state.sent].data;assert(#latest.Cells==25)
+road.Destroying:Fire();road.Parent=nil
+clock+=2;request.OnServerEvent:Fire(again)
+for _,cell in ipairs(state.sent[#state.sent].data.Cells) do
+ if cell.X==0 and cell.Z==0 then assert(cell.RoadMask==0,"destroying a sleeping road removes its remembered map geometry") end
+end
+print("PASS: sleeping folder roads remain on explored map; actual destruction removes geometry")
 print("PASS: real world footprints, road/house/infra, private fog, movement deltas, KO guards, request limits, fresh-life reset and reconnect")
 '''
 with tempfile.TemporaryDirectory() as d:

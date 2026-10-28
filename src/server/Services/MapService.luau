@@ -1,9 +1,11 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Run=game:GetService("RunService")
 local Rules=require(ReplicatedStorage.Shared.MapRules)
 local Service={}
 local candidates={}
+local roadWatches=setmetatable({},{__mode="k"})
 local records={} -- Per-user exploration belongs only to this generated server world.
 local index={}
 local originX,originZ=0,0
@@ -12,6 +14,8 @@ local remote
 local dirty=true
 local lastBuild=-math.huge
 local function box(object)
+ local frame,size=WorldActivity.Footprint(object)
+ if frame then return frame,size end
  if object:IsA("BasePart") then return object.CFrame,object.Size end
  if object:IsA("Model") and object:FindFirstChildWhichIsA("BasePart",true) then return object:GetBoundingBox() end
 end
@@ -25,7 +29,7 @@ local function category(object)
   if object.Name=="BuildingSpace" and type(object:GetAttribute("BuildingID"))=="string" and object:GetAttribute("BuildingID")~="" then return "Infrastructure" end
   if object:GetAttribute("ZHouse")==true and object:FindFirstChild("Yard") then return "House" end
  end
- if object:GetAttribute("Road")==true then return "Road" end
+ if WorldActivity.IsRoad(object) then return "Road" end
  -- Support the existing authored Workspace/roads folder as well as Road=true.
  local parent=object.Parent
  if parent and string.lower(parent.Name)=="roads" and (object:IsA("BasePart") or object:IsA("Model")) then return "Road" end
@@ -34,13 +38,16 @@ local function track(object)
  if not (object:IsA("Model") or object:IsA("BasePart")) then return end
  if category(object) or (object:IsA("Model") and (object.Name=="YardPlace" or object.Name=="BuildingSpace")) then
   candidates[object]=true;dirty=true
+  if WorldActivity.IsRoad(object) and not roadWatches[object] and object.Destroying then
+   roadWatches[object]=object.Destroying:Connect(function() candidates[object]=nil;roadWatches[object]=nil;dirty=true end)
+  end
  end
 end
 local function build()
  local regions={}
  local anchor
  for object in pairs(candidates) do
-  if not object:IsDescendantOf(workspace) then candidates[object]=nil;continue end
+  if not object.Parent or (not object:IsDescendantOf(workspace) and not (WorldActivity.IsDormant(object) and WorldActivity.IsRoad(object))) then candidates[object]=nil;continue end
   if not anchor and object.Name=="YardPlace" then local cf=box(object);if cf then anchor=cf.Position end end
  end
  if revision==0 and anchor then originX=(anchor.X-10)%20;originZ=(anchor.Z-10)%20 end
@@ -115,13 +122,16 @@ function Service.Start()
  remote=Instance.new("RemoteEvent");remote.Name="MapState";remote.Parent=ReplicatedStorage
  local request=Instance.new("RemoteEvent");request.Name="MapRequest";request.Parent=ReplicatedStorage
  for _,object in ipairs(workspace:GetDescendants()) do track(object) end
+ for _,object in ipairs(WorldActivity.Roads()) do track(object) end
  build()
  workspace.DescendantAdded:Connect(function(object)
   track(object)
   -- An authored model may be parented before its Yard/marker parts are added.
   if object.Parent then track(object.Parent) end
  end)
- workspace.DescendantRemoving:Connect(function(object) if candidates[object] then candidates[object]=nil;dirty=true end end)
+ workspace.DescendantRemoving:Connect(function(object)
+  if candidates[object] and not (WorldActivity.IsDormant(object) and WorldActivity.IsRoad(object)) then candidates[object]=nil;dirty=true end
+ end)
  local function added(player)
   local r=recordFor(player)
   player:GetAttributeChangedSignal("MapExplorationVersion"):Connect(function()

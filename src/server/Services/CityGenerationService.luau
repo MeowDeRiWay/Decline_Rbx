@@ -38,6 +38,8 @@ local function box(object)
 end
 -- Only authored workspace bounds are cached. Template geometry remains live.
 local function authoredBox(object)
+ local frame,size=WorldActivity.Footprint(object)
+ if frame then return frame,size end
  local cached=boundsCache[object]
  if cached then return cached.Frame,cached.Size end
  local frame,size=box(object)
@@ -134,7 +136,8 @@ end
 -- Keep authored candidates indexed; retry ticks never allocate a full world descendant list.
 local plotIndex,roadIndex,markerIndex={},{},{}
 local watchers={}
-local function untrack(object)
+local function untrack(object,force)
+ if not force and WorldActivity.IsDormant(object) and WorldActivity.IsRoad(object) then return end
  if not watchers[object] and not boundsCache[object] then return end
  invalidateBounds(object)
  hiddenPlots[object],retryAt[object],plotDue[object],markerDue[object]=nil,nil,nil,nil
@@ -145,12 +148,13 @@ local function untrack(object)
 end
 local function classify(object)
  retryAt[object],plotDue[object],markerDue[object]=nil,nil,nil
- if not object:IsDescendantOf(workspace) or generatedContent(object) then
+ if (not object:IsDescendantOf(workspace) and not WorldActivity.IsDormant(object)) or generatedContent(object) then
   plotIndex[object],roadIndex[object],markerIndex[object]=nil,nil,nil;return
  end
  plotIndex[object]=object:IsA("Model") and ((object.Name=="YardPlace" and object:GetAttribute("ForZHouse")==true) or object:GetAttribute("ForInfrastructure")==true) or nil
  if plotIndex[object] and not hiddenPlots[object] then hidePlot(object);hiddenPlots[object]=true end
- roadIndex[object]=object:GetAttribute("Road")==true or nil
+ roadIndex[object]=WorldActivity.IsRoad(object) or nil
+ if roadIndex[object] then WorldActivity.RegisterRoad(object) end
  markerIndex[object]=(object.Name=="WallYard" or Furniture.IsMarker(object) or typeof(object:GetAttribute("Replace"))=="string") or nil
 end
 local function track(object)
@@ -159,6 +163,7 @@ local function track(object)
  classify(object)
  if not started or watchers[object] then return end
  local connections={};watchers[object]=connections
+ if object.Destroying then table.insert(connections,object.Destroying:Connect(function() untrack(object,true) end)) end
  for _,key in ipairs({"ForZHouse","ForInfrastructure","Road","Replace","AutoPlacer"}) do
   table.insert(connections,object:GetAttributeChangedSignal(key):Connect(function() classify(object) end))
  end
@@ -177,7 +182,7 @@ end
 local function roads()
  local result={}
  for object in pairs(roadIndex) do
-  if object:IsDescendantOf(workspace) and authoredBox(object) then table.insert(result,object) end
+  if object.Parent and (object:IsDescendantOf(workspace) or WorldActivity.IsDormant(object)) and authoredBox(object) then table.insert(result,object) end
  end
  sortPlots(result);return result
 end
@@ -284,6 +289,7 @@ local function generate(incremental)
  if not incremental then
   plotIndex,roadIndex,markerIndex={},{},{}
   for _,object in ipairs(workspace:GetDescendants()) do track(object) end
+  for _,object in ipairs(WorldActivity.Roads()) do track(object) end
  end
  if not incremental then table.clear(retryAt) end
  local points=positions()

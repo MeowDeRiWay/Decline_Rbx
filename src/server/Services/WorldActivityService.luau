@@ -131,6 +131,37 @@ function Service.Register(root,kind,source)
  index(record)
  record.Connection=root.Destroying:Connect(function() forget(root,record) end)
 end
+-- Road identity/bounds remain available to generators and the map even when
+-- the physical instance is outside Workspace. Roads retain their cheap parts:
+-- cloning a unique slab into a prototype would not save memory.
+function Service.IsRoad(root)
+ if not root or (not root:IsA("Model") and not root:IsA("BasePart")) then return false end
+ local record=records[root]
+ if record and record.Kind=="Road" then return true end
+ local parent=root.Parent
+ return root:GetAttribute("Road")==true or (parent and parent:IsA("Folder") and string.lower(parent.Name)=="roads") or false
+end
+function Service.Footprint(root)
+ local record=records[root]
+ if record and record.Kind=="Road" and record.State~="Active" then return record.Frame,record.Size end
+end
+function Service.Roads()
+ local result={}
+ for root,record in pairs(records) do if record.Kind=="Road" then table.insert(result,root) end end
+ return result
+end
+function Service.RegisterRoad(root)
+ if not Service.IsRoad(root) or not root:IsDescendantOf(workspace) then return end
+ local ancestor=root.Parent
+ while ancestor and ancestor~=workspace do
+  if records[ancestor] then return end
+  ancestor=ancestor.Parent
+ end
+ local list=parts(root)
+ if #list==0 then return end
+ for _,part in ipairs(list) do if not part.Anchored then return end end
+ Service.Register(root,"Road")
+end
 local function prepare(record)
  local descriptors={}
  local protectedJoints={}
@@ -237,6 +268,21 @@ function Service.Step(now)
     for record in pairs(buckets[x..":"..z] or {}) do nearby[record]=true end
    end
   end
+ end
+ -- Restore the nearest surfaces before spending this pass on distant cleanup.
+ -- Otherwise a large backlog of sleeping roads could starve a player's floor.
+ local waking,distances={},{}
+ for record in pairs(nearby) do
+  if record.State=="Active" or record.Busy then continue end
+  local best=math.huge
+  for _,point in ipairs(points) do best=math.min(best,Rules.DistanceSquared(record.Frame,record.Size,point)) end
+  if best<=Config.ActiveRadius^2 then distances[record]=best;table.insert(waking,record) end
+ end
+ table.sort(waking,function(a,b) return distances[a]<distances[b] end)
+ for _,record in ipairs(waking) do
+  if transitions>=Config.TransitionsPerStep then break end
+  if records[record.Root]~=record or record.Busy then continue end
+  if wake(record) then transitions+=1;task.wait() end
  end
  local examined=0
  local quiet=true
@@ -354,6 +400,11 @@ end
 function Service.Start()
  if Service.Started then return end;Service.Started=true;containers()
  Players.PlayerAdded:Connect(function() nextCheck=0 end)
+ for _,object in ipairs(workspace:GetDescendants()) do Service.RegisterRoad(object) end
+ workspace.DescendantAdded:Connect(function(object)
+  Service.RegisterRoad(object)
+  if object.Parent then Service.RegisterRoad(object.Parent) end
+ end)
  task.spawn(function()
   local nextStats=0
   while true do
