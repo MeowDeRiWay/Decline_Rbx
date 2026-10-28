@@ -1,7 +1,7 @@
 local R=require("../src/shared/MapRules")
 local x,z=R.Cell(19.99,-.01,0,0);assert(x==0 and z==-1)
-local seen={};assert(#R.Reveal(0,0,seen)==9);assert(#R.Reveal(0,0,seen)==0)
-assert(#R.Reveal(1,0,seen)==3 and seen["-1:-1"] and not seen["3:0"])
+local seen={};assert(#R.Reveal(0,0,seen)==25);assert(#R.Reveal(0,0,seen)==0)
+assert(#R.Reveal(1,0,seen)==5 and seen["-2:-2"] and not seen["4:0"])
 local regions={
  {X=10,Z=10,W=200,H=200,Cos=1,Sin=0,Kind="Forest"},
  {X=10,Z=10,W=100,H=20,Cos=1,Sin=0,Kind="Road"},

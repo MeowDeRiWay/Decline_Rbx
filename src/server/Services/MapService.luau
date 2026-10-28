@@ -101,7 +101,7 @@ function Service.Step(player)
  Rules.Reveal(x,z,r.Seen)
  -- Only newly revealed / nearby refreshed cells need a delta on movement.
  local nearby={}
- for dx=-1,1 do for dz=-1,1 do local key=Rules.Key(x+dx,z+dz);nearby[key]=r.Seen[key] end end
+ for dx=-Rules.RevealRadius,Rules.RevealRadius do for dz=-Rules.RevealRadius,Rules.RevealRadius do local key=Rules.Key(x+dx,z+dz);nearby[key]=r.Seen[key] end end
  local batch={}
  for key,cell in pairs(nearby) do
   local data,signature=Rules.CellData(index,cell.X,cell.Z,originX,originZ)

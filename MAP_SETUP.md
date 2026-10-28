@@ -9,7 +9,7 @@ positions, zombies, or full-world reveal requests.
 Colors: peach houses; blue infrastructure; gray road strips and intersections;
 solid dark green forests; gray/brown scrapyards with scrap symbols;
 gray stone fields. Undiscovered cells are black. Exploration opens your current
-cell and eight neighbors, stays open after leaving, and is recorded while walking
+cell and two surrounding rings (5x5 cells total), stays open after leaving, and is recorded while walking
 with the map closed too. KO, death, unfinished creation, and transient character
 loading do not reveal tiles. Opening the map blocks movement/combat/medical input
 and camera orbit. The multiplayer world continues running.

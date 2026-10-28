@@ -23,7 +23,7 @@ cases='''
 Service.Start()
 local state=ReplicatedStorage.MapState;local request=ReplicatedStorage.MapRequest
 Service.Step(a);Service.Step(b)
-local first=state.sent[1];assert(first.player==a and #first.data.Cells==9)
+local first=state.sent[1];assert(first.player==a and #first.data.Cells==25)
 local byKey={};for _,cell in ipairs(first.data.Cells) do byKey[Rules.Key(cell.X,cell.Z)]=cell end
 assert(byKey["0:0"].Kind=="Ground" and byKey["0:0"].RoadMask==65535 and byKey["1:0"].Kind=="House")
 assert(not byKey["10:0"],"unexplored factory must never be sent")
@@ -31,7 +31,7 @@ assert(state.sent[2].player==b)
 for _,cell in ipairs(state.sent[2].data.Cells) do assert(cell.X<0,"players cannot receive each other's explored cells") end
 local count=#state.sent;Service.Step(a);assert(#state.sent==count,"no repeated packet while stationary")
 a.Character.HumanoidRootPart.Position=Vector3.new(30,0,10);Service.Step(a)
-assert(#state.sent[#state.sent].data.Cells==3,"only new edge cells are sent on movement")
+assert(#state.sent[#state.sent].data.Cells==5,"only new edge cells are sent on movement")
 a.Character:SetAttribute("Knockout",true);a.Character.HumanoidRootPart.Position=Vector3.new(210,0,10)
 count=#state.sent;Service.Step(a);assert(#state.sent==count,"knockout cannot explore")
 a.Character:SetAttribute("Knockout",false);Service.Step(a)
@@ -47,7 +47,7 @@ for _,cell in ipairs(state.sent[#state.sent].data.Cells) do assert(cell.X<3,"old
 -- Rejoin same generated server retains personal discoveries, but no other player data.
 a.Parent=nil;local again=player(a.UserId);Players.PlayerAdded:Fire(again);again:SetAttribute("MapExplorationVersion",1)
 clock+=2;request.OnServerEvent:Fire(again)
-local latest=state.sent[#state.sent].data;assert(#latest.Cells==9)
+local latest=state.sent[#state.sent].data;assert(#latest.Cells==25)
 print("PASS: real world footprints, road/house/infra, private fog, movement deltas, KO guards, request limits, fresh-life reset and reconnect")
 '''
 with tempfile.TemporaryDirectory() as d:

@@ -1,5 +1,5 @@
 -- One authored 20-stud world cell is 20 pixels at zoom 1. North is -Z.
-local R={CellSize=20,RevealRadius=1,BucketSize=8}
+local R={CellSize=20,RevealRadius=2,BucketSize=8}
 local priorities={Ground=0,Forest=1,ScrapYard=2,StoneYard=2,House=4,Infrastructure=5}
 function R.Key(x,z) return x..":"..z end
 function R.Cell(x,z,ox,oz) return math.floor((x-ox)/20),math.floor((z-oz)/20) end
