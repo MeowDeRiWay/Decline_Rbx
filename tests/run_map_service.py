@@ -24,8 +24,8 @@ Service.Start()
 local state=ReplicatedStorage.MapState;local request=ReplicatedStorage.MapRequest
 Service.Step(a);Service.Step(b)
 local first=state.sent[1];assert(first.player==a and #first.data.Cells==9)
-local byKey={};for _,cell in ipairs(first.data.Cells) do byKey[Rules.Key(cell.X,cell.Z)]=cell.Kind end
-assert(byKey["0:0"]=="RoadZ" and byKey["1:0"]=="House")
+local byKey={};for _,cell in ipairs(first.data.Cells) do byKey[Rules.Key(cell.X,cell.Z)]=cell end
+assert(byKey["0:0"].Kind=="Ground" and byKey["0:0"].RoadMask==65535 and byKey["1:0"].Kind=="House")
 assert(not byKey["10:0"],"unexplored factory must never be sent")
 assert(state.sent[2].player==b)
 for _,cell in ipairs(state.sent[2].data.Cells) do assert(cell.X<0,"players cannot receive each other's explored cells") end

@@ -35,12 +35,15 @@ local Theme={Font=1,Text=1,Accent=2,Button=3,Panel=4,Bevel=function() end}
 cases=r'''
 local function press() Input.InputBegan:Fire({KeyCode=Enum.KeyCode.M},false) end
 assert(not gui.Enabled and requests==1)
-packets.OnClientEvent:Fire({Reset=true,OriginX=0,OriginZ=0,Cells={{X=0,Z=0,Kind="House"},{X=1,Z=0,Kind="Infrastructure"},{X=2,Z=0,Kind="Forest"}}})
+packets.OnClientEvent:Fire({Reset=true,OriginX=0,OriginZ=0,Cells={{X=0,Z=0,Kind="House"},{X=1,Z=0,Kind="Infrastructure"},{X=2,Z=0,Kind="Forest"},{X=3,Z=0,Kind="Ground",RoadMask=65535}}})
 press();Run.RenderStepped:Fire()
 assert(gui.Enabled and player.attrs.MapOpen and hp.Stopped and Context.Bindings.MapBlockInput)
-assert(#pool==3,"no frames for fogged cells")
+assert(#pool==4,"no frames for fogged cells")
 assert(pool[1].Frame.Size[1]==20 and pool[1].Frame.Size[2]==20,"one cell is exactly 20x20 pixels at 100%")
 assert(arrow.Rotation==0 and arrow.Visible)
+assert(#pool[4].Roads==1 and pool[4].Roads[1].Size[1]==1 and pool[4].Roads[1].Size[2]==1,"square road fills tile without center stripes")
+packets.OnClientEvent:Fire({OriginX=0,OriginZ=0,Cells={{X=3,Z=0,Kind="Ground",RoadMask=255}}})
+Run.RenderStepped:Fire();assert(pool[4].Roads[1].Size[2]==.5,"road-only updates repaint cached terrain")
 Input.InputChanged:Fire({UserInputType=Enum.UserInputType.MouseWheel,Position=vec(0,0,1)})
 Run.RenderStepped:Fire();assert(math.abs(zoom-1.2)<.001 and pool[1].Frame.Size[1]==24)
 local down={UserInputType=Enum.UserInputType.MouseButton1,Position=vec(100,100)}

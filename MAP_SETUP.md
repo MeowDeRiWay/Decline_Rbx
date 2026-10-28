@@ -18,7 +18,11 @@ and camera orbit. The multiplayer world continues running.
 
 - GeneratedCityHouse=true / GenerationCategory=Houses => house; Stores/Factories
   => infrastructure. GenerationSource's plot or inner Yard gives the footprint.
-- Workspace/roads Parts/Models and Road=true markers => road strips.
+- Workspace/roads Parts/Models and Road=true markers => actual road footprint
+  coverage, sampled every 5 studs within each revealed 20-stud cell. Square road
+  slabs fill their cells continuously; long/rotated roads use their real footprint
+  instead of guessing an orientation and drawing disconnected center strips.
+  Coverage is merged into rectangles for display, entirely inside revealed cells.
 - Forest, ScrapYard, StoneYard Models => their existing marker Parts; harvesting
   individual nodes doesn't remove the area's map designation.
 - BuildingSpace Models with a nonempty BuildingID => town infrastructure.

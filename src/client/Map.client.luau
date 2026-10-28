@@ -48,29 +48,33 @@ local pool={}
 local function tile(index)
  if pool[index] then return pool[index] end
  local f=make("Frame",tiles,{BorderSizePixel=0})
- local a=make("Frame",f,{BorderSizePixel=0})
+ local a=make("Frame",f,{BorderSizePixel=0,ZIndex=3})
  local b=make("Frame",f,{BorderSizePixel=0})
  local icon=label(f,"",UDim2.new(),UDim2.fromScale(1,1),13)
- pool[index]={Frame=f,A=a,B=b,Icon=icon};return pool[index]
+ icon.ZIndex=4
+ pool[index]={Frame=f,A=a,B=b,Icon=icon,Roads={}};return pool[index]
 end
-local function paint(t,kind,x,z,size)
+local function paint(t,cell,x,z,size)
+ local kind,mask=cell.Kind,cell.RoadMask or 0
  t.Frame.Position=UDim2.fromOffset(x,z);t.Frame.Size=UDim2.fromOffset(size,size)
- if t.Kind==kind and t.Zoom==zoom then return end
- t.Kind,t.Zoom=kind,zoom
+ if t.Kind==kind and t.Mask==mask and t.Zoom==zoom then return end
+ t.Kind,t.Mask,t.Zoom=kind,mask,zoom
  t.Frame.BackgroundColor3=colors[kind] or colors.Ground
  t.A.Visible=false;t.B.Visible=false;t.Icon.Text=""
  if kind=="House" or kind=="Infrastructure" then
   t.Frame.BackgroundColor3=colors.Ground;t.A.Visible=true;t.A.BackgroundColor3=colors[kind]
   t.A.Position=UDim2.fromScale(.1,.1);t.A.Size=UDim2.fromScale(.8,.8)
- elseif kind=="RoadX" or kind=="RoadZ" or kind=="RoadCross" then
-  t.A.BackgroundColor3=Color3.fromRGB(133,132,121);t.B.BackgroundColor3=t.A.BackgroundColor3
-  t.A.Visible=true
-  t.A.Position=kind=="RoadZ" and UDim2.fromScale(.32,0) or UDim2.fromScale(0,.32)
-  t.A.Size=kind=="RoadZ" and UDim2.fromScale(.36,1) or UDim2.fromScale(1,.36)
-  if kind=="RoadCross" then t.B.Visible=true;t.B.Position=UDim2.fromScale(.32,0);t.B.Size=UDim2.fromScale(.36,1) end
  elseif kind=="Forest" then t.Icon.Text="♠";t.Icon.TextColor3=Color3.fromRGB(82,116,62)
  elseif kind=="ScrapYard" then t.Icon.Text="▪▫";t.Icon.TextColor3=Color3.fromRGB(155,142,115)
  elseif kind=="StoneYard" then t.Icon.Text="◆";t.Icon.TextColor3=Color3.fromRGB(160,159,142) end
+ if mask~=0 then t.Icon.Text="" end
+ local rectangles=Rules.RoadRects(mask)
+ for i,rect in ipairs(rectangles) do
+  local road=t.Roads[i]
+  if not road then road=make("Frame",t.Frame,{BorderSizePixel=0,ZIndex=2,BackgroundColor3=Color3.fromRGB(133,132,121)});t.Roads[i]=road end
+  road.Visible=true;road.Position=UDim2.fromScale(rect.X,rect.Z);road.Size=UDim2.fromScale(rect.W,rect.H)
+ end
+ for i=#rectangles+1,#t.Roads do t.Roads[i].Visible=false end
  t.Icon.TextSize=math.max(8,math.floor(14*zoom))
 end
 local function draw()
@@ -83,10 +87,10 @@ local function draw()
  local used=0
  -- Virtualize: only explored cells currently inside the viewport get UI objects.
  for z=minZ,maxZ do for x=minX,maxX do
-  local kind=explored[Rules.Key(x,z)]
-  if kind then
+  local cell=explored[Rules.Key(x,z)]
+  if cell then
    used+=1;local t=tile(used);t.Frame.Visible=true
-   paint(t,kind,w/2+(x*20-focusX)*zoom,h/2+(z*20-focusZ)*zoom,cellSize)
+   paint(t,cell,w/2+(x*20-focusX)*zoom,h/2+(z*20-focusZ)*zoom,cellSize)
   end
  end end
  for i=used+1,#pool do pool[i].Frame.Visible=false end
@@ -140,7 +144,7 @@ Input.WindowFocusReleased:Connect(function() dragging=nil end)
 state.OnClientEvent:Connect(function(packet)
  if packet.Reset then explored={} end
  originX,originZ=packet.OriginX,packet.OriginZ
- for _,cell in ipairs(packet.Cells) do explored[Rules.Key(cell.X,cell.Z)]=cell.Kind end
+ for _,cell in ipairs(packet.Cells) do explored[Rules.Key(cell.X,cell.Z)]=cell end
  dirty=true
 end)
 player.CharacterRemoving:Connect(function() setOpen(false) end)

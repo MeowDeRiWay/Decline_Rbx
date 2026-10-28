@@ -50,7 +50,6 @@ local function build()
   -- Resource marker slabs are horizontal. Ignore pitch/roll in the 2D map.
   local length=math.sqrt(c*c+s*s);if length<.001 then return end
   c,s=c/length,s/length
-  if kind=="Road" then kind=Rules.RoadKind(size.X,size.Z,c,s) end
   table.insert(regions,{X=cf.Position.X,Z=cf.Position.Z,W=size.X,H=size.Z,Cos=c,Sin=s,Kind=kind})
  end
  for object in pairs(candidates) do
@@ -81,9 +80,9 @@ local function send(player,r,reset)
  end
  if reset then r.Sent={};flush(true) end
  for key,cell in pairs(r.Seen) do
-  local kind=Rules.Kind(index,cell.X,cell.Z,originX,originZ)
-  if r.Sent[key]~=kind then
-   r.Sent[key]=kind;table.insert(batch,{X=cell.X,Z=cell.Z,Kind=kind})
+  local data,signature=Rules.CellData(index,cell.X,cell.Z,originX,originZ)
+  if r.Sent[key]~=signature then
+   r.Sent[key]=signature;table.insert(batch,data)
    if #batch==256 then flush(false) end
   end
  end
@@ -105,8 +104,8 @@ function Service.Step(player)
  for dx=-1,1 do for dz=-1,1 do local key=Rules.Key(x+dx,z+dz);nearby[key]=r.Seen[key] end end
  local batch={}
  for key,cell in pairs(nearby) do
-  local kind=Rules.Kind(index,cell.X,cell.Z,originX,originZ)
-  if r.Sent[key]~=kind then r.Sent[key]=kind;table.insert(batch,{X=cell.X,Z=cell.Z,Kind=kind}) end
+  local data,signature=Rules.CellData(index,cell.X,cell.Z,originX,originZ)
+  if r.Sent[key]~=signature then r.Sent[key]=signature;table.insert(batch,data) end
  end
  if #batch>0 then remote:FireClient(player,{OriginX=originX,OriginZ=originZ,Cells=batch}) end
 end
