@@ -124,7 +124,7 @@ frame times and visual edge quality need laptop verification.
 ## Генерація поблизу гравців
 
 Будинки, магазини та фабрики створюються, коли живий персонаж підходить на
-240 studs до меж майданчика. Без живих гравців будинки не генеруються.
+140 studs до меж майданчика. Без живих гравців будинки не генеруються.
 Черга перевіряється кожні 0,25 с; найближчі майданчики першими, максимум
 4 будинки за прохід, із паузами за часовим бюджетом між операціями.
 Маркери ділянок приховані від початку, навіть коли будинку ще немає.
@@ -139,17 +139,17 @@ frame times and visual edge quality need laptop verification.
 
 Налаштування у Shared/CityGenerationConfig: GenerationRadius, CheckInterval,
 PlotsPerStep, RetryInterval. У Workspace/GeneratedCityHouses під час Play:
-GenerationMode = NearbyPlots, GenerationRadius = 240.
+GenerationMode = NearbyPlots, GenerationRadius = 140.
 
 Вибір шаблону використовує окремий seed для кожного майданчика, прив'язаний
 до seed сервера, координат і повного імені майданчика: порядок відвідування
 міст не змінює його початковий випадковий вибір.
 
-### Плавне завантаження зони за 30 секунд
+### Плавне завантаження зони за 10 секунд
 
-`ZoneLoadSeconds = 30` у Shared/CityGenerationConfig розподіляє кожну нову
-групу близьких майданчиків від першого до останнього завдання на 30 секунд.
-Найближчий починає одразу; наприклад, три будинки отримують час 0, 15 і 30 с.
+`ZoneLoadSeconds = 10` у Shared/CityGenerationConfig розподіляє кожну нову
+групу близьких майданчиків від першого до останнього завдання на 10 секунд.
+Найближчий починає одразу; наприклад, три будинки отримують час 0, 5 і 10 с.
 Це фонове створення об'єктів; керування гравцем не блокується таймером.
 Один майданчик може створюватися одразу. Реальний час залежить від вартості
 шаблонів, кадрового бюджету та ліміту PlotsPerStep.
@@ -161,5 +161,7 @@ GenerationMode = NearbyPlots, GenerationRadius = 240.
 саму схему. Якщо сервер пропустив кілька термінів, наступні створення
 розділяються щонайменше одним кадром. Готові маркери меблів не повторюються.
 
-У Workspace/GeneratedCityHouses атрибут `GenerationLoadSeconds = 30` показує
+У Workspace/GeneratedCityHouses атрибут `GenerationLoadSeconds = 10` показує
 активне налаштування. Для нового значення потрібен повний Stop/Play.
+
+Server sleep, geometry release and ballistic behavior: see WORLD_ACTIVITY.md.

@@ -33,4 +33,8 @@ table.insert(objects,zombie(floor,20))
 assert(Rules.Count(floor,creatures,{})==Rules.Limit(floor))
 table.remove(objects,1)
 assert(Rules.Count(floor,creatures,{})<Rules.Limit(floor))
+local sleeper=zombie(floor,20)
+function sleeper:IsDescendantOf() return false end
+assert(Rules.Count(floor,creatures,{}, {sleeper})==3,"sleeping NPC still consumes source house quota")
+assert(#objects==5,"count cannot mutate caller collections")
 print("PASS: house-wide ZNumber, multiple floors, defaults, zero disables, invalid values, living-only source counts and restored capacity")

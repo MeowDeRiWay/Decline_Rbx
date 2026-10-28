@@ -2,7 +2,7 @@
 from pathlib import Path
 import re,subprocess,tempfile,sys
 root=Path(__file__).resolve().parents[1]
-s=(root/'src/server/Services/FarmingService.luau').read_text()
+s=(root/'src/server/Services/FarmingService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 s=re.sub(r'local (Config|Rules|Interaction|ItemConfig|Inventory|Progression|Journal)=require[^\n]+\n','',s)
 setup='''
 local warnings={}

@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 -- In-memory continuity for reconnecting to this SAME running server.
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
@@ -97,6 +98,8 @@ local function added(player)
   local body=record.Body
   if body and body.Parent and body:FindFirstChildOfClass("Humanoid").Health>0 then
    body:SetAttribute("ReturningSession",true);body:SetAttribute("OfflineUserId",nil);body:SetAttribute("OfflineUntil",nil)
+   local root=body:FindFirstChild("HumanoidRootPart")
+   if root then WorldActivity.Ensure(root.Position,4) end
    body.Parent=workspace
    for part,entry in pairs(record.Parts) do
     if part.Parent then part.Anchored=entry.Anchored;part.CanCollide=entry.CanCollide;part.CanQuery=entry.CanQuery end

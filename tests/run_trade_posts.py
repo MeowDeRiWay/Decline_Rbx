@@ -2,7 +2,7 @@
 from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
-trade=(root/'src/server/Services/TradePostService.luau').read_text()
+trade=(root/'src/server/Services/TradePostService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 trade=re.sub(r'local (Items|Rules|MoneyRules|Interaction|Config|Inventory|Wallet|Towns)=require[^\n]+\n','',trade)
 wallet=(root/'src/server/Services/EconomyService.luau').read_text()
 wallet=re.sub(r'local R=require[^\n]+\n','local R=MoneyRules\n',wallet)

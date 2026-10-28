@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
@@ -155,7 +156,12 @@ function Service.Start(requestPassage, tell)
   while true do
    task.wait(.25)
    for door,record in pairs(doors) do
-    if not door:IsDescendantOf(workspace) then doors[door]=nil
+    if WorldActivity.IsDormant(door) then
+     local now=os.clock()
+     if now<(record.DormantNext or 0) then continue end
+     record.DormantNext=now+10
+     if record.untilTime and workspace:GetServerTimeNow()>=record.untilTime then record.untilTime=nil;setOpen(door,record,false) end
+    elseif not door:IsDescendantOf(workspace) then doors[door]=nil
     elseif record.untilTime and workspace:GetServerTimeNow()>=record.untilTime then record.untilTime=nil;setOpen(door,record,false) end
    end
   end

@@ -69,7 +69,7 @@ print("PASS: holster toggle preserves condition, drop/replacement/transfer canno
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
 for name,module in [('ItemConfig','ItemConfig'),('Rules','InventoryRules'),('CombatRules','CombatRules')]:
  parts.append(f'local {name}=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
-world=(root/'src/server/Services/WorldItemService.luau').read_text()
+world=(root/'src/server/Services/WorldItemService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 world=world.replace('local Stations=require(ReplicatedStorage.Shared.CraftStations)', 'local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()')
 world=re.sub(r'local (ItemConfig|Inventory|Rules|Interaction|EquipmentVisuals|AmmoRules|Stations)\s*=\s*require[^\n]+\n','',world)
 world_setup='''

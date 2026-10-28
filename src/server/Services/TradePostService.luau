@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Items=require(ReplicatedStorage.Shared.ItemConfig)
@@ -128,7 +129,7 @@ function Service.Step()
  for id,record in pairs(offline) do
   if now>=record.Until then offline[id]=nil;Service.ReassignUser(id,record.TownID) end
  end
- for model in pairs(posts) do if not model:IsDescendantOf(workspace) then posts[model]=nil end end
+ for model in pairs(posts) do if not model:IsDescendantOf(workspace) and not WorldActivity.IsDormant(model) then posts[model]=nil end end
  if now>=nextTax then
   nextTax=now+MoneyRules.TaxInterval
   local sellers={}

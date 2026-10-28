@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -208,9 +209,9 @@ local function place(plot, sources, roadList)
  if busy[plot] or generatedContent(plot) or not plot:IsDescendantOf(workspace) or (plot:GetAttribute("ForZHouse") ~= true and plot:GetAttribute("ForInfrastructure") ~= true) then return end
  local explicit=plot:GetAttribute("GenerationCategory") or (plot:GetAttribute("ForInfrastructure")==true and "Factories" or nil)
  if explicit and not sources[explicit] then warnOnce(plot,"Unknown GenerationCategory: "..tostring(explicit));return end
- if generated[plot] and generated[plot]:IsDescendantOf(workspace) then return end
+ if generated[plot] and (generated[plot]:IsDescendantOf(workspace) or WorldActivity.IsDormant(generated[plot])) then return end
  local existing = plot:FindFirstChild("GeneratedHouse")
- if existing and existing:IsA("ObjectValue") and existing.Value and existing.Value:IsDescendantOf(workspace) then
+ if existing and existing:IsA("ObjectValue") and existing.Value and (existing.Value:IsDescendantOf(workspace) or WorldActivity.IsDormant(existing.Value)) then
   generated[plot] = existing.Value; hidePlot(plot); return
  end
  if #sources.Houses==0 and #sources.Stores==0 and #sources.Factories==0 then warnOnce(plot,"Add building Models with an inner Yard in ServerStorage/CityGeneration/Houses, Stores or Factories"); return end
@@ -269,10 +270,12 @@ local function place(plot, sources, roadList)
  reference.Name,reference.Value,reference.Parent = "GenerationSource",plot,clone
  generated[plot] = clone
  clone.Parent = folder
+ WorldActivity.Register(clone,"Building","City:"..chosen.house:GetFullName())
  if existing then existing:Destroy() end
  reference = Instance.new("ObjectValue")
  reference.Name,reference.Value,reference.Parent = "GeneratedHouse",clone,plot
  plot:SetAttribute("Generated",true)
+ plot:SetAttribute("GeneratedCategory",category)
  hidePlot(plot)
  warnings[plot],busy[plot] = nil,nil
 end
@@ -289,7 +292,7 @@ local function generate(incremental)
   for object in pairs(plotIndex) do
    budget()
    local house=generated[object]
-   if not object:IsDescendantOf(workspace) or (house and house:IsDescendantOf(workspace)) or os.clock()<(retryAt[object] or 0) then continue end
+   if not object:IsDescendantOf(workspace) or (house and (house:IsDescendantOf(workspace) or WorldActivity.IsDormant(house))) or os.clock()<(retryAt[object] or 0) then continue end
    local gap=distance(object,points)
    if gap<=Config.GenerationRadius*Config.GenerationRadius then table.insert(plots,object);distances[object]=gap end
   end
@@ -314,7 +317,7 @@ local function generate(incremental)
     betweenJobs()
     if not nearby(plot) then continue end
     place(plot,sources,roadList)
-    if generated[plot] and generated[plot]:IsDescendantOf(workspace) then retryAt[plot]=nil
+    if generated[plot] and (generated[plot]:IsDescendantOf(workspace) or WorldActivity.IsDormant(generated[plot])) then retryAt[plot]=nil
     else retryAt[plot]=os.clock()+Config.RetryInterval end
     plotDue[plot]=nil
    end

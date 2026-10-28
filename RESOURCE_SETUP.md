@@ -96,9 +96,11 @@ Resource density is now **1% per square stud** for Forest, ScrapYard and StoneYa
 ## Nearby generation
 
 Keep Forest/StoneYard/ScrapYard markers at their authored sizes. The server splits
-them into virtual 20x20-stud chunks and rolls only within 180 horizontal studs
+them into virtual 20x20-stud chunks and rolls only within 140 horizontal studs
 of a living player. Visited resources keep health/harvest state when players
 leave. Client unloading uses StreamingEnabled; this does not unload server state.
 Respawn now applies independently to an emptied chunk, with the same configured
 30–300-second delay, and waits for a nearby player. No-player worlds stay empty.
 See PERFORMANCE.md for the World.rbxm audit and validation limits.
+
+Generated resources now share the server sleep/cold lifecycle in WORLD_ACTIVITY.md.

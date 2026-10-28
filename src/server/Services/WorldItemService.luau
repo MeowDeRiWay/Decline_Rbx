@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local HttpService = game:GetService("HttpService")
 local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -39,6 +40,7 @@ local function register(item)
  item:SetAttribute("Item_ID",id)
  if item:GetAttribute("Quantity")==nil then item:SetAttribute("Quantity",1) end
  queryable(item)
+ WorldActivity.Register(item,"Item")
 end
 local function consider(object)
  if object:IsA("Model") and (object.Name=="Chest" or Stations.Kind(object)) then queryable(object) end

@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local Journal=require(script.Parent.JournalService)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
@@ -101,7 +102,7 @@ function Service.Cook(player,id,requested)
  end
  notify(stove)
  task.delay(duration,function()
-  if not stove:IsDescendantOf(workspace) or state.Job~=job then return end
+  if (not stove:IsDescendantOf(workspace) and not WorldActivity.IsDormant(stove)) or state.Job~=job then return end
   if job.RequiresPresence and (sessions[player]~=stove or player.Character~=character or not reachable(player,stove)) then cancel(stove,job); return end
   unlock(job)
   local outputs=Progression.Loot(player,ProgressionRules.CraftOutputs(plan.Outputs,recipe,effects))

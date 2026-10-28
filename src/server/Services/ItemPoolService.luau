@@ -3,6 +3,9 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Rules=require(ReplicatedStorage.Shared.ItemPoolRules)
 local WorldItems=require(script.Parent.WorldItemService)
+local Activity=require(script.Parent.WorldActivityService)
+local ActivityRules=require(ReplicatedStorage.Shared.WorldActivityRules)
+local ActivityConfig=require(ReplicatedStorage.Shared.WorldActivityConfig)
 local random=Random.new()
 local Service={}
 local states={}
@@ -41,20 +44,31 @@ local function hide(marker)
  for _,p in ipairs(marker:GetDescendants()) do if p:IsA("BasePart") then p.Transparency=1;p.CanCollide=false;p.CanTouch=false;p.CanQuery=false;p.Anchored=true;p:SetAttribute("BlocksVision",false) end end
  marker:SetAttribute("BlocksVision",false)
 end
+local function track(marker)
+ if not marker:IsA("Model") and not marker:IsA("BasePart") then return end
+ if typeof(marker:GetAttribute("ItemPool"))~="string" or states[marker] then return end
+ local world=workspace:FindFirstChild("WorldItems")
+ if world and marker:IsDescendantOf(world) then return end
+ states[marker]={Due=workspace:GetServerTimeNow()};hide(marker)
+end
 function Service.Update()
  local now=workspace:GetServerTimeNow()
+ local positions=Activity.Positions()
  for marker,state in pairs(states) do
-  if not marker:IsDescendantOf(workspace) or typeof(marker:GetAttribute("ItemPool"))~="string" then
+  if (not marker:IsDescendantOf(workspace) and not Activity.IsDormant(marker)) or typeof(marker:GetAttribute("ItemPool"))~="string" then
    if state.Item and state.Item.Parent then state.Item:Destroy() end
    states[marker]=nil
   end
  end
- for _,marker in ipairs(workspace:GetDescendants()) do
+ for marker,state in pairs(states) do
+  if Activity.IsDormant(marker) then continue end
   local path=marker:GetAttribute("ItemPool")
-  if typeof(path)~="string" or (not marker:IsA("Model") and not marker:IsA("BasePart")) then continue end
-  if marker:IsDescendantOf(workspace:FindFirstChild("WorldItems")) then continue end
-  local state=states[marker]
-  if not state then state={Due=now};states[marker]=state;hide(marker) end
+  local frame,size
+  if marker:IsA("Model") then
+   if not marker:FindFirstChildWhichIsA("BasePart",true) then continue end
+   frame,size=marker:GetBoundingBox()
+  else frame,size=marker.CFrame,marker.Size end
+  if not ActivityRules.Near(frame,size,positions,ActivityConfig.ActiveRadius) then continue end
   if state.Item then
    if state.Item.Parent then continue end
    state.Item=nil;state.Due=now+Rules.Delay(marker:GetAttribute("RespawnSeconds"))
@@ -69,16 +83,13 @@ function Service.Update()
   state.Due=now+Rules.Delay(marker:GetAttribute("RespawnSeconds"))
   if random:NextNumber()>=Rules.Chance(marker:GetAttribute("SpawnChance")) then continue end
   local chosen=Rules.Pick(choices,random:NextNumber())
-  local frame,size
-  if marker:IsA("Model") then
-   if not marker:FindFirstChildWhichIsA("BasePart",true) then continue end
-   frame,size=marker:GetBoundingBox()
-  else frame,size=marker.CFrame,marker.Size end
   if chosen then state.Item=WorldItems.SpawnTemplate(chosen.Source,chosen.ID,frame.Position+Vector3.new(0,size.Y/2,0)) end
  end
 end
 function Service.Start()
  if Service.Started then return end;Service.Started=true
+ for _,marker in ipairs(workspace:GetDescendants()) do track(marker) end
+ workspace.DescendantAdded:Connect(track)
  Service.Update()
  task.spawn(function() while true do task.wait(5);Service.Update() end end)
 end

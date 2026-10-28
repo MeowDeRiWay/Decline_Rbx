@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 root=Path(__file__).resolve().parents[1]
-service=(root/'src/server/Services/CraftingService.luau').read_text().replace('local Journal=require(script.Parent.JournalService)', 'local Journal={Send=function() end}')
+service=(root/'src/server/Services/CraftingService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}').replace('local Journal=require(script.Parent.JournalService)', 'local Journal={Send=function() end}')
 for variable in ['Inventory','Items','Recipes','Rules','Amounts','Interaction','Progression','ProgressionRules','Stations']:
  service=re.sub(rf'local {variable}=require\([^\n]+\)\n','',service)
 setup='''

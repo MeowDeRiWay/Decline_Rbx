@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local Storage=game:GetService("ServerStorage")
 local Replicated=game:GetService("ReplicatedStorage")
 local Players=game:GetService("Players")
@@ -85,7 +86,7 @@ local function publish(bed,state)
  local factor=Rules.Water((bed:GetAttribute("Watering") or 0)/capacity(bed)*100)
  for index,plant in ipairs(state.Plants) do
   if plant.Rotten then rotten+=1 elseif plant.Progress>=1 then ready+=1 end
-  progress+=plant.Progress;visualize(bed,plant,index,#state.Plants)
+  progress+=plant.Progress;if not WorldActivity.IsDormant(bed) then visualize(bed,plant,index,#state.Plants) end
   local stage=Rules.Stage(plant.Progress,plant.Rotten)
   local caption=({"Early growth","Late growth","Ready to harvest","Rotten"})[stage]
   local eta=stage<3 and (factor==math.huge and "Paused: needs water" or ("~"..math.ceil((1-plant.Progress)*Config.GrowthSeconds*factor).."s to harvest")) or ""
@@ -201,7 +202,10 @@ function Service.Start()
   while true do
    task.wait(1)
    for bed,state in pairs(beds) do
-    if not bed:IsDescendantOf(workspace) then beds[bed]=nil
+    if WorldActivity.IsDormant(bed) then
+     local now=workspace:GetServerTimeNow()
+     if now>=(state.DormantNext or 0) then state.DormantNext=now+10;Service.Step(bed,now) end
+    elseif not bed:IsDescendantOf(workspace) then beds[bed]=nil
     else
      yieldMultiplier(bed);Service.Step(bed,workspace:GetServerTimeNow())
     end

@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 -- One movement dispatcher; sleeping zombies have no individual Heartbeat callback.
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
@@ -94,6 +95,7 @@ end
 function Service.Register(model,root,step,onMode)
  local record={Model=model,Root=root,Step=step,OnMode=onMode,Mode=nil,NextTeleport=os.clock()+random:NextNumber(0,Rules.TeleportInterval)}
  records[model]=record
+ WorldActivity.Register(model,"NPC")
  return {Disconnect=function() records[model]=nil;active[model]=nil end}
 end
 local function change(record,mode)
@@ -107,7 +109,7 @@ end
 function Service.Alert(position,radius)
  for model,record in pairs(records) do
   local hp=model:FindFirstChildOfClass("Humanoid")
-  if hp and hp.Health>0 and (record.Root.Position-position).Magnitude<=radius*math.clamp(model:GetAttribute("Attention") or 5,1,10)/5 then
+  if not WorldActivity.IsDormant(model) and hp and hp.Health>0 and (record.Root.Position-position).Magnitude<=radius*math.clamp(model:GetAttribute("Attention") or 5,1,10)/5 then
    record.NoiseUntil=os.clock()+60
    change(record,"Active")
   end
@@ -115,7 +117,8 @@ function Service.Alert(position,radius)
 end
 RunService.Heartbeat:Connect(function(dt)
  for model,record in pairs(active) do
-  if not model:IsDescendantOf(workspace) then records[model]=nil;active[model]=nil
+  if WorldActivity.IsDormant(model) then change(record,"AFK")
+  elseif not model:IsDescendantOf(workspace) then records[model]=nil;active[model]=nil
   else record.Step(dt) end
  end
 end)
@@ -124,6 +127,7 @@ task.spawn(function()
   footprints=playerFootprints()
   local budget=0
   for model,record in pairs(records) do
+   if WorldActivity.IsDormant(model) then change(record,"AFK");continue end
    local hp=model:FindFirstChildOfClass("Humanoid")
    if not model:IsDescendantOf(workspace) or not hp or hp.Health<=0 then records[model]=nil;active[model]=nil;continue end
    local mode=Rules.Mode(gapAt(record.Root.Position))

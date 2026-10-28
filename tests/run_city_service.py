@@ -6,7 +6,7 @@ import sys
 root=Path(__file__).resolve().parents[1]
 mock=(root/'tests/fixtures/town_mock.luau').read_text()
 geometry=(root/'tests/city_geometry.fixture.luau').read_text()
-service=(root/'src/server/Services/CityGenerationService.luau').read_text()
+service=(root/'src/server/Services/CityGenerationService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 service=service.replace('local Config = require(ReplicatedStorage.Shared.CityGenerationConfig)','')
 service=service.replace('local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)','')
 service=service.replace('local Furniture=require(script.Parent.StoreFurnitureService)','')
@@ -14,7 +14,7 @@ service=service.replace('local Walls=require(script.Parent.WallReplacementServic
 service=service.replace('local Placement=require(script.Parent.StaticPlacement)','')
 furniture=(root/'src/server/Services/StoreFurnitureService.luau').read_text().replace('local Rules=require(ReplicatedStorage.Shared.CityGenerationRules)','')
 cases='''
-assert(Config.ZoneLoadSeconds==30)
+assert(Config.ZoneLoadSeconds==10)
 -- Legacy placement/geometry regressions run without pacing; timed cases below
 -- restore the real setting and exercise the scheduler with a controlled clock.
 Config.ZoneLoadSeconds=0
@@ -238,7 +238,7 @@ assert(otherTown:FindFirstChild("GeneratedHouse"),"all living players activate t
 secondHP.Health=0;observerRoot.Position=Vector3.new(30000,0,0)
 addRoad(30000,30)
 local queued={}
-for i=1,10 do queued[i]=addPlot(30000+(i-1)*20,0) end
+for i=1,10 do queued[i]=addPlot(30000+(i-1)*12,0) end
 Service.Generate(true)
 local count=0
 for _,p in ipairs(queued) do if p:FindFirstChild("GeneratedHouse") then count+=1 end end
@@ -283,23 +283,23 @@ assert(farFurniture:FindFirstChild("GeneratedFurniture") and farWall.destroyed,"
 assert(workspace.GeneratedCityHouses:GetAttribute("GenerationMode")=="NearbyPlots")
 assert(workspace.GeneratedCityHouses:GetAttribute("GenerationRadius")==Config.GenerationRadius)
 print("PASS: lazy city generation, hidden markers, no-player/dead-player guards, multiple towns/players, state retention, closest-first bounded queue and moved geometry")
-Config.ZoneLoadSeconds=30
+Config.ZoneLoadSeconds=10
 addRoad(70000,30)
 local paced={addPlot(70000,0),addPlot(70020,0),addPlot(70040,0)}
 observerRoot.Position=Vector3.new(70000,0,0)
 Service.Generate(true)
-assert(paced[1]:FindFirstChild("GeneratedHouse") and not paced[2]:FindFirstChild("GeneratedHouse") and not paced[3]:FindFirstChild("GeneratedHouse"),"30-second batch starts with its nearest plot only")
+assert(paced[1]:FindFirstChild("GeneratedHouse") and not paced[2]:FindFirstChild("GeneratedHouse") and not paced[3]:FindFirstChild("GeneratedHouse"),"10-second batch starts with its nearest plot only")
 local firstHouse=paced[1].GeneratedHouse.Value
 -- Polling does not restart the original deadlines.
 for _=1,3 do Service.Generate(true) end
-tick(14.75)
+tick(4.75)
 assert(not paced[2]:FindFirstChild("GeneratedHouse"),"middle plot cannot start early")
 tick(.25)
-assert(paced[2]:FindFirstChild("GeneratedHouse") and not paced[3]:FindFirstChild("GeneratedHouse"),"middle plot loads at 15 seconds")
-tick(14.75)
-assert(not paced[3]:FindFirstChild("GeneratedHouse"),"last plot cannot start before the 30-second deadline")
+assert(paced[2]:FindFirstChild("GeneratedHouse") and not paced[3]:FindFirstChild("GeneratedHouse"),"middle plot loads at 5 seconds")
+tick(4.75)
+assert(not paced[3]:FindFirstChild("GeneratedHouse"),"last plot cannot start before the 10-second deadline")
 tick(.25)
-assert(paced[3]:FindFirstChild("GeneratedHouse"),"last plot loads at 30 seconds")
+assert(paced[3]:FindFirstChild("GeneratedHouse"),"last plot loads at 10 seconds")
 assert(paced[1].GeneratedHouse.Value==firstHouse,"pacing never replaces finished state")
 addRoad(80000,30)
 local moved={addPlot(80000,0),addPlot(80020,0),addPlot(80040,0)}
@@ -334,12 +334,12 @@ for i=1,3 do
 end
 observerRoot.Position=Vector3.new(100000,0,0);Service.Generate(true)
 assert(furnitureBatch[1]:FindFirstChild("GeneratedFurniture") and not furnitureBatch[2]:FindFirstChild("GeneratedFurniture"))
-tick(15)
+tick(5)
 assert(furnitureBatch[2]:FindFirstChild("GeneratedFurniture") and not furnitureBatch[3]:FindFirstChild("GeneratedFurniture"))
-tick(15)
+tick(5)
 assert(furnitureBatch[3]:FindFirstChild("GeneratedFurniture"))
-print("PASS: missed-deadline catch-up yields between buildings and standalone furniture uses 30-second pacing")
-print("PASS: 30-second pacing, nearest-first slots at 0/15/30 seconds, stable polling deadlines, departure cancellation and paced re-entry")
+print("PASS: missed-deadline catch-up yields between buildings and standalone furniture uses 10-second pacing")
+print("PASS: 10-second pacing, nearest-first slots at 0/5/10 seconds, stable polling deadlines, departure cancellation and paced re-entry")
 
 
 

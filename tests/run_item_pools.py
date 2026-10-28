@@ -3,8 +3,11 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/ItemPoolService.luau').read_text()
-source=re.sub(r'local (Items|Rules|WorldItems)=require[^\n]+\n','',source)
+source=re.sub(r'local (Items|Rules|WorldItems|Activity|ActivityRules|ActivityConfig)=require[^\n]+\n','',source)
 setup='''
+local Activity={Positions=function() return {Vector3.zero} end,IsDormant=function(o) return o:GetAttribute("WorldDormant")==true end}
+local ActivityRules={Near=function() return true end};local ActivityConfig={ActiveRadius=140}
+workspace.DescendantAdded=event()
 local warn=function() end
 local world=make("Folder","WorldItems",workspace)
 local authored=make("Folder","Items",ServerStorage)
@@ -29,6 +32,7 @@ local missing=make("Part","Missing pool point",workspace,{ItemPool="Later"})
 '''
 cases='''
 Service.Start()
+table.sort(calls,function(a,b) return a.ID>b.ID end)
 assert(#calls==2 and #world:GetChildren()==2)
 assert(calls[1].ID=="Potato" and calls[1].Source==potato,"pool filters unregistered props, model components and zero weights")
 assert(calls[2].ID=="AmmoBox9mmFMJ" and calls[2].Item:GetAttribute("Quantity")==1 and calls[2].Item:GetAttribute("MaxAmmo")==30,"one ammo box model, never a loose round")
@@ -38,9 +42,16 @@ calls[1].Item:Destroy();Service.Update();clock+=9;Service.Update();assert(#calls
 clock+=1;Service.Update();assert(#calls==3 and calls[3].ID=="Potato","respawn delay begins after pickup")
 local later=make("Folder","Later",authored);make("Part","Chemicals",later)
 clock+=5;Service.Update();assert(#calls==4 and calls[4].ID=="Chemicals","late supplied pool retries")
+foodPoint:SetAttribute("WorldDormant",true);foodPoint.Parent=ServerStorage
+local countBefore=#calls
+Service.Update();clock+=20;Service.Update()
+assert(#calls==countBefore and not calls[3].Item.destroyed,"sleep retains loot without respawning")
+foodPoint:SetAttribute("WorldDormant",nil);foodPoint.Parent=workspace
+Service.Update();assert(#calls==countBefore,"wake retains the original pickup")
 foodPoint:Destroy();Service.Update();assert(calls[3].Item.destroyed,"deleting marker removes its remaining pickup")
 ammoPoint:SetAttribute("ItemPool",nil);Service.Update();assert(calls[2].Item.destroyed)
 local noSpawn=make("Part","No spawn",workspace,{ItemPool="Food",SpawnChance=0,RespawnSeconds=1})
+workspace.DescendantAdded:Fire(noSpawn)
 clock+=5;Service.Update();assert(#calls==4,"zero chance respects authored setting")
 noSpawn:SetAttribute("SpawnChance",1);clock+=1;Service.Update();assert(#calls==5)
 assert(Rules.Pick({{ID="a",Weight=1},{ID="b",Weight=3}},.1).ID=="a")

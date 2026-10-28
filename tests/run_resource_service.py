@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 root = Path(__file__).resolve().parents[1]
-service = (root/'src/server/Services/ResourceService.luau').read_text()
+service = (root/'src/server/Services/ResourceService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 for name in ['Config', 'Rules', 'CombatRules', 'Journal', 'Area', 'Inventory', 'WorldItems', 'Items', 'Progression']:
     import re
     service = re.sub(rf'local {name} = require\([^\n]+\)\n', '', service)

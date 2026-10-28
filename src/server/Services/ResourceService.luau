@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,7 +16,7 @@ local random = Random.new()
 local nodes, zones = {}, {}
 local folder
 -- Virtual chunks leave authored markers untouched. Only nearby chunks roll resources.
-local CHUNK_SIZE, WAKE_RADIUS = 20, 180
+local CHUNK_SIZE, WAKE_RADIUS = 20, 140
 local deadline = 0
 local footprints = Rules.FootprintIndex(8)
 local function budget()
@@ -86,6 +87,7 @@ local function register(model,zone,chunk)
  local box,size=model:GetBoundingBox()
  node.Footprint=Rules.Footprint(box,size)
  footprints:Insert(node.Footprint)
+ WorldActivity.Register(model,"Resource","Resource:"..kind..":"..model.Name)
 end
 local function marker(part)
  if not part:IsA("BasePart") then return end
@@ -178,7 +180,7 @@ local function generate(zone,state)
    local clone = source:Clone()
    clone:PivotTo(target)
    register(clone,zone,state)
-   if nodes[clone] then clone.Parent=folder;made+=1 else clone:Destroy() end
+   if nodes[clone] then clone.Parent=folder;WorldActivity.Register(clone,"Resource","Resource:"..state.Kind..":"..source.Name);made+=1 else clone:Destroy() end
   end,budget)
  end
  -- A legitimate zero roll waits for the normal respawn, rather than rerolling every five seconds.
@@ -256,8 +258,9 @@ local function tick()
   local hp=character and character:FindFirstChildOfClass("Humanoid")
   if root and hp and hp.Health>0 then table.insert(positions,root.Position) end
  end
+ if #positions==0 then return end
  for model,node in pairs(nodes) do
-  if not model:IsDescendantOf(workspace) then
+  if not model:IsDescendantOf(workspace) and not WorldActivity.IsDormant(model) then
    footprints:Remove(node.Footprint);nodes[model]=nil
   end
   budget()

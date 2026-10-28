@@ -2,7 +2,7 @@
 from pathlib import Path
 import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-service=(root/'src/server/Services/ZombieActivity.luau').read_text()
+service=(root/'src/server/Services/ZombieActivity.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 for variable,module in [('Config','GameConfig'),('Progression','ProgressionRules'),('Rules','ZombieActivityRules')]:
  service=service.replace(f'local {variable}=require(ReplicatedStorage.Shared.{module})','')
 service=service.replace('local Sessions=require(script.Parent.PlayerSessionService)','local Sessions={OfflineCharacters=function() return {} end}')

@@ -2,7 +2,7 @@
 from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-source=(root/'src/server/Services/ZombieHomeService.luau').read_text()
+source=(root/'src/server/Services/ZombieHomeService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 source=re.sub(r'local (Area|Rules|HomeRules)\s*=\s*require[^\n]+\n','',source)
 setup='''
 local Random={new=function() return {NextNumber=function(_,minimum) return minimum end} end}

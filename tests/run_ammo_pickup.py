@@ -1,7 +1,7 @@
 from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-service=(root/'src/server/Services/WorldItemService.luau').read_text()
+service=(root/'src/server/Services/WorldItemService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 service=re.sub(r'local (ItemConfig|Inventory|Rules|Interaction|EquipmentVisuals|AmmoRules|Stations)\s*=\s*require[^\n]+\n','',service)
 service=service.replace('require(ReplicatedStorage.Shared.EconomyRules)','MoneyRules').replace('require(script.Parent.EconomyService)','Wallet')
 mock='''

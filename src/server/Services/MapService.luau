@@ -17,6 +17,7 @@ local function box(object)
 end
 local function category(object)
  if object:IsA("Model") then
+  if object.Name=="YardPlace" and object:GetAttribute("Generated")==true then return object:GetAttribute("GeneratedCategory")=="Houses" and "House" or "Infrastructure" end
   if object:GetAttribute("GeneratedCityHouse")==true then
    return object:GetAttribute("GenerationCategory")=="Houses" and "House" or "Infrastructure"
   end

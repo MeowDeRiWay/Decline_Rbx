@@ -1,3 +1,4 @@
+local WorldActivity=require(script.Parent.WorldActivityService)
 local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Area = require(script.Parent.AreaService)
@@ -25,7 +26,7 @@ end
 local function spawn(home,valid)
  -- Count living zombies by their source house, even after they wander outside.
  -- All Zombie_home floors inside one ZHouse share the same house-wide quota.
- if HomeRules.Count(home, creatures, workspace) >= HomeRules.Limit(home) then return false end
+ if HomeRules.Count(home, creatures, workspace, WorldActivity.DormantNPCs()) >= HomeRules.Limit(home) then return false end
  local source = template()
  if not source then
   if not warned[home] then
@@ -75,7 +76,7 @@ local function spawn(home,valid)
   if not clear then continue end
   -- A player can enter while a multi-frame placement search yields.
   if not valid() or Area.Occupied(home,records[home].Parts) then return false end
-  if HomeRules.Count(home,creatures,workspace)>=HomeRules.Limit(home) then return false end
+  if HomeRules.Count(home,creatures,workspace,WorldActivity.DormantNPCs())>=HomeRules.Limit(home) then return false end
   local zombie = source:Clone()
   zombie:SetAttribute("Zombie_home",nil)
   zombie:SetAttribute("IsDead",nil)
@@ -120,6 +121,11 @@ local function rebuild(home,record)
 end
 local function remove(home)
  local record=records[home]
+ if WorldActivity.IsDormant(home) then
+  if record then clearBuckets(home,record);Rules.Occupancy(record,false,os.clock(),180) end
+  active[home],pending[home]=nil,nil
+  return
+ end
  if record then
   clearBuckets(home,record)
   for _,connection in ipairs(record.PartConnections or {}) do connection:Disconnect() end
@@ -129,14 +135,21 @@ local function remove(home)
  local connection=watched[home];if connection then connection:Disconnect();watched[home]=nil end
 end
 local function watch(home)
- if not home:IsA("Model") or watched[home] then return end
+ if not home:IsA("Model") then return end
+ if watched[home] then
+  if records[home] then pending[home]=true;lastWake=-math.huge end
+  return
+ end
  watched[home]=home:GetAttributeChangedSignal("Zombie_home"):Connect(function() pending[home]=true;lastWake=-math.huge end)
  if home:GetAttribute("Zombie_home")==true then pending[home]=true end
 end
 local function synchronize()
  for home in pairs(pending) do
   pending[home]=nil
-  if not home:IsDescendantOf(workspace) then remove(home);continue end
+  if not home:IsDescendantOf(workspace) then
+   if not WorldActivity.IsDormant(home) then remove(home) end
+   continue
+  end
   if not records[home] and home:GetAttribute("Zombie_home")==true then
    local record={Occupied=false,AllowedAt=0,Connections={},Deadline=0};records[home]=record
    record.Connections={home.DescendantAdded:Connect(function() pending[home]=true;lastWake=-math.huge end),

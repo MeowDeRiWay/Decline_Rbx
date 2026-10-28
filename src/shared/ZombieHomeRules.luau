@@ -26,13 +26,15 @@ function Rules.Limit(floor)
  if typeof(value) ~= "number" or value ~= value or math.abs(value) == math.huge then return Rules.DefaultLimit end
  return math.max(0, math.floor(value))
 end
-function Rules.Count(floor, creatures, world)
+function Rules.Count(floor, creatures, world, dormant)
+ local candidates=table.clone(creatures:GetChildren())
+ for _,zombie in ipairs(dormant or {}) do table.insert(candidates,zombie) end
  local house, count = Rules.House(floor), 0
- for _, zombie in ipairs(creatures:GetChildren()) do
+ for _, zombie in ipairs(candidates) do
   local reference = zombie:FindFirstChild("ZombieHome")
   local humanoid = zombie:FindFirstChildOfClass("Humanoid")
   if reference and reference:IsA("ObjectValue") and reference.Value and humanoid and humanoid.Health > 0
-   and zombie:IsDescendantOf(world) and not zombie:GetAttribute("IsDead") and not zombie:GetAttribute("IsCorpse")
+   and (zombie:IsDescendantOf(world) or table.find(dormant or {},zombie)) and not zombie:GetAttribute("IsDead") and not zombie:GetAttribute("IsCorpse")
    and Rules.House(reference.Value) == house then count += 1 end
  end
  return count
