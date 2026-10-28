@@ -64,7 +64,6 @@ local function paint(t,cell,x,z,size)
  if kind=="House" or kind=="Infrastructure" then
   t.Frame.BackgroundColor3=colors.Ground;t.A.Visible=true;t.A.BackgroundColor3=colors[kind]
   t.A.Position=UDim2.fromScale(.1,.1);t.A.Size=UDim2.fromScale(.8,.8)
- elseif kind=="Forest" then t.Icon.Text="♠";t.Icon.TextColor3=Color3.fromRGB(82,116,62)
  elseif kind=="ScrapYard" then t.Icon.Text="▪▫";t.Icon.TextColor3=Color3.fromRGB(155,142,115)
  elseif kind=="StoneYard" then t.Icon.Text="◆";t.Icon.TextColor3=Color3.fromRGB(160,159,142) end
  if mask~=0 then t.Icon.Text="" end
