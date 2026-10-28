@@ -47,11 +47,26 @@ local function templates(category)
  table.sort(result,function(a,b) return a.Name < b.Name end)
  return result
 end
-local function plotOrder(a,b)
- local af,bf = box(a),box(b)
- if not af or not bf then return a:GetFullName() < b:GetFullName() end
- for _, key in ipairs({"X","Z","Y"}) do if af.Position[key] ~= bf.Position[key] then return af.Position[key] < bf.Position[key] end end
- return a:GetFullName() < b:GetFullName()
+-- Comparators must never query model geometry: sorting a town previously made
+-- tens of thousands of GetBoundingBox/FindFirstChildWhichIsA calls per retry.
+local function sortPlots(list)
+ local keys={}
+ for index,object in ipairs(list) do
+  local frame=box(object)
+  keys[object]={Position=frame and frame.Position,Name=object:GetFullName()}
+  if index%32==0 then budget() end
+ end
+ table.sort(list,function(a,b)
+  local ak,bk=keys[a],keys[b]
+  local ap,bp=ak.Position,bk.Position
+  if (ap==nil)~=(bp==nil) then return ap~=nil end
+  if ap and bp then
+   for _,key in ipairs({"X","Z","Y"}) do
+    if ap[key]~=bp[key] then return ap[key]<bp[key] end
+   end
+  end
+  return ak.Name<bk.Name
+ end)
 end
 -- Keep authored candidates indexed; retry ticks never allocate a full world descendant list.
 local plotIndex,roadIndex,markerIndex={},{},{}
@@ -85,7 +100,7 @@ local function roads()
  for object in pairs(roadIndex) do
   if object:IsDescendantOf(workspace) and box(object) then table.insert(result,object) end
  end
- table.sort(result,plotOrder);return result
+ sortPlots(result);return result
 end
 local function nearestRoad(plotFrame, list)
  local point, distance
@@ -187,10 +202,19 @@ function Service.Generate(incremental)
   plotIndex,roadIndex,markerIndex={},{},{}
   for _,object in ipairs(workspace:GetDescendants()) do track(object) end
  end
- local sources,roadList,plots={Houses=templates("Houses"),Stores=templates("Stores"),Factories=templates("Factories")},roads(),{}
- for object in pairs(plotIndex) do if object:IsDescendantOf(workspace) then table.insert(plots,object) end end
- table.sort(plots,plotOrder)
- for _, plot in ipairs(plots) do place(plot,sources,roadList);budget() end
+ local plots={}
+ for object in pairs(plotIndex) do
+  local house=generated[object]
+  if object:IsDescendantOf(workspace) and not (house and house:IsDescendantOf(workspace)) then table.insert(plots,object) end
+ end
+ -- A settled town has no placement work. Avoid discovering templates, computing
+ -- road bounds and sorting completed plots on every five-second retry.
+ if #plots>0 then
+  local sources={Houses=templates("Houses"),Stores=templates("Stores"),Factories=templates("Factories")}
+  local roadList=roads()
+  sortPlots(plots)
+  for _,plot in ipairs(plots) do place(plot,sources,roadList);budget() end
+ end
  local markers={}
  for object in pairs(markerIndex) do table.insert(markers,object) end
  for _,object in ipairs(markers) do

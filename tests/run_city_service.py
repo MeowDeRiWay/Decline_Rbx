@@ -152,6 +152,36 @@ assert(lateHouse.destroyed,"cached plot removal still cleans generated house")
 assert(scans==0,"addition, attribute updates and removal keep retries incremental")
 workspace.GetDescendants=originalDescendants
 print("PASS: incremental retries have zero full world scans; late plots, changed attributes and removals work")
+-- Regression for the real capture's 20,450 geometry queries during one sort.
+small:SetAttribute("ForZHouse",false)
+local originalBounds=methods.GetBoundingBox
+local roadBounds=0
+function methods:GetBoundingBox()
+ if self:GetAttribute("Road")==true then roadBounds+=1 end
+ return originalBounds(self)
+end
+for i=1,120 do
+ local r=make("Model","PerfRoad"..i,workspace,{Road=true})
+ r.CFrame=CFrame.new(Vector3.new(i*20,0,40));r.Size=Vector3.new(20,.2,20);make("Part","Part",r)
+ workspace.DescendantAdded:Fire(r)
+end
+Service.Generate(true)
+assert(roadBounds==0,"settled towns do not compute or sort road bounds on retry")
+local pendingPlot=make("Model","YardPlace",workspace,{ForZHouse=true})
+pendingPlot.CFrame=CFrame.new(Vector3.zero);pendingPlot.Size=Vector3.new(20,.2,20);make("Part","Part",pendingPlot)
+workspace.DescendantAdded:Fire(pendingPlot)
+roadBounds=0
+Service.Generate(true)
+assert(pendingPlot:FindFirstChild("GeneratedHouse"),"late plot still generates with cached sort keys")
+assert(roadBounds<4*121,"road geometry calls scale linearly, not with sort comparisons")
+roadBounds=0
+Service.Generate(true)
+assert(roadBounds==0,"completed late plot restores zero road-bound work")
+local removed=pendingPlot.GeneratedHouse.Value
+removed:Destroy();Service.Generate(true)
+assert(pendingPlot.GeneratedHouse.Value~=removed and not pendingPlot.GeneratedHouse.Value.destroyed,"removed generated buildings can be regenerated")
+print("PASS: 120-road regression has no settled-town geometry work, linear pending-sort queries and removed-house recovery")
+
 
 '''
 parts=[mock,geometry,(root/'tests/city_service.fixture.luau').read_text()]

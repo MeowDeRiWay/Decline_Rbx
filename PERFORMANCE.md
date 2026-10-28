@@ -104,3 +104,28 @@ City service/geometry fixtures, compilation of all 152 source files and Rojo
 build pass. These are engine mocks/build checks; compare startup and frame-time
 spikes in Studio after synchronizing and fully restarting Play. If stalls persist,
 record both client and server MicroProfiler traces before further optimization.
+
+# City retry spike found in a real Studio capture — 28 October 2026
+
+microprofile-20261028-174031.x.html (received inside ZIP) opens in official
+LibMP. It contains 38 frames. Frame 23 has a roughly 30.075ms uninterrupted
+Script_CityGeneration scope, with 20,450 GetBoundingBox calls and 20,450
+FindFirstChildWhichIsA calls. The generator's sort comparator recomputed both
+models' bounds for every comparison on each retry, including completed plots.
+This is a measured spike; the configured retry interval is five seconds, so it
+does not by itself establish the cause of every reported one-second stall.
+
+The generator now excludes completed live plots before placement preparation.
+A settled town performs no road/template discovery or road/plot sorting.
+When pending plots exist, sorting snapshots each model's position/name once,
+yielding during key preparation, and compares only cached values. Removal of a
+generated house still allows its source plot to generate again. Existing marker
+retry, category selection, geometry ordering and incremental indexing remain.
+
+The service fixture adds 120 roads, asserts zero road-bound work on settled
+retries, linear geometry-query counts for a pending plot, late-plot generation,
+and recovery after a generated house is removed. City service and actual
+geometry fixtures pass; source compilation and Rojo build pass. No post-fix
+Studio measurement is available yet. Other costs in the capture, including
+StandardAdorns and frame presentation, have not been attributed to a game script
+or changed without evidence.
