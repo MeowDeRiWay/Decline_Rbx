@@ -10,13 +10,19 @@ fixture='''
 local RaycastParams={new=function() return {} end}
 local OverlapParams={new=function() return {} end}
 local Enum={RaycastFilterType={Exclude=1,Include=2}}
-local workspace={}
+local function event()
+ local listeners={}
+ return {Connect=function(_,fn) table.insert(listeners,fn);return {Disconnect=function() end} end,
+ Fire=function(_,...) for _,fn in ipairs(listeners) do fn(...) end end}
+end
+local workspace={DescendantAdded=event(),DescendantRemoving=event()}
+local scans=0
 local opening=1.04
 local groundY=0
 local function intersects(position,size)
  return math.abs(position.Z)<.08+size.Z/2 and math.abs(position.X)+size.X/2>opening/2+.000001
 end
-function workspace:GetDescendants() return {} end
+function workspace:GetDescendants() scans+=1;return {} end
 function workspace:Raycast(origin,delta)
  if origin.Y < groundY or origin.Y+delta.Y > groundY then return nil end
  return {Position=Vector3.new(origin.X,groundY,origin.Z),Normal=Vector3.new(0,1,0)}
@@ -60,7 +66,10 @@ function door:IsA(class) return class=="Model" end
 function door:GetAttribute() return nil end
 function door:FindFirstChildWhichIsA() return {} end
 function door:GetBoundingBox() return doorFrame,Vector3.new(1.04,.2,.16) end
-function workspace:GetDescendants() return {door} end
+local attributeSignal,nameSignal=event(),event()
+function door:GetAttributeChangedSignal() return attributeSignal end
+function door:GetPropertyChangedSignal() return nameSignal end
+workspace.DescendantAdded:Fire(door)
 function vm.__mul(a,b)
  if type(a)=="number" then a,b=b,a end
  return Vector3.new(a.X*b,a.Y*b,a.Z*b)
@@ -143,6 +152,28 @@ for _=1,10000 do
  if not agent.Pending then break end
 end
 assert(not agent.Pending and #agent.Route>0,"cooperative search must eventually produce the same reachable route")
+assert(scans==1,"navigation does only one full-world discovery across all direct/cooperative plans")
+local list=nav:Parameters()
+workspace.DescendantRemoving:Fire(door)
+local extra={Name="Wall",Parent={IsA=function() return true end}}
+local marker=false
+function extra:IsA(class) return class=="Model" end
+function extra:GetAttribute() return marker end
+local attr,rename=event(),event()
+function extra:GetAttributeChangedSignal() return attr end
+function extra:GetPropertyChangedSignal() return rename end
+workspace.DescendantAdded:Fire(extra)
+marker=true;attr:Fire();nav:Parameters()
+marker=false;attr:Fire();extra.Name="DoorWay";rename:Fire();nav:Parameters()
+workspace.DescendantRemoving:Fire(extra);nav:Parameters()
+assert(scans==1,"dynamic doors, renames and removals must not trigger a world rescan")
+local bodyModel={IsA=function(_,class) return class=="Model" end}
+local human={Parent=bodyModel,IsA=function(_,class) return class=="Humanoid" end}
+workspace.DescendantAdded:Fire(human)
+local exclusions=nav:Parameters();assert(table.find(exclusions.FilterDescendantsInstances,bodyModel),"new humanoid enters collision exclusion index")
+workspace.DescendantRemoving:Fire(human)
+exclusions=nav:Parameters();assert(not table.find(exclusions.FilterDescendantsInstances,bodyModel),"removed humanoid leaves collision exclusion index")
+print("PASS: event-driven navigation index, one startup scan, runtime marker/name updates and removals")
 print("PASS: wall-hugging target and reachable endpoint on correct side; window-to-side-door detour, collision-safe portal route; real body-sized doorway clearance, fine-grid centering, collision-checked route segments, undersized door rejection")
 '''
 with tempfile.TemporaryDirectory(prefix='decline-door-') as directory:

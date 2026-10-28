@@ -3,20 +3,44 @@ local Navigation = {}
 Navigation.__index = Navigation
 -- All zombies share one cooperative planner budget, including failed fine-grid searches.
 local jobs={}
-local worldObjects,worldAt=nil,-math.huge
+local worldObjects
+local worldMembers,worldWatchers={},{}
+local worldStarted=false
 local function checkpoint(self)
  if self.Cooperative then coroutine.yield() end
 end
-local function descendants(self)
- if not self.Cooperative and not self.CachedWorld then return workspace:GetDescendants() end
- if not worldObjects or os.clock()-worldAt>=1 then
-  worldObjects={}
-  for _,object in ipairs(workspace:GetDescendants()) do
-   if object:IsA("Humanoid") or (object:IsA("Model") and (object:GetAttribute("NavigationDoor")==true or string.match(string.lower(object.Name),"^doorway"))) then
-    table.insert(worldObjects,object)
-   end
-  end
-  worldAt=os.clock()
+local function classify(object)
+ local relevant=object:IsA("Humanoid") or (object:IsA("Model") and
+  (object:GetAttribute("NavigationDoor")==true or string.match(string.lower(object.Name),"^doorway")))
+ local included=relevant and true or false
+ if (worldMembers[object]==true)~=included then
+  worldMembers[object]=relevant and true or nil;worldObjects=nil
+ end
+end
+local function untrack(object)
+ if worldMembers[object] then worldMembers[object]=nil;worldObjects=nil end
+ local connections=worldWatchers[object]
+ if connections then for _,connection in ipairs(connections) do connection:Disconnect() end;worldWatchers[object]=nil end
+end
+local function track(object)
+ if not (object:IsA("Humanoid") or object:IsA("Model")) then return end
+ classify(object)
+ if object:IsA("Model") and not worldWatchers[object] then
+  worldWatchers[object]={object:GetAttributeChangedSignal("NavigationDoor"):Connect(function() classify(object) end),
+   object:GetPropertyChangedSignal("Name"):Connect(function() classify(object) end)}
+ end
+end
+local function descendants(_)
+ if not worldStarted then
+  worldStarted=true
+  workspace.DescendantAdded:Connect(track)
+  workspace.DescendantRemoving:Connect(untrack)
+  -- One initial discovery. Later queries touch only humanoids and doorway models.
+  for _,object in ipairs(workspace:GetDescendants()) do track(object) end
+ end
+ if not worldObjects then
+  local snapshot={};for object in pairs(worldMembers) do table.insert(snapshot,object) end
+  worldObjects=snapshot -- Never mutate a snapshot held by a yielding planner.
  end
  return worldObjects
 end

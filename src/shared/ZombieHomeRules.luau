@@ -1,5 +1,16 @@
 local Rules = {}
 Rules.DefaultLimit = 3
+Rules.WakeRadius = 300 -- studs from the home footprint, not its center
+Rules.BucketSize = 256
+Rules.HomesPerBatch = 16
+Rules.SpawnsPerStep = 2
+Rules.SpawnAttemptsPerFrame = 8
+function Rules.Near(frame,size,position,radius)
+ local point=frame:PointToObjectSpace(position)
+ local x=math.max(0,math.abs(point.X)-size.X/2)
+ local z=math.max(0,math.abs(point.Z)-size.Z/2)
+ return x*x+z*z<=radius*radius
+end
 function Rules.House(floor)
  local parent = floor
  while parent do
