@@ -10,7 +10,7 @@ local action=ReplicatedStorage:WaitForChild("FirearmAction")
 local effects=ReplicatedStorage:WaitForChild("FirearmEffects")
 local firing,ready=false,0
 local function blocked()
- return Input:GetFocusedTextBox() or GuiService.MenuIsOpen or player:GetAttribute("MedicalMode") or ((player:GetAttribute("HelpOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))
+ return Input:GetFocusedTextBox() or GuiService.MenuIsOpen or player:GetAttribute("MedicalMode") or (((player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))
 end
 Input.InputBegan:Connect(function(input,processed)
  if processed or blocked() then return end

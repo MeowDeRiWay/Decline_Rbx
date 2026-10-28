@@ -9,7 +9,7 @@ local items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local remote = ReplicatedStorage:WaitForChild("WeaponAttack")
 local ready = 0
 Input.InputBegan:Connect(function(input,processed)
- if processed or input.UserInputType ~= Enum.UserInputType.MouseButton1 or Input:GetFocusedTextBox() or GuiService.MenuIsOpen or (player:GetAttribute("MedicalMode") or ((player:GetAttribute("HelpOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then return end
+ if processed or input.UserInputType ~= Enum.UserInputType.MouseButton1 or Input:GetFocusedTextBox() or GuiService.MenuIsOpen or (player:GetAttribute("MedicalMode") or (((player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then return end
  local character = player.Character
  local held = character and character:FindFirstChild("HeldItem")
  local motor = held and held:FindFirstChild("WeaponGrip")

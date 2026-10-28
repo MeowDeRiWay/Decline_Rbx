@@ -142,6 +142,7 @@ print("PASS: logs10, stone20 and scrap50 XP per unit; passive practice unchanged
 a.Character=nil
 Service.NewCharacter(a)
 local newborn=Service.Snapshot(a)
+assert(a:GetAttribute("MapExplorationVersion")==1,"new character starts a fresh exploration lifetime")
 assert(newborn.Level==0 and newborn.XP==0 and not newborn.Confirmed and not newborn.TagsConfirmed)
 assert(next(newborn.Perks)==nil and next(newborn.TaggedSkills)==nil and newborn.PerkPoints==0,"new life clears perks and tags")
 for _,practice in pairs(newborn.Practice) do assert(practice.Value==0,"new life clears passive practice") end

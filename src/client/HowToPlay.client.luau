@@ -67,6 +67,7 @@ Q - Inventory / close container
 C - Character and attributes
 T - Skills and perks
 G - Group
+M - Map: drag to pan, scroll to zoom. Explored tiles stay visible.
 H - Use an equipped bandage
 4 - Doctor: click a nearby knocked-out player to try to revive them. Press 4 again to cancel.
 
@@ -186,7 +187,7 @@ local function setOpen(value)
  else Context:UnbindAction("HelpBlockInput");Run:UnbindFromRenderStep("HelpStopMovement") end
 end
 local function busy()
- for _,name in ipairs({"LoadingScreenOpen","TownMenuOpen","ProgressionOpen","InventoryOpen","TradeOpen","GroupOpen","AdminOpen","FarmMenuOpen","CharacterLoading","OutcastEnd"}) do
+ for _,name in ipairs({"LoadingScreenOpen","TownMenuOpen","ProgressionOpen","InventoryOpen","TradeOpen","GroupOpen","AdminOpen","FarmMenuOpen","CharacterLoading","OutcastEnd","MapOpen"}) do
   if player:GetAttribute(name) then return true end
  end
  return false

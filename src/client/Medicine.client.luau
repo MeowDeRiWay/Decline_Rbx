@@ -16,7 +16,7 @@ local hint=Instance.new("TextLabel");hint.Size=UDim2.fromOffset(250,58);hint.Bac
 local function bandage(id) return id=="Bandage" or id=="GreatBandage" end
 local selected
 local function blocked()
- return player:GetAttribute("HelpOpen") or GuiService.MenuIsOpen or Input:GetFocusedTextBox() or (player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen")
+ return (player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or GuiService.MenuIsOpen or Input:GetFocusedTextBox() or (player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen")
 end
 local function cancel() player:SetAttribute("MedicalMode",nil);selected=nil;highlight.Enabled=false;hint.Visible=false end
 Input.InputBegan:Connect(function(key,processed)

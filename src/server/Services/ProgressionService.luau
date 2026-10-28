@@ -85,6 +85,7 @@ function Service.GrantLevels(player,count)
 end
 function Service.NewCharacter(player)
  if not player or player.Parent~=Players then return false end
+ player:SetAttribute("MapExplorationVersion",(player:GetAttribute("MapExplorationVersion") or 0)+1)
  states[player]=Rules.New()
  disconnected[player.UserId]=nil
  Service.Sync(player)

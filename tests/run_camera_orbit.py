@@ -53,7 +53,7 @@ assert(Input.MouseBehavior=="Default")
 move(100);render(1);near(camera.CFrame.Position.X,15)
 Input.InputChanged:Fire({UserInputType="Wheel",Position={Z=1}},false);render(1)
 near(camera.CFrame.Position.Y,30+2*math.exp(-12))
-for _,name in ipairs({"InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","LoadingScreenOpen"}) do
+for _,name in ipairs({"InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","LoadingScreenOpen","MapOpen"}) do
  middle(false);player:SetAttribute(name,true);assert(Input.MouseBehavior=="Default")
  middle(false);assert(Input.MouseBehavior=="Default")
  player:SetAttribute(name,false)
