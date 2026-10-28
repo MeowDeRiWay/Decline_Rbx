@@ -1,4 +1,5 @@
 local ServerStorage = game:GetService("ServerStorage")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.ResourceConfig)
 local Rules = require(ReplicatedStorage.Shared.ResourceRules)
@@ -13,6 +14,18 @@ local Service = {}
 local random = Random.new()
 local nodes, zones = {}, {}
 local folder
+-- Virtual chunks leave authored markers untouched. Only nearby chunks roll resources.
+local CHUNK_SIZE, WAKE_RADIUS = 20, 180
+local deadline = 0
+local footprints = Rules.FootprintIndex(8)
+local function budget()
+ if os.clock() >= deadline then task.wait(); deadline = os.clock()+.002 end
+end
+local function chunkAt(state,position)
+ for _,chunk in ipairs(state.Chunks) do
+  if Area.Contains(chunk.Parts[1],position) then return chunk end
+ end
+end
 local byName, byZone = {}, {}
 for kind,definition in pairs(Config) do
  byZone[definition.Zone] = kind
@@ -41,13 +54,14 @@ local function attach(model,node)
   if state.Kind == node.Kind and contains(zone,bottom(model)) then
    node.Zone = zone
    state.Nodes[model] = true
-   state.NextAt = nil
+   node.Chunk = chunkAt(state,bottom(model))
+   if node.Chunk then node.Chunk.Nodes[model] = true; node.Chunk.NextAt = nil end
    return
   end
  end
 end
-local function register(model)
- if nodes[model] or not model:IsA("Model") or not model:IsDescendantOf(workspace) then return end
+local function register(model,zone,chunk)
+ if nodes[model] or not model:IsA("Model") or (not zone and not model:IsDescendantOf(workspace)) then return end
  local kind = resourceKind(model)
  if not kind or not model:FindFirstChildWhichIsA("BasePart",true) then return end
  local definition = Config[kind]
@@ -65,7 +79,13 @@ local function register(model)
   end
  end
  -- BlocksVision and other model settings are preserved. No Humanoid or highlight.
- attach(model,node)
+ if zone and chunk then
+  node.Zone,node.Chunk = zone,chunk
+  zones[zone].Nodes[model],chunk.Nodes[model] = true,true
+ else attach(model,node) end
+ local box,size=model:GetBoundingBox()
+ node.Footprint=Rules.Footprint(box,size)
+ footprints:Insert(node.Footprint)
 end
 local function marker(part)
  if not part:IsA("BasePart") then return end
@@ -75,10 +95,21 @@ local function marker(part)
 end
 local function watchZone(zone)
  if zones[zone] or not zone:IsA("Model") or not byZone[zone.Name] then return end
- local state = {Kind = byZone[zone.Name], Nodes = {}, NextAt = 0}
+ local state = {Kind = byZone[zone.Name], Nodes = {}, Chunks = {}}
  zones[zone] = state
- for _,part in ipairs(Area.Parts(zone)) do marker(part) end
- state.Connection = zone.DescendantAdded:Connect(marker)
+ local function addSurface(part)
+  if not part:IsA("BasePart") then return end
+  marker(part)
+  for x=0,math.ceil(part.Size.X/CHUNK_SIZE)-1 do
+   for z=0,math.ceil(part.Size.Z/CHUNK_SIZE)-1 do
+    local width,depth=math.min(CHUNK_SIZE,part.Size.X-x*CHUNK_SIZE),math.min(CHUNK_SIZE,part.Size.Z-z*CHUNK_SIZE)
+    local surface={Size=Vector3.new(width,part.Size.Y,depth),CFrame=part.CFrame*CFrame.new(Vector3.new(-part.Size.X/2+x*CHUNK_SIZE+width/2,0,-part.Size.Z/2+z*CHUNK_SIZE+depth/2))}
+    table.insert(state.Chunks,{Kind=state.Kind,Nodes={},NextAt=0,Parts={surface},Source=part})
+   end
+  end
+ end
+ for _,part in ipairs(Area.Parts(zone)) do addSurface(part) end
+ state.Connection = zone.DescendantAdded:Connect(addSurface)
  for model,node in pairs(nodes) do attach(model,node) end
 end
 local function sources(kind)
@@ -93,16 +124,16 @@ local function sources(kind)
 end
 local function generate(zone,state)
  local definition = Config[state.Kind]
- local templates,parts = sources(state.Kind),Area.Parts(zone)
+ local templates,parts = sources(state.Kind),state.Parts
  if #templates == 0 or #parts == 0 then
-  if not state.Warned then
+  if not zones[zone].Warned then
    warn("[Decline] Empty resource zone or missing templates for "..zone:GetFullName().."; use ServerStorage/Resources/"..definition.Folder)
-   state.Warned = true
+   zones[zone].Warned = true
   end
   state.NextAt = os.clock()+5
   return
  end
- state.Warned = false
+ zones[zone].Warned = false
  local excluded = {folder}
  for markerZone in pairs(zones) do table.insert(excluded,markerZone) end
  local creatures = workspace:FindFirstChild("Creatures")
@@ -116,19 +147,18 @@ local function generate(zone,state)
  params.FilterType = Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances = excluded
  params.RespectCanCollide = true
- local footprints = Rules.FootprintIndex(8)
- for model,node in pairs(nodes) do
-  if model:IsDescendantOf(workspace) then
-   local box,size=model:GetBoundingBox()
-   footprints:Insert(Rules.Footprint(box,size))
-  end
- end
  local made = 0
- for partIndex,surface in ipairs(parts) do
+ local zoneParts=Area.Parts(zone)
+ for _,surface in ipairs(parts) do
   Rules.RollCells(surface.Size.X,surface.Size.Z,definition.SpawnChance,random,function(x,z)
+   budget()
+   if not zone:IsDescendantOf(workspace) or not state.Source:IsDescendantOf(zone) then return end
    local point=surface.CFrame:PointToWorldSpace(Vector3.new(x,surface.Size.Y/2,z))
    -- Overlapping markers in one zone must not get a second chance at the same area.
-   for i=1,partIndex-1 do if Area.Contains(parts[i],point) then return end end
+   for _,other in ipairs(zoneParts) do
+    if other==state.Source then break end
+    if Area.Contains(other,point) then return end
+   end
    local source = templates[random:NextInteger(1,#templates)]
    local sourceBox,size = source:GetBoundingBox()
    local pivot = source:GetPivot()
@@ -147,17 +177,9 @@ local function generate(zone,state)
    if not footprints:Clear(footprint) then return end
    local clone = source:Clone()
    clone:PivotTo(target)
-   clone.Parent = folder
-   register(clone)
-   local node = nodes[clone]
-   if node then
-    if node.Zone then zones[node.Zone].Nodes[clone] = nil end
-    node.Zone = zone
-    state.Nodes[clone] = true
-    footprints:Insert(footprint)
-    made += 1
-   else clone:Destroy() end
-  end)
+   register(clone,zone,state)
+   if nodes[clone] then clone.Parent=folder;made+=1 else clone:Destroy() end
+  end,budget)
  end
  -- A legitimate zero roll waits for the normal respawn, rather than rerolling every five seconds.
  state.NextAt = made == 0 and os.clock()+random:NextInteger(definition.RespawnMin,definition.RespawnMax) or nil
@@ -204,12 +226,17 @@ function Service.Hit(player,model,weapon)
   end
   -- Invalidate before granting loot so a second strike cannot harvest twice.
   nodes[model] = nil
+  footprints:Remove(node.Footprint)
   local resourceID=({Tree="TreeLog",StoneVein="Stone",ScrapPile="Scrap"})[node.Kind]
   Progression.Harvest(player,node.Kind,loot[resourceID] or 0)
   if node.Zone and zones[node.Zone] then
    local state = zones[node.Zone]
    state.Nodes[model] = nil
-   if not next(state.Nodes) then state.NextAt = os.clock()+random:NextInteger(resource.RespawnMin,resource.RespawnMax) end
+   local chunk=node.Chunk
+   if chunk then
+    chunk.Nodes[model]=nil
+    if not next(chunk.Nodes) then chunk.NextAt=os.clock()+random:NextInteger(resource.RespawnMin,resource.RespawnMax) end
+   end
   end
   model:Destroy()
  end
@@ -221,25 +248,44 @@ function Service.Hit(player,model,weapon)
  return true
 end
 local function tick()
- for model in pairs(nodes) do
-  if not model:IsDescendantOf(workspace) then nodes[model] = nil end
+ deadline=os.clock()+.002
+ local positions={}
+ for _,player in ipairs(Players:GetPlayers()) do
+  local character=player.Character
+  local root=character and character:FindFirstChild("HumanoidRootPart")
+  local hp=character and character:FindFirstChildOfClass("Humanoid")
+  if root and hp and hp.Health>0 then table.insert(positions,root.Position) end
+ end
+ for model,node in pairs(nodes) do
+  if not model:IsDescendantOf(workspace) then
+   footprints:Remove(node.Footprint);nodes[model]=nil
+  end
+  budget()
  end
  for zone,state in pairs(zones) do
   if not zone:IsDescendantOf(workspace) then
    state.Connection:Disconnect()
-   for model in pairs(state.Nodes) do if nodes[model] then nodes[model].Zone = nil end end
-   zones[zone] = nil
+   for model in pairs(state.Nodes) do if nodes[model] then nodes[model].Zone,nodes[model].Chunk=nil,nil end end
+   zones[zone]=nil
    continue
   end
-  for model in pairs(state.Nodes) do
-   if not nodes[model] then state.Nodes[model] = nil end
-  end
-  if not next(state.Nodes) then
-   if not state.NextAt then
-    local definition = Config[state.Kind]
-    state.NextAt = os.clock()+random:NextInteger(definition.RespawnMin,definition.RespawnMax)
+  for _,chunk in ipairs(state.Chunks) do
+   budget()
+   for model in pairs(chunk.Nodes) do if not nodes[model] then chunk.Nodes[model],state.Nodes[model]=nil,nil end end
+   if not chunk.Source:IsDescendantOf(zone) or next(chunk.Nodes) then continue end
+   local near=false
+   for _,position in ipairs(positions) do
+    local surface=chunk.Parts[1]
+    local point=surface.CFrame:PointToObjectSpace(position)
+    local dx,dz=math.max(0,math.abs(point.X)-surface.Size.X/2),math.max(0,math.abs(point.Z)-surface.Size.Z/2)
+    if dx*dx+dz*dz<=WAKE_RADIUS*WAKE_RADIUS then near=true;break end
    end
-   if os.clock() >= state.NextAt then generate(zone,state) end
+   if not near then continue end
+   if not chunk.NextAt then
+    local definition=Config[chunk.Kind]
+    chunk.NextAt=os.clock()+random:NextInteger(definition.RespawnMin,definition.RespawnMax)
+   end
+   if os.clock()>=chunk.NextAt then generate(zone,chunk) end
   end
  end
 end
@@ -248,6 +294,8 @@ function Service.Start()
  Service.Started = true
  folder = workspace:FindFirstChild("Resources")
  if not folder then folder = Instance.new("Folder"); folder.Name,folder.Parent = "Resources",workspace end
+ folder:SetAttribute("GenerationMode","NearbyChunks20")
+ folder:SetAttribute("GenerationRadius",WAKE_RADIUS)
  -- Gather markers first, then associate hand-placed test resources with them.
  for _,object in ipairs(workspace:GetDescendants()) do if object:IsA("Model") and byZone[object.Name] then watchZone(object) end end
  for _,object in ipairs(workspace:GetDescendants()) do if object:IsA("Model") then register(object) end end

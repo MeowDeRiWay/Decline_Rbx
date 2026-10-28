@@ -14,6 +14,10 @@ local random = Random.new(seed)
 local generated, busy, warnings = {}, {}, {}
 local categories=setmetatable({},{__mode="k"})
 local folder
+local deadline=0
+local function budget()
+ if os.clock()>=deadline then task.wait();deadline=os.clock()+.002 end
+end
 local function generatedContent(object)
  local ancestor=object
  while ancestor and ancestor~=workspace do
@@ -85,8 +89,10 @@ local function roads()
 end
 local function nearestRoad(plotFrame, list)
  local point, distance
- for _, road in ipairs(list) do
+ for index, road in ipairs(list) do
+  if index%64==0 then budget() end
   local frame,size = box(road)
+  if not frame then continue end
   local candidate = Rules.RoadPoint(frame,size,plotFrame.Position)
   local delta = candidate - plotFrame.Position
   local d = Vector3.new(delta.X,0,delta.Z).Magnitude
@@ -108,16 +114,17 @@ local function place(plot, sources, roadList)
  if busy[plot] or generatedContent(plot) or not plot:IsDescendantOf(workspace) or (plot:GetAttribute("ForZHouse") ~= true and plot:GetAttribute("ForInfrastructure") ~= true) then return end
  local explicit=plot:GetAttribute("GenerationCategory") or (plot:GetAttribute("ForInfrastructure")==true and "Factories" or nil)
  if explicit and not sources[explicit] then warnOnce(plot,"Unknown GenerationCategory: "..tostring(explicit));return end
+ if generated[plot] and generated[plot]:IsDescendantOf(workspace) then return end
  local existing = plot:FindFirstChild("GeneratedHouse")
  if existing and existing:IsA("ObjectValue") and existing.Value and existing.Value:IsDescendantOf(workspace) then
   generated[plot] = existing.Value; hidePlot(plot); return
  end
- if generated[plot] and generated[plot]:IsDescendantOf(workspace) then return end
  if #sources.Houses==0 and #sources.Stores==0 and #sources.Factories==0 then warnOnce(plot,"Add building Models with an inner Yard in ServerStorage/CityGeneration/Houses, Stores or Factories"); return end
  local plotFrame,plotSize = box(plot)
  if not plotFrame then warnOnce(plot,"YardPlace needs a physical marker Part"); return end
  if math.abs(plotFrame.UpVector.Y-1) > .001 then warnOnce(plot,"YardPlace must be horizontal; yaw rotation is supported"); return end
  local roadPoint = nearestRoad(plotFrame,roadList)
+ if not plot:IsDescendantOf(workspace) then return end
  if not roadPoint then warnOnce(plot,"No usable road with Road=true near YardPlace"); return end
  busy[plot] = true
  local function candidatesFor(category)
@@ -175,6 +182,7 @@ local function place(plot, sources, roadList)
  warnings[plot],busy[plot] = nil,nil
 end
 function Service.Generate(incremental)
+ deadline=os.clock()+.002
  if not incremental then
   plotIndex,roadIndex,markerIndex={},{},{}
   for _,object in ipairs(workspace:GetDescendants()) do track(object) end
@@ -182,10 +190,11 @@ function Service.Generate(incremental)
  local sources,roadList,plots={Houses=templates("Houses"),Stores=templates("Stores"),Factories=templates("Factories")},roads(),{}
  for object in pairs(plotIndex) do if object:IsDescendantOf(workspace) then table.insert(plots,object) end end
  table.sort(plots,plotOrder)
- for _, plot in ipairs(plots) do place(plot,sources,roadList) end
+ for _, plot in ipairs(plots) do place(plot,sources,roadList);budget() end
  local markers={}
  for object in pairs(markerIndex) do table.insert(markers,object) end
  for _,object in ipairs(markers) do
+  budget()
   if object:IsDescendantOf(workspace) and not generatedContent(object) then
    if Furniture.IsMarker(object) then Furniture.Fill(object)
    else Walls.Fill(object) end

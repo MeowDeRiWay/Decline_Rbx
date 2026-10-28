@@ -55,6 +55,12 @@ marker.CFrame=CFrame.new(); marker.Size=Vector3.new(10,.1,10)
 local duplicate=make("Part","Part",zone)
 duplicate.CFrame=marker.CFrame; duplicate.Size=marker.Size
 Service.Start()
+assert(#workspace.Resources:GetChildren()==0,"no players means no resource generation")
+local observer=make("Player","Observer",Players)
+observer.Character=make("Model","ObserverCharacter",workspace)
+local observerRoot=make("Part","HumanoidRootPart",observer.Character);observerRoot.Position=Vector3.zero
+local observerHP=make("Humanoid","Humanoid",observer.Character);observerHP.Health=100
+tick(1)
 local generated=workspace.Resources:GetChildren()
 assert(#generated==100,"100 successful cell rolls, no old population cap or doubled overlapping marker")
 assert(marker.Transparency==1 and marker.CanQuery==false and marker.CanCollide==false)
@@ -92,6 +98,49 @@ assert(Service.Hit(player,tree,weapon) and tree:GetAttribute("Health")==82.5,"tr
 assert(Service.Hit(player,tree,weapon) and tree:GetAttribute("Health")==65 and used==usedBefore,"fists do not consume weapon durability")
 assert(messages[#messages]=="Tree: about 4 hits remaining.","variable unarmed damage is labelled approximate")
 assert(not Service.Hit(player,generated[4],weapon) and generated[4]:GetAttribute("Health")==100,"hands cannot mine stone")
+-- Two tiny distant chunks keep this test focused on scheduling and state.
+local far=make("Model","StoneYard",workspace);far.DescendantAdded=event()
+local farMarker=make("Part","Part",far)
+farMarker.CFrame=CFrame.new(Vector3.new(1000,0,0));farMarker.Size=Vector3.new(40,.1,1)
+workspace.DescendantAdded:Fire(far)
+local before=#workspace.Resources:GetChildren()
+tick(1)
+assert(#workspace.Resources:GetChildren()==before,"distant chunks do not generate")
+observerRoot.Position=Vector3.new(1000,0,0)
+tick(1)
+assert(#workspace.Resources:GetChildren()==before+40,"both nearby 20-stud chunks generate exactly once")
+local first=workspace.Resources:GetChildren()[before+1]
+assert(Service.Hit(player,first,weapon)==false,"empty hands cannot mine a distant stone")
+first:SetAttribute("Health",42)
+observerRoot.Position=Vector3.new(3000,0,0);tick(1)
+observerRoot.Position=Vector3.new(1000,0,0);tick(1)
+assert(#workspace.Resources:GetChildren()==before+40 and first:GetAttribute("Health")==42,"re-entry preserves nodes and does not reroll")
+local victims={}
+for _,model in ipairs(workspace.Resources:GetChildren()) do
+ if model:GetPivot().Position.X>900 then table.insert(victims,model) end
+end
+for _,model in ipairs(victims) do model:Destroy() end
+tick(1)
+assert(#workspace.Resources:GetChildren()==before,"depleted chunks wait for respawn")
+tick(29)
+assert(#workspace.Resources:GetChildren()==before,"respawn cannot happen early")
+observerRoot.Position=Vector3.new(3000,0,0);tick(2)
+assert(#workspace.Resources:GetChildren()==before,"due distant chunks wait until approached")
+observerRoot.Position=Vector3.new(1000,0,0);tick(1)
+assert(#workspace.Resources:GetChildren()==before+40,"due nearby chunks respawn and reuse freed footprints")
+local budgetZone=make("Model","StoneYard",workspace);budgetZone.DescendantAdded=event()
+local budgetMarker=make("Part","Part",budgetZone)
+budgetMarker.CFrame=CFrame.new(Vector3.new(5000,0,0));budgetMarker.Size=Vector3.new(20,.1,1)
+workspace.DescendantAdded:Fire(budgetZone)
+observerRoot.Position=Vector3.new(5000,0,0)
+local baseline=#workspace.Resources:GetChildren()
+-- Simulate one millisecond per clock check; the real generator must suspend and resume.
+function os.clock() clock+=.001;return clock end
+for _=1,400 do tick(.01) end
+assert(#workspace.Resources:GetChildren()==baseline+20,"budgeted generation resumes without duplicated or lost cell rolls")
+assert(workspace.Resources:GetAttribute("GenerationMode")=="NearbyChunks20")
+print("PASS: time-sliced generator resumes correctly under an advancing clock")
+print("PASS: virtual chunks defer distant work, preserve re-entry state and respawn only nearby after cooldown")
 print("PASS: bare hands damage trees using combat rolls and bonuses, without tool wear or stone mining")
 print("PASS: real resource service generates StoneYard by cells, skips duplicate markers, anchors veins, requires shovel and drops stone once")
 '''

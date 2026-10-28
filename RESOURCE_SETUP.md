@@ -92,3 +92,13 @@ Kitchen template: **ServerStorage/Buildings/Kitchen (T1)**, with nested Space, B
 All Workstation recipes are limited to one crafting operation per batch. One log still yields three planks in that operation. Stove boiling accepts up to five raw food units per batch, with ingredients charged per unit.
 
 Resource density is now **1% per square stud** for Forest, ScrapYard and StoneYard. A 40x100 region averages 40 candidates per resource type present, before ground/overlap rejection. If different resource region types share the same footprint their candidate counts add together.
+
+## Nearby generation
+
+Keep Forest/StoneYard/ScrapYard markers at their authored sizes. The server splits
+them into virtual 20x20-stud chunks and rolls only within 180 horizontal studs
+of a living player. Visited resources keep health/harvest state when players
+leave. Client unloading uses StreamingEnabled; this does not unload server state.
+Respawn now applies independently to an emptied chunk, with the same configured
+30–300-second delay, and waits for a nearby player. No-player worlds stay empty.
+See PERFORMANCE.md for the World.rbxm audit and validation limits.

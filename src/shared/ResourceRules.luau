@@ -74,10 +74,13 @@ function Rules.Clearance(footprints,candidate,gap)
  return true
 end
 -- One Bernoulli trial per square stud. Partial edge cells scale by their area.
-function Rules.RollCells(width, depth, chance, random, visit)
+function Rules.RollCells(width, depth, chance, random, visit, checkpoint)
+ local trials=0
  for x=0,math.ceil(width)-1 do
   local cellWidth=math.min(1,width-x)
   for z=0,math.ceil(depth)-1 do
+   trials+=1
+   if checkpoint and trials%128==0 then checkpoint() end
    local cellDepth=math.min(1,depth-z)
    if random:NextNumber() < chance*cellWidth*cellDepth then
     visit(-width/2+x+random:NextNumber()*cellWidth, -depth/2+z+random:NextNumber()*cellDepth)
@@ -105,6 +108,16 @@ function Rules.FootprintIndex(cellSize)
   Insert=function(_,footprint)
    keys(footprint,function(key)
     buckets[key]=buckets[key] or {}; table.insert(buckets[key],footprint)
+   end)
+  end,
+  Remove=function(_,footprint)
+   if not footprint then return end
+   keys(footprint,function(key)
+    local bucket=buckets[key]
+    if not bucket then return end
+    local index=table.find(bucket,footprint)
+    if index then table.remove(bucket,index) end
+    if #bucket==0 then buckets[key]=nil end
    end)
   end,
   Clear=function(_,footprint)

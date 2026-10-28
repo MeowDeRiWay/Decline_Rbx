@@ -42,3 +42,8 @@ for _=1,100 do Rules.RollCells(40,100,Config.Tree.SpawnChance,rng,function() can
 assert(candidates>3700 and candidates<4300,"40x100 at 1 percent averages about 40 candidates")
 for _,definition in pairs(Config) do assert(definition.SpawnChance==.01) end
 print("PASS: all resource types use one-percent density; 40x100 averages forty candidates")
+
+local checkpoints,trials=0,0
+Rules.RollCells(400,500,0,{NextNumber=function() trials+=1;return .5 end},function() error("zero chance") end,function() checkpoints+=1 end)
+assert(trials==200000 and checkpoints==math.floor(200000/128),"large empty areas still offer cooperative scheduling checkpoints")
+print("PASS: empty area rolls retain frame-budget checkpoints")

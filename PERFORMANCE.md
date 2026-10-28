@@ -55,3 +55,52 @@ loop; actual placement fixture checks cached occupancy/altitude, 40 candidates,
 activity, home quota and resource-service tests pass. Luau compile and Rojo build
 pass. These are deterministic engine mocks, not a measured Studio FPS result;
 compare the same two-town scene after a full Stop/Play restart.
+
+# World.rbxm audit and resource generation — 28 October 2026
+
+The supplied World.rbxm contains 5,838 instances: 4,614 Parts, 1,213 Models,
+7 Folders and 4 WeldConstraints. Of the Parts, 4,612 are anchored. It contains
+316 ForZHouse YardPlace Models, 735 Road=true Models, 60 Forest regions,
+2 StoneYards and 3 ScrapYards. There are no resource templates or scripts in
+this attachment, so the final generated instance count and measured Studio
+frame time cannot be inferred from its compressed file size.
+
+Forest marker area totals approximately 1,534,811 square studs. Previously the
+first resource tick performed 1,535,040 forest cell rolls, averaging about
+15,348 candidate trees before ray/overlap rejection, and rebuilt a footprint
+index from every existing resource before each region. Client streaming did
+not reduce this server generation work. This establishes substantial startup
+work, not proof that every observed periodic stall had the same cause.
+
+ResourceService now partitions each marker into virtual 20x20-stud chunks,
+including fractional edges and rotated markers. No manual marker subdivision
+is needed. A chunk generates only when a living player's root is within
+180 horizontal studs of its bounds. No players means no generation. Density
+and overlap rejection are unchanged. Empty chunks respawn independently after
+the existing 30–300-second delay and only when approached; re-entry alone never
+rerolls a populated chunk. Previously the entire region had to be emptied to
+start its respawn timer. Already generated resource state remains on the server;
+StreamingEnabled handles client delivery/unloading. Server-side destruction on
+player departure is deliberately absent, so damage and harvesting state survive.
+
+The spatial footprint index is maintained on registration/removal rather than
+rebuilt per region. Generation and cleanup cooperate with the scheduler after
+roughly 2ms; cell rolls offer checkpoints even when every roll fails. A single
+engine clone/raycast can still exceed this cooperative budget. The Resources
+folder advertises GenerationMode=NearbyChunks20 and GenerationRadius=180 so an
+actual Studio session can confirm that the updated script is running.
+
+CityGeneration still populates all building plots, but yields between plots,
+marker jobs and batches of nearest-road comparisons. Completed plots return
+before repeated hidden-marker writes on retry ticks. This reduces uninterrupted
+startup work; it does not promise that total building generation completes faster.
+Authored marker geometry should be edited outside Play and followed by Stop/Play.
+
+Validation: run_resource_service.py covers no-player and distant suppression,
+nearby 20-stud chunks, re-entry without duplication, depletion cooldown, deferred
+respawn, footprint reuse and interrupted/resumed generation. Resource density
+and clearance tests cover unchanged probabilities and persistent index removal.
+City service/geometry fixtures, compilation of all 152 source files and Rojo
+build pass. These are engine mocks/build checks; compare startup and frame-time
+spikes in Studio after synchronizing and fully restarting Play. If stalls persist,
+record both client and server MicroProfiler traces before further optimization.
