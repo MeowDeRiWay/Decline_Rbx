@@ -83,6 +83,7 @@ Cursor.Subscribe("Creatures",4,function()
  if owner and (player:GetAttribute("GroupID") or 0)~=0 and owner:GetAttribute("GroupID")==player:GetAttribute("GroupID") then return end
  local known=player:GetAttribute("Observant")==true
  name.Visible=known;health.Visible=known;equipped.Visible=known
+ name:SetAttribute("LocalizationIgnore",isPlayer)
  name.Text=owner and (owner.DisplayName or owner.Name) or display
  local root=character:FindFirstChild("HumanoidRootPart")
  local target=model:FindFirstChild("HumanoidRootPart",true) or anchor

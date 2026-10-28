@@ -1,3 +1,4 @@
+local Locale=require(script.Parent.LocaleController)
 local UI=require(script.Parent.UIUpdates)
 local Cursor=require(script.Parent.CursorQuery)
 local Players = game:GetService("Players")
@@ -73,9 +74,9 @@ local function confirm(caption, command, value, extra)
  confirmation = {caption, command, value, extra}; render()
 end
 local function detail(town)
- text(town.Name, 24)
- text("Team members: " .. town.Count .. "\nMayor: " .. town.LeaderName)
- for _, relation in ipairs(town.Relations) do text(relation.Name .. " — " .. relationNames[relation.Relation]) end
+ text(Locale.Raw(town.Name), 24)
+ text("Team members: " .. town.Count .. "\nMayor: " .. Locale.Raw(town.LeaderName))
+ for _, relation in ipairs(town.Relations) do text(Locale.Raw(relation.Name) .. " — " .. relationNames[relation.Relation]) end
 end
 render = function()
  local offset = scroll.CanvasPosition
@@ -96,7 +97,7 @@ render = function()
  if not session then
   if #snapshot.Towns == 0 then text("No towns are available.") end
   for _, town in ipairs(snapshot.Towns) do
-   button(town.Name, function() selected = if selected == town.ID then nil else town.ID; render() end)
+   button(Locale.Raw(town.Name), function() selected = if selected == town.ID then nil else town.ID; render() end)
    if selected == town.ID then
     local details = Instance.new("Frame")
     order += 1
@@ -151,20 +152,20 @@ render = function()
     if section == "Citizens" then
      text("Expel a citizen from the faction. A reason is required and shared with every faction member.")
      for _,member in ipairs(town.Members) do
-      if member.ID~=player.UserId then button(member.Name,function() expelTarget=member.ID;expelReason="";render() end) end
+      if member.ID~=player.UserId then button(Locale.Raw(member.Name),function() expelTarget=member.ID;expelReason="";render() end) end
      end
      if expelTarget then
       local targetName
-      for _,member in ipairs(town.Members) do if member.ID==expelTarget then targetName=member.Name end end
+      for _,member in ipairs(town.Members) do if member.ID==expelTarget then targetName=Locale.Raw(member.Name) end end
       if targetName then
-       text("Expel "..targetName.." · Reason (up to 200 characters)")
+       text("Expel "..Locale.Raw(targetName).." · Reason (up to 200 characters)")
        local input=Instance.new("TextBox")
        order+=1;input.LayoutOrder=order;input.Size=UDim2.new(1,-8,0,70)
        input.BackgroundColor3=Theme.Card;input.TextColor3=Theme.Text;input.Font=Theme.Font;input.TextSize=16
        input.TextWrapped=true;input.ClearTextOnFocus=false;input.PlaceholderText="Required reason";input.Text=expelReason;input.Parent=content
        input:GetPropertyChangedSignal("Text"):Connect(function() expelReason=input.Text end)
        button("Expel citizen",function()
-        if expelReason:find("%S") then confirm("Expel "..targetName.."? Reason: "..expelReason,"Expel",expelTarget,expelReason) end
+        if expelReason:find("%S") then confirm("Expel "..Locale.Raw(targetName).."? Reason: "..Locale.Raw(expelReason),"Expel",expelTarget,expelReason) end
        end)
       end
      end
@@ -174,7 +175,7 @@ render = function()
      text("Towns begin with neutral relations. An alliance needs approval from the other mayor. War and neutrality take effect for both towns as soon as you select them.")
      if #town.Relations == 0 then text("There are no other towns to contact.") end
      for _, relation in ipairs(town.Relations) do
-      text(relation.Name .. " — " .. relationNames[relation.Relation])
+      text(Locale.Raw(relation.Name) .. " — " .. relationNames[relation.Relation])
       for _, value in ipairs(Config.Relations) do
        button(relationNames[value] .. (value == "Ally" and " — propose" or " — set"),function() send("Relation",relation.TownID,value) end)
       end
@@ -186,7 +187,7 @@ render = function()
   local plot = session.Plot
   local town = plot and townByID(plot.TownID)
   if not town then text("This plot is not assigned to a town.")
-  elseif snapshot.TownID ~= town.ID then text("Only members of " .. town.Name .. " may build here.")
+  elseif snapshot.TownID ~= town.ID then text("Only members of " .. Locale.Raw(town.Name) .. " may build here.")
   else
    local isMayor = town.LeaderID == player.UserId
    local owners = require(ReplicatedStorage.Shared.TownRules).ParseOwners(plot.CoOwners)
@@ -201,11 +202,11 @@ render = function()
    if section == "Owner" then
     title.Text = "Owner"
     button("← Back to building",back)
-    text("Current owner: " .. plot.OwnerName,20)
+    text("Current owner: " .. Locale.Raw(plot.OwnerName),20)
     text("Select a town member to assign ownership of this building.")
     button("Remove owner",function() send("Owner",0) end)
     for _, member in ipairs(town.Members) do
-     button(member.Name .. (member.ID == plot.OwnerID and " · Current owner" or ""),function() send("Owner",member.ID) end)
+     button(Locale.Raw(member.Name) .. (member.ID == plot.OwnerID and " · Current owner" or ""),function() send("Owner",member.ID) end)
     end
    elseif section == "CoOwner" then
     title.Text = "Co-owners"
@@ -216,7 +217,7 @@ render = function()
     for _, member in ipairs(town.Members) do
      if member.ID ~= plot.OwnerID then
       count += 1
-      button((owners[member.ID] and "Remove: " or "Add: ") .. member.Name,function() send("CoOwner",member.ID,not owners[member.ID]) end)
+      button((owners[member.ID] and "Remove: " or "Add: ") .. Locale.Raw(member.Name),function() send("CoOwner",member.ID,not owners[member.ID]) end)
      end
     end
     for id in pairs(owners) do
@@ -228,7 +229,7 @@ render = function()
    else
     local count = 0
     for _ in pairs(owners) do count += 1 end
-    text(plot.BuildingID and ((Config.Buildings[plot.BuildingID] and Config.Buildings[plot.BuildingID].Name or plot.BuildingID) .. " · level " .. plot.Level .. "\nOwner: " .. plot.OwnerName .. "\nCo-owners: " .. count) or "Empty plot")
+    text(plot.BuildingID and ((Config.Buildings[plot.BuildingID] and Config.Buildings[plot.BuildingID].Name or plot.BuildingID) .. " · level " .. plot.Level .. "\nOwner: " .. Locale.Raw(plot.OwnerName) .. "\nCo-owners: " .. count) or "Empty plot")
     if plot.Pending then text("Waiting for the mayor.")
     elseif not plot.BuildingID or owner then
      local function materials(cost)

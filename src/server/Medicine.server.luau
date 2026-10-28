@@ -1,3 +1,4 @@
+local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Inventory=require(script.Parent.Services.InventoryService)
@@ -36,10 +37,10 @@ remote.OnServerEvent:Connect(function(player,mode,target)
   if not Inventory.UseMedicine(player) then Journal.Send(player,"Equip a bandage in the Medicine slot first.");return end
   local amount=math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine,player:GetAttribute("MedicalHealingBonus")))
   health.Health+=amount;patient:SetAttribute("Health",health.Health)
-  Journal.Send(player,string.format("You restored %g HP to %s.",amount,target==player and "yourself" or target.Name))
+  Journal.Send(player,string.format("You restored %g HP to %s.",amount,target==player and "yourself" or Literal.Protect(target.Name)))
   if target~=player then
    Progression.Award(player,amount)
-   Journal.Send(target,string.format("%s restored %g HP to you.",player.Name,amount))
+   Journal.Send(target,string.format("%s restored %g HP to you.",Literal.Protect(player.Name),amount))
   end
  else
   if target==player or not patient:GetAttribute("Knockout") then return end
@@ -51,8 +52,8 @@ remote.OnServerEvent:Connect(function(player,mode,target)
   if Life.Revive(target,fortunate and 0 or (player:GetAttribute("ReviveLockSeconds") or 600),player:GetAttribute("MedicalHealingBonus")) then
    if fortunate then health.Health=health.MaxHealth;patient:SetAttribute("Health",health.Health);target:SetAttribute("ReviveLockedUntil",0) end
    Progression.Award(player,100)
-   Journal.Send(player,"You revived "..target.Name..".")
-   Journal.Send(target,player.Name.." revived you.")
+   Journal.Send(player,"You revived "..Literal.Protect(target.Name)..".")
+   Journal.Send(target,Literal.Protect(player.Name).." revived you.")
   end
  end
 end)

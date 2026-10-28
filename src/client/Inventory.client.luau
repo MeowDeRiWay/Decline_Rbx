@@ -1,3 +1,4 @@
+local Locale=require(script.Parent.LocaleController)
 local UI=require(script.Parent.UIUpdates)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -395,7 +396,7 @@ redraw = function()
 
  takeAll.Visible = chestOpen and chestReadOnly and not cookingOpen
  equipment.Size = UDim2.new(.5,-32,1,takeAll.Visible and -148 or -108)
- rightTitle.Text = cookingOpen and "Recipes" or chestOpen and (snapshot.ChestName or "Chest") or "Equipment"
+ rightTitle.Text = cookingOpen and "Recipes" or chestOpen and (snapshot.Chest and snapshot.Chest:GetAttribute("CorpseType")=="Player" and Locale.Raw(snapshot.ChestName) or snapshot.ChestName or "Chest") or "Equipment"
  renderItems(inventory, snapshot.Items, "Player")
  if cookingOpen then renderRecipes(); return end
  if chestOpen then
@@ -419,6 +420,7 @@ redraw = function()
   debuff.LayoutOrder,debuff.TextColor3 = 3,Color3.fromRGB(232,133,133)
   local description = text(equipment, "Description\n" .. (definition.Description or "No description available."), UDim2.new(), UDim2.new(1,-8,0,160))
   description.LayoutOrder,description.TextYAlignment = 4,Enum.TextYAlignment.Top
+  description.AutomaticSize=Enum.AutomaticSize.Y
   return
  end
  for order, slot in ipairs(ItemConfig.Slots) do

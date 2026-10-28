@@ -1,3 +1,4 @@
+local Locale=require(script.Parent.LocaleController)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Context=game:GetService("ContextActionService")
@@ -125,12 +126,14 @@ Keep in mind that passive income is $1 x player level per payout. That very impo
 Help the people who know how to make things, and they will help you.]]},
 }
 local tabs={}
+local currentPage=1
 local function setPage(index)
+ currentPage=index
  local selected=pages[index]
- heading.Text=selected.Title;body.Text=selected.Text
+ Locale.Set(heading,"Text",selected.Title);Locale.Set(body,"Text",selected.Text)
  -- Measure wrapped text at its actual logical width instead of nesting automatic
  -- canvas sizing and automatic row heights (which produced the broken scrollbar).
- local bounds=TextService:GetTextSize(selected.Text,body.TextSize,body.Font,Vector2.new(BODY_WIDTH,100000))
+ local bounds=TextService:GetTextSize(Locale.Text(selected.Text),body.TextSize,body.Font,Vector2.new(BODY_WIDTH,100000))
  body.Size=UDim2.fromOffset(BODY_WIDTH,math.ceil(bounds.Y)+4)
  scroll.CanvasSize=UDim2.fromOffset(0,math.ceil(bounds.Y)+24)
  scroll.CanvasPosition=Vector2.zero
@@ -146,6 +149,7 @@ for index,entry in ipairs(pages) do
  tab.Activated:Connect(function() setPage(index) end)
 end
 setPage(1)
+Locale.Changed:Connect(function() setPage(currentPage) end)
 local check=button(panel,"[ ]  Don't show on login",UDim2.new(0,24,1,-87),UDim2.fromOffset(380,34))
 check.TextXAlignment=Enum.TextXAlignment.Left
 local done=button(panel,"Got it",UDim2.new(1,-144,1,-87),UDim2.fromOffset(120,34))

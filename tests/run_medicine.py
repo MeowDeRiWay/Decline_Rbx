@@ -2,7 +2,7 @@
 from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-medicine=(root/'src/server/Medicine.server.luau').read_text()
+medicine=(root/'src/server/Medicine.server.luau').read_text().replace('local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', 'local Literal={Protect=function(v) return v end}')
 medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight)=require[^\n]+\n','',medicine)
 life=(root/'src/server/Services/PlayerLifeService.luau').read_text()
 life=life[life.index('function Service.Knockout'):life.index('function Service.Damage')]

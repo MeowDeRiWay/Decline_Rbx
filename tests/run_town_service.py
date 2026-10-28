@@ -8,6 +8,7 @@ import tempfile
 
 root = Path(__file__).resolve().parents[1]
 service = (root / 'src/server/Services/TownService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Ensure=function(position) table.insert(restoredSurfaces,position) end}')
+service = service.replace('local Localization=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', '')
 service = service.replace('local TextService=game:GetService("TextService")', '')
 service = service.replace('local Journal=require(script.Parent.JournalService)', '')
 service = service.replace('local Doors = require(script.Parent.TownDoors)', '')
@@ -41,6 +42,7 @@ local marketSpace=make("Model","Space",marketPlot);make("Part","Floor",marketSpa
 local marketMenu=make("Model","BuildingMenu",marketPlot);make("Part","Sign",marketMenu)
 ''')
 parts.append('local restoredSurfaces={}')
+parts.append('local Localization=(function()\n'+(root/'src/shared/LocalizationRules.luau').read_text()+'\nend)()')
 parts.extend(['local Service = (function()\n' + service + '\nend)()', (root / 'tests/fixtures/town_scenarios.luau').read_text(), (root / 'tests/fixtures/building_storage_scenarios.luau').read_text(), (root / 'tests/fixtures/expulsion_scenarios.luau').read_text()])
 parts.append('''
 local existingRemotes=ReplicatedStorage.TownRemotes

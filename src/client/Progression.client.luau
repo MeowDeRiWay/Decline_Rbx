@@ -1,3 +1,4 @@
+local Locale=require(script.Parent.LocaleController)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Input=game:GetService("UserInputService")
@@ -170,46 +171,46 @@ local function refreshStats()
  local definition=character and Items[character:GetAttribute("HandsItem")]
  if snapshot and not snapshot.Confirmed and draft then for id,value in pairs(Rules.Bonuses(draft,nil,0,Rules.SkillValues(draft))) do a[id]=value end end
  local stats=Sheet.Calculate(a,definition,character and character:GetAttribute("WeaponCondition"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("Health"),snapshot and not snapshot.Confirmed and a.MaxHealth or character and character:GetAttribute("MaxHealth"))
- values.Health.Text=string.format("%.0f / %.0f HP",stats.Health,stats.MaxHealth)
- values.ArmorClass.Text=tostring(stats.Dodge)
- values.Carry.Text=string.format("%g kg",stats.Carry)
- values.MeleeDamage.Text=stats.MeleeDamageMin~=stats.MeleeDamageMax and string.format("%g–%g",stats.MeleeDamageMin,stats.MeleeDamageMax) or string.format("%g",stats.MeleeDamage)
- values.Absorption.Text=string.format("%g",stats.Absorption)
- values.Resistance.Text=string.format("%g%%",stats.Resistance*100)
- values.WalkSpeed.Text=string.format("%.1f studs/s",stats.WalkSpeed)
- values.RunSpeed.Text=string.format("%.1f studs/s",stats.RunSpeed)
- values.Sprint.Text=string.format("%g seconds",stats.Sprint)
- values.Regeneration.Text=string.format("%g HP",stats.Regeneration)
- values.CriticalChance.Text=string.format("%g%%",stats.CriticalChance*100)
+ Locale.Set(values.Health,"Text",string.format("%.0f / %.0f HP",stats.Health,stats.MaxHealth))
+ Locale.Set(values.ArmorClass,"Text",tostring(stats.Dodge))
+ Locale.Set(values.Carry,"Text",string.format("%g kg",stats.Carry))
+ Locale.Set(values.MeleeDamage,"Text",stats.MeleeDamageMin~=stats.MeleeDamageMax and string.format("%g–%g",stats.MeleeDamageMin,stats.MeleeDamageMax) or string.format("%g",stats.MeleeDamage))
+ Locale.Set(values.Absorption,"Text",string.format("%g",stats.Absorption))
+ Locale.Set(values.Resistance,"Text",string.format("%g%%",stats.Resistance*100))
+ Locale.Set(values.WalkSpeed,"Text",string.format("%.1f studs/s",stats.WalkSpeed))
+ Locale.Set(values.RunSpeed,"Text",string.format("%.1f studs/s",stats.RunSpeed))
+ Locale.Set(values.Sprint,"Text",string.format("%g seconds",stats.Sprint))
+ Locale.Set(values.Regeneration,"Text",string.format("%g HP",stats.Regeneration))
+ Locale.Set(values.CriticalChance,"Text",string.format("%g%%",stats.CriticalChance*100))
 end
 redraw=function()
  if not snapshot then return end
- summary.Text=snapshot.Level>=Rules.MaxLevel and ("Level "..Rules.MaxLevel.." · MAX") or string.format("Level %d · XP %g / %g",snapshot.Level,snapshot.XP,snapshot.NextXP)
- points.Text="Perks: "..Rules.PerkCount(snapshot).." / 10 · Skill points: "..snapshot.SkillPoints.." · Perk points: "..(snapshot.PerkPoints or 0)..(snapshot.Confirmed and "" or "\nAttribute points remaining: "..remaining())
+ Locale.Set(summary,"Text",snapshot.Level>=Rules.MaxLevel and ("Level "..Rules.MaxLevel.." · MAX") or string.format("Level %d · XP %g / %g",snapshot.Level,snapshot.XP,snapshot.NextXP))
+ Locale.Set(points,"Text","Perks: "..Rules.PerkCount(snapshot).." / 10 · Skill points: "..snapshot.SkillPoints.." · Perk points: "..(snapshot.PerkPoints or 0)..(snapshot.Confirmed and "" or "\nAttribute points remaining: "..remaining()))
  for id,card in pairs(cards) do
-  card.Value.Text=tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id])
+  Locale.Set(card.Value,"Text",tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id]))
   card.Minus.Visible=not snapshot.Confirmed;card.Plus.Visible=not snapshot.Confirmed
  end
- confirmedText.Text=(snapshot.Confirmed and "Attributes confirmed. Perk point every 3 levels." or "Attributes must total 36.")..(snapshot.TagsConfirmed and "" or " Choose 3 main skills in Skills ("..#selectedTags().." / 3). Confirm to lock your choice.")
+ Locale.Set(confirmedText,"Text",(snapshot.Confirmed and "Attributes confirmed. Perk point every 3 levels." or "Attributes must total 36.")..(snapshot.TagsConfirmed and "" or " Choose 3 main skills in Skills ("..#selectedTags().." / 3). Confirm to lock your choice."))
  confirmButton.Visible=not snapshot.Confirmed or not snapshot.TagsConfirmed
  creationHint.Visible=not snapshot.Confirmed
- confirmButton.Text=confirming and "Confirm permanently" or (snapshot.Confirmed and "Confirm main skills" or "Confirm character")
+ Locale.Set(confirmButton,"Text",confirming and "Confirm permanently" or (snapshot.Confirmed and "Confirm main skills" or "Confirm character"))
  for id,row in pairs(skillRows) do
   local preview=not snapshot.Confirmed and Rules.SkillValues(draft) or snapshot.Skills
   local value=preview[id] or 0;local practice=snapshot.Practice[id]
-  row.Value.Text=practice and string.format("%d · XP %d / %d",value,practice.XP,10*(value+1)) or tostring(value)
+  Locale.Set(row.Value,"Text",practice and string.format("%d · XP %d / %d",value,practice.XP,10*(value+1)) or tostring(value))
   if row.Plus then
    local tagged=snapshot.TagsConfirmed and snapshot.TaggedSkills[id] or (not snapshot.TagsConfirmed and tagDraft[id])
    local mainColor=Color3.fromRGB(190,124,112)
    row.Name.TextColor3=tagged and mainColor or palette.Text
    row.Value.TextColor3=tagged and mainColor or palette.Accent
    row.Tag.Visible=not snapshot.TagsConfirmed
-   row.Tag.Text=tagged and "Selected" or "Tag"
+   Locale.Set(row.Tag,"Text",tagged and "Selected" or "Tag")
    row.Tag.AutoButtonColor=not snapshot.TagsConfirmed
    row.Tag.TextColor3=tagged and mainColor or palette.Muted
    local gain,cost=Rules.SkillQuote(snapshot,id,value)
    row.Plus.Visible=snapshot.Confirmed and gain~=nil
-   row.Plus.Text="+"
+   Locale.Set(row.Plus,"Text","+")
    row.Plus.Active=cost~=nil and snapshot.SkillPoints>=cost
    row.Plus.AutoButtonColor=row.Plus.Active
    row.Plus.TextColor3=row.Plus.Active and palette.Accent or palette.Muted
@@ -224,7 +225,7 @@ redraw=function()
   local row=perkRows[perk.ID];row.Visible=true
   local rank=(snapshot.Perks or {})[perk.ID] or 0
   row.Position=UDim2.fromOffset(0,count*86);count+=1
-  row.Text="  "..perk.Name.." · "..rank.." / "..perk.Max.."\n  "..Presentation.PerkRequirements(perk,config.Names)
+  Locale.Set(row,"Text","  "..perk.Name.." · "..rank.." / "..perk.Max.."\n  "..Presentation.PerkRequirements(perk,config.Names))
   row.Active=eligible and rank<perk.Max and (perk.FreeSlot or (Rules.PerkCount(snapshot)<10 and (snapshot.PerkPoints or 0)>0))
   row.AutoButtonColor=row.Active
   row.TextColor3=row.Active and palette.Accent or palette.Muted
@@ -262,8 +263,8 @@ Run.RenderStepped:Connect(function()
  scale.Scale=math.min(1,camera.ViewportSize.X*.95/1100,camera.ViewportSize.Y*.9/720)
  refreshStats()
  if hovered then
-  local text=tips[hovered];local height=TextService:GetTextSize(text,14,tooltip.Font,Vector2.new(330,1000)).Y+24
-  tooltip.Text=text;tooltip.Size=UDim2.fromOffset(350,height)
+  local text=tips[hovered];local height=TextService:GetTextSize(Locale.Text(text),14,tooltip.Font,Vector2.new(330,1000)).Y+24
+  Locale.Set(tooltip,"Text",text);tooltip.Size=UDim2.fromOffset(350,height)
   local mouse=Input:GetMouseLocation();tooltip.Position=UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-350)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-height)));tooltip.Visible=true
  end
 end)

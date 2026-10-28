@@ -1,3 +1,4 @@
+local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Rules=require(ReplicatedStorage.Shared.GroupRules)
@@ -49,7 +50,7 @@ action.OnServerEvent:Connect(function(player,command,value)
   local hit=Sight.Cast(a.Position,b.Position-a.Position,player.Character)
   if hit and not hit.Instance:IsDescendantOf(target.Character) then return end
   if Rules.Invite(state,user,value,now) then
-   Journal.Send(target,(player.DisplayName or player.Name).." invited you to a group. Press G to respond.")
+   Journal.Send(target,Literal.Protect(player.DisplayName or player.Name).." invited you to a group. Press G to respond.")
    Journal.Send(player,"Group invitation sent.")
   else Journal.Send(player,"Cannot invite this player right now.") end
  elseif command=="Reply" then

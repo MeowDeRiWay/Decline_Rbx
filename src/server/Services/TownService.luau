@@ -1,3 +1,4 @@
+local Localization=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)
 local WorldActivity=require(script.Parent.WorldActivityService)
 local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
@@ -334,7 +335,7 @@ local function finishVote(town)
   end
   if #winners == 1 then
    setLeader(town, winners[1])
-   for _, member in ipairs(members(town)) do tell(member, nameOf(winners[1]) .. " has been elected mayor with " .. highest .. " votes.") end
+   for _, member in ipairs(members(town)) do tell(member, Localization.Protect(nameOf(winners[1])) .. " has been elected mayor with " .. highest .. " votes.") end
   elseif #winners > 1 and not vote.runoff then
    for _, member in ipairs(members(town)) do tell(member, "The election is tied. A runoff between the leading candidates is starting.") end
    startElection(town, winners)
@@ -384,7 +385,7 @@ local function startVote(player, town, resignation)
  if resignation then
   cancelRequests(town)
   setLeader(town, 0)
-  for _, member in ipairs(members(town)) do tell(member, player.Name .. " has resigned as mayor.") end
+  for _, member in ipairs(members(town)) do tell(member, Localization.Protect(player.Name) .. " has resigned as mayor.") end
   startElection(town)
   return
  end
@@ -513,7 +514,7 @@ local function handle(player, command, value, extra)
    if not mayor(player,town) or sessions[player]~=session or not near(player,session.target) or target.Parent~=Players or townOf(target)~=town then return end
    local recipients=members(town)
    leaveTown(target,town)
-   local message=target.Name.." was expelled from "..town.name.." by "..player.Name..". Reason: "..filtered
+   local message=Localization.Protect(target.Name).." was expelled from "..Localization.Protect(town.name).." by "..Localization.Protect(player.Name)..". Reason: "..Localization.Protect(filtered)
    for _,member in ipairs(recipients) do Journal.Send(member,message) end
   elseif command == "Vote" then startVote(player, town, false)
   elseif command == "Resign" then startVote(player, town, true)
@@ -526,7 +527,7 @@ local function handle(player, command, value, extra)
     for _, request in pairs(pending) do
      if request.kind == "Alliance" and ((request.town == town and request.other == other) or (request.town == other and request.other == town)) then tell(player, "An alliance request is already awaiting a response."); return end
     end
-    requestApproval(player, other, {kind = "Alliance", other = town, text = "The mayor of " .. town.name .. " (" .. player.Name .. ") proposes an alliance."})
+    requestApproval(player, other, {kind = "Alliance", other = town, text = "The mayor of " .. Localization.Protect(town.name) .. " (" .. Localization.Protect(player.Name) .. ") proposes an alliance."})
    else
     for id, request in pairs(pending) do
      if request.kind == "Alliance" and ((request.town == town and request.other == other) or (request.town == other and request.other == town)) then pending[id] = nil end
@@ -550,7 +551,7 @@ local function handle(player, command, value, extra)
    table.sort(materials)
    local costText=#materials==0 and "Free." or (table.concat(materials,", ").." from the builder's inventory.")
    requestApproval(player, town, {kind = "Build", plot = plot, building = value, level = level,
-    previousKind = plot.kind, previousLevel = plot.level, text = player.Name .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. ". Cost: " .. costText})
+    previousKind = plot.kind, previousLevel = plot.level, text = Localization.Protect(player.Name) .. " wants to " .. (level == 1 and "start construction: " or "upgrade: ") .. definition.Name .. ". Cost: " .. costText})
   elseif command == "Destroy" and plot.kind and owns(player, plot) then
    if BuildingStorage.CanDestroy and not BuildingStorage.CanDestroy(plot.building) then tell(player,"Empty and release the trading posts before demolishing this building.");return end
    if plot.pending then pending[plot.pending] = nil; plot.pending = nil end
@@ -626,7 +627,7 @@ function Service.Start()
   for _,request in pairs(pending) do
    if request.kind=="Gate" and request.player==player then tell(player,"Your passage request is already pending.");return end
   end
-  requestApproval(player,town,{kind="Gate",door=door,text=player.Name .. " requests passage into the town. Open this gate for 20 seconds?"})
+  requestApproval(player,town,{kind="Gate",door=door,text=Localization.Protect(player.Name) .. " requests passage into the town. Open this gate for 20 seconds?"})
   Service.Publish()
  end,tell)
  local function added(player)

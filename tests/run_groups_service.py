@@ -2,7 +2,7 @@
 from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-s=(root/'src/server/Groups.server.luau').read_text()
+s=(root/'src/server/Groups.server.luau').read_text().replace('local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', 'local Literal={Protect=function(v) return v end}')
 s=re.sub(r'local (Rules|Sight|Journal|Affiliation)=require[^\n]+\n','',s)
 setup='''
 local messages={}

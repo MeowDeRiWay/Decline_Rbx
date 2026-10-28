@@ -1,3 +1,4 @@
+local Locale=require(script.Parent.LocaleController)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Input=game:GetService("UserInputService")
@@ -38,7 +39,7 @@ local function row(key,text,callback)
   item.Parent=list
  end
  entry.Seen=true;entry.Callback=callback
- if entry.Item.Text~=text then entry.Item.Text=text end
+ Locale.Set(entry.Item,"Text",text)
  if entry.Item.LayoutOrder~=rowOrder then entry.Item.LayoutOrder=rowOrder end
  return entry.Item
 end
@@ -55,14 +56,14 @@ local function redraw()
  for _,entry in pairs(rows) do entry.Seen=false end
  local invite=state.Invite
  if invite and invite.Expires>workspace:GetServerTimeNow() then
-  row("invitation",invite.Name.." invited you to a group.")
+  row("invitation",Locale.Raw(invite.Name).." invited you to a group.")
   row("accept","Accept invitation",function() action:FireServer("Reply",true) end)
   row("decline","Decline invitation",function() action:FireServer("Reply",false) end)
  end
  if state.ID~=0 then
   row("count",string.format("Members: %d / %d",#state.Members,state.Maximum))
   for _,member in ipairs(state.Members) do
-   local caption=member.Name..(member.ID==state.Leader and " · Leader" or "")
+   local caption=Locale.Raw(member.Name)..(member.ID==state.Leader and " · Leader" or "")
    if state.Leader==player.UserId and member.ID~=player.UserId then
     row("kick:"..member.ID,caption.." · Remove",function() action:FireServer("Kick",member.ID) end)
    else row("member:"..member.ID,caption) end
@@ -81,7 +82,7 @@ local function redraw()
    local hp=target and target:FindFirstChildOfClass("Humanoid")
    if other~=player and Affiliation.SameFaction(player,other) and (other:GetAttribute("GroupID") or 0)==0 and root and camera and part and hp and hp.Health>0 and not target:GetAttribute("Knockout") and (part.Position-root.Position).Magnitude<=40 and View.Check(target,root,character,camera) then
     found=true
-    row("invite:"..other.UserId,"Invite "..(other.DisplayName or other.Name),function() action:FireServer("Invite",other.UserId) end)
+    row("invite:"..other.UserId,"Invite "..Locale.Raw(other.DisplayName or other.Name),function() action:FireServer("Invite",other.UserId) end)
    end
   end
   if not found then row("none","No available players in sight.") end
@@ -129,7 +130,7 @@ Run.RenderStepped:Connect(function(dt)
   local member=other~=player and group~=0 and other:GetAttribute("GroupID")==group
   if member and not tag then
    tag=Instance.new("BillboardGui");tag.Name="GroupMemberName";tag.Size=UDim2.fromOffset(190,28);tag.AlwaysOnTop=true;tag.MaxDistance=0;tag.Parent=gui
-   local text=Instance.new("TextLabel");text.Size=UDim2.fromScale(1,1);text.BackgroundTransparency=1;text.TextColor3=Theme.Accent;text.TextStrokeTransparency=.3;text.Font=Theme.Font;text.TextSize=14;text.Parent=tag
+   local text=Instance.new("TextLabel");text.Size=UDim2.fromScale(1,1);text.BackgroundTransparency=1;text.TextColor3=Theme.Accent;text:SetAttribute("LocalizationIgnore",true);text.TextStrokeTransparency=.3;text.Font=Theme.Font;text.TextSize=14;text.Parent=tag
    tags[other]=tag
   end
   if tag then

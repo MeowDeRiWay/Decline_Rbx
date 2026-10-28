@@ -2,8 +2,9 @@
 from pathlib import Path
 import subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
-source=(root/'src/client/HowToPlay.client.luau').read_text()
+source=(root/'src/client/HowToPlay.client.luau').read_text().replace('local Locale=require(script.Parent.LocaleController)', '')
 mock=r'''
+local Locale={Set=function(o,k,v) o[k]=v end,Text=function(v) return v end,Changed={Connect=function() end}}
 local mode="MODE"
 local function signal()
  local listeners={}

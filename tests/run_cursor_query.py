@@ -56,6 +56,6 @@ assert(writes==0)
 UI.Set(object,"Text","Done");UI.Set(object,"Text","Done");assert(writes==1)
 print("PASS: shared30Hz world ray, separate visible-creature ray, ordering, respawn, viewport guards, unsubscribe, failure isolation and change-only UI")
 '''
-code=(root/'tests/city_geometry.fixture.luau').read_text()+'\n'+mock+'\nlocal Query=(function()\n'+s+'\nend)()\nlocal UI=(function()\n'+(root/'src/client/UIUpdates.luau').read_text()+'\nend)()\n'+cases
+code=(root/'tests/city_geometry.fixture.luau').read_text()+'\n'+mock+'\nlocal Query=(function()\n'+s+'\nend)()\nlocal UI=(function()\n'+(root/'src/client/UIUpdates.luau').read_text().replace('local Locale=require(script.Parent.LocaleController)', 'local Locale={Set=function(o,k,v) if o[k]~=v then o[k]=v end end}')+'\nend)()\n'+cases
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'cursor.luau';p.write_text(code);subprocess.run([sys.argv[1],str(p)],check=True)

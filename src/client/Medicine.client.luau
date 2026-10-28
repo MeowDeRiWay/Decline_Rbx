@@ -1,3 +1,4 @@
+local Locale=require(script.Parent.LocaleController)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Input=game:GetService("UserInputService")
@@ -69,7 +70,7 @@ Run.RenderStepped:Connect(function()
  else text=string.format("First aid · %g HP · H to cancel\nClick yourself or a nearby player",Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),(selected or player):GetAttribute("Endurance"),character:GetAttribute("MedicineItem"),player:GetAttribute("MedicalHealingBonus"))) end
  if selected then
   local body=selected.Character:FindFirstChild("HumanoidRootPart")
-  if body and (body.Position-root.Position).Magnitude>3 then text="Move closer to "..selected.Name end
+  if body and (body.Position-root.Position).Magnitude>3 then text="Move closer to "..Locale.Raw(selected.Name) end
  end
  hint.Text=text;hint.Position=UDim2.fromOffset(math.clamp(mouse.X+18,0,math.max(0,camera.ViewportSize.X-250)),math.clamp(mouse.Y+18,0,math.max(0,camera.ViewportSize.Y-58)));hint.Visible=true
 end)

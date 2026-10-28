@@ -5,6 +5,7 @@ local Content=game:GetService("ContentProvider")
 local Tween=game:GetService("TweenService")
 local player=Players.LocalPlayer
 local gui=Instance.new("ScreenGui")
+gui.AutoLocalize=false
 gui.Name="DeclineLoading";gui.IgnoreGuiInset=true;gui.ResetOnSpawn=false;gui.DisplayOrder=1000
 local function make(class,parent,props)
  local o=Instance.new(class)

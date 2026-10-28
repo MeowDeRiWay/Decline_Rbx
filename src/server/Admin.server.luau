@@ -1,3 +1,4 @@
+local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Services=script.Parent.Services
@@ -55,7 +56,7 @@ local function handle(player,command,data)
     hp.Health=hp.MaxHealth;c:SetAttribute("Health",hp.Health);c:SetAttribute("Sick",0)
    else c:SetAttribute("Food",100);c:SetAttribute("Water",100);c:SetAttribute("Sick",0) end
   end
-  Journal.Send(target,"Admin "..player.Name..": "..command.." applied to your character.")
+  Journal.Send(target,string.format("Admin %s applied %s to your character.",Literal.Protect(player.Name),command))
   return true,command.." applied to "..target.Name.."."
  else return false,"Invalid action or value." end
  return true,"Server time updated."

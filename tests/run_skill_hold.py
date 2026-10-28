@@ -6,6 +6,7 @@ source=(root/'src/client/Progression.client.luau').read_text()
 hold=source[source.index('local heldSkill'):source.index('local function skillRow')]
 rows=source[source.index(' local count=0\n -- All perks'):source.index('\nend\nsetOpen=function')]
 setup='''
+local Locale={Set=function(o,k,v) o[k]=v end}
 local function event()
  local e={callbacks={}}
  function e:Connect(fn) table.insert(self.callbacks,fn) end

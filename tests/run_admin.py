@@ -2,7 +2,7 @@
 from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
-authority=(root/'src/server/Admin.server.luau').read_text()
+authority=(root/'src/server/Admin.server.luau').read_text().replace('local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', 'local Literal={Protect=function(v) return v end}')
 authority=re.sub(r'local (Rules|Clock|Progression|Inventory|Life|Items|Journal)=require[^\n]+\n','',authority)
 authority=authority.replace('local Services=script.Parent.Services\n','')
 setup='''

@@ -1,3 +1,4 @@
+local Locale=require(script.Parent.LocaleController)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Input=game:GetService("UserInputService")
@@ -46,7 +47,7 @@ end
 local function render()
  clear(inventory);clear(stock);clear(controls)
  local owner=snapshot.OwnerID==player.UserId
- title.Text="Trade post · "..(owner and "your shop" or snapshot.OwnerID>0 and snapshot.OwnerName or snapshot.Inherited and "reserved for the mayor" or "vacant")
+ title.Text="Trade post · "..(owner and "your shop" or snapshot.OwnerID>0 and Locale.Raw(snapshot.OwnerName) or snapshot.Inherited and "reserved for the mayor" or "vacant")
  balance.Text="$"..tostring(player:GetAttribute("Money") or snapshot.Money or 0)
  message.Text=snapshot.Message or (owner and ("Tax: $"..snapshot.Tax.." per seller every 5 minutes. Prices are per item.") or "Anyone may buy. Only citizens may claim a vacant post.")
  if snapshot.CanClaim then button(controls,"Claim post",UDim2.new(),UDim2.fromOffset(160,30),function() send("Claim") end) end

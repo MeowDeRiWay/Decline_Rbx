@@ -1,3 +1,4 @@
+local Locale=require(script.Parent.LocaleController)
 local UI=require(script.Parent.UIUpdates)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
@@ -31,17 +32,22 @@ journal.BackgroundColor3=Theme.Card;journal.BorderSizePixel=0;journal.ScrollBarT
 journal.AutomaticCanvasSize=Enum.AutomaticSize.Y;journal.CanvasSize=UDim2.new();journal.Parent=bar
 local list=Instance.new("UIListLayout");list.Padding=UDim.new(0,3);list.Parent=journal
 local rows={}
-local function log(message)
+local function log(message,userText)
  local row=label(journal,Presentation.Plain(message),0,0,320,0,12)
+ if userText then row:SetAttribute("LocalizationIgnore",true) end
  row.AutomaticSize=Enum.AutomaticSize.Y;row.TextXAlignment=Enum.TextXAlignment.Left
  table.insert(rows,row)
  if #rows>100 then table.remove(rows,1):Destroy() end
  task.defer(function() journal.CanvasPosition=Vector2.new(0,math.max(0,journal.AbsoluteCanvasSize.Y-journal.AbsoluteSize.Y)) end)
+ return row
 end
 Layout.Log.Event:Connect(log)
 ReplicatedStorage:WaitForChild("CombatReport").OnClientEvent:Connect(function(event)
  if typeof(event)~="table" then return end
- if Visibility.Witnessed(event,player.Character,workspace.CurrentCamera) then log(Presentation.Combat(event,player.UserId)) end
+ if Visibility.Witnessed(event,player.Character,workspace.CurrentCamera) then
+  local row=log(Presentation.Combat(event,player.UserId),true)
+  Locale.Computed(row,function() return Locale.Combat(event,player.UserId) end)
+ end
 end)
 ReplicatedStorage:WaitForChild("PersonalNotice").OnClientEvent:Connect(log)
 label(bar,"Events / chat",12,4,220,20,12)
@@ -61,7 +67,7 @@ Chat.MessageReceived:Connect(function(message)
  task.delay(120,function() received[id]=nil end)
  local source=message.TextSource
  local sender=source and Players:GetPlayerByUserId(source.UserId)
- log((sender and (sender.DisplayName..": ") or "")..message.Text)
+ log((sender and (sender.DisplayName..": ") or "")..message.Text,true)
 end)
 entry.FocusLost:Connect(function(enter)
  if not enter or entry.Text:match("^%s*$") then return end
