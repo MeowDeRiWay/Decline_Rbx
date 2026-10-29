@@ -94,6 +94,50 @@ print("PASS: profile-only locale, existing/new GUI, original source restoration,
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),setup,'local Rules=(function()\n'+(root/'src/shared/LocalizationRules.luau').read_text()+'\nend)()', 'local Journal=(function()\n'+(root/'src/shared/JournalPresentation.luau').read_text()+'\nend)()','local Catalog={}']
 for p in sorted((root/'src/shared/Locales').glob('*.luau')):parts.append('table.insert(Catalog,(function()\n'+p.read_text()+'\nend)())')
-parts+=['local Service=(function()\n'+source+'\nend)()',cases]
+hover=(root/'src/client/WorldItems.client.luau').read_text()
+hover=hover[hover.index('Cursor.Subscribe("WorldItems",1,function()')+len('Cursor.Subscribe("WorldItems",1,function()'):hover.index('end)\nUserInputService.InputBegan')]
+hover_setup=r'''
+local Locale=Service
+local player=a;player:LoadCharacterAsync()
+local label=make("TextLabel","HoverRegression",gui)
+local highlight={}
+local hovered,reachable,chestHovered,stoveHovered,farmHovered,bedHovered,tradeHovered
+local function dims(x,y) return {X={Offset=x},Y={Offset=y}} end
+local UDim2={fromOffset=dims}
+local Color3={fromRGB=function(r,g,b) return {r,g,b} end}
+local Config={PickupDistance=1}
+local distance=3
+local Interaction={NearestPoint=function() return Vector3.new(distance,0,0) end}
+local Stations={Kind=function() return nil end}
+local GuiService={MenuIsOpen=false}
+local UserInputService={GetMouseLocation=function() return {X=350,Y=300} end,GetFocusedTextBox=function() return nil end}
+workspace.CurrentCamera={ViewportSize={X=800,Y=600}}
+player.Character.HumanoidRootPart.Position=Vector3.zero
+local body=make("Model","Zombie",workspace)
+body:SetAttribute("IsCorpse",true);body:SetAttribute("ClientVisible",true);body:SetAttribute("DisplayName","Zombie")
+local part=make("Part","Head",body)
+local Cursor={Get=function() return {Hit={Instance=part}} end}
+local folder=make("Folder","WorldItems",workspace)
+'''
+hover_cases=r'''
+updateHover()
+assert(label.Text:find("Зомбі",1,true) and label.Text:find("Занадто далеко",1,true))
+local before=writes
+for _=1,300 do updateHover() end
+assert(writes==before,"actual corpse tooltip cannot alternate English/Ukrainian at 30Hz")
+distance=0;updateHover()
+assert(Service.Source(label,"Text")=="Zombie corpse\n[E] Loot")
+before=writes;for _=1,300 do updateHover() end;assert(writes==before)
+body.Name="GardenBed";body:SetAttribute("IsCorpse",nil)
+body:SetAttribute("Watering",25);body:SetAttribute("PlantCount",2)
+updateHover()
+assert(Service.Source(label,"Text"):find("Water: 25/100",1,true),"multiline garden tooltip is assembled before translation")
+before=writes;for _=1,300 do updateHover() end;assert(writes==before,"garden tooltip writes one complete source, without intermediate text")
+body:SetAttribute("Watering",30);updateHover();assert(writes==before+1,"changed values still refresh exactly once")
+a.LocaleId="ru";updateHover();before=writes
+for _=1,300 do updateHover() end;assert(writes==before,"Russian hover stays stable too")
+print("PASS: actual corpse and garden hover callbacks, stable translated text across 1200+ updates and changed-value refresh")
+'''
+parts+=['local Service=(function()\n'+source+'\nend)()',cases,hover_setup,'local function updateHover()\n'+hover+'\nend',hover_cases]
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'controller.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)

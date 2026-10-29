@@ -375,7 +375,7 @@ Cursor.Subscribe("Towns",3,function()
  end
  if highlight.Enabled then
   local label = if object.Name == "Flag" then "Flag" else "Building Menu"
-  hoverLabel.Text = label .. (hovered and "\n[E] Open" or "\nToo far")
+  UI.Set(hoverLabel,"Text",label .. (hovered and "\n[E] Open" or "\nToo far"))
   hoverLabel.Position = UDim2.fromOffset(
    math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),
    math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-44)))

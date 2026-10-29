@@ -47,7 +47,7 @@ Cursor.Subscribe("WorldItems",1,function()
  if not root or not camera or character:GetAttribute("Knockout") or (((player:GetAttribute("TradeOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  if character:GetAttribute("HospitalResting") then
-  label.Text="Hospital bed\n[E] Get up"
+  Locale.Set(label,"Text","Hospital bed\n[E] Get up")
   label.Position=UDim2.fromOffset(mouse.X+16,mouse.Y+16);label.Visible=true
   return
  end
@@ -74,26 +74,27 @@ Cursor.Subscribe("WorldItems",1,function()
   highlight.FillColor = Color3.fromRGB(80,190,110)
   highlight.OutlineColor = Color3.fromRGB(125,255,160)
   highlight.Adornee, highlight.Enabled = chest, true
-  label.Text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("CorpseType")=="Player" and Locale.Raw(chest:GetAttribute("DisplayName") or chest.Name) or (chest:GetAttribute("DisplayName") or "Zombie")) .. " corpse") or (stoveHovered and Stations.Label(chest) or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
-  if tradeHovered then label.Text="Trade post"..(reachable and "\n[E] Trade" or "\nToo far") end
+  local text = (chest:GetAttribute("IsCorpse") and ((chest:GetAttribute("CorpseType")=="Player" and Locale.Raw(chest:GetAttribute("DisplayName") or chest.Name) or (chest:GetAttribute("DisplayName") or "Zombie")) .. " corpse") or (stoveHovered and Stations.Label(chest) or "Chest")) .. (reachable and (chest:GetAttribute("IsCorpse") and "\n[E] Loot" or "\n[E] Open") or "\nToo far")
+  if tradeHovered then text="Trade post"..(reachable and "\n[E] Trade" or "\nToo far") end
   if bedHovered then
    local occupant=chest:GetAttribute("HospitalBedUserId")
-   label.Text="Hospital bed"..(occupant and "\nOccupied" or reachable and "\n[E] Lie down" or "\nToo far")
+   text="Hospital bed"..(occupant and "\nOccupied" or reachable and "\n[E] Lie down" or "\nToo far")
    if occupant then reachable=false end
   end
   if farmHovered then
-   label.Text=(chest.Name=="Well" and "Well" or "Garden bed")
+   text=(chest.Name=="Well" and "Well" or "Garden bed")
    if chest.Name=="GardenBed" then
     label.Size=UDim2.fromOffset(200,88)
-    label.Text..="\nWater: "..math.floor(chest:GetAttribute("Watering") or 0).."/"..(chest:GetAttribute("MaxWatering") or 100)
-    label.Text..="\nPlants: "..(chest:GetAttribute("PlantCount") or 0).." | Ready: "..(chest:GetAttribute("ReadyPlants") or 0).." | Rotten: "..(chest:GetAttribute("RottenPlants") or 0)
+    text..="\nWater: "..math.floor(chest:GetAttribute("Watering") or 0).."/"..(chest:GetAttribute("MaxWatering") or 100)
+    text..="\nPlants: "..(chest:GetAttribute("PlantCount") or 0).." | Ready: "..(chest:GetAttribute("ReadyPlants") or 0).." | Rotten: "..(chest:GetAttribute("RottenPlants") or 0)
    end
    if chest.Name=="GardenBed" and player:GetAttribute("PlantKnowledge") then
     label.Size=UDim2.fromOffset(400,180)
-    label.Text..="\n"..(chest:GetAttribute("CropDetails") or "")
+    text..="\n"..(chest:GetAttribute("CropDetails") or "")
    end
-   label.Text..=reachable and "\n[E] Use" or "\nToo far"
+   text..=reachable and "\n[E] Use" or "\nToo far"
   end
+  Locale.Set(label,"Text",text)
   label.Position = UDim2.fromOffset(math.clamp(mouse.X+16,0,math.max(0,camera.ViewportSize.X-200)),math.clamp(mouse.Y+16,0,math.max(0,camera.ViewportSize.Y-label.Size.Y.Offset)))
   label.Visible = true
   return
@@ -111,7 +112,7 @@ Cursor.Subscribe("WorldItems",1,function()
  local count = item:GetAttribute("Quantity") or 1
  local caption = (definition.Name or item.Name) .. (count > 1 and " ×" .. tostring(count) or "")
  if definition.Currency then caption="$"..tostring((item:GetAttribute("BanknoteValue") or 0)*count).." banknote" end
- label.Text = caption .. (reachable and "\n[E] Pick up" or "\nToo far")
+ Locale.Set(label,"Text",caption .. (reachable and "\n[E] Pick up" or "\nToo far"))
  label.Position = UDim2.fromOffset(math.clamp(mouse.X + 16, 0, math.max(0, camera.ViewportSize.X - 200)), math.clamp(mouse.Y + 16, 0, math.max(0, camera.ViewportSize.Y - 44)))
  label.Visible = true
 end)

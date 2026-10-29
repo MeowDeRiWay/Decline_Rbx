@@ -1,3 +1,4 @@
+local UI=require(script.Parent.UIUpdates)
 local Cursor=require(script.Parent.CursorQuery)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -84,7 +85,7 @@ Cursor.Subscribe("Creatures",4,function()
  local known=player:GetAttribute("Observant")==true
  name.Visible=known;health.Visible=known;equipped.Visible=known
  name:SetAttribute("LocalizationIgnore",isPlayer)
- name.Text=owner and (owner.DisplayName or owner.Name) or display
+ UI.Set(name,"Text",owner and (owner.DisplayName or owner.Name) or display)
  local root=character:FindFirstChild("HumanoidRootPart")
  local target=model:FindFirstChild("HumanoidRootPart",true) or anchor
  local definition=Items[character:GetAttribute("HandsItem")]
@@ -94,12 +95,12 @@ Cursor.Subscribe("Creatures",4,function()
  chanceText.Position=UDim2.fromOffset(8,known and 48 or 4)
  if chanceText.Visible then
   local chance=Accuracy.Chance(Accuracy.ForWeapon(player,definition),(definition and definition.Firearm and Accuracy.SightBonus(character:FindFirstChild("HeldItem")) or 0),(target.Position-root.Position).Magnitude,(owner and owner:GetAttribute("DodgeChance") or model:GetAttribute("DodgeChance") or 0)+((not model:GetAttribute("HandsItem") or model:GetAttribute("HandsItem")=="") and ((owner or model):GetAttribute("UnarmedArmorClass") or 0) or 0),Accuracy.NightMultiplier(player))
-  chanceText.Text=string.format("Hit chance: %d%%",math.floor(chance))
+  UI.Set(chanceText,"Text",string.format("Hit chance: %d%%",math.floor(chance)))
  end
  gui.Size=UDim2.fromOffset(230,known and 98 or 30)
- health.Text=string.format("%.0f / %.0f HP",humanoid.Health,humanoid.MaxHealth)
+ UI.Set(health,"Text",string.format("%.0f / %.0f HP",humanoid.Health,humanoid.MaxHealth))
  local weaponID=model:GetAttribute("HandsItem")
  local item=weaponID and Items[weaponID]
- equipped.Text="Weapon: "..(item and item.Name or "Unarmed")
+ UI.Set(equipped,"Text","Weapon: "..(item and item.Name or "Unarmed"))
  gui.Enabled = true
 end)
