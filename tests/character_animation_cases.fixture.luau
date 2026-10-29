@@ -47,3 +47,20 @@ local lastRemote=remoteHip.Transform
 RunService.PreSimulation:Fire(1/30)
 assert(remoteHip.Transform~=lastRemote,"Studio preview poses players without a local viewer or distance cull")
 print("PASS: pistol, knife, two-handed axe/shovel and shared Studio server preview")
+local oldHeld=c:FindFirstChild("HeldItem");if oldHeld then oldHeld.Parent=nil end
+c:SetAttribute("HandsItem",nil)
+local function wrist(side)
+ local shoulder=c:FindFirstChild(side.."Shoulder",true)
+ local elbow=c:FindFirstChild(side.."Elbow",true)
+ local rotation=shoulder:GetAttribute("StandingRotation")*shoulder.Transform
+ local delta=rotation:VectorToWorldSpace(shoulder:GetAttribute("UpperVector"))+(rotation*elbow.Transform):VectorToWorldSpace(shoulder:GetAttribute("LowerVector"))
+ local anchor=(shoulder.Part0.CFrame*shoulder:GetAttribute("AuthoredC0")*CFrame.new(shoulder:GetAttribute("StandingOffset"))).Position
+ return root.CFrame:PointToObjectSpace(anchor+root.CFrame:VectorToWorldSpace(delta))
+end
+Punch.Begin(c,serverTime);serverTime+=Punch.Contact;RunService.PreSimulation:Fire(1/30)
+assert(wrist("Right").Z<-.7 and wrist("Left").Z>-.4 and wrist("Left").Y>.1,"right punch reaches contact while left hand guards")
+serverTime+=1-Punch.Contact;Punch.Begin(c,serverTime);serverTime+=Punch.Contact;RunService.PreSimulation:Fire(1/30)
+assert(wrist("Left").Z<-.7 and wrist("Right").Z>-.4,"next accepted punch uses the left hand")
+serverTime+=2;RunService.PreSimulation:Fire(1/30)
+assert(wrist("Left").Y<-.3 and wrist("Right").Y<-.3,"both arms return to idle after combat")
+print("PASS: alternating unarmed punches, opposite-hand guard, synchronized contact and idle recovery")

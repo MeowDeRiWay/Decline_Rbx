@@ -7,6 +7,7 @@ source=(root/'tests/rig_math.fixture.luau').read_text()
 source+='\nlocal Rig='+module('src/shared/CharacterRig.luau')
 source+='\nlocal Pose='+module('src/shared/CharacterPose.luau')
 source+='\nlocal Foot='+module('src/shared/FootPlant.luau')
+source+='\nlocal Punch='+module('src/shared/UnarmedPose.luau')
 source+='\nlocal geometry='+module('tests/character_geometry.fixture.luau')
 source+=r'''
 local objects={}
@@ -98,7 +99,7 @@ print("PASS: actual model, 11 joints, authored orientations/gap, height, repeate
 source+='\n'+(root/'tests/character_animation.fixture.luau').read_text()
 controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
 import re
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Items)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items)\s*=.*\n','',controller)
 controller=controller.replace('return Driver','Driver.Start(Players.LocalPlayer,false)')
 source+='\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
 source+='\n'+(root/'tests/equipment_pose_cases.fixture.luau').read_text()

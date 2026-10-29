@@ -6,6 +6,7 @@ local RunService=game:GetService("RunService")
 local Shared=game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Pose=require(Shared:WaitForChild("CharacterPose"))
 local Foot=require(Shared:WaitForChild("FootPlant"))
+local Punch=require(Shared:WaitForChild("UnarmedPose"))
 local Items=require(Shared.ItemConfig).Items
 local Driver={}
 function Driver.Start(localPlayer,serverPreview)
@@ -114,6 +115,9 @@ RunService.PreSimulation:Connect(function(dt)
   local twoHands=definition and (definition.Firearm or definition.HarvestTool=="Axe" or definition.HarvestTool=="Shovel")
   local grip=held and (held:FindFirstChild("RightHandGrip",true) or held:FindFirstChild("_HandGrip",true))
   local targetFrame=equipped and (grip and grip:IsA("Attachment") and grip.WorldCFrame or held:GetPivot())
+  local punchTime=c:GetAttribute("PunchStartedAt")
+  local punchElapsed=typeof(punchTime)=="number" and workspace:GetServerTimeNow()-punchTime or -1
+  local punchSequence=c:GetAttribute("PunchSequence") or 0
   for _,side in ipairs({"Left","Right"}) do
    local shoulder,elbow=m[side.."Shoulder"],m[side.."Elbow"]
    local standing=shoulder:GetAttribute("StandingRotation") or CFrame.identity
@@ -139,6 +143,14 @@ RunService.PreSimulation:Connect(function(dt)
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
     local s,e=Pose.Arm(upper,lower,delta,Vector3.new(-1,-.5,.15))
+    shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
+   elseif not definition and not held and punchElapsed>=0 and punchElapsed<1.5 then
+    local localTarget,weight=Punch.Target(root.Size,side,punchSequence,punchElapsed)
+    local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
+    local hanging=anchor+root.CFrame:VectorToWorldSpace(standing:VectorToWorldSpace(upper+lower))
+    local target=hanging+(root.CFrame:PointToWorldSpace(localTarget)-hanging)*weight
+    local delta=root.CFrame:VectorToObjectSpace(target-anchor)
+    local s,e=Pose.Arm(upper,lower,delta,Vector3.new(side=="Left" and -1 or 1,-.5,.15))
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
    else
     local swing=math.sin(r.Phase)*(side=="Left" and -1 or 1)*r.Amount*.6

@@ -5,7 +5,8 @@ end
 local deferred={}
 task={defer=function(fn) table.insert(deferred,fn) end}
 local function flush() local pending=deferred;deferred={};for _,fn in ipairs(pending) do fn() end end
-workspace={}
+local serverTime=100
+workspace={GetServerTimeNow=function() return serverTime end}
 function methods:IsDescendantOf(target) local p=self.Parent;while p do if p==target then return true end;p=p.Parent end;return false end
 local find=methods.FindFirstChild
 function methods:FindFirstChild(name,recurse)

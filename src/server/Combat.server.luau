@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CombatRules=require(ReplicatedStorage.Shared.CombatRules)
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
+local Punch=require(ReplicatedStorage.Shared.UnarmedPose)
 local Audio=require(script.Parent.Services.CombatAudio)
 local Damage = require(script.Parent.Services.DamageService)
 local Inventory = require(script.Parent.Services.InventoryService)
@@ -34,8 +35,9 @@ attack.OnServerEvent:Connect(function(player)
  -- Cowboy affects damage, not swing speed.
  local cooldown = 60 / motionWeapon.AttacksPerMinute
  ready[player] = now + cooldown
+ if not definition then Punch.Begin(character,workspace:GetServerTimeNow()) end
  Motion.Play(motor,motionWeapon)
- task.delay(Motion.HitDelay(motionWeapon),function()
+ task.delay(not definition and Punch.Contact or Motion.HitDelay(motionWeapon),function()
  if player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or character:GetAttribute("HospitalResting") or (motor and (motor.Parent ~= held or held.Parent ~= character)) or Inventory.GetWeapon(player) ~= weapon then return end
  local params = OverlapParams.new()
  params.FilterType = Enum.RaycastFilterType.Exclude
