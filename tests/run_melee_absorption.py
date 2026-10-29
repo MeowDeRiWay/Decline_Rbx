@@ -18,6 +18,8 @@ local Life={Damage=function(_,hp,amount) hits+=1; hp.Health-=amount; return amou
 function Players:GetPlayerFromCharacter(character) if character==a.Character then return a end end
 '''
 cases='''
+local playerDamage={}
+Service.OnPlayerDamage(function(attacker,victim,amount) table.insert(playerDamage,{attacker,victim,amount}) end)
 b:LoadCharacterAsync();a:LoadCharacterAsync();a.Character:PivotTo(CFrame.new(Vector3.zero)); a:SetAttribute("MeleeAbsorption",3)
 local hp=a.Character.Humanoid
 assert(Service.Apply(hp,5,"Blunt",nil,"Melee")==2 and hp.Health==98)
@@ -150,6 +152,22 @@ end
 hp.Health=100;a:SetAttribute("ArmorAbsorption",100);a:SetAttribute("ArmorResistance",.9)
 assert(Service.Apply(hp,20,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true,ArmorIgnoreAbsorption=5,ArmorIgnoreResistance=.4,PostDefenseDamage=4,CriticalMultiplier=2})==4,"flat perk damage survives fully absorbed automatic bullet and is added last without crit scaling")
 print("PASS: caliber armor penetration on players/zombies and post-defense flat perk ordering")
+
+table.clear(playerDamage)
+hp.Health=100;a:SetAttribute("ArmorAbsorption",0);a:SetAttribute("ArmorResistance",0);b:SetAttribute("ArmorBypassChance",0)
+a:SetAttribute("TeamID",10);b:SetAttribute("TeamID",20)
+assert(Service.Apply(hp,5,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==5)
+assert(#playerDamage==1 and playerDamage[1][1]==b and playerDamage[1][2]==a and playerDamage[1][3]==5)
+a:SetAttribute("ArmorAbsorption",100)
+assert(Service.Apply(hp,5,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0)
+Service.Miss(a.Character,b,"Ranged")
+a:SetAttribute("ArmorAbsorption",0)
+Service.Apply(hp,5,"Blunt",nil,"Melee",{Attacker=target,HitChecked=true})
+Service.Apply(targetHP,5,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})
+b:SetAttribute("TeamID",10)
+assert(Service.Apply(hp,5,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0)
+assert(#playerDamage==1,"only positive player-versus-player damage reaches ambient observers; no NPCs, misses, absorption or friendlies")
+print("PASS: authoritative PvP damage observer reports real damage and excludes NPCs, misses, absorbed and friendly hits")
 
 '''
 cases=cases.replace('requirePlaceholder','(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)()').replace('inventoryPlaceholder','(function()\n'+(root/'src/shared/InventoryRules.luau').read_text()+'\nend)()')

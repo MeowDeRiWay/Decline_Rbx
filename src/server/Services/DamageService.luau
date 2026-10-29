@@ -8,6 +8,8 @@ local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Audio=require(script.Parent.CombatAudio)
 local Service = {}
+local damageObservers={}
+function Service.OnPlayerDamage(callback) table.insert(damageObservers,callback) end
 local function friendly(attacker,target)
  if not attacker then return false end
  local source=attacker:IsA("Player") and attacker or Players:GetPlayerFromCharacter(attacker)
@@ -134,6 +136,9 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
   local actor=options.Attacker:IsA("Player") and options.Attacker.Character or options.Attacker
   local hands=actor and actor:GetAttribute("HandsItem")
   if not hands or hands=="" or hands=="ZombieHand" then Audio.Play(target,"Punch",options.Attacker:IsA("Player") and options.Attacker.UserId or nil) end
+ end
+ if amount>0 and attackerPlayer and victim and attackerPlayer~=victim then
+  for _,callback in ipairs(damageObservers) do task.spawn(callback,attackerPlayer,victim,amount) end
  end
  target:SetAttribute("LastDamage",amount)
  target:SetAttribute("LastDamageType",damageType)

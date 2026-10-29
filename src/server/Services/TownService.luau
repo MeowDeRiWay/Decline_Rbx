@@ -97,6 +97,12 @@ local function cancelRequests(town)
  end
 end
 local function relation(a, b) return a.relations[b.id] or "Neutral" end
+function Service.RelationBetween(a,b)
+ local first,second=townOf(a),townOf(b)
+ if not first or not second then return "Neutral" end
+ if first==second then return "Ally" end
+ return relation(first,second)
+end
 local function syncPlot(plot)
  plot.model:SetAttribute("OwnerID", plot.owner)
  plot.model:SetAttribute("Co-OwnerID", Rules.SerializeOwners(plot.coowners))
@@ -677,6 +683,7 @@ function Service.Start()
     end
     player:SetAttribute("TerritoryTownID", closest and closest.id)
     player:SetAttribute("TerritoryTeamID", closest and closest.teamID)
+    player:SetAttribute("TerritoryResolved",root~=nil)
    end
    Service.Publish()
   end

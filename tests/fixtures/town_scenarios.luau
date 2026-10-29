@@ -3,6 +3,7 @@ local action=ReplicatedStorage.TownRemotes.Action
 local function call(player,command,value,extra) clock+=.2; action.OnServerEvent:Fire(player,command,value,extra) end
 call(a,"Join",1); call(b,"Join",1); call(c,"Join",2)
 assert(a:GetAttribute("TownID")==1 and a.Character.Humanoid.Health==100)
+assert(Service.RelationBetween(a,b)=="Ally" and Service.RelationBetween(a,c)=="Neutral")
 call(d,"Join",3)
 assert(d:GetAttribute("TeamID")==1 and d.Character:GetPivot().Position.X==33 and d.Character.Humanoid.Health==100,
  "TownSpawn.TeamID=1 must match Flag.Team=1 rather than TownID=3, after engine placement")
@@ -62,7 +63,9 @@ for _,item in ipairs(notices) do if item.data.Kind=="Approval" and item.player==
 assert(alliance)
 call(b,"Reply",alliance,true); assert(Service.Snapshot(a).Towns[1].Relations[1].Relation=="Neutral")
 call(c,"Reply",alliance,true); assert(Service.Snapshot(a).Towns[1].Relations[1].Relation=="Ally")
+assert(Service.RelationBetween(a,c)=="Ally" and Service.RelationBetween(c,a)=="Ally")
 call(a,"Relation",2,"War"); assert(Service.Snapshot(c).Towns[2].Relations[1].Relation=="War")
+assert(Service.RelationBetween(a,c)=="War")
 call(b,"Open",flagA); call(b,"Vote")
 local vote=Service.Snapshot(b).Prompts[1]; assert(vote)
 call(c,"Reply",vote,false); call(a,"Reply",vote,true)
