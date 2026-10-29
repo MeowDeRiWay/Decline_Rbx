@@ -73,6 +73,13 @@ function Service.Play(model,kind)
  -- Legacy parts/accessories retain their rigid offset; articulated parts use the
  -- complete final pose. Weapons never determine the body's ground height.
  local offsets={}
+ local attachments={}
+ for _,j in ipairs(model:GetDescendants()) do
+  if j:IsA("WeldConstraint") and j.Name=="ArmorWeld" and j.Part0 and j.Part1 and frames[j.Part0] then
+   attachments[j.Part1]={Parent=j.Part0,Offset=j.Part0.CFrame:ToObjectSpace(j.Part1.CFrame)}
+   frames[j.Part1]=frames[j.Part0]*attachments[j.Part1].Offset
+  end
+ end
  for _,p in ipairs(model:GetDescendants()) do
   if p:IsA("BasePart") then
    p.Anchored=true;p.CanCollide=false
@@ -94,7 +101,9 @@ function Service.Play(model,kind)
   local pose={}
   for _,j in ipairs(joints) do pose[j]=initial[j]:Lerp(targets[j],alpha);j.C0=pose[j];j.Transform=CFrame.identity end
   local frame=start:Lerp(destination,alpha)
-  for p,cf in pairs(Fall.Solve(root,frame,joints,pose)) do p.CFrame=cf end
+  local solved=Fall.Solve(root,frame,joints,pose)
+  for p,cf in pairs(solved) do p.CFrame=cf end
+  for p,attachment in pairs(attachments) do if p.Parent and solved[attachment.Parent] then p.CFrame=solved[attachment.Parent]*attachment.Offset end end
   for p,offset in pairs(offsets) do if p.Parent then p.CFrame=frame*offset end end
  end
  local value=Instance.new("NumberValue")

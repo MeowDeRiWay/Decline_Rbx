@@ -141,6 +141,16 @@ noGround=true
 local missing,r=build(0);local y=r.Position.Y
 Service.Play(missing,"Death");tweens[#tweens]:Finish()
 assert(math.abs(r.Position.Y-y)<.0001,"no accepted ground means no invented furniture support")
+noGround=false;blockers={};floorY=0
+local armored,aroot=build(0)
+local limb=armored:FindFirstChild("LeftLowerArm")
+local sleeve=new("Part",armored);sleeve.Name="Sleeve";sleeve.Transparency=0;sleeve.Size=Vector3.new(.2,.2,.2)
+local offset=CFrame.new(.01,0,.02);sleeve.CFrame=limb.CFrame*offset
+local weld=new("WeldConstraint",sleeve);weld.Name="ArmorWeld";weld.Part0=limb;weld.Part1=sleeve
+for _,kind in ipairs({"Knockout","Death"}) do
+ Service.Play(armored,kind);tweens[#tweens]:Finish();grounded(armored)
+ near(limb.CFrame:ToObjectSpace(sleeve.CFrame).Position,offset.Position)
+end
 print("PASS: fetal KO, relaxed death, restore/cancellation, directional zombie falls, head/feet arm poses and final ground contact on authored rig, marked plates, Terrain, ignored walls/furniture/home floors and missing-ground guard")
 '''
 with tempfile.TemporaryDirectory() as d:

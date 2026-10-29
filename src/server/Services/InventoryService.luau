@@ -4,6 +4,7 @@ local ItemConfig = require(ReplicatedStorage.Shared.ItemConfig)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local CombatRules = require(ReplicatedStorage.Shared.CombatRules)
 local Visuals = require(script.Parent.EquipmentVisuals)
+local ArmorVisuals=require(script.Parent.ArmorVisuals)
 local Service = {}
 local states = {}
 local disconnected = {}
@@ -29,6 +30,7 @@ local function update(player)
  if player.Character then
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")))
   Visuals.Apply(player.Character, state.Equipment.Hands)
+  ArmorVisuals.Apply(player.Character,state.Equipment.Body,state.Equipment.Body and Visuals.Template(state.Equipment.Body))
   player.Character:SetAttribute("MedicineItem",state.Equipment.Medicine or "")
   player.Character:SetAttribute("MedicineCount",(state.Items[state.Equipment.Medicine or ""] or 0)+(state.Equipment.Medicine and 1 or 0))
   player.Character:SetAttribute("WeaponCondition", state.EquipmentCondition.Hands or 0)

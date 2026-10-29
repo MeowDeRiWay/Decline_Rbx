@@ -1,5 +1,9 @@
 -- Hand-authored Ukrainian and Russian translations. English source is stable.
 return {
+ {"Leather jacket","Шкіряна куртка","Кожаная куртка"},
+ {"A leather jacket offering light protection: 2 damage absorption and 10% damage resistance.","Шкіряна куртка з легким захистом: поглинання 2 одиниць шкоди та опір шкоді 10%.","Кожаная куртка с лёгкой защитой: поглощение 2 единиц урона и сопротивление урону 10%."},
+ {"Make leather jacket","Пошити шкіряну куртку","Сшить кожаную куртку"},
+ {"Sew a leather jacket from twenty cloth. Requires Repair 100 and a reusable sewing kit in your inventory.","Пошийте шкіряну куртку з двадцяти одиниць тканини. Потрібні ремонт 100 і багаторазовий швейний набір в інвентарі.","Сшейте кожаную куртку из двадцати единиц ткани. Нужны ремонт 100 и многоразовый швейный набор в инвентаре."},
  {"Banknote","Банкнота","Банкнота"},
  {"Money","Гроші","Деньги"},
  {"Zombie hand","Рука зомбі","Рука зомби"},

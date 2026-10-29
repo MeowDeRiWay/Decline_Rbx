@@ -3,13 +3,14 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/InventoryService.luau').read_text()
-service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|Journal)\s*=\s*require[^\n]+\n','',service)
+service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|Journal)\s*=\s*require[^\n]+\n','',service)
 service=service.replace('require(script.Parent.CraftingService).Close(player)','Crafting.Close(player)')
 setup='''
 local Crafting={Close=function() end}
 local Journal=journalPlaceholder
 local notices=ReplicatedStorage:FindFirstChild("PersonalNotice").sent
-local Visuals={Apply=function() end,Validate=function() return true end}
+local ArmorVisuals={Apply=function(c,id) c:SetAttribute("WornArmor",id) end}
+local Visuals={Apply=function() end,Validate=function() return true end,Template=function() return {} end}
 local baseNew=Instance.new
 function Instance.new(kind)
  local value=baseNew(kind)
@@ -149,6 +150,10 @@ Service.Refresh(a);assert(Service.Snapshot(a).Items.AssaultRifle223==count,"slot
 ItemConfig.Items.TestHelmet={Name="Old helmet",Weight=1,Slot="Head"}
 assert(Service.Add(a,"TestHelmet",1) and not Service.Equip(a,"TestHelmet") and not Service.Unequip(a,"Head"),"client cannot equip or address removed slot")
 ItemConfig.Items.Apron.Armor=nil
+assert(Service.Add(a,"LeatherArmor",1) and Service.Equip(a,"LeatherArmor"))
+assert(Service.Snapshot(a).Equipment.Body=="LeatherArmor" and a.Character:GetAttribute("WornArmor")=="LeatherArmor")
+assert(a:GetAttribute("ArmorAbsorption")==2 and a:GetAttribute("ArmorResistance")==.1)
+assert(Service.Unequip(a,"Body") and a.Character:GetAttribute("WornArmor")==nil and a:GetAttribute("ArmorAbsorption")==0)
 print("PASS: five slots, Body-only armor, retired-slot recovery without duplication, removed-slot commands rejected")
 print("PASS: actual world drop/pickup preserves condition, loaded rounds, ammo type and total mass without duplicate pickup")
 '''

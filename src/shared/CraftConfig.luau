@@ -1,5 +1,6 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 local recipes = {
+ MakeLeatherArmor={Name="Make leather jacket",Station="Workstation",Description="Sew a leather jacket from twenty cloth. Requires Repair 100 and a reusable sewing kit in your inventory.",Ingredients={Cloth=20},Output="LeatherArmor",OutputCount=1,MaxBatch=1,Duration=60,RequiresPresence=true,Tool="SewingKit",Requirements={Skills={Repair=100}}},
  BoilWater={Name="Boil water",Station="Stove",Boiled=true,Description="Boil one to five bottles of dirty water into clean water. One fuel per batch; no experience. You may leave.",Ingredients={DirtyWater=1},Output="CleanWater",OutputCount=1,MaxBatch=5,Duration=60,XP=0},
  MakePipePistol9mm={Name="Make 9 mm pipe pistol",Station="Workstation",Description="Assemble a single-shot pipe pistol. Requires Repair 60.",Ingredients={Plank=1,Scrap=3},Output="PipePistol9mm",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={Repair=60}}},
  MakePipeRifle9mm={Name="Make 9 mm pipe rifle",Station="Workstation",Description="Assemble a single-shot pipe rifle. Requires Repair 60.",Ingredients={Plank=2,Scrap=5},Output="PipeRifle9mm",OutputCount=1,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=60}}},

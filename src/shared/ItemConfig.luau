@@ -34,6 +34,7 @@ ItemConfig.Items = {
  Coal = {Name="Charcoal",Weight=.2,Description="Charcoal made by burning tree logs. Used for smelting and ammunition."},
  Chemicals = {Name="Chemicals",Weight=.2,Description="Scavenged chemical compounds used to produce ammunition."},
  Iron = {Name="Iron",Weight=1,ResourceMaterial="Iron",Description="Smelted iron used for industrial firearms and ammunition."},
+ LeatherArmor={Name="Leather jacket",Weight=2,Slot="Body",Armor={Absorption=2,Resistance=.1},Description="A leather jacket offering light protection: 2 damage absorption and 10% damage resistance."},
  Apron = {Name = "Apron", Weight = 0.5, Slot = "Additional", Description = "An apron worn over clothing."},
  SewingKit={Name="Sewing kit",Weight=0.2,CraftTool="SewingKit",CraftSpeed=1,Description="A reusable tool required to craft items from cloth and rags. Keep it in your inventory."},
  Cloth = {

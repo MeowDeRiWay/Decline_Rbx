@@ -46,10 +46,14 @@ assert(Visuals.Template("Handle")==handle,"nested material works")
 local cooked=make("Folder","CookedFood",ServerStorage.Items)
 local food=make("Model","BoiledPotato",cooked);make("Part","Part",food)
 assert(Visuals.Template("BoiledPotato")==food,"food world drop uses same resolver")
+assert(not Visuals.Validate("LeatherArmor"),"cannot equip armor without its template")
+local armor=make("Folder","Armor",ServerStorage.Items)
+local jacket=make("Model","LeatherArmor",armor);local torso=make("Folder","UpperTorso",jacket);make("Part","Plate",torso)
+assert(Visuals.Template("LeatherArmor")==jacket and Visuals.Validate("LeatherArmor"),"Items/Armor model resolves for Body equipment")
 print("PASS: nested categories, existing nested template capture, component exclusion, food/material/weapon resolution")
 print("PASS: all eight world equipment models supply templates, survive pickup removal and preserve existing templates")
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)()','local Visuals=(function()\n'+service+'\nend)()',cases]
+parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local function warn() end','local Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)()','local Visuals=(function()\n'+service+'\nend)()',cases]
 with tempfile.TemporaryDirectory(prefix='decline-equipment-') as directory:
  p=Path(directory)/'test.luau';p.write_text('\n'.join(parts))
  subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(p)],check=True)

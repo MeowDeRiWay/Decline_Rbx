@@ -1,0 +1,69 @@
+"""Fit armor groups onto the actual custom rig and verify safe weld ownership."""
+from pathlib import Path
+import subprocess,sys,tempfile
+root=Path(__file__).resolve().parents[1]
+def module(path):return '(function()\n'+(root/path).read_text()+'\nend)()'
+helpers=(root/'tests/run_character_rig.py').read_text().split("source+=r'''")[1].split('local function test(frame)')[0]
+s=(root/'tests/rig_math.fixture.luau').read_text()+helpers
+s+='\nlocal Rig='+module('src/shared/CharacterRig.luau')
+s+='\nlocal Armor='+module('src/server/Services/ArmorVisuals.luau')
+s+='\nlocal Items='+module('src/shared/ItemConfig.luau')
+s+='\nlocal Recipes='+module('src/shared/CraftConfig.luau')
+s+='\nlocal Craft='+module('src/shared/CraftRules.luau')
+s+='\nlocal Defense='+module('src/shared/DefenseRules.luau')
+s+='\nlocal geometry='+module('tests/character_geometry.fixture.luau')
+s+=r'''
+function methods:GetPivot() return self.CFrame or CFrame.identity end
+function methods:Clone()
+ local p=Instance.new(self.ClassName);p.Name=self.Name;p.Size=self.Size;p.CFrame=self.CFrame;p.Attributes=table.clone(self.Attributes);p.Transparency=self.Transparency
+ return p
+end
+local c=Instance.new("Model")
+local originals={}
+for _,g in ipairs(geometry) do local p=Instance.new("Part",c);p.Name=g.Name;p.CFrame=g.CFrame;p.Size=g.Size;p.Transparency=0;originals[g.Name]=g end
+local root=c:FindFirstChild("Body");root.Name="HumanoidRootPart"
+assert(Rig.Prepare(c,root,Instance.new("Humanoid",c)))
+local frames={[root]=root.CFrame}
+for _=1,12 do for _,j in ipairs(c:GetDescendants()) do if j:IsA("Motor6D") and frames[j.Part0] and not frames[j.Part1] then frames[j.Part1]=frames[j.Part0]*j.C0*j.C1:Inverse() end end end
+for p,cf in pairs(frames) do p.CFrame=cf end
+local template=Instance.new("Model");template.CFrame=CFrame.new(30,4,20)
+for _,name in ipairs({"UpperTorso","LeftUpperArm","LeftLowerArm","RightUpperArm","RightLowerArm"}) do
+ local group=Instance.new("Folder",template);group.Name=name
+ local p=Instance.new("Part",group);p.Name="Any name";p.CFrame=originals[name].CFrame;p.Size=originals[name].Size*1.1
+end
+local held=Instance.new("Part",c);held.Name="HeldItem"
+assert(Armor.Apply(c,"LeatherArmor",template))
+local model=c:FindFirstChild("EquippedArmor");assert(model and held.Parent==c)
+local count=0
+for _,p in ipairs(model:GetDescendants()) do if p:IsA("Part") then
+ count+=1
+ local j=p:FindFirstChild("ArmorWeld");assert(j and j.Part1==p and j.Part0.Name==p.Parent.Name)
+ assert(not p.Anchored and p.Massless and not p.CanCollide and not p.CanQuery and not p.CanTouch)
+ near(p.CFrame.Position,j.Part0.Position)
+ near(p.CFrame.UpVector,j.Part0.CFrame.UpVector)
+ near(p.CFrame.LookVector,j.Part0.CFrame.LookVector)
+end end
+assert(count==5,"jacket and all sleeve sections mount separately")
+assert(Armor.Apply(c,"LeatherArmor",template) and c:FindFirstChild("EquippedArmor")==model,"inventory updates do not rebuild armor")
+Armor.Apply(c,nil);assert(not c:FindFirstChild("EquippedArmor") and held.Parent==c)
+local anchored=Instance.new("Model");anchored.CFrame=CFrame.identity
+local group=Instance.new("Folder",anchored);group.Name="UpperTorso"
+local marker=Instance.new("Part",group);marker.Name="Anchor";marker.CFrame=originals.UpperTorso.CFrame
+local plate=Instance.new("Part",group);plate.Name="Front";plate.Size=Vector3.new(.4,.5,.08);plate.CFrame=marker.CFrame*CFrame.new(0,0,-.2)
+assert(Armor.Apply(c,"LeatherArmor",anchored))
+local fitted=c:FindFirstChild("EquippedArmor"):FindFirstChild("UpperTorso"):FindFirstChild("Front")
+near(c:FindFirstChild("UpperTorso").CFrame:ToObjectSpace(fitted.CFrame).Position,Vector3.new(0,0,-.2))
+assert(#c:FindFirstChild("EquippedArmor"):GetDescendants()==3,"Anchor is not worn/copied")
+local item=Items.Items.LeatherArmor;local recipe=Recipes.MakeLeatherArmor
+assert(item.Slot=="Body" and item.Weight==2 and item.Armor.Absorption==2 and item.Armor.Resistance==.1)
+assert(Defense.Resolve(20,item.Armor.Resistance,item.Armor.Absorption)==16)
+assert(recipe.Station=="Workstation" and recipe.Duration==60 and recipe.Requirements.Skills.Repair==100 and recipe.RequiresPresence)
+assert(recipe.Ingredients.Cloth==20 and recipe.Ingredients.SewingKit==nil and recipe.Tool=="SewingKit")
+assert(Craft.Speed({},recipe)==nil and Craft.Speed({SewingKit=1},recipe)==1)
+assert(not Craft.Plan({Cloth=19},recipe,1))
+local plan=assert(Craft.Plan({Cloth=20,SewingKit=1},recipe,1))
+assert(plan.Ingredients.Cloth==20 and plan.Ingredients.SewingKit==nil and plan.Outputs.LeatherArmor==1)
+print("PASS: actual torso/sleeve fit, section welds, no armor physics/hitboxes, caching/removal, exact Anchor offsets, Body defense/weight and cloth/kit recipe")
+'''
+with tempfile.TemporaryDirectory() as d:
+ p=Path(d)/'armor.luau';p.write_text(s);subprocess.run([sys.argv[1],str(p)],check=True)
