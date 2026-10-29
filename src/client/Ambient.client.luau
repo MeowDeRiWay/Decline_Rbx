@@ -12,7 +12,10 @@ local function update()
  local mode
  if active then
   if (player:GetAttribute("BattleAmbientUntil") or 0)>workspace:GetServerTimeNow() then mode="Battle"
-  elseif player:GetAttribute("TerritoryResolved")==true and not player:GetAttribute("TerritoryTownID") then mode="Outside" end
+  elseif player:GetAttribute("TerritoryResolved")==true then
+   local distance=player:GetAttribute("TownFlagDistance")
+   if distance==nil or distance>Config.TownRadius then mode="Outside" end
+  end
  end
  music:SetMode(mode)
 end
@@ -23,7 +26,7 @@ local heartbeat=RunService.Heartbeat:Connect(function(dt)
  elapsed=0;update()
 end)
 local connections={heartbeat}
-for _,attribute in ipairs({"BattleAmbientUntil","TerritoryTownID","TerritoryResolved"}) do
+for _,attribute in ipairs({"BattleAmbientUntil","TownFlagDistance","TerritoryResolved"}) do
  table.insert(connections,player:GetAttributeChangedSignal(attribute):Connect(update))
 end
 table.insert(connections,player.CharacterAdded:Connect(function() music:SetMode(nil) end))

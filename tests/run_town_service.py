@@ -80,6 +80,13 @@ assert(newborn.Character and newborn.Character.Humanoid.Health==newborn.Characte
 assert(#restoredSurfaces>0,"town placement restores target surfaces before spawning")
 print("PASS: ending blocks spawn/join and fresh creation resets initial spawn health")
 print("PASS: free market construction/approval, mayor tax limits and wall-tier cap")
+local probe=player(9981);Players.PlayerAdded:Fire(probe);call(probe,"Join",1)
+local root=probe.Character.HumanoidRootPart
+root.Position=Vector3.new(60,999,0);tick(1)
+assert(probe:GetAttribute("TownFlagDistance")==60 and probe:GetAttribute("TerritoryTownID")~=nil)
+root.Position=Vector3.new(61,-999,0);tick(1)
+assert(probe:GetAttribute("TownFlagDistance")==61 and probe:GetAttribute("TerritoryTownID")~=nil,"music distance is horizontal and does not shrink the city territory")
+print("PASS: nearest flag distance is horizontal and independent of the existing 200-stud territory")
 ''')
 with tempfile.TemporaryDirectory(prefix='decline-town-tests-') as directory:
     test = Path(directory) / 'town_service.luau'

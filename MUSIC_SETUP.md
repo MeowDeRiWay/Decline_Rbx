@@ -14,9 +14,11 @@ exist. Tracks play once; the next track is selected when the current one ends.
 ## Switching
 
 Outside music starts only after TownService has resolved the first territory
-check and the player is outside every town flag's existing radius. Entering any
-city fades outside music to silence. This uses location (`TerritoryTownID`), not
-city membership. Existing town-radius rules and their one-second update remain.
+check and the player is more than 60 horizontal studs from every town flag.
+Within 60 studs (inclusive) of any flag, outside music fades to silence. This uses
+`TownFlagDistance`, not city membership. Existing 200-stud gameplay territory and
+its one-second update remain unchanged. `AmbientConfig.TownRadius` controls only
+this music boundary.
 
 Actual positive damage by one live player against another starts Battle music
 for both participants. The damage is reported only after the authoritative
@@ -40,6 +42,7 @@ between participants.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
+| TownRadius | 60 | Music-only horizontal radius around each flag |
 | FadeSeconds | 3 | Smooth fade/crossfade duration |
 | CombatSeconds | 30 | Time since latest qualifying PvP damage |
 | OutsideVolume | 1 | Multiplier on authored outside Sound volume |

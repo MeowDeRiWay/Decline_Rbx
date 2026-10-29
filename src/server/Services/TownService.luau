@@ -669,13 +669,14 @@ function Service.Start()
    end
    for _, player in ipairs(Players:GetPlayers()) do
     local root = alive(player)
-    local closest, distance
+    local closest, distance, nearestFlagDistance
     if root then
      for _, town in pairs(towns) do
       for _, flag in ipairs(town.flags) do
        if flag:IsDescendantOf(workspace) then
         local delta = root.Position - flag:GetPivot().Position
         local d = Vector3.new(delta.X, 0, delta.Z).Magnitude
+        nearestFlagDistance=math.min(nearestFlagDistance or math.huge,d)
         if d <= Config.Radius and (not distance or d < distance) then closest, distance = town, d end
        end
       end
@@ -683,6 +684,7 @@ function Service.Start()
     end
     player:SetAttribute("TerritoryTownID", closest and closest.id)
     player:SetAttribute("TerritoryTeamID", closest and closest.teamID)
+    player:SetAttribute("TownFlagDistance",nearestFlagDistance)
     player:SetAttribute("TerritoryResolved",root~=nil)
    end
    Service.Publish()
