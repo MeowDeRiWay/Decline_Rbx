@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile,re
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Firearms.server.luau').read_text()
-service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression|Noise)=require[^\n]+\n','',service)
+service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression|Noise|Config)=require[^\n]+\n','',service)
 mock='''
 local function signal() return {Connect=function(self,fn) self.callback=fn end} end
 local changed=signal()
@@ -18,7 +18,8 @@ end
 local character={attributes={HandsItem="AssaultRifle223",WeaponCondition=3000}}
 function character:GetAttribute(k) return self.attributes[k] end
 function character:SetAttribute(k,v) self.attributes[k]=v end
-local hp={Health=100}
+local Config={ShotMovementLockSeconds=.2}
+local hp={Health=100,WalkSpeed=8,Move=function(self) self.Stopped=true end}
 local root={Position=Vector3.new(0,0,0)}
 local muzzle={GetPivot=function() return CFrame.new(Vector3.new(0,.8,-.5)) end,IsA=function(_,kind) return kind=="Model" end}
 local held={FindFirstChild=function() return muzzle end}
@@ -64,7 +65,7 @@ Enum={RaycastFilterType={Exclude=1}}
 RaycastParams={new=function() return {} end}
 local rays={}
 local wall=false
-workspace={Raycast=function(_,origin,delta)
+workspace={GetServerTimeNow=function() return time end,Raycast=function(_,origin,delta)
  table.insert(rays,{Origin=origin,Delta=delta})
  if wall and delta.Z<0 then return {} end
 end}
@@ -75,15 +76,19 @@ cases='''
 local fire=action.OnServerEvent.callback
 local direction=Vector3.new(0,0,-1)
 fire(player,"Fire",direction);assert(shots==0)
+assert(character:GetAttribute("ShotMovementUntil")==nil,"empty input cannot stop walking")
 fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single")
 fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Single")
 advance(.3);fire(player,"Mode");assert(character:GetAttribute("FireMode")=="Auto")
 fire(player,"Reload");fire(player,"Fire",direction);assert(shots==0)
 advance(2.5);assert(magazine.Loaded==24 and rounds.Ammo223FMJ==26,"reload moves loose cartridges into weapon")
 fire(player,"Fire",direction);assert(shots==1 and magazine.Loaded==23 and rounds.Ammo223FMJ==26 and uses==1)
+assert(hp.WalkSpeed==0 and hp.Stopped and character:GetAttribute("ShotMovementUntil")==time+.2,"accepted shot stops walking with shared-clock deadline")
+local shotDeadline=character:GetAttribute("ShotMovementUntil")
 assert(#rays==2 and rays[2].Origin.Y==.8 and rays[2].Delta.Y==0)
 fire(player,"Fire",direction);assert(shots==1 and noises==1,"RPM limit emits no noise")
 advance(.1);wall=true;fire(player,"Fire",direction);assert(shots==1 and magazine.Loaded==23,"wall guards consume nothing")
+assert(character:GetAttribute("ShotMovementUntil")==shotDeadline,"blocked shot cannot extend pause")
 wall=false;advance(.1);fire(player,"Fire",Vector3.new(0,0,-100));assert(shots==1)
 fire(player,"Type");assert(magazine.Type=="AP" and magazine.Loaded==0 and rounds.Ammo223FMJ==49,"type switch returns previous rounds")
 fire(player,"Reload");advance(2.5);assert(magazine.Loaded==3 and rounds.Ammo223AP==0)

@@ -4,6 +4,7 @@ local RunService = game:GetService("RunService")
 local ContextActionService = game:GetService("ContextActionService")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local ProgressionRules=require(ReplicatedStorage.Shared.ProgressionRules)
+local MovementRules=require(ReplicatedStorage.Shared.MovementRules)
 local Input=game:GetService("UserInputService")
 local GuiService=game:GetService("GuiService")
 local targetHeight=Config.CameraHeight
@@ -67,6 +68,13 @@ local function added(character)
 end
 player.CharacterAdded:Connect(added)
 if player.Character then task.spawn(added, player.Character) end
+-- Run after the default controls, so held WASD cannot override the shot pause.
+RunService:BindToRenderStep("DeclineShotMovement",Enum.RenderPriority.Input.Value+1,function()
+ local character=player.Character
+ if not character or not MovementRules.ShotLocked(character:GetAttribute("ShotMovementUntil"),workspace:GetServerTimeNow()) then return end
+ local humanoid=character:FindFirstChildOfClass("Humanoid")
+ if humanoid then humanoid:Move(Vector3.zero,false) end
+end)
 RunService:BindToRenderStep("DeclineCamera", Enum.RenderPriority.Camera.Value + 1, function(dt)
  if orbiting and blocked() then stopOrbit() end
  local character = player.Character

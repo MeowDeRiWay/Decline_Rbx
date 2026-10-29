@@ -1,5 +1,11 @@
 local Rules = require("../src/shared/MovementRules")
 local Config = require("../src/shared/GameConfig")
+assert(not Rules.ShotLocked(nil,10))
+assert(Rules.ShotLocked(10.2,10))
+assert(not Rules.ShotLocked(10.2,10.2))
+assert(not Rules.ShotLocked(10.2,11))
+-- Repeated shots extend the deadline without a stale delayed callback unlocking it.
+assert(Rules.ShotLocked(10.3,10.21))
 for _,weight in ipairs({0,10,20}) do assert(Rules.LoadMultiplier(weight,Config)==1) end
 assert(math.abs(Rules.LoadMultiplier(20.2,Config)-.99)<.000001)
 assert(math.abs(Rules.LoadMultiplier(21,Config)-.95)<.000001)

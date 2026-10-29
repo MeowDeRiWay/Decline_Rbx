@@ -7,6 +7,7 @@ local Audio=require(script.Parent.Services.FirearmAudio)
 local Progression=require(script.Parent.Services.ProgressionService)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
+local Config=require(ReplicatedStorage.Shared.GameConfig)
 local Journal=require(script.Parent.Services.JournalService)
 local states={}
 local random=Random.new()
@@ -104,6 +105,10 @@ action.OnServerEvent:Connect(function(player,command,direction)
   or workspace:Raycast(shoulder,origin-shoulder,params) then return end
  direction=direction.Unit
  if not Projectiles.Fire(player,character,origin,direction,gun,state.Type,id) then return end
+ -- Only an accepted shot stops walking; rejected input and reload do not.
+ character:SetAttribute("ShotMovementUntil",workspace:GetServerTimeNow()+Config.ShotMovementLockSeconds)
+ local humanoid=character:FindFirstChildOfClass("Humanoid")
+ if humanoid then humanoid.WalkSpeed=0;humanoid:Move(Vector3.zero,false) end
  local shot=Audio.Play(character,"ShotSound",gun.ShotDistance)
  Noise.Emit(origin,gun.ShotDistance or (shot and shot.RollOffMaxDistance or 150),"Shot")
  state.Ready=now+60/gun.RPM;state.Loaded-=1

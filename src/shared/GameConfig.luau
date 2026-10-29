@@ -3,6 +3,7 @@ GameConfig.MaxTowns = 5
 GameConfig.ReconnectGraceSeconds = 300
 GameConfig.WalkSpeed = 1
 GameConfig.RunSpeedBonus = 2
+GameConfig.ShotMovementLockSeconds = 0.2
 GameConfig.CarryLimitKg = 20
 GameConfig.OverloadPenaltyPerKg = 0.05
 -- Spatial player footsteps.

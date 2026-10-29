@@ -1,4 +1,8 @@
 local Rules = {}
+-- Both peers use Workspace:GetServerTimeNow(), never independent os.clock values.
+function Rules.ShotLocked(untilTime, now)
+ return typeof(untilTime)=="number" and untilTime>now
+end
 function Rules.LoadMultiplier(weight, config, carryLimit)
  if typeof(weight) ~= "number" or weight ~= weight or math.abs(weight) == math.huge then weight = 0 end
  local excess = math.max(0,weight-(carryLimit or config.CarryLimitKg))
