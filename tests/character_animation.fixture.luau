@@ -28,5 +28,5 @@ local owner,c,root,hp=makePlayer(0)
 local other,oc,otherRoot=makePlayer(1)
 local Players={LocalPlayer=owner,PlayerAdded=signal(),PlayerRemoving=signal(),GetPlayers=function() return {owner,other} end}
 local RunService={PreSimulation=signal()}
-local Items={Gun={Firearm={Category="Rifle"}},Pistol={Firearm={Category="Pistol"}},Knife={Weapon={}},Axe={Weapon={},HarvestTool="Axe"},Shovel={Weapon={},HarvestTool="Shovel"}}
+local Items={Gun={Firearm={Category="Rifle"}},Pistol={Firearm={Category="Pistol"}},Knife={Weapon={},CraftTool="Knife"},Axe={Weapon={},HarvestTool="Axe"},Shovel={Weapon={},HarvestTool="Shovel"}}
 game={GetService=function(_,name) if name=="Players" then return Players elseif name=="RunService" then return RunService end end}

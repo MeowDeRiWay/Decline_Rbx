@@ -34,6 +34,15 @@ for _,id in ipairs({"Pistol","Knife","Axe","Shovel"}) do
  c:SetAttribute("HandsItem",id);RunService.PreSimulation:Fire(1/30)
  assert(shoulder.Transform.R[1]==shoulder.Transform.R[1],"all equipment poses stay finite")
 end
+c:SetAttribute("HandsItem","Knife");RunService.PreSimulation:Fire(1/30)
+local guard=c:FindFirstChild("LeftShoulder",true)
+local guardElbow=c:FindFirstChild("LeftElbow",true)
+local s=guard:GetAttribute("StandingRotation")*guard.Transform
+local endpoint=s:VectorToWorldSpace(guard:GetAttribute("UpperVector"))+(s*guardElbow.Transform):VectorToWorldSpace(guard:GetAttribute("LowerVector"))
+local anchor=(guard.Part0.CFrame*guard:GetAttribute("AuthoredC0")*CFrame.new(guard:GetAttribute("StandingOffset"))).Position
+local hand=root.CFrame:PointToObjectSpace(anchor+root.CFrame:VectorToWorldSpace(endpoint))
+assert(hand.Z<-.4 and hand.Y>.1,"knife free hand is raised in front of the body")
+c:SetAttribute("HandsItem","Shovel");RunService.PreSimulation:Fire(1/30)
 local lastRemote=remoteHip.Transform
 RunService.PreSimulation:Fire(1/30)
 assert(remoteHip.Transform~=lastRemote,"Studio preview poses players without a local viewer or distance cull")

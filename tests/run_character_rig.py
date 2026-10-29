@@ -113,14 +113,14 @@ for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel
  if id:find("Pistol") then
   assert(math.abs(localPose.Position.X)<.0001 and localPose.Position.Z<-.76,"actual pistol equipment is forward with extended arms")
  elseif id=="Rifle223" then
-  assert(math.abs(localPose.Position.Z+.2575)<.0001,"rifle's existing authored hold distance is preserved")
+  assert(math.abs(localPose.Position.Z+.1945)<.0001 and math.abs(localPose.Position.X-.24)<.0001,"rifle grip moves back and inward toward chest")
  end
  local grip=held:FindFirstChild("_HandGrip",true)
  assert(grip and grip.Parent==held,"moving grip follows the weapon part, even without Model.PrimaryPart")
  local point=(held.CFrame*grip.CFrame).Position
  near(point,held.CFrame.Position)
 end
-print("PASS: actual equipment positions for both pistols, unchanged rifle distance, knife/axe/shovel and movable grip")
+print("PASS: actual equipment positions for both pistols, closer rifle grip, knife/axe/shovel and movable grip")
 end
 '''
 with tempfile.TemporaryDirectory() as directory:

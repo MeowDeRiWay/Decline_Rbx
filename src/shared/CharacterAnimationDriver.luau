@@ -133,6 +133,13 @@ RunService.PreSimulation:Connect(function(dt)
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
     local s,e=Pose.Arm(upper,lower,delta,Vector3.new(side=="Left" and -1 or 1,-1,.2))
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
+   elseif equipped and definition.CraftTool=="Knife" and side=="Left" then
+    -- Free hand stays forward in a defensive guard; it does not swing at the side.
+    local target=root.CFrame:PointToWorldSpace(Vector3.new(-root.Size.X*.6,root.Size.Y*.28,-root.Size.Y*.75))
+    local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
+    local delta=root.CFrame:VectorToObjectSpace(target-anchor)
+    local s,e=Pose.Arm(upper,lower,delta,Vector3.new(-1,-.5,.15))
+    shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
    else
     local swing=math.sin(r.Phase)*(side=="Left" and -1 or 1)*r.Amount*.6
     shoulder.Transform=standing:Inverse()*CFrame.Angles(swing,0,0)*standing
