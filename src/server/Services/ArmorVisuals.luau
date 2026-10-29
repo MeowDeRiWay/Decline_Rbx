@@ -1,6 +1,7 @@
 -- Each named folder is welded to the matching articulated body section.
 -- Optional Anchor parts preserve exact authored fit; otherwise fit the group's
--- center to the body section in the rig's authored T-pose axes.
+-- center to the body section in the rig's authored T-pose axes. Helmets
+-- retain their authored height above the head using the torso as a reference.
 local Armor={}
 local names={"Head","UpperTorso","LowerTorso","LeftUpperArm","LeftLowerArm","RightUpperArm","RightLowerArm","LeftUpperLeg","LeftLowerLeg","RightUpperLeg","RightLowerLeg"}
 local function rotation(cf) return CFrame.new(-cf.Position)*cf end
@@ -31,6 +32,24 @@ local function groupFrame(parts,axes)
  end
  return axes*CFrame.new((low+high)/2)
 end
+local function headFrame(template,axes,authored,character)
+ local torso=character:FindFirstChild("UpperTorso")
+ local head=character:FindFirstChild("Head")
+ local group=template:FindFirstChild("UpperTorso")
+ if not torso or not group or not authored[torso] or not authored[head] then return nil end
+ local anchor=group:FindFirstChild("Anchor")
+ local source
+ if anchor and anchor:IsA("BasePart") then source=anchor.CFrame
+ else
+  local parts={}
+  for _,p in ipairs(group:GetDescendants()) do if p:IsA("BasePart") then table.insert(parts,p) end end
+  if #parts==0 then return nil end
+  source=groupFrame(parts,axes)*rotation(authored[torso])
+ end
+ -- The helmet bounds describe the shell, not the head it was modeled around.
+ -- Reconstruct that head frame from the unanimated body proportions instead.
+ return source*authored[torso]:ToObjectSpace(authored[head])
+end
 function Armor.Apply(character,id,template)
  local existing=character:FindFirstChild("EquippedArmor")
  if existing and existing:GetAttribute("Item_ID")==id then return true end
@@ -52,9 +71,13 @@ function Armor.Apply(character,id,template)
     local source,destination
     if anchor and anchor:IsA("BasePart") then source=anchor.CFrame;destination=body.CFrame
     else
-     source=groupFrame(parts,axes)
-     local rest=authored[body] or root.CFrame:ToObjectSpace(body.CFrame)
-     destination=body.CFrame*rotation(rest):Inverse()
+     source=name=="Head" and headFrame(template,axes,authored,character)
+     if source then destination=body.CFrame
+     else
+      source=groupFrame(parts,axes)
+      local rest=authored[body] or root.CFrame:ToObjectSpace(body.CFrame)
+      destination=body.CFrame*rotation(rest):Inverse()
+     end
     end
     local folder=Instance.new("Folder",model);folder.Name=name
     for _,p in ipairs(parts) do

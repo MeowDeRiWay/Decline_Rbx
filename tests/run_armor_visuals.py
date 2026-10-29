@@ -12,6 +12,7 @@ s+='\nlocal Recipes='+module('src/shared/CraftConfig.luau')
 s+='\nlocal Craft='+module('src/shared/CraftRules.luau')
 s+='\nlocal Defense='+module('src/shared/DefenseRules.luau')
 s+='\nlocal geometry='+module('tests/character_geometry.fixture.luau')
+s+='\nlocal military='+module('tests/military_armor_geometry.fixture.luau')
 s+=r'''
 function methods:GetPivot() return self.CFrame or CFrame.identity end
 function methods:Clone()
@@ -72,6 +73,54 @@ local upgraded=assert(Craft.Plan({LeatherArmor=1,Scrap=5,SewingKit=1},upgrade,1)
 assert(upgraded.Ingredients.LeatherArmor==1 and upgraded.Ingredients.Scrap==5 and upgraded.Ingredients.SewingKit==nil and upgraded.Outputs.LeatherArmor2==1)
 local previous=c:FindFirstChild("EquippedArmor")
 assert(Armor.Apply(c,"LeatherArmor2",anchored) and c:FindFirstChild("EquippedArmor")~=previous,"upgrading replaces the previous armor visuals")
+-- Reproduce both uploaded helmets on the supplied character, including turning
+-- the whole scene and posing the head independently before equipping armor.
+for _,armor in ipairs(military.Armor) do
+ for _,yaw in ipairs({0,.8,-1.5}) do
+  local characterFrame=CFrame.new(-580,20,14)*CFrame.Angles(0,yaw,0)
+  local armorFrame=CFrame.new(-575,7,-12)*CFrame.Angles(0,-yaw,0)
+  local character=Instance.new("Model")
+  for _,g in ipairs(military.Character) do
+   local p=Instance.new("Part",character);p.Name=g.Name;p.Size=g.Size;p.CFrame=characterFrame*g.CFrame;p.Transparency=0
+  end
+  local root=character:FindFirstChild("Body");root.Name="HumanoidRootPart"
+  assert(Rig.Prepare(character,root,Instance.new("Humanoid",character)))
+  local head=character:FindFirstChild("Head")
+  head.CFrame=head.CFrame*CFrame.Angles(.25,.4,-.1)
+  local template=Instance.new("Model");template.CFrame=armorFrame
+  for _,g in ipairs(armor.Groups) do
+   local folder=Instance.new("Folder",template);folder.Name=g.Name
+   for _,part in ipairs(g.Parts) do
+    local p=Instance.new("Part",folder);p.Name=part.Name;p.Size=part.Size;p.CFrame=armorFrame*part.CFrame
+   end
+  end
+  assert(Armor.Apply(character,armor.ID,template))
+  local worn=character:FindFirstChild("EquippedArmor"):FindFirstChild("Head")
+  local parts={}
+  for _,p in ipairs(worn:GetDescendants()) do if p:IsA("BasePart") then table.insert(parts,p) end end
+  local cap=parts[1];local localCap=head.CFrame:ToObjectSpace(cap.CFrame)
+  assert(math.abs(localCap.Position.Y-.0819730759)<.0001,"helmet cap retains modeled height above head center: "..armor.ID)
+  assert(localCap.Position.Y+cap.Size.Y/2>head.Size.Y/2,"cap covers the top of the head")
+  for i,p in ipairs(parts) do
+   local weld=p:FindFirstChild("ArmorWeld");assert(weld.Part0==head)
+   local source=armor.Groups[#armor.Groups].Parts
+   local expected=source[1].CFrame:ToObjectSpace(source[i].CFrame)
+   local actual=cap.CFrame:ToObjectSpace(p.CFrame)
+   near(actual.Position,expected.Position);near(actual.UpVector,expected.UpVector)
+  end
+  -- An explicit Head/Anchor overrides the automatic torso reference.
+  local group=template:FindFirstChild("Head")
+  local anchor=Instance.new("Part",group);anchor.Name="Anchor";anchor.CFrame=armorFrame*CFrame.new(585.9874877929688,-5.799969673156738,-.3990880846977234)
+  Armor.Apply(character,nil);assert(Armor.Apply(character,armor.ID,template))
+  local anchored=character:FindFirstChild("EquippedArmor"):FindFirstChild("Head")
+  local copies={}
+  for _,p in ipairs(anchored:GetDescendants()) do if p:IsA("BasePart") then table.insert(copies,p) end end
+  assert(#copies==#parts,"Head Anchor is not worn")
+  local sourceCap=armor.Groups[#armor.Groups].Parts[1]
+  near(head.CFrame:ToObjectSpace(copies[1].CFrame).Position,anchor.CFrame:ToObjectSpace(armorFrame*sourceCap.CFrame).Position)
+ end
+end
+print("PASS: both actual military helmet meshes retain cap height, visor spacing and head welds under scene rotations/head poses; explicit Anchor wins")
 print("PASS: actual torso/sleeve fit, section welds, no armor physics/hitboxes, caching/removal, exact Anchor offsets, Body defense/weight and cloth/kit recipe")
 '''
 with tempfile.TemporaryDirectory() as d:
