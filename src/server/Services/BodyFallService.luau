@@ -1,4 +1,3 @@
-local Players=game:GetService("Players")
 local TweenService=game:GetService("TweenService")
 local Fall=require(game:GetService("ReplicatedStorage").Shared.BodyFallPose)
 local Service={}
@@ -23,6 +22,23 @@ function Service.Restore(model)
  for part,cf in pairs(Fall.Solve(root,root.CFrame,joints,targets)) do part.CFrame=cf end
  model:SetAttribute("BodyPoseKind",nil)
  model:SetAttribute("BodyFallUprightRotation",nil)
+end
+-- Only explicitly marked ground plates (or Terrain) support bodies. Skip
+-- intervening furniture/walls instead of treating their top faces as ground.
+local function groundBelow(origin,model)
+ local excluded={model}
+ local params=RaycastParams.new()
+ params.FilterType=Enum.RaycastFilterType.Exclude
+ params.RespectCanCollide=false
+ for _=1,64 do
+  params.FilterDescendantsInstances=excluded
+  local hit=workspace:Raycast(origin,Vector3.new(0,-100,0),params)
+  if not hit then return nil end
+  local part=hit.Instance
+  if (part==workspace.Terrain or (part:IsA("BasePart") and part:GetAttribute("BodyGround")==true)) and hit.Normal.Y>.5 then return hit end
+  table.insert(excluded,part)
+ end
+ return nil
 end
 function Service.Play(model,kind)
  Service.Cancel(model)
@@ -65,39 +81,11 @@ function Service.Play(model,kind)
   end
  end
  model:SetAttribute("BodyPoseKind",kind)
- local excluded={model}
- for _,p in ipairs(Players:GetPlayers()) do if p.Character then table.insert(excluded,p.Character) end end
- for _,name in ipairs({"Creatures","PlayerCorpses","DisconnectedPlayers"}) do local f=workspace:FindFirstChild(name);if f then table.insert(excluded,f) end end
- local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
- params.FilterDescendantsInstances=excluded;params.RespectCanCollide=true
- local softParams=RaycastParams.new();softParams.FilterType=Enum.RaycastFilterType.Exclude
- softParams.FilterDescendantsInstances=excluded;softParams.RespectCanCollide=false
- local reference=model:FindFirstChild("ZombieHome")
- local home=reference and reference:IsA("ObjectValue") and reference.Value
- local homeParams
- if home and home:IsDescendantOf(workspace) then
-  homeParams=RaycastParams.new();homeParams.FilterType=Enum.RaycastFilterType.Include;homeParams.FilterDescendantsInstances={home}
- end
  local shift=-math.huge
  for p,cf in pairs(frames) do
   if p.Transparency<1 and not (held and (p==held or p:IsDescendantOf(held))) then
    local origin=Vector3.new(cf.Position.X,start.Position.Y+.15,cf.Position.Z)
-   local floor=workspace:Raycast(origin,Vector3.new(0,-100,0),params)
-   -- Authored Zombie_home floors may intentionally have no collision. Accept
-   -- only upward-facing home surfaces, not arbitrary noncollidable decorations.
-   local soft=workspace:Raycast(origin,Vector3.new(0,-100,0),softParams)
-   local ancestor=soft and soft.Instance
-   while ancestor and ancestor~=workspace do
-    if ancestor:GetAttribute("Zombie_home")==true then
-     if soft.Normal.Y>.5 and (not floor or soft.Position.Y>floor.Position.Y) then floor=soft end
-     break
-    end
-    ancestor=ancestor.Parent
-   end
-   if homeParams then
-    local hit=workspace:Raycast(origin,Vector3.new(0,-100,0),homeParams)
-    if hit and (not floor or hit.Position.Y>floor.Position.Y) then floor=hit end
-   end
+   local floor=groundBelow(origin,model)
    if floor then shift=math.max(shift,floor.Position.Y+.02-(cf.Position.Y-Fall.RadiusY(cf,p.Size))) end
   end
  end

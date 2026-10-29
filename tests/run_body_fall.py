@@ -26,14 +26,20 @@ Instance.new=function(kind,parent)
 end
 local Players={GetPlayers=function() return {} end}
 local floorY=0
-local softFloor=nil
+local blockers={}
+local noGround=false
 workspace=new("Model");workspace.Name="Workspace"
+workspace.Terrain=new("Terrain",workspace)
+local ground=new("Part",workspace);ground:SetAttribute("BodyGround",true)
 function workspace:Raycast(origin,delta,params)
- if softFloor then
-  if params.RespectCanCollide==false then return {Position=Vector3.new(origin.X,floorY,origin.Z),Instance=softFloor,Normal=Vector3.yAxis} end
-  return {Position=Vector3.new(origin.X,0,origin.Z)}
+ assert(params.RespectCanCollide==false,"marked noncollidable ground must be queryable")
+ for _,entry in ipairs(blockers) do
+  if not table.find(params.FilterDescendantsInstances,entry.Part) then
+   return {Position=Vector3.new(origin.X,entry.Y,origin.Z),Instance=entry.Part,Normal=entry.Normal or Vector3.yAxis}
+  end
  end
- return {Position=Vector3.new(origin.X,floorY,origin.Z)}
+ if noGround then return nil end
+ return {Position=Vector3.new(origin.X,floorY,origin.Z),Instance=ground,Normal=Vector3.yAxis}
 end
 local TweenService={};local tweens={}
 function TweenService:Create(value,info,goal)
@@ -102,14 +108,40 @@ for _,yaw in ipairs({0,1.3}) do
   floorY=0
  end
 end
--- A player has no ZombieHome ObjectValue, but still must land on authored
--- noncollidable interior floors rather than the terrain underneath the house.
+-- Furniture, walls, and authored home floors must never lift a body above
+-- the actual marked ground, even if their top faces are horizontal.
 local home=new("Model",workspace);home:SetAttribute("Zombie_home",true)
-softFloor=new("Part",home);floorY=1.8
+local shelf=new("Part",home)
+local wall=new("Part",home)
+local shopFloor=new("Part",home)
+blockers={{Part=shelf,Y=2.5},{Part=wall,Y=2},{Part=shopFloor,Y=1.8}}
+floorY=0
 local indoor=build(0)
 Service.Play(indoor,"Knockout");tweens[#tweens]:Finish();grounded(indoor)
 Service.Play(indoor,"Death");tweens[#tweens]:Finish();grounded(indoor)
-print("PASS: fetal KO, relaxed death, restore/cancellation, directional zombie falls, head/feet arm poses and final ground contact on authored rig, including noncollidable home floors")
+local zombie=build(0)
+local ref=new("ObjectValue",zombie);ref.Name="ZombieHome";ref.Value=home
+Service.Play(zombie,"Zombie");tweens[#tweens]:Finish();grounded(zombie)
+-- Explicitly marked raised floors can still be used if the author wants them.
+shopFloor:SetAttribute("BodyGround",true);floorY=1.8
+local raised=build(0)
+Service.Play(raised,"Death");tweens[#tweens]:Finish();grounded(raised)
+shopFloor:SetAttribute("BodyGround",nil)
+-- Ground attributes on a container never mark all its shelves/walls as ground.
+home:SetAttribute("BodyGround",true);floorY=0
+local container=build(0)
+Service.Play(container,"Zombie");tweens[#tweens]:Finish();grounded(container)
+-- Terrain is accepted without an attribute; vertical marked faces are skipped.
+ground=workspace.Terrain
+wall:SetAttribute("BodyGround",true);blockers={{Part=wall,Y=2,Normal=Vector3.xAxis}}
+local terrain=build(0)
+Service.Play(terrain,"Knockout");tweens[#tweens]:Finish();grounded(terrain)
+-- Missing ground has no fallback to a shelf or wall.
+noGround=true
+local missing,r=build(0);local y=r.Position.Y
+Service.Play(missing,"Death");tweens[#tweens]:Finish()
+assert(math.abs(r.Position.Y-y)<.0001,"no accepted ground means no invented furniture support")
+print("PASS: fetal KO, relaxed death, restore/cancellation, directional zombie falls, head/feet arm poses and final ground contact on authored rig, marked plates, Terrain, ignored walls/furniture/home floors and missing-ground guard")
 '''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'body_fall.luau';p.write_text(s)
