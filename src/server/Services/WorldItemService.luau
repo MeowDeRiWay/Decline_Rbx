@@ -11,7 +11,7 @@ local AmmoRules=require(ReplicatedStorage.Shared.FirearmRules)
 local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local random=Random.new()
 local Service = {}
-local fallbackItems = {TreeLog = true, Scrap = true, Rags = true, Stone = true, Ammo223FMJ=true, Ammo223AP=true}
+local fallbackItems = {Kevlar=true, TreeLog = true, Scrap = true, Rags = true, Stone = true, Ammo223FMJ=true, Ammo223AP=true}
 local warned = {}
 local folder = workspace:FindFirstChild("WorldItems")
 if not folder then

@@ -27,6 +27,7 @@ function character:FindFirstChild(name) return name=="HeldItem" and held or root
 function character:FindFirstChildOfClass() return hp end
 local player={Character=character,attributes={AttributesConfirmed=true}}
 function player:GetAttribute(key) return self.attributes[key] end
+local Progression={Meets=function(p,req) return (p:GetAttribute("Strength") or 10)>=(req.Attributes and req.Attributes.Strength or 0) end}
 local wearRoll=1
 local Random={new=function() return {NextNumber=function() return wearRoll end} end}
 local rounds={Ammo223FMJ=50,Ammo223AP=3}
@@ -161,6 +162,16 @@ character:SetAttribute("InteractionLocked",true);fire(player,"Fire",direction)
 assert(magazine.Loaded==before,"loot/recovery blocks server shots, regardless of client UI")
 character:SetAttribute("InteractionLocked",nil);fire(player,"Fire",direction)
 assert(magazine.Loaded==before-1,"shots resume after recovery completes")
+for index,entry in ipairs({{"Pistol9mm",3},{"PipePistol9mm",3},{"PipeRifle9mm",4},{"Rifle223",4},{"AssaultRifle223",5},{"LSW223",6}}) do
+ advance(10);local id,minimum=entry[1],entry[2]
+ character:SetAttribute("HandsItem",id);magazine={UID=500+index,Type="FMJ",Loaded=1,Mode="Auto"}
+ player.attributes.Strength=minimum-1;changed.callback(player)
+ local beforeShots=shots;fire(player,"Fire",direction)
+ assert(shots==beforeShots and magazine.Loaded==1,"server firing rejects insufficient Strength: "..id)
+ player.attributes.Strength=minimum;fire(player,"Fire",direction)
+ assert(shots==beforeShots+1 and magazine.Loaded==0,"server firing accepts exact Strength: "..id)
+end
+player.attributes.Strength=10
 print("PASS: both pipe guns load exactly one 9mm round and require reload between shots")
 print("PASS: SR20 semi-auto and LSW30/700RPM reload, mode and fire timing")
 print("PASS: persistent per-weapon charge, independent identical guns, loose/loaded conservation, holster cooldown, reload cancellation, RPM/wall/direction guards, mode, sound, durability and empty notice")

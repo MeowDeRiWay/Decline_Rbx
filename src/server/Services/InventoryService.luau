@@ -91,7 +91,7 @@ function Service.Equip(player, id,key,uid)
  if player.Character and player.Character:GetAttribute("InteractionLocked") then return false end
  if typeof(id) ~= "string" or not ItemConfig.Items[id] or not Visuals.Validate(id) then return false end
  local requirements=ItemConfig.Items[id].Requirements
- if requirements and not require(script.Parent.ProgressionService).Meets(player,requirements) then return false end
+ if requirements and not require(script.Parent.ProgressionService).Meets(player,requirements) then Journal.Send(player,"Item requirements are not met.");return false end
  local state = states[player]
  if not state or not Rules.Equip(state, ItemConfig.Items, ItemConfig.Slots, id,key,uid) then return false end
  update(player)
@@ -211,6 +211,8 @@ end
 function Service.Refresh(player) update(player) end
 function Service.GetWeapon(player)
  local state = states[player]
+ local definition=state and ItemConfig.Items[state.Equipment.Hands]
+ if definition and definition.Requirements and not require(script.Parent.ProgressionService).Meets(player,definition.Requirements) then return nil end
  return state and CombatRules.GetWeapon(state,ItemConfig.Items)
 end
 function Service.UseWeapon(player)

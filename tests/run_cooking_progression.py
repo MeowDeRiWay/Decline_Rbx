@@ -143,6 +143,16 @@ for _,id in ipairs({"MakeAmmo223","MakeRifle223","MakeAssaultRifle223"}) do
  assert(xp==before+recipe.XP and Service.Snapshot(a).CookingReady[recipe.Output]==recipe.OutputCount)
 end
 assert(stock.Iron==79 and not Service.Cook(a,"MakePistol9mm",1))
+stock.Cloth=5;stock.Chemicals=1;repair=100;sewing=false
+assert(not Service.Cook(a,"MakeKevlar",1) and stock.Cloth==5 and stock.Chemicals==1)
+sewing=true;assert(Service.Cook(a,"MakeKevlar",1) and stock.Cloth==0 and stock.Chemicals==0 and durations[#durations]==60)
+callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.Kevlar==5)
+assert(Service.CollectRecipe(a,"MakeKevlar","All") and stock.Kevlar==5)
+stock.Kevlar=20;stock.Scrap=10;repair=174
+assert(not Service.Cook(a,"MakeMiliArmor1",1) and stock.Kevlar==20 and stock.Scrap==10)
+repair=175;assert(Service.Cook(a,"MakeMiliArmor1",1) and stock.Kevlar==0 and stock.Scrap==0 and durations[#durations]==120)
+callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.MiliArmor1==1)
+assert(Service.CollectRecipe(a,"MakeMiliArmor1","All") and stock.MiliArmor1==1)
 local workshop=make("Model","Workbench (T2)",workspace,{BuildingID="Workbench",BuildingLevel=1})
 local furnace=make("Model","Furnace",workshop);make("Part","Part",furnace)
 Service.Close(a);assert(Service.Open(a,furnace));stock.Scrap=25;stock.Coal=1

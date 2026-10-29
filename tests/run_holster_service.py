@@ -4,8 +4,10 @@ import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/InventoryService.luau').read_text()
 service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|Journal)\s*=\s*require[^\n]+\n','',service)
-service=service.replace('require(script.Parent.CraftingService).Close(player)','Crafting.Close(player)')
+service=service.replace('require(script.Parent.CraftingService).Close(player)','Crafting.Close(player)').replace('require(script.Parent.ProgressionService).Meets','Progression.Meets')
 setup='''
+local strength=10
+local Progression={Meets=function(_,req) return not req.Attributes or strength>=(req.Attributes.Strength or 0) end}
 local Crafting={Close=function() end}
 local Journal=journalPlaceholder
 local notices=ReplicatedStorage:FindFirstChild("PersonalNotice").sent
@@ -74,6 +76,8 @@ world=(root/'src/server/Services/WorldItemService.luau').read_text().replace('lo
 world=world.replace('local Stations=require(ReplicatedStorage.Shared.CraftStations)', 'local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()')
 world=re.sub(r'local (ItemConfig|Inventory|Rules|Interaction|EquipmentVisuals|AmmoRules|Stations)\s*=\s*require[^\n]+\n','',world)
 world_setup='''
+local warn=function() end
+local Color3={fromRGB=function(r,g,b) return {r,g,b} end}
 local encoded={}
 local HttpService={JSONEncode=function(_,value) local key="payload"..(#encoded+1);table.insert(encoded,value);encoded[key]=value;return key end,JSONDecode=function(_,key) return encoded[key] end}
 local oldService=game.GetService
@@ -102,6 +106,17 @@ assert(spawned:GetAttribute("AmmoCount")==26 and ammoSource:GetAttribute("AmmoCo
 worldFolder.ChildAdded:Fire(spawned);assert(spawned:GetAttribute("AmmoCount")==26)
 ground=false;assert(World.Pickup(a,spawned) and Service.Snapshot(a).Items.Ammo223FMJ==26)
 ground=true
+local sourceTemplate=EquipmentVisuals.Template
+EquipmentVisuals.Template=function(id) if id=="Kevlar" then return nil end;return sourceTemplate(id) end
+Enum.Material={Fabric=1,Slate=2,Wood=3,Metal=4}
+local beforeKevlar=Service.Snapshot(a).Items.Kevlar or 0
+assert(World.SpawnLoot({Kevlar=5},Vector3.zero,{a.Character}))
+local kevlarDrop
+for _,child in ipairs(worldFolder:GetChildren()) do if child:GetAttribute("Item_ID")=="Kevlar" then kevlarDrop=child end end
+assert(kevlarDrop and kevlarDrop:IsA("BasePart"),"Kevlar remains droppable before its model exists")
+ground=false;assert(World.Pickup(a,kevlarDrop));ground=true
+assert(Service.Snapshot(a).Items.Kevlar==beforeKevlar+5)
+EquipmentVisuals.Template=sourceTemplate
 print("PASS: actual pool template placement produces one box and unpacks one freshly rolled ammunition stack")
 Service.ToggleHolster(a)
 local charged
@@ -158,6 +173,18 @@ assert(Service.Add(a,"LeatherArmor2",1) and Service.Equip(a,"LeatherArmor2"))
 assert(Service.Snapshot(a).Equipment.Body=="LeatherArmor2" and a.Character:GetAttribute("WornArmor")=="LeatherArmor2")
 assert(a:GetAttribute("ArmorAbsorption")==4 and a:GetAttribute("ArmorResistance")==.15)
 assert(Service.Unequip(a,"Body") and a:GetAttribute("ArmorResistance")==0)
+assert(Service.Add(a,"MiliArmor1",1) and Service.Equip(a,"MiliArmor1"))
+assert(a:GetAttribute("ArmorAbsorption")==6 and a:GetAttribute("ArmorResistance")==.3)
+assert(Service.Unequip(a,"Body"))
+for id,minimum in pairs({Pistol9mm=3,PipePistol9mm=3,PipeRifle9mm=4,Rifle223=4,ServiceRifle223=4,AssaultRifle223=5,LSW223=6}) do
+ assert(Service.Add(a,id,1))
+ local previous=Service.Snapshot(a).Equipment.Hands
+ strength=minimum-1;assert(not Service.Equip(a,id) and Service.Snapshot(a).Equipment.Hands==previous,"server equip gate: "..id)
+ strength=minimum;assert(Service.Equip(a,id) and Service.GetWeapon(a),"exact minimum can equip/use: "..id)
+ strength=minimum-1;assert(Service.GetWeapon(a)==nil,"already-held weapon stops working after attribute reduction")
+ strength=minimum;assert(Service.Unequip(a,"Hands"))
+end
+strength=10
 print("PASS: five slots, Body-only armor, retired-slot recovery without duplication, removed-slot commands rejected")
 print("PASS: actual world drop/pickup preserves condition, loaded rounds, ammo type and total mass without duplicate pickup")
 '''

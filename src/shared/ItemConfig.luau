@@ -34,6 +34,8 @@ ItemConfig.Items = {
  Coal = {Name="Charcoal",Weight=.2,Description="Charcoal made by burning tree logs. Used for smelting and ammunition."},
  Chemicals = {Name="Chemicals",Weight=.2,Description="Scavenged chemical compounds used to produce ammunition."},
  Iron = {Name="Iron",Weight=1,ResourceMaterial="Iron",Description="Smelted iron used for industrial firearms and ammunition."},
+ MiliArmor1={Name="Military armor",Weight=6,Slot="Body",Armor={Absorption=6,Resistance=.3},Description="Military armor reinforced with Kevlar and scrap plates: 6 damage absorption and 30% damage resistance."},
+ Kevlar={Name="Kevlar",Weight=.2,Description="Protective fabric used to craft military armor."},
  LeatherArmor2={Name="Reinforced leather jacket",Weight=3,Slot="Body",Armor={Absorption=4,Resistance=.15},Description="A leather jacket reinforced with scrap plates: 4 damage absorption and 15% damage resistance."},
  LeatherArmor={Name="Leather jacket",Weight=2,Slot="Body",Armor={Absorption=2,Resistance=.1},Description="A leather jacket offering light protection: 2 damage absorption and 10% damage resistance."},
  Apron = {Name = "Apron", Weight = 0.5, Slot = "Additional", Description = "An apron worn over clothing."},
@@ -196,5 +198,15 @@ for _,id in ipairs({"BoiledPotato","SausageSlice","MashedPotatoesWithSausage_1",
 end
 ItemConfig.Items.EmptyBucket={Name="Empty bucket",Weight=1,Slot="Hands",Description="Fill at a well, then water a garden bed."}
 ItemConfig.Items.DirtyWaterBucket={Name="Bucket of dirty water",Weight=6,ConsumeAction="Drink",EmptyContainer="EmptyBucket",Slot="Hands",TemplateID="EmptyBucket",Consume={Water=100,Sick=80},ReturnItems={EmptyBucket=1},Description="Enough water to irrigate a garden bed. Drinking restores 100 water but adds 80 infection. Returns an empty bucket."}
+-- Item use gates are independent of the Repair requirements on recipes.
+for id,definition in pairs(ItemConfig.Items) do
+ local gun=definition.Firearm
+ local strength=gun and ((gun.Category=="Pistol" and 3) or (gun.Category=="Rifle" and 4) or (id=="AssaultRifle223" and 5) or (id=="LSW223" and 6))
+ if strength then
+  definition.Requirements=definition.Requirements or {}
+  definition.Requirements.Attributes=definition.Requirements.Attributes or {}
+  definition.Requirements.Attributes.Strength=strength
+ end
+end
 return ItemConfig
 

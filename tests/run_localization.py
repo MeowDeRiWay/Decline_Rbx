@@ -31,6 +31,8 @@ end''')
 parts.append('''
 assert(Rules.Normalize("uk-UA")=="uk" and Rules.Normalize("ru-ru")=="ru" and Rules.Normalize("fr-fr")=="en")
 assert(dictionary.Translate("Take all","uk")=="Взяти все")
+assert(dictionary.Translate("Requires Strength 4","uk")=="Потрібно: Сила 4")
+assert(dictionary.Translate("Requires Strength 4","ru")=="Требуется: Сила 4")
 assert(dictionary.Translate("Take all","ru")=="Взять всё")
 assert(dictionary.Translate("HP 040","uk")=="ОЗ 040","numeric formatting survives capture")
 assert(dictionary.Translate("Level 12 · XP 45 / 300","ru")=="Уровень 12 · Опыт 45 / 300")
