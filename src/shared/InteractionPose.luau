@@ -8,6 +8,17 @@ function Pose.State(mode,t,riseFrom,layFrom)
  if mode=="LootUp" then return (riseFrom or 1)*(1-smooth((t-.5)/.65)),(layFrom or 1)*(1-smooth((t-.18)/.4)),1 end
  return 0,0,0
 end
+-- Keep close-range searches in front of the knees, over the corpse rather
+-- than the actor's lap. The motion runs mostly along the body, not vertically.
+function Pose.SearchPoint(root,point,side,t,legLength,hipHeight)
+ local p=root.CFrame:PointToObjectSpace(point)
+ local sign=side=="Left" and -1 or 1
+ local ground=-(root.Size.Y/2+(hipHeight or legLength))
+ local x=p.X+sign*.1+.03*math.sin(t*2.4+sign)
+ local y=math.min(p.Y+.045+.018*math.sin(t*2.4+sign),ground+.32)
+ local z=math.min(p.Z+.045*math.sin(t*2+sign),-math.max(.55,legLength*.6))
+ return root.CFrame:PointToWorldSpace(Vector3.new(x,y,z))
+end
 function Pose.Apply(c,root,m,now)
  local mode=c:GetAttribute("InteractionMode")
  if not mode then return false end
@@ -20,9 +31,9 @@ function Pose.Apply(c,root,m,now)
   local j=m[side.."Hip"]
   legLength=math.max(legLength,(j:GetAttribute("UpperVector") or Vector3.zero).Magnitude+(j:GetAttribute("LowerVector") or Vector3.zero).Magnitude)
  end
- local drop=legLength*.48*crouch
+ local drop=legLength*.56*crouch
  m.RootJoint.Transform=CFrame.new(0,-drop,0)
- m.Waist.Transform=CFrame.Angles(math.rad(-23)*crouch,0,0)
+ m.Waist.Transform=CFrame.Angles(math.rad(-42)*crouch,0,0)
  m.Neck.Transform=CFrame.Angles(math.rad(10)*crouch,0,0)
  local lower=root.CFrame*m.RootJoint.C0*m.RootJoint.Transform*m.RootJoint.C1:Inverse()
  local upper=lower*m.Waist.C0*m.Waist.Transform*m.Waist.C1:Inverse()
@@ -64,8 +75,7 @@ function Pose.Apply(c,root,m,now)
   local frame=upper*rest*CFrame.new(shoulder:GetAttribute("StandingOffset") or Vector3.zero)
   local hanging=frame.Position+frame:VectorToWorldSpace(standing:VectorToWorldSpace(a+b))
   local aim=hanging
-  local sign=side=="Left" and -1 or 1
-  local search=target+root.CFrame.RightVector*sign*.12+Vector3.new(0,.18+.06*math.sin(t*5+sign),0)
+  local search=Pose.SearchPoint(root,target,side,t,legLength,c:GetAttribute("RigHipHeight"))
   if mode=="Reach" then
    if side==(c:GetAttribute("InteractionHand") or "Right") then
     local base=gripWorld and (gripWorld.Position+gripWorld.LookVector*.2) or hanging

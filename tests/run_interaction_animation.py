@@ -51,6 +51,7 @@ local function reset()
  c.Destroying=signal()
  local old=c:FindFirstChild("HeldItem");if old then old:Destroy() end
  root.CFrame=CFrame.identity
+ owner.CharacterAdded:Fire(c)
  return Instance.new("Part",workspace)
 end
 local function heldWeapon()
@@ -137,6 +138,30 @@ c:SetAttribute("Knockout",true);root.Anchored=true;advance(2)
 assert(root.Anchored,"old timers cannot unfreeze KO/death")
 object=target();assert(Animation.BeginLoot(owner,object,1,function() return true end))
 owner.CharacterRemoving:Fire(c);advance(2);assert(not c:GetAttribute("InteractionLocked"))
+-- Close corpses must not pull hands back into the player's lap. Check real
+-- wrist positions on the authored rig at both near and farther search points.
+for _,z in ipairs({-.1,-.8}) do
+ local body=target();body.CFrame=CFrame.new(0,-.85,z)
+ heldWeapon()
+ assert(Animation.BeginLoot(owner,body,2,function() return true end));advance(.9)
+ for _,side in ipairs({"Left","Right"}) do
+  local localHand=root.CFrame:PointToObjectSpace(wrist(side))
+  assert(localHand.Z<-.35 and localHand.Y<-.6,"search wrists remain forward and low even beside a very close corpse")
+  for step=0,20 do
+   local point=Interact.SearchPoint(root,body.Position,side,step*.1,.9,.9)
+   local p=root.CFrame:PointToObjectSpace(point)
+   assert(p.Z<=-.55 and p.Y<=-.93+.0001,"search target stays in front and near corpse height throughout the sweep")
+  end
+ end
+ assert(poseMotors().Waist.Transform.LookVector.Y<-.6,"torso leans over the corpse")
+ Animation.Cancel(c)
+end
+local body=target();body:Destroy()
+body=Instance.new("Model",workspace);body.CFrame=CFrame.new(0,-.2,-.4)
+local torso=Instance.new("Part",body);torso.Name="UpperTorso";torso.CFrame=CFrame.new(.15,-.95,-.8)
+assert(Animation.BeginLoot(owner,body,1,function() return true end))
+near(c:GetAttribute("InteractionPoint"),torso.Position)
+Animation.Cancel(c)
 print("PASS: delayed single contact, handedness, weapon lowering, anchored crouch/search, owned ground weapon, pickup-before-rise, full lock deadline, early close, KO and character removal")
 '''
 # Actual corpse session opens after crouching and starts recovery on Close/TakeAll.

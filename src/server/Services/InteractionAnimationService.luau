@@ -33,7 +33,7 @@ function Service.Cancel(c)
  c:SetAttribute("InteractionRiseFrom",nil)
  c:SetAttribute("InteractionLayFrom",nil)
 end
-local function begin(player,target,range)
+local function begin(player,target,range,aimPoint)
  local c=player.Character
  local root=c and c:FindFirstChild("HumanoidRootPart")
  local hp=c and c:FindFirstChildOfClass("Humanoid")
@@ -48,12 +48,13 @@ local function begin(player,target,range)
  if motor then Motion.Cancel(motor);motor.C0=motor:GetAttribute("RestC0") or motor.C0;motor.Transform=CFrame.identity end
  c:SetAttribute("InteractionSequence",(c:GetAttribute("InteractionSequence") or 0)+1)
  c:SetAttribute("PunchStartedAt",nil)
- c:SetAttribute("InteractionPoint",point)
+ local aim=aimPoint or point
+ c:SetAttribute("InteractionPoint",aim)
  c:SetAttribute("InteractionHand",held and "Left" or "Right")
  c:SetAttribute("InteractionLocked",true);c:SetAttribute("Running",false)
  hp.WalkSpeed=0;hp.AutoRotate=false
  root.AssemblyLinearVelocity=Vector3.zero;root.AssemblyAngularVelocity=Vector3.zero
- local delta=Vector3.new(point.X-root.Position.X,0,point.Z-root.Position.Z)
+ local delta=Vector3.new(aim.X-root.Position.X,0,aim.Z-root.Position.Z)
  if delta.Magnitude>.01 then root.CFrame=CFrame.lookAt(root.Position,root.Position+delta) end
  root.Anchored=true
  table.insert(r.Links,c:GetAttributeChangedSignal("Knockout"):Connect(function() if c:GetAttribute("Knockout") then Service.Cancel(c) end end))
@@ -76,7 +77,11 @@ function Service.Reach(player,target,range,activate)
  return true
 end
 function Service.BeginLoot(player,target,range,opened)
- local r=begin(player,target,range)
+ -- A whole corpse bounding box includes root/limbs/equipment and may put its
+ -- nearest point directly in the player's lap. Search the visible torso instead.
+ local torso=typeof(target)=="Instance" and (target:FindFirstChild("UpperTorso") or target:FindFirstChild("LowerTorso"))
+ local point=torso and torso:IsA("BasePart") and torso.Position or nil
+ local r=begin(player,target,range,point)
  if not r then return false end
  phase(r,"LootDown")
  task.delay(Pose.DownDuration,function()
