@@ -25,9 +25,14 @@ function Motion.Play(motor,weapon)
   state.tween:Play()
  end
  if weapon.Animation=="Chop" then
-  motor.C0=CFrame.new(.08,.25,.05)*CFrame.Angles(math.rad(-65),0,math.rad(15))*base
-  tween(CFrame.new(-.12,-.1,-.08)*CFrame.Angles(math.rad(40),0,math.rad(-25))*base,.25)
-  task.delay(.25,function() if not state.cancelled and motor.Parent then tween(base,.35) end end)
+  -- Raise around the grip, not around the character root. The authored axe
+  -- extends along -Z: positive X rotation brings its head up above the hands.
+  local raised=CFrame.new(base.Position)*CFrame.Angles(math.pi/2,0,0)*CFrame.new(-base.Position)*base
+  motor.C0=base
+  tween(raised,.1)
+  task.delay(.1,function()
+   if not state.cancelled and motor.Parent then tween(base,.15) end
+  end)
  elseif weapon.Animation=="Thrust" then
   motor.C0=CFrame.new(0,0,.08)*base
   tween(CFrame.new(0,0,-(weapon.Thrust or .4))*base,.15)

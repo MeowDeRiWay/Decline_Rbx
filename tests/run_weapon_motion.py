@@ -24,7 +24,14 @@ for _,material in ipairs({"Stone","Scrap","Iron"}) do
  assert(axe.Animation=="Chop" and shovel.Animation=="Thrust")
  assert(Motion.HitDelay(axe)==.25 and Motion.HitDelay(shovel)==.15)
  Motion.Play(motor,axe)
- assert(motor.C0.RightVector.Y<-.1 and math.abs(motor.C0.LookVector.Y)>.2,"axe chops down and left")
+ local base=CFrame.new(.2,.1,-.3)
+ assert((motor.C0.Position-base.Position).Magnitude<.0001,"axe raises around its grip without moving the hands")
+ -- Blade offset from the actual uploaded IronAxe.rbxm primary part.
+ local blade=Vector3.new(.0250244,-.1999874,-1.1337914)
+ local raised=base:PointToObjectSpace(motor.C0:PointToWorldSpace(blade))
+ assert(raised.Y>1.13 and math.abs(raised.Z+.1999874)<.0001,"authored axe head is raised 90 degrees above grip")
+ pending[#pending]()
+ assert((motor.C0.Position-base.Position).Magnitude<.0001 and (motor.C0.LookVector-base.LookVector).Magnitude<.0001,"chop ends exactly at authored level hold")
  local old=latest;Motion.Play(motor,shovel)
  assert(old.Cancelled,"new attack cancels previous weapon tween")
  assert(motor.C0.Position.Z<-.65,"blunt shovel must thrust forward instead of horizontal swing")
@@ -35,7 +42,7 @@ assert(motor.C0.Position.Z==-.3,"knife returns from thrust to rest in this immed
 assert(Motion.HitDelay(Items.IronKnife.Weapon)==0)
 Motion.Cancel(motor)
 for _,fn in ipairs(pending) do fn() end
-print("PASS: all tool tiers, axe down-left chop, shovel thrust precedence over blunt swing, hit timing, knife and cancellation")
+print("PASS: all tool tiers, axe 90-degree raise to level hold, shovel thrust precedence over blunt swing, hit timing, knife and cancellation")
 '''
 with tempfile.TemporaryDirectory() as directory:
  p=Path(directory)/'motion.luau';p.write_text(source)

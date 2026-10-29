@@ -74,12 +74,12 @@ function Visuals.Apply(character, id)
   local height=root.CFrame:PointToObjectSpace(target.Position).Y
   target=target+root.CFrame.UpVector*(root.Size.Y*(definition.Firearm.HoldHeightRatio or .4)-height)
  end
- -- Bring long-gun grips toward the shoulder/chest without changing their rotation.
+ -- Keep the inward shoulder fit, but preserve the original forward distance.
  if definition.Firearm and definition.Firearm.Category~="Pistol" then
   local p=root.CFrame:PointToObjectSpace(target.Position)
   local inset=math.min(math.abs(p.X),root.Size.X*.15)
   local x=p.X>0 and -inset or (p.X<0 and inset or 0)
-  target=target+root.CFrame:VectorToWorldSpace(Vector3.new(x,0,root.Size.Z*.2))
+  target=target+root.CFrame:VectorToWorldSpace(Vector3.new(x,0,0))
  end
  -- Pistol grip is forward of the chest so both arms can extend toward it.
  if definition.Firearm and definition.Firearm.Category=="Pistol" then
