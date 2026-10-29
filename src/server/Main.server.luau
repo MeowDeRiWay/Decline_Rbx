@@ -3,6 +3,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Life = require(script.Parent.Services.PlayerLifeService)
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
+local Rig=require(ReplicatedStorage.Shared.CharacterRig)
 Players.CharacterAutoLoads = false
 StarterPlayer.LoadCharacterAppearance = false
 
@@ -12,7 +13,7 @@ local function prepare(character)
  local head = character:FindFirstChild("Head")
  assert(humanoid and root and root:IsA("BasePart") and head and head:IsA("BasePart"),
   "StarterCharacter needs Humanoid, Body (or HumanoidRootPart), and Head")
- -- Body itself is the root; no model parts are generated.
+ -- Keep the original collision body as the root.
  root.Name = "HumanoidRootPart"
  character.PrimaryPart = root
  humanoid.RequiresNeck = false
@@ -30,7 +31,8 @@ local function prepare(character)
  head.Anchored = false
  head.CanCollide = false
  head.Massless = true
- -- Preserve an existing joint if the model already has one.
+ if Rig.Prepare(character,root,humanoid) then return end
+ -- Legacy two-part characters keep their original head weld.
  local connected = false
  for _, item in ipairs(character:GetDescendants()) do
   if item:IsA("JointInstance") or item:IsA("WeldConstraint") then

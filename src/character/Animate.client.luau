@@ -1,2 +1,2 @@
--- Override Roblox's default limb animations for the two-part custom character.
--- This model has no Torso or limbs. Its own animations can be added here later.
+-- Suppress Roblox's standard R6/R15 Animate script for the custom body.
+-- CharacterAnimation in StarterPlayerScripts poses nearby players on each viewer.
