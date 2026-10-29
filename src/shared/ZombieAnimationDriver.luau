@@ -33,6 +33,9 @@ function Driver.Start(viewer,preview)
    if queued then return end;queued=true
    task.defer(function() queued=false;rebuild() end)
   end
+  table.insert(connections,model:GetAttributeChangedSignal("BodyPoseKind"):Connect(function()
+   for _,joint in ipairs(model:GetDescendants()) do if joint:IsA("Motor6D") then joint.Transform=CFrame.identity end end
+  end))
   table.insert(connections,model.DescendantAdded:Connect(queue))
   table.insert(connections,model.DescendantRemoving:Connect(function(object)
    local record=records[model]

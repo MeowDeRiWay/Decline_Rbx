@@ -21,7 +21,7 @@ local Chests={Close=function() end}
 local function freeze(c)
  for _,p in ipairs(c:GetDescendants()) do if p:IsA("BasePart") then p.Anchored=true;p.CanCollide=false;p.CanQuery=true end end
 end
-local function fall(c) c:PivotTo(CFrame.new(Vector3.new(0,-1,0))) end
+local BodyFall={Play=function(c,kind) c:SetAttribute("BodyPoseKind",kind);c:PivotTo(CFrame.new(Vector3.new(0,-1,0))) end,Restore=function(c) c:SetAttribute("BodyPoseKind",nil) end}
 local finishedCount=0
 local Service={Finish=function() finishedCount+=1 end}
 LIFE
@@ -62,13 +62,14 @@ xp=oldXP;b.Character.Humanoid.Health=99.5;equipped=oldCount
 a.Character:SetAttribute("MedicineItem","Bandage")
 local standing=b.Character:GetPivot()
 Life.Knockout(b,b.Character);local oldTimer=timers[#timers].Run
-assert(b.Character:GetAttribute("Knockout") and b.Character.HumanoidRootPart.Anchored)
+assert(b.Character:GetAttribute("Knockout") and b.Character.HumanoidRootPart.Anchored and b.Character:GetAttribute("BodyPoseKind")=="Knockout")
 use("Bandage",b);assert(b.Character:GetAttribute("Knockout") and equipped==before-1,"bandages cannot revive")
 roll=.1;use("Doctor",b);assert(b.Character:GetAttribute("Knockout"),"20 Doctor misses at10% boundary")
 local cooldown=a:GetAttribute("DoctorReadyAt")
 roll=0;use("Doctor",b);assert(b.Character:GetAttribute("Knockout") and a:GetAttribute("DoctorReadyAt")==cooldown,"failed attempt also has10s cooldown")
 clock+=10;use("Doctor",b)
 assert(not b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==2 and xp==154.5)
+assert(b.Character:GetAttribute("BodyPoseKind")==nil,"revival releases the terminal pose")
 assert(not b.Character.HumanoidRootPart.Anchored and b.Character.HumanoidRootPart.CanCollide and not b.Character.Humanoid.PlatformStand,"physical state restored")
 assert(b.Character:GetPivot()==standing,"upright saved pose restored")
 assert(b:GetAttribute("ReviveLockedUntil")==clock+600)

@@ -5,6 +5,7 @@ local Inventory = require(script.Parent.InventoryService)
 local Chests = require(script.Parent.ChestService)
 local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local Beds=require(script.Parent.HospitalBedService)
+local BodyFall=require(script.Parent.BodyFallService)
 local Service = {}
 local knocked=setmetatable({},{__mode="k"})
 local finished = setmetatable({},{__mode="k"})
@@ -20,54 +21,13 @@ local function freeze(character)
   end
  end
 end
-local function fall(character)
- local root=character:FindFirstChild("HumanoidRootPart")
- if not root then return end
- local start=character:GetPivot()
- local position=root.Position
- local direction=character:GetAttribute("LastHitDirection") or root.CFrame.LookVector
- direction=Vector3.new(direction.X,0,direction.Z)
- direction=direction.Magnitude>.001 and direction.Unit or Vector3.new(0,0,-1)
- local pose=CFrame.lookAt(position,position+direction)*CFrame.Angles(-math.pi/2,0,0)*root.CFrame:Inverse()*start
- character:PivotTo(pose)
- local bottom=math.huge
- local held=character:FindFirstChild("HeldItem")
- for _,part in ipairs(character:GetDescendants()) do
-  if part:IsA("BasePart") and part.Transparency<1 and not (held and part:IsDescendantOf(held)) then
-   local cf,size=part.CFrame,part.Size
-   local radius=math.abs(cf.RightVector.Y)*size.X/2+math.abs(cf.UpVector.Y)*size.Y/2+math.abs(cf.LookVector.Y)*size.Z/2
-   bottom=math.min(bottom,cf.Position.Y-radius)
-  end
- end
- local excluded={character}
- local homes={}
- for _,model in ipairs(workspace:GetDescendants()) do
-  if model:IsA("Model") then
-   if model:FindFirstChildOfClass("Humanoid") then table.insert(excluded,model) end
-   if model:GetAttribute("Zombie_home")==true then table.insert(homes,model) end
-  end
- end
- local params=RaycastParams.new()
- params.FilterType=Enum.RaycastFilterType.Exclude
- params.FilterDescendantsInstances=excluded
- params.RespectCanCollide=true
- local origin=position+Vector3.new(0,2,0)
- local floor=workspace:Raycast(origin,Vector3.new(0,-100,0),params)
- if #homes>0 then
-  params.FilterType=Enum.RaycastFilterType.Include
-  params.FilterDescendantsInstances=homes
-  params.RespectCanCollide=false
-  local homeFloor=workspace:Raycast(origin,Vector3.new(0,-100,0),params)
-  if homeFloor and (not floor or homeFloor.Position.Y>floor.Position.Y) then floor=homeFloor end
- end
- if floor and bottom<math.huge then character:PivotTo(pose+Vector3.new(0,floor.Position.Y-bottom+.02,0)) end
-end
 function Service.Finish(player,character)
  if finished[character] or player.Character~=character then return end
  Beds.Leave(player,true)
  finished[character]=true
  character:SetAttribute("IsDead",true)
  character:SetAttribute("Knockout",false)
+ BodyFall.Cancel(character)
  freeze(character)
  character.Archivable=true
  local corpse=character:Clone()
@@ -90,6 +50,7 @@ function Service.Finish(player,character)
  local folder=workspace:FindFirstChild("PlayerCorpses")
  if not folder then folder=Instance.new("Folder"); folder.Name="PlayerCorpses"; folder.Parent=workspace end
  corpse.Parent=folder
+ BodyFall.Play(corpse,"Death")
  local humanoid=character:FindFirstChildOfClass("Humanoid")
  if humanoid then humanoid.Health=0 end
  -- Hide the old character during the normal respawn delay; the persistent clone
@@ -124,7 +85,7 @@ function Service.Knockout(player,character)
  humanoid.Health=1
  Chests.Close(player)
  freeze(character)
- fall(character)
+ BodyFall.Play(character,"Knockout")
  task.delay(120,function()
   if player.Parent==Players and player.Character==character and knocked[character]==record and character:GetAttribute("Knockout") then Service.Finish(player,character) end
  end)
@@ -136,6 +97,7 @@ function Service.Revive(player,lockSeconds,healingBonus)
  if not record or not hp or hp.Health<=0 or finished[character] or not character:GetAttribute("Knockout") then return false end
  if workspace:GetServerTimeNow()<(player:GetAttribute("ReviveLockedUntil") or 0) then return false end
  knocked[character]=nil
+ BodyFall.Restore(character)
  character:PivotTo(record.Pivot)
  for part,flags in pairs(record.Parts) do
   if part.Parent then part.Anchored=flags.Anchored;part.CanCollide=flags.CanCollide;part.CanQuery=flags.CanQuery end
@@ -151,19 +113,19 @@ end
 function Service.KnockoutRecord(character) return knocked[character] end
 function Service.ResumeKnockout(player,character,record)
  knocked[character]=record
+ BodyFall.Play(character,"Knockout")
  local remaining=math.max(0,(character:GetAttribute("KnockoutEndsAt") or 0)-workspace:GetServerTimeNow())
  task.delay(remaining,function()
   if player.Parent==Players and player.Character==character and knocked[character]==record and character:GetAttribute("Knockout") then Service.Finish(player,character) end
  end)
 end
 function Service.OfflineCorpse(character,storage,userID,displayName)
- local wasKnocked=character:GetAttribute("Knockout")
  character:SetAttribute("IsDead",true);character:SetAttribute("Knockout",false)
  character:SetAttribute("KnockoutEndsAt",nil);character:SetAttribute("OfflineUserId",nil)
  character:SetAttribute("OfflineUntil",nil);character:SetAttribute("BlocksVision",false)
  character:SetAttribute("OwnerUserId",userID);character:SetAttribute("DisplayName",displayName)
  freeze(character)
- if not wasKnocked then fall(character) end
+ BodyFall.Play(character,"Death")
  local hp=character:FindFirstChildOfClass("Humanoid")
  if hp then hp.Health=0 end
  character:SetAttribute("Health",0)

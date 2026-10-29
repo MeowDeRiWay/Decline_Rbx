@@ -3,8 +3,7 @@ from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/PlayerLifeService.luau').read_text()
-source=re.sub(r'local (Defense|Inventory|Chests|Motion|Beds)\s*=\s*require[^\n]+\n','',source)
-source=re.sub(r'local function fall\(character\).*?\nfunction Service.Finish', 'local function fall(character) end\nfunction Service.Finish',source,flags=re.S)
+source=re.sub(r'local (Defense|Inventory|Chests|Motion|Beds|BodyFall)\s*=\s*require[^\n]+\n','',source)
 for module,alias in [('TownService','Towns'),('CraftingService','Crafting'),('ProgressionService','Progression'),('EconomyService','Economy')]:
  source=source.replace(f'require(script.Parent.{module})',alias)
 setup='''
@@ -17,6 +16,7 @@ local function advance(seconds)
  clock+=seconds
  for _,timer in ipairs(table.clone(timers)) do if not timer.Done and timer.At<=clock then timer.Done=true;timer.Run() end end
 end
+local BodyFall={Play=function(c,kind) c:SetAttribute("BodyPoseKind",kind) end,Cancel=function() end,Restore=function(c) c:SetAttribute("BodyPoseKind",nil) end}
 local corpses={};local extracted=0;local resets=0;local fresh=0;local funds=0;local spawned=0;local creation=0
 local Inventory={ExtractAll=function(p) extracted+=1;return {Items={Musket=1}} end,Reset=function(p) resets+=1 end}
 local Chests={Close=function() end,CreatePlayerCorpse=function(c,items) corpses[c]=items end}
@@ -38,7 +38,7 @@ assert(body:GetAttribute("Knockout") and not a:GetAttribute("OutcastEnd"))
 advance(119);assert(not a:GetAttribute("OutcastEnd") and extracted==0 and spawned==0)
 advance(1);assert(a:GetAttribute("OutcastEnd") and extracted==1 and body:GetAttribute("IsDead"))
 local corpse;for c,items in pairs(corpses) do corpse=c;assert(items.Items.Musket==1) end
-assert(corpse and corpse.Parent==workspace.PlayerCorpses)
+assert(corpse and corpse.Parent==workspace.PlayerCorpses and corpse:GetAttribute("BodyPoseKind")=="Death","corpse changes from fetal KO to relaxed death")
 advance(600);assert(spawned==0,"no default or town respawn before acknowledgement")
 Service.Finish(a,body);assert(extracted==1,"exactly one loot transfer")
 assert(not Service.RestartOutcast(b),"cannot request a free reset while alive")

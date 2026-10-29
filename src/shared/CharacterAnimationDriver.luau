@@ -39,6 +39,9 @@ local function bind(player,character)
   if queued then return end;queued=true
   task.defer(function() queued=false;if watched[player]==links then rebuild() end end)
  end
+ table.insert(links,character:GetAttributeChangedSignal("BodyPoseKind"):Connect(function()
+  for _,joint in ipairs(character:GetDescendants()) do if joint:IsA("Motor6D") then joint.Transform=CFrame.identity end end
+ end))
  table.insert(links,character.DescendantAdded:Connect(queue))
  table.insert(links,character.DescendantRemoving:Connect(function(object)
   local record=records[player]

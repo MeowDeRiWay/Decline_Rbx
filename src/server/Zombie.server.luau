@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 local Sessions=require(script.Parent.Services.PlayerSessionService)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+local BodyFall=require(script.Parent.Services.BodyFallService)
 local Sight = require(ReplicatedStorage.Shared.Sight)
 local Navigation = require(script.Parent.Services.ZombieNavigation)
 game:GetService("RunService").Heartbeat:Connect(function() Navigation.Update() end)
@@ -110,7 +110,6 @@ local function prepare(model)
   if dead then return end
   dead=true
   Audio.Play(model,"Die")
-  local held = model:FindFirstChild("HeldItem")
   model:SetAttribute("AIState","Dead")
   model:SetAttribute("TargetName","")
   model:SetAttribute("IsDead",true)
@@ -122,51 +121,7 @@ local function prepare(model)
   -- Loot and terminal state are set before the fall animation. Rig state events
   -- and animation failures must not prevent looting or leave the AI running.
   Chests.CreateCorpse(model,require(script.Parent.Services.ProgressionService).ZombieDied(model,LootRules.Roll(LootConfig,Items)))
-  local direction=model:GetAttribute("LastHitDirection")
-  if typeof(direction)~="Vector3" then direction=root.CFrame.LookVector end
-  direction=Vector3.new(direction.X,0,direction.Z)
-  direction=direction.Magnitude>.001 and direction.Unit or Vector3.new(0,0,-1)
-  local start=model:GetPivot()
-  local standingPosition=root.Position
-  local fallRoot=CFrame.lookAt(standingPosition,standingPosition+direction)*CFrame.Angles(-math.pi/2,0,0)
-  local destination=fallRoot*root.CFrame:Inverse()*start
-  model:PivotTo(destination)
-  -- Ground the actual body, not the equipped hand or a custom model pivot.
-  local bottom=math.huge
-  for _,part in ipairs(model:GetDescendants()) do
-   if part:IsA("BasePart") and part.Transparency<1 and not (held and part:IsDescendantOf(held)) then
-    local cf,size=part.CFrame,part.Size
-    local radius=math.abs(cf.RightVector.Y)*size.X/2+math.abs(cf.UpVector.Y)*size.Y/2+math.abs(cf.LookVector.Y)*size.Z/2
-    bottom=math.min(bottom,cf.Position.Y-radius)
-   end
-  end
-  if bottom==math.huge then bottom=root.Position.Y-root.Size.Z/2 end
-  local params=RaycastParams.new()
-  params.FilterType=Enum.RaycastFilterType.Exclude
-  local excluded={model}
-  for _,player in ipairs(Players:GetPlayers()) do if player.Character then table.insert(excluded,player.Character) end end
-  local creatures=workspace:FindFirstChild("Creatures")
-  if creatures then table.insert(excluded,creatures) end
-  params.FilterDescendantsInstances=excluded
-  params.RespectCanCollide=true
-  local floor=workspace:Raycast(standingPosition+Vector3.new(0,2,0),Vector3.new(0,-100,0),params)
-  local reference=model:FindFirstChild("ZombieHome")
-  local home=reference and reference:IsA("ObjectValue") and reference.Value
-  if home and home:IsDescendantOf(workspace) then
-   local homeParams=RaycastParams.new()
-   homeParams.FilterType=Enum.RaycastFilterType.Include
-   homeParams.FilterDescendantsInstances={home}
-   local homeFloor=workspace:Raycast(standingPosition+Vector3.new(0,2,0),Vector3.new(0,-100,0),homeParams)
-   if homeFloor and (not floor or homeFloor.Position.Y>floor.Position.Y) then floor=homeFloor end
-  end
-  if floor then destination += Vector3.new(0,floor.Position.Y-bottom+.02,0) end
-  model:PivotTo(start)
-  local value=Instance.new("CFrameValue")
-  value.Value=start
-  local connection=value.Changed:Connect(function(cf) if model.Parent then model:PivotTo(cf) end end)
-  local tween=TweenService:Create(value,TweenInfo.new(.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Value=destination})
-  tween.Completed:Once(function() connection:Disconnect(); value:Destroy() end)
-  tween:Play()
+  BodyFall.Play(model,"Zombie")
  end
  humanoid.HealthChanged:Connect(function()
   sync()
