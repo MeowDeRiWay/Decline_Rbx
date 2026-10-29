@@ -74,6 +74,11 @@ function Visuals.Apply(character, id)
   local height=root.CFrame:PointToObjectSpace(target.Position).Y
   target=target+root.CFrame.UpVector*(root.Size.Y*(definition.Firearm.HoldHeightRatio or .4)-height)
  end
+ -- Pistol grip is forward of the chest so both arms can extend toward it.
+ if definition.Firearm and definition.Firearm.Category=="Pistol" then
+  local p=root.CFrame:PointToObjectSpace(target.Position)
+  target=target+root.CFrame:VectorToWorldSpace(Vector3.new(-p.X,root.Size.Y*.4-p.Y,-root.Size.Y*1.1-p.Z))
+ end
  -- The model pivot is the point held in the hand. Place it at the handle in Studio.
  held:PivotTo(target)
  local parts = {}
@@ -84,6 +89,8 @@ function Visuals.Apply(character, id)
   if joint:IsA("JointInstance") or joint:IsA("WeldConstraint") then joint:Destroy() end
  end
  local gripPart = held:IsA("Model") and (held.PrimaryPart or parts[1]) or held
+ local handGrip=Instance.new("Attachment")
+ handGrip.Name="_HandGrip";handGrip.CFrame=gripPart.CFrame:ToObjectSpace(target);handGrip.Parent=gripPart
  if definition.Firearm then
   local muzzle=held:FindFirstChild("Muzzle",true)
   if muzzle and (muzzle:IsA("Model") or muzzle:IsA("BasePart") or muzzle:IsA("Attachment")) then

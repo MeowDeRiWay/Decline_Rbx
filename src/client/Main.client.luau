@@ -42,6 +42,9 @@ player.CharacterRemoving:Connect(stopOrbit)
 for _,name in ipairs({"TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","LoadingScreenOpen","HelpOpen","MapOpen"}) do
  player:GetAttributeChangedSignal(name):Connect(function() if blocked() then stopOrbit() end end)
 end
+local function minimumHeight()
+ return player:GetAttribute("AdminAccess")==true and .65 or 18
+end
 local function maximumHeight()
  local _,maximum=ProgressionRules.ZoomBounds(player:GetAttribute("ViewRange") or 25,Config.CameraHeight,Config.CameraFieldOfView)
  return maximum
@@ -53,7 +56,7 @@ Input.InputChanged:Connect(function(input,processed)
   return
  end
  if processed or input.UserInputType~=Enum.UserInputType.MouseWheel then return end
- targetHeight=math.clamp(targetHeight-input.Position.Z*2,18,maximumHeight())
+ targetHeight=math.clamp(targetHeight-input.Position.Z*math.max(.08,math.min(2,targetHeight*.15)),minimumHeight(),maximumHeight())
 end)
 -- Default Roblox controls handle walking relative to the camera.
 ContextActionService:BindActionAtPriority("DeclineNoJump", function()
@@ -84,7 +87,7 @@ RunService:BindToRenderStep("DeclineCamera", Enum.RenderPriority.Camera.Value + 
  camera.CameraType = Enum.CameraType.Scriptable
  camera.FieldOfView = Config.CameraFieldOfView
  local target = root.Position
- targetHeight=math.clamp(targetHeight,18,maximumHeight())
+ targetHeight=math.clamp(targetHeight,minimumHeight(),maximumHeight())
  currentHeight+=(targetHeight-currentHeight)*(1-math.exp(-12*dt))
  local sine,cosine=math.sin(yaw),math.cos(yaw)
  local back=Config.CameraBack*currentHeight/Config.CameraHeight

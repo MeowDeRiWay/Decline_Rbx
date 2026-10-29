@@ -27,3 +27,14 @@ RunService.PreSimulation:Fire(1/30)
 Players.PlayerRemoving:Fire(other);owner.CharacterRemoving:Fire()
 RunService.PreSimulation:Fire(1/30)
 print("PASS: viewer controller movement, late weapon, other players, distance cull, knockout, partial streaming and cleanup")
+
+-- Reuse precisely the client pose implementation in Studio's server viewport.
+Driver.Start(nil,true)
+for _,id in ipairs({"Pistol","Knife","Axe","Shovel"}) do
+ c:SetAttribute("HandsItem",id);RunService.PreSimulation:Fire(1/30)
+ assert(shoulder.Transform.R[1]==shoulder.Transform.R[1],"all equipment poses stay finite")
+end
+local lastRemote=remoteHip.Transform
+RunService.PreSimulation:Fire(1/30)
+assert(remoteHip.Transform~=lastRemote,"Studio preview poses players without a local viewer or distance cull")
+print("PASS: pistol, knife, two-handed axe/shovel and shared Studio server preview")

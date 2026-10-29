@@ -28,6 +28,7 @@ end
 function cm:PointToObjectSpace(v) return self:Inverse():PointToWorldSpace(v) end
 function cm:VectorToObjectSpace(v) return self:Inverse():VectorToWorldSpace(v) end
 function cm:ToObjectSpace(b) return self:Inverse()*b end
+function cm.__add(a,b) return cf(a.Position+b,a.R) end
 function cm.__mul(a,b)
  local r={}
  for row=0,2 do for col=0,2 do

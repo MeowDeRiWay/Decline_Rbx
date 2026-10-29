@@ -3,7 +3,7 @@ import re, subprocess, sys, tempfile
 
 root = Path(__file__).resolve().parents[1]
 source = (root / 'src/client/Main.client.luau').read_text()
-source = re.sub(r'local (Config|ProgressionRules)\s*=\s*require[^\n]+\n', '', source)
+source = re.sub(r'local (Config|ProgressionRules|MovementRules)\s*=\s*require[^\n]+\n', '', source)
 mock = '''
 local function signal()
  local s={}
@@ -29,7 +29,7 @@ local os={clock=function() time+=1;return time end}
 local storage={FindFirstChild=function() return {FireServer=function(_,...) report={...} end} end}
 local services={Players={LocalPlayer=player},ReplicatedStorage=storage,RunService={BindToRenderStep=function(_,_,_,fn) render=fn end},ContextActionService={BindActionAtPriority=function() end},UserInputService=Input,GuiService=gui}
 local game={GetService=function(_,n) return services[n] end}
-local Enum={CameraType={Scriptable="Scriptable"},UserInputType={MouseWheel="Wheel",MouseButton3="Middle",MouseMovement="Move"},MouseBehavior={LockCurrentPosition="Locked"},ContextActionResult={Sink=1},ContextActionPriority={High={Value=1}},PlayerActions={CharacterJump=1},RenderPriority={Camera={Value=100}}}
+local Enum={CameraType={Scriptable="Scriptable"},UserInputType={MouseWheel="Wheel",MouseButton3="Middle",MouseMovement="Move"},MouseBehavior={LockCurrentPosition="Locked"},ContextActionResult={Sink=1},ContextActionPriority={High={Value=1}},PlayerActions={CharacterJump=1},RenderPriority={Input={Value=0},Camera={Value=100}}}
 local Config={CameraHeight=30,CameraBack=5,CameraFieldOfView=40,CameraOrbitSensitivity=.006}
 local ProgressionRules={ZoomBounds=function() return 18,60 end}
 local camera={ViewportSize={X=1600,Y=900}}
@@ -61,6 +61,15 @@ end
 middle(false);Input.WindowFocusReleased:Fire();assert(Input.MouseBehavior=="Default")
 middle(false);player.CharacterRemoving:Fire();assert(Input.MouseBehavior=="Default")
 middle(false);gui.MenuIsOpen=true;render(1);assert(Input.MouseBehavior=="Default")
+gui.MenuIsOpen=false
+Input.InputChanged:Fire({UserInputType="Wheel",Position={Z=1000}},false);render(2)
+assert(camera.CFrame.Position.Y>=20,"ordinary player cannot zoom inside character")
+player:SetAttribute("AdminAccess",true)
+Input.InputChanged:Fire({UserInputType="Wheel",Position={Z=1000}},false);render(2)
+assert(camera.CFrame.Position.Y<2.66,"admin can inspect character at 0.65 stud height")
+player:SetAttribute("AdminAccess",false);render(2)
+assert(camera.CFrame.Position.Y>19.99,"revoking access restores ordinary zoom minimum")
+print("PASS: admin close inspection and normal-player zoom boundaries")
 print("PASS: middle drag yaw and fixed tilt, unchanged wheel zoom, activity yaw report, processed input, menu/focus/respawn cursor release")
 '''
 with tempfile.TemporaryDirectory() as directory:

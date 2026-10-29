@@ -6,6 +6,7 @@ def module(path):return '(function()\n'+(root/path).read_text()+'\nend)()'
 source=(root/'tests/rig_math.fixture.luau').read_text()
 source+='\nlocal Rig='+module('src/shared/CharacterRig.luau')
 source+='\nlocal Pose='+module('src/shared/CharacterPose.luau')
+source+='\nlocal Foot='+module('src/shared/FootPlant.luau')
 source+='\nlocal geometry='+module('tests/character_geometry.fixture.luau')
 source+=r'''
 local objects={}
@@ -64,6 +65,16 @@ local function test(frame)
   assert(b.Position.Y<a.Position.Y-.4,"forearm extends from elbow, not into upper arm")
   assert(math.abs(a.Position.X-b.Position.X)<.03,"idle arm sections stay aligned")
  end
+ local neutral={Left=Vector3.new(-.1,0,0),Right=Vector3.new(.1,0,0)}
+ local feet,targets=Foot.Step(nil,neutral,Vector3.zero,.03,false,.9)
+ feet.Next="Left"
+ local planted=targets.Right
+ neutral={Left=neutral.Left+Vector3.new(0,0,-.2),Right=neutral.Right+Vector3.new(0,0,-.2)}
+ feet,targets=Foot.Step(feet,neutral,Vector3.new(0,0,-1),.03,false,.9)
+ near(targets.Right,planted)
+ assert(targets.Left.Y>0,"swing foot lifts while support foot stays in world")
+ for step=1,20 do feet,targets=Foot.Step(feet,neutral,Vector3.zero,.03,false,.9) end
+ assert(targets.Left.Y==0 and targets.Right.Y==0,"stopping settles both feet")
  local walkAngle,walkHz=Pose.Gait(8,false)
  local runAngle,runHz=Pose.Gait(8,true)
  assert(walkHz<=1.05 and runHz>walkHz and walkAngle<runAngle*.5,"walking is capped and visibly gentler than running")
@@ -85,10 +96,33 @@ assert(#legacy:GetDescendants()==2,"legacy/incomplete model is untouched")
 print("PASS: actual model, 11 joints, authored orientations/gap, height, repeated prepare, rotated origin, IK and legacy fallback")
 '''
 source+='\n'+(root/'tests/character_animation.fixture.luau').read_text()
-controller=(root/'src/client/CharacterAnimation.client.luau').read_text()
+controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
 import re
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Items)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Items)\s*=.*\n','',controller)
+controller=controller.replace('return Driver','Driver.Start(Players.LocalPlayer,false)')
 source+='\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
+source+='\n'+(root/'tests/equipment_pose_cases.fixture.luau').read_text()
+service=(root/'src/server/Services/EquipmentVisuals.luau').read_text()
+service=re.sub(r'local (ServerStorage|ReplicatedStorage|Items) = [^\n]+\n','',service)
+source+='\ndo\nlocal ServerStorage=serverStorage\nlocal Items='+module('src/shared/ItemConfig.luau')+'\nlocal Visuals=(function()\n'+service+'\nend)()\n'
+source+=r'''
+for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife"}) do
+ Visuals.Apply(c,id)
+ local held=c:FindFirstChild("HeldItem")
+ local localPose=root.CFrame:ToObjectSpace(held.CFrame)
+ if id:find("Pistol") then
+  assert(math.abs(localPose.Position.X)<.0001 and localPose.Position.Z<-.76,"actual pistol equipment is forward with extended arms")
+ elseif id=="Rifle223" then
+  assert(math.abs(localPose.Position.Z+.2575)<.0001,"rifle's existing authored hold distance is preserved")
+ end
+ local grip=held:FindFirstChild("_HandGrip",true)
+ assert(grip and grip.Parent==held,"moving grip follows the weapon part, even without Model.PrimaryPart")
+ local point=(held.CFrame*grip.CFrame).Position
+ near(point,held.CFrame.Position)
+end
+print("PASS: actual equipment positions for both pistols, unchanged rifle distance, knife/axe/shovel and movable grip")
+end
+'''
 with tempfile.TemporaryDirectory() as directory:
  path=Path(directory)/'rig.luau';path.write_text(source)
  subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

@@ -65,8 +65,15 @@ function Rig.Prepare(character,root,humanoid)
   motor:SetAttribute("UpperVector",elbow-shoulder)
   motor:SetAttribute("LowerVector",hand-elbow)
   joint(side.."Elbow",arm,forearm,elbow)
-  joint(side.."Hip",lower,thigh,point(thigh,"Y",1))
-  joint(side.."Knee",thigh,shin,(point(thigh,"Y",-1)+point(shin,"Y",1))/2)
+  local hip=point(thigh,"Y",1)
+  local knee=(point(thigh,"Y",-1)+point(shin,"Y",1))/2
+  local foot=point(shin,"Y",-1)
+  local hipMotor=joint(side.."Hip",lower,thigh,hip)
+  hipMotor:SetAttribute("RootAnchor",hip)
+  hipMotor:SetAttribute("UpperVector",knee-hip)
+  hipMotor:SetAttribute("LowerVector",foot-knee)
+  hipMotor:SetAttribute("FootPosition",foot)
+  joint(side.."Knee",thigh,shin,knee)
  end
  -- First finish every joint frame in the authored T-pose, then lower the arms.
  for _,entry in ipairs(pending) do
