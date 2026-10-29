@@ -1,5 +1,9 @@
 -- Hand-authored Ukrainian and Russian translations. English source is stable.
 return {
+ {"Reinforced leather jacket","Покращена шкіряна куртка","Улучшенная кожаная куртка"},
+ {"A leather jacket reinforced with scrap plates: 4 damage absorption and 15% damage resistance.","Шкіряна куртка, підсилена пластинами з брухту: поглинання 4 одиниць шкоди та опір шкоді 15%.","Кожаная куртка, усиленная пластинами из лома: поглощение 4 единиц урона и сопротивление урону 15%."},
+ {"Reinforce leather jacket","Покращити шкіряну куртку","Улучшить кожаную куртку"},
+ {"Sew scrap plates into a leather jacket. Requires one leather jacket, five scrap, Repair 140 and a reusable sewing kit in your inventory.","Вшийте пластини з брухту в шкіряну куртку. Потрібні одна шкіряна куртка, п’ять одиниць брухту, ремонт 140 і багаторазовий швейний набір в інвентарі.","Вшейте пластины из лома в кожаную куртку. Нужны одна кожаная куртка, пять единиц лома, ремонт 140 и многоразовый швейный набор в инвентаре."},
  {"Leather jacket","Шкіряна куртка","Кожаная куртка"},
  {"A leather jacket offering light protection: 2 damage absorption and 10% damage resistance.","Шкіряна куртка з легким захистом: поглинання 2 одиниць шкоди та опір шкоді 10%.","Кожаная куртка с лёгкой защитой: поглощение 2 единиц урона и сопротивление урону 10%."},
  {"Make leather jacket","Пошити шкіряну куртку","Сшить кожаную куртку"},

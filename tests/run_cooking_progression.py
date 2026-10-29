@@ -115,6 +115,12 @@ assert(Service.Cook(a,"MakeLeatherArmor",1) and stock.Cloth==0 and durations[#du
 assert(a.Character:GetAttribute("CraftingLocked"),"jacket requires presence for the full craft")
 callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.LeatherArmor==1)
 assert(Service.CollectRecipe(a,"MakeLeatherArmor","All") and stock.LeatherArmor==1)
+stock.Scrap=5
+repair=139;assert(not Service.Cook(a,"MakeLeatherArmor2",1) and stock.LeatherArmor==1 and stock.Scrap==5)
+repair=140;sewing=false;assert(not Service.Cook(a,"MakeLeatherArmor2",1) and stock.LeatherArmor==1 and stock.Scrap==5)
+sewing=true;assert(Service.Cook(a,"MakeLeatherArmor2",1) and stock.LeatherArmor==0 and stock.Scrap==0 and durations[#durations]==60)
+callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.LeatherArmor2==1)
+assert(Service.CollectRecipe(a,"MakeLeatherArmor2","All") and stock.LeatherArmor2==1)
 print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
 repair=99
 Progression.Meets=function(_,requirement)

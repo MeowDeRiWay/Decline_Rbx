@@ -63,6 +63,15 @@ assert(Craft.Speed({},recipe)==nil and Craft.Speed({SewingKit=1},recipe)==1)
 assert(not Craft.Plan({Cloth=19},recipe,1))
 local plan=assert(Craft.Plan({Cloth=20,SewingKit=1},recipe,1))
 assert(plan.Ingredients.Cloth==20 and plan.Ingredients.SewingKit==nil and plan.Outputs.LeatherArmor==1)
+local improved=Items.Items.LeatherArmor2;local upgrade=Recipes.MakeLeatherArmor2
+assert(improved.Slot=="Body" and improved.Weight==3 and improved.Armor.Absorption==4 and improved.Armor.Resistance==.15)
+assert(Defense.Resolve(20,improved.Armor.Resistance,improved.Armor.Absorption)==13)
+assert(upgrade.Station=="Workstation" and upgrade.Duration==60 and upgrade.Requirements.Skills.Repair==140 and upgrade.Tool=="SewingKit")
+assert(not Craft.Plan({LeatherArmor=1,Scrap=4},upgrade,1) and not Craft.Plan({Scrap=5},upgrade,1))
+local upgraded=assert(Craft.Plan({LeatherArmor=1,Scrap=5,SewingKit=1},upgrade,1))
+assert(upgraded.Ingredients.LeatherArmor==1 and upgraded.Ingredients.Scrap==5 and upgraded.Ingredients.SewingKit==nil and upgraded.Outputs.LeatherArmor2==1)
+local previous=c:FindFirstChild("EquippedArmor")
+assert(Armor.Apply(c,"LeatherArmor2",anchored) and c:FindFirstChild("EquippedArmor")~=previous,"upgrading replaces the previous armor visuals")
 print("PASS: actual torso/sleeve fit, section welds, no armor physics/hitboxes, caching/removal, exact Anchor offsets, Body defense/weight and cloth/kit recipe")
 '''
 with tempfile.TemporaryDirectory() as d:
