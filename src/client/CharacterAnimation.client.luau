@@ -73,11 +73,12 @@ RunService.PreSimulation:Connect(function(dt)
   local speed=velocity.Magnitude
   if speed>math.max(30,hp.WalkSpeed*3) or hp.Sit or hp.PlatformStand then speed=0 end
   local blend=1-math.exp(-12*elapsed)
-  local amount=speed>.025 and (c:GetAttribute("Running") and .65 or .4) or 0
+  local running=c:GetAttribute("Running")==true
+  local amount,frequency=Pose.Gait(speed,running)
   r.Amount+=(amount-r.Amount)*blend
-  r.Phase+=math.min(speed,20)*elapsed*8
+  r.Phase=(r.Phase+frequency*elapsed*2*math.pi)%(2*math.pi)
   local direction=speed>.025 and root.CFrame:VectorToObjectSpace(velocity.Unit) or Vector3.new(0,0,-1)
-  local lh,rh,lk,rk=Pose.Legs(r.Phase,r.Amount,-direction.Z,direction.X)
+  local lh,rh,lk,rk=Pose.Legs(r.Phase,r.Amount,-direction.Z,direction.X,running and .8 or .35)
   m.LeftHip.Transform=lh;m.RightHip.Transform=rh;m.LeftKnee.Transform=lk;m.RightKnee.Transform=rk
   local held=c:FindFirstChild("HeldItem")
   local definition=Items[c:GetAttribute("HandsItem")]
@@ -87,12 +88,13 @@ RunService.PreSimulation:Connect(function(dt)
    local shoulder,elbow=m[side.."Shoulder"],m[side.."Elbow"]
    local standing=shoulder:GetAttribute("StandingRotation") or CFrame.identity
    local rest=shoulder:GetAttribute("AuthoredC0")
+   local offset=shoulder:GetAttribute("StandingOffset") or Vector3.zero
    local upper,lower=shoulder:GetAttribute("UpperVector"),shoulder:GetAttribute("LowerVector")
    if not rest or not upper or not lower or not shoulder.Part0 or not shoulder.Part1 or not elbow.Part0 or not elbow.Part1 then continue end
    if gun then
     -- Primary hand at the grip; support hand toward the barrel. Clamp reach in IK.
     local target=targetFrame.Position+(side=="Left" and root.CFrame.LookVector*.28 or Vector3.zero)
-    local anchor=(shoulder.Part0.CFrame*rest).Position
+    local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
     local s,e=Pose.Arm(upper,lower,delta,Vector3.new(side=="Left" and -1 or 1,-1,.2))
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e

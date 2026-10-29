@@ -43,6 +43,31 @@ local function test(frame)
  assert(left.Massless and not left.CanCollide and not left.CanQuery)
  hp.HipHeight=0;assert(Rig.Prepare(c,root,hp));assert(hp.HipHeight>.9)
  assert(#c:GetDescendants()==25,"second preparation adds no duplicate joints or animators")
+ -- Solve the whole standing chain, not merely individual neutral joints.
+ local posed={[root]=root.CFrame}
+ for pass=1,12 do
+  for _,j in ipairs(c:GetDescendants()) do
+   if j:IsA("Motor6D") and posed[j.Part0] and not posed[j.Part1] then
+    posed[j.Part1]=posed[j.Part0]*j.C0*j.C1:Inverse()
+   end
+  end
+ end
+ for _,side in ipairs({"Left","Right"}) do
+  local arm=c:FindFirstChild(side.."UpperArm")
+  local forearm=c:FindFirstChild(side.."LowerArm")
+  local a=root.CFrame:ToObjectSpace(posed[arm])
+  local b=root.CFrame:ToObjectSpace(posed[forearm])
+  -- A hanging arm keeps its thickness, lies outside the chest and extends down.
+  local width=math.abs(a.RightVector.X)*arm.Size.X+math.abs(a.UpVector.X)*arm.Size.Y
+  assert(math.abs(width-.2)<.0001,"arm thickness survives standing rotation")
+  assert(math.abs(a.Position.X)-width/2>.2,"standing shoulder must clear torso")
+  assert(b.Position.Y<a.Position.Y-.4,"forearm extends from elbow, not into upper arm")
+  assert(math.abs(a.Position.X-b.Position.X)<.03,"idle arm sections stay aligned")
+ end
+ local walkAngle,walkHz=Pose.Gait(8,false)
+ local runAngle,runHz=Pose.Gait(8,true)
+ assert(walkHz<=1.05 and runHz>walkHz and walkAngle<runAngle*.5,"walking is capped and visibly gentler than running")
+ local _,idleHz=Pose.Gait(0,false);assert(idleHz==0)
  local upper=Vector3.new(-.4,0,0);local lower=Vector3.new(-.5,0,0)
  for _,target in ipairs({Vector3.new(.1,-.4,-.4),Vector3.new(0,-2,0),Vector3.zero}) do
   local s,e=Pose.Arm(upper,lower,target,Vector3.new(-1,-1,.2))

@@ -25,10 +25,16 @@ function Pose.Arm(upper,lower,target,pole)
  local forearm=Pose.Between(lower,direction*d-elbow)
  return shoulder,shoulder:Inverse()*forearm
 end
-function Pose.Legs(phase,amount,forward,sideways)
+function Pose.Gait(speed,running)
+ if speed<=.025 then return 0,0 end
+ if running then return .42,math.clamp(speed*.65,.8,1.8) end
+ return .18,math.clamp(speed*.6,.35,1.05)
+end
+function Pose.Legs(phase,amount,forward,sideways,kneeFactor)
+ kneeFactor=kneeFactor or .4
  local swing=math.sin(phase)*amount
  return CFrame.Angles(swing*forward,0,-swing*sideways),CFrame.Angles(-swing*forward,0,swing*sideways),
-  CFrame.Angles(-math.max(0,-math.sin(phase))*amount*.9,0,0),
-  CFrame.Angles(-math.max(0,math.sin(phase))*amount*.9,0,0)
+  CFrame.Angles(-math.max(0,-math.sin(phase))*amount*kneeFactor,0,0),
+  CFrame.Angles(-math.max(0,math.sin(phase))*amount*kneeFactor,0,0)
 end
 return Pose

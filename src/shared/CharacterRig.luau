@@ -21,6 +21,10 @@ function Rig.Prepare(character,root,humanoid)
   humanoid.HipHeight=character:GetAttribute("RigHipHeight") or humanoid.HipHeight
   return true
  end
+ -- Snapshot before parenting any motors: joint creation may already move an assembly.
+ local frames={[root]=root.CFrame}
+ for _,part in pairs(parts) do frames[part]=part.CFrame end
+ local pending={}
  local members={[root]=true}
  for _,part in pairs(parts) do members[part]=true end
  -- Only replace joints internal to this body. Equipment and accessory joints survive.
@@ -32,16 +36,17 @@ function Rig.Prepare(character,root,humanoid)
   if axis=="X" then return p+Vector3.new(h.X*sign,0,0) end
   return p+Vector3.new(0,h.Y*sign,0)
  end
- local function joint(name,a,b,p,standing)
-  local frame=root.CFrame*CFrame.new(p)
+ local function joint(name,a,b,p,standing,offset)
+  local frame=frames[root]*CFrame.new(p)
   local motor=Instance.new("Motor6D")
   motor.Name=name;motor.Part0=a;motor.Part1=b
-  local rest=a.CFrame:ToObjectSpace(frame)
-  motor.C0=rest*(standing or CFrame.identity)
-  motor.C1=b.CFrame:ToObjectSpace(frame)
+  local rest=frames[a]:ToObjectSpace(frame)
+  motor.C0=rest
+  motor.C1=frames[b]:ToObjectSpace(frame)
   motor:SetAttribute("AuthoredC0",rest)
   motor:SetAttribute("StandingRotation",standing or CFrame.identity)
-  motor.Parent=a
+  motor:SetAttribute("StandingOffset",offset or Vector3.zero)
+  table.insert(pending,{Motor=motor,Parent=a,Rest=rest,Rotation=standing or CFrame.identity,Offset=offset or Vector3.zero})
   return motor
  end
  local lower,upper=parts.LowerTorso,parts.UpperTorso
@@ -51,17 +56,22 @@ function Rig.Prepare(character,root,humanoid)
  for _,side in ipairs({"Left","Right"}) do
   local arm,forearm=parts[side.."UpperArm"],parts[side.."LowerArm"]
   local thigh,shin=parts[side.."UpperLeg"],parts[side.."LowerLeg"]
-  local center=bounds(root,arm)
+  local center,half=bounds(root,arm)
   local sign=center.X>=0 and 1 or -1
   local shoulder=point(arm,"X",-sign)
   local elbow=(point(arm,"X",sign)+point(forearm,"X",-sign))/2
   local hand=point(forearm,"X",sign)
-  local motor=joint(side.."Shoulder",upper,arm,shoulder,CFrame.Angles(0,0,-sign*math.pi/2))
+  local motor=joint(side.."Shoulder",upper,arm,shoulder,CFrame.Angles(0,0,-sign*math.pi/2),Vector3.new(sign*(half.Y+.015),half.Y,0))
   motor:SetAttribute("UpperVector",elbow-shoulder)
   motor:SetAttribute("LowerVector",hand-elbow)
   joint(side.."Elbow",arm,forearm,elbow)
   joint(side.."Hip",lower,thigh,point(thigh,"Y",1))
   joint(side.."Knee",thigh,shin,(point(thigh,"Y",-1)+point(shin,"Y",1))/2)
+ end
+ -- First finish every joint frame in the authored T-pose, then lower the arms.
+ for _,entry in ipairs(pending) do
+  entry.Motor.C0=entry.Rest*CFrame.new(entry.Offset)*entry.Rotation
+  entry.Motor.Parent=entry.Parent
  end
  local bottom=math.huge
  for _,name in ipairs({"LeftLowerLeg","RightLowerLeg"}) do
