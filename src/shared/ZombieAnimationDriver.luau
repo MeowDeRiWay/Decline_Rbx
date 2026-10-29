@@ -82,9 +82,10 @@ function Driver.Start(viewer,preview)
     local a,b=shoulder:GetAttribute("UpperVector"),shoulder:GetAttribute("LowerVector")
     if not rest or not standing or not offset or not a or not b then continue end
     local jointFrame=upper*rest*CFrame.new(offset)
-    local target=root.CFrame:PointToWorldSpace(sample[name])
-    local delta=jointFrame:VectorToObjectSpace(target-jointFrame.Position)
-    local s,e=Pose.Arm(a,b,delta,Vector3.new(name=="Left" and -1 or 1,-1,.1))
+    local direction=jointFrame:VectorToObjectSpace(root.CFrame:VectorToWorldSpace(sample[name]))
+    local s=Pose.Between(a,direction)
+    local lowerRotation=Pose.Between(b,direction)
+    local e=s:Inverse()*lowerRotation
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
    end
   end

@@ -21,18 +21,19 @@ function Z.Sample(size,kind,side,phase,elapsed)
  for _,name in ipairs({"Left","Right"}) do
   local sign=name=="Left" and -1 or 1
   local target
+  -- Directions, not nearby hand targets: both limb sections stay straight.
   if kind==1 then
-   target=Vector3.new(sign*size.X*.75,-size.Y*.6,-size.Y*.25)
+   target=Vector3.new(sign*.03,-1,-.08)
   elseif kind==2 then
-   local forward=.8+.35*hit
-   if elapsed>Z.Contact(kind) and elapsed<.8 then forward=1.15-.8*((elapsed-.4)/.4)
-   elseif elapsed>=.8 and elapsed<1.1 then forward=.35+.45*((elapsed-.8)/.3) end
-   target=Vector3.new(sign*size.X*.7,size.Y*.18,-size.Y*forward)
+   local lift=-.12+.22*hit
+   if elapsed>.4 and elapsed<.8 then lift=.10-.60*((elapsed-.4)/.4)
+   elseif elapsed>=.8 and elapsed<1.1 then lift=-.50+.38*((elapsed-.8)/.3) end
+   target=Vector3.new(sign*.05,lift,-1)
   elseif name==side then
-   target=Vector3.new(sign*size.X*.65,size.Y*.22,-size.Y*(.55+.55*hit))
+   target=Vector3.new(sign*.04,-.10+.12*hit,-1)
   else
-   -- Intentionally authored flopping motion: no ragdoll constraints or physics.
-   target=Vector3.new(sign*size.X*(.78+.08*math.sin(phase*.7)),-size.Y*(.58+.05*math.sin(phase)),-size.Y*(.20+.13*math.sin(phase*.8)))
+   -- A straight hanging arm sways as one limb; no bent-elbow combat guard.
+   target=Vector3.new(sign*.03,-1,.08*math.sin(phase*.8))
   end
   result[name]=target
  end

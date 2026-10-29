@@ -87,6 +87,14 @@ tick:Fire(1/30)
 for _,m in ipairs(models) do
  local waist=m:FindFirstChild("Waist",true)
  assert(waist.Transform and waist.Transform.UpVector.Z<0,"all three types hunch forward despite anchored roots")
+ for _,name in ipairs({"Left","Right"}) do
+  local shoulder=m:FindFirstChild(name.."Shoulder",true)
+  local elbow=m:FindFirstChild(name.."Elbow",true)
+  local rotation=shoulder:GetAttribute("StandingRotation")*shoulder.Transform
+  local upperDirection=rotation:VectorToWorldSpace(shoulder:GetAttribute("UpperVector")).Unit
+  local lowerDirection=(rotation*elbow.Transform):VectorToWorldSpace(shoulder:GetAttribute("LowerVector")).Unit
+  assert(upperDirection:Dot(lowerDirection)>.99999,"every archetype keeps its elbow straight")
+ end
  local rest=waist.Transform
  m:SetAttribute("ZombieAttackStartedAt",serverTime-Z.Contact(m:GetAttribute("ZombieAnimationType")))
  tick:Fire(1/30)
@@ -97,6 +105,15 @@ for _,m in ipairs(models) do
  m:SetAttribute("ActivityMode","Active");m:SetAttribute("IsDead",true);tick:Fire(1/30);assert(waist.Transform==before)
  m:SetAttribute("IsDead",false)
 end
+for _,side in ipairs({"Left","Right"}) do
+ local idle=Z.Sample(Vector3.new(.4,.7,.315),3,side,0,-1)
+ local free=side=="Left" and "Right" or "Left"
+ assert(idle[side].Unit.Z<-.99 and idle[free].Unit.Y<-.99,"third type extends only its permanent striking arm; the other hangs down")
+end
+local grab=Z.Sample(Vector3.new(.4,.7,.315),2,"Left",0,-1)
+local bite=Z.Sample(Vector3.new(.4,.7,.315),1,"Left",0,-1)
+assert(grab.Left.Unit.Z<-.99 and grab.Right.Unit.Z<-.99,"classic zombie extends both arms")
+assert(bite.Left.Unit.Y<-.99 and bite.Right.Unit.Y<-.99,"biter hangs both arms down")
 local sample=Z.Sample(Vector3.new(.4,.7,.315),3,"Left",0,Z.Contact(3))
 local later=Z.Sample(Vector3.new(.4,.7,.315),3,"Left",1,Z.Contact(3))
 assert((sample.Left-later.Left).Magnitude==0 and (sample.Right-later.Right).Magnitude>0,"third type always attacks left and flops right")
