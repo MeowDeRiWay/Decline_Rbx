@@ -107,9 +107,9 @@ repair=99;assert(not Service.Cook(a,"MakeBucket",1),"bucket skill requirement ch
 repair=100;assert(not Service.Cook(a,"MakeBucket",2))
 assert(Service.Cook(a,"MakeBucket",1) and stock.Scrap==0 and durations[#durations]==20)
 callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.EmptyBucket==1,"bucket craft output")
-Service.Close(a);assert(Service.Open(a,bench));stock.Cloth=20
-repair=99;assert(not Service.Cook(a,"MakeLeatherArmor",1) and stock.Cloth==20)
-repair=100;sewing=false;assert(not Service.Cook(a,"MakeLeatherArmor",1) and stock.Cloth==20)
+Service.Close(a);assert(Service.Open(a,bench));stock.Cloth=6
+repair=99;assert(not Service.Cook(a,"MakeLeatherArmor",1) and stock.Cloth==6)
+repair=100;sewing=false;assert(not Service.Cook(a,"MakeLeatherArmor",1) and stock.Cloth==6)
 sewing=true;assert(not Service.Cook(a,"MakeLeatherArmor",2))
 assert(Service.Cook(a,"MakeLeatherArmor",1) and stock.Cloth==0 and durations[#durations]==60)
 assert(a.Character:GetAttribute("CraftingLocked"),"jacket requires presence for the full craft")

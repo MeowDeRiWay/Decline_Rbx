@@ -181,7 +181,7 @@ LeatherArmor2: покращена шкіряна куртка, 3 кг, погл�
 MakeLeatherArmor2 на Workstation: LeatherArmor 1 + Scrap 5, Repair 140,
 60 с, SewingKit в інвентарі не витрачається. Модель —
 ServerStorage/Items/Armor/LeatherArmor2 із тією ж структурою секцій.
-Рецепт MakeLeatherArmor: Workstation, Repair 100, Cloth 20, 60 с,
+Рецепт MakeLeatherArmor: Workstation, Repair 100, Cloth 6, 60 с,
 SewingKit в інвентарі як багаторазовий інструмент (не інгредієнт),
 одна куртка за чергу; потрібна присутність біля верстата.
 
