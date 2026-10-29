@@ -127,17 +127,29 @@ Progression.Meets=function(_,requirement)
  return not requirement.Skills.Repair or repair>=requirement.Skills.Repair
 end
 Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=100;stock.Coal=10;stock.Chemicals=10
-assert(Recipes.MakePistol9mm==nil and Recipes.MakeSMG9mm==nil,"factory-made 9mm weapon recipes removed")
-assert(not Service.Cook(a,"MakePistol9mm",1) and not Service.Cook(a,"MakeSMG9mm",1) and stock.Scrap==100)
-repair=100
+stock.Plank=10
+for id,required in pairs({MakePistol9mm=100,MakeSMG9mm=120,MakePipePistol9mm=60,MakePipeRifle9mm=60}) do
+ local recipe=Recipes[id];stock.TreeLog=1
+ local oldScrap,oldPlank=stock.Scrap,stock.Plank
+ repair=required-1;assert(not Service.Cook(a,id,1) and stock.Scrap==oldScrap and stock.Plank==oldPlank and stock.TreeLog==1)
+ repair=required;assert(Service.Cook(a,id,1));callbacks[#callbacks]()
+ assert(Service.Snapshot(a).CookingReady[recipe.Output]==1)
+ assert(stock.Scrap==oldScrap-recipe.Ingredients.Scrap)
+ if id=="MakePipePistol9mm" or id=="MakePipeRifle9mm" then
+  assert(stock.TreeLog==0 and stock.Plank==oldPlank,"pipe guns consume a log, not a plank")
+ else assert(stock.Plank==oldPlank-1) end
+end
+stock.Scrap=100;repair=59
+assert(not Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==100)
+repair=60
 local before=xp
 assert(Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==99 and stock.Coal==9 and stock.Chemicals==9)
 callbacks[#callbacks]();assert(xp==before+100 and Service.Snapshot(a).CookingReady.Ammo9mmFMJ==50)
 assert(not Service.Cook(a,"MakeRifle223",1),"factory recipe unavailable on town bench")
 local arms=make("Model","Custom weapons machine",workspace,{WeaponStation=true});make("Part","Part",arms)
 Service.Close(a);assert(Service.Open(a,arms));stock.Iron=100;stock.Plank=10
-repair=169;assert(not Service.Cook(a,"MakeAmmo223",1));repair=170
-for _,id in ipairs({"MakeAmmo223","MakeRifle223","MakeAssaultRifle223"}) do
+repair=149;assert(not Service.Cook(a,"MakeAmmo223",1));repair=150
+for _,id in ipairs({"MakeAmmo223","MakeRifle223","MakeAssaultRifle223","MakeLSW223","MakeServiceRifle223"}) do
  before=xp;local recipe=Recipes[id]
  assert(Service.Cook(a,id,1));callbacks[#callbacks]()
  assert(xp==before+recipe.XP and Service.Snapshot(a).CookingReady[recipe.Output]==recipe.OutputCount)
@@ -148,11 +160,22 @@ assert(not Service.Cook(a,"MakeKevlar",1) and stock.Cloth==5 and stock.Chemicals
 sewing=true;assert(Service.Cook(a,"MakeKevlar",1) and stock.Cloth==0 and stock.Chemicals==0 and durations[#durations]==60)
 callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.Kevlar==5)
 assert(Service.CollectRecipe(a,"MakeKevlar","All") and stock.Kevlar==5)
-stock.Kevlar=20;stock.Scrap=10;repair=174
-assert(not Service.Cook(a,"MakeMiliArmor1",1) and stock.Kevlar==20 and stock.Scrap==10)
-repair=175;assert(Service.Cook(a,"MakeMiliArmor1",1) and stock.Kevlar==0 and stock.Scrap==0 and durations[#durations]==120)
+stock.Kevlar=6;stock.Iron=3;repair=174
+assert(not Service.Cook(a,"MakeMiliArmor1",1) and stock.Kevlar==6 and stock.Iron==3)
+repair=175;assert(Service.Cook(a,"MakeMiliArmor1",1) and stock.Kevlar==0 and stock.Iron==0 and durations[#durations]==60)
 callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.MiliArmor1==1)
 assert(Service.CollectRecipe(a,"MakeMiliArmor1","All") and stock.MiliArmor1==1)
+stock.Kevlar=2;stock.Iron=3;repair=199
+assert(not Service.Cook(a,"MakeMiliArmor2",1) and stock.MiliArmor1==1 and stock.Kevlar==2 and stock.Iron==3)
+repair=200;sewing=false
+assert(not Service.Cook(a,"MakeMiliArmor2",1) and stock.MiliArmor1==1)
+sewing=true
+assert(Service.Cook(a,"MakeMiliArmor2",1) and stock.MiliArmor1==0 and stock.Kevlar==0 and stock.Iron==0 and durations[#durations]==60)
+Service.Close(a)
+assert(stock.MiliArmor1==1 and stock.Kevlar==2 and stock.Iron==3,"cancelled upgrade returns original armor and materials")
+assert(Service.Open(a,arms) and Service.Cook(a,"MakeMiliArmor2",1))
+callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.MiliArmor2==1)
+assert(Service.CollectRecipe(a,"MakeMiliArmor2","All") and stock.MiliArmor2==1 and stock.MiliArmor1==0)
 local workshop=make("Model","Workbench (T2)",workspace,{BuildingID="Workbench",BuildingLevel=1})
 local furnace=make("Model","Furnace",workshop);make("Part","Part",furnace)
 Service.Close(a);assert(Service.Open(a,furnace));stock.Scrap=25;stock.Coal=1
@@ -163,7 +186,7 @@ assert(stock.Scrap==0 and stock.Coal==0 and durations[#durations]==120 and not S
 Service.Close(a);a.Character.HumanoidRootPart.Position=Vector3.new(100,0,0)
 callbacks[#callbacks]();a.Character.HumanoidRootPart.Position=Vector3.zero
 assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Iron==5,"furnace completes after closing and leaving")
-assert(Service.CollectRecipe(a,"SmeltIron","All") and stock.Iron==84)
+assert(Service.CollectRecipe(a,"SmeltIron","All") and stock.Iron==5)
 stock.TreeLog=5;stock.Coal=0
 assert(Service.Cook(a,"BurnLogs",5) and durations[#durations]==60);Service.Close(a);callbacks[#callbacks]()
 assert(Service.Open(a,furnace) and Service.Snapshot(a).CookingReady.Coal==5)

@@ -1,3 +1,22 @@
+## Weapon recipes and military armor — 29 October 2026 (latest)
+
+User corrections applied directly to main: PipePistol9mm = TreeLog1 + Scrap3;
+PipeRifle9mm = TreeLog1 + Scrap5 (both Repair60). Restored Workstation recipes
+MakePistol9mm = Plank1 + Scrap3 / Repair100 / 60s / XP200;
+MakeSMG9mm = Plank1 + Scrap5 / Repair120 / 90s / XP200. SMG use requires Strength4.
+All four .223 firearms = Iron5 + Plank2 / Repair150, existing time/XP preserved.
+9mm FMJ Repair60; .223 FMJ Repair150; ingredients and output50 unchanged.
+MiliArmor1 = Kevlar6 + Iron3 / Repair175 / 60s / weight5kg / armor6/.30.
+MiliArmor2 = MiliArmor1 + Kevlar2 + Iron3 / Repair200 / 60s / weight6kg / armor8/.40.
+Both armor recipes temporarily at ArmsBench/WeaponStation, require presence and
+reusable SewingKit. Model IDs: ServerStorage/Items/Armor/MiliArmor1 and MiliArmor2;
+same section folders/Anchor convention as LeatherArmor. New armor item appears in
+admin catalog automatically. Manual Ukrainian/Russian names/descriptions updated.
+Actual crafting service tests cover exact skill boundaries, material consumption,
+cancellation refunds including original armor, completion and collecting upgrades;
+inventory tests cover SMG threshold and upgraded Body armor defense. Studio visual
+verification still requires the user's authored armor model.
+
 ## Attribute balance and zombie parity — 27 October 2026 (latest)
 
 All actors share attribute bonuses again, including HP. Removed the temporary

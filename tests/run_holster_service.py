@@ -176,7 +176,11 @@ assert(Service.Unequip(a,"Body") and a:GetAttribute("ArmorResistance")==0)
 assert(Service.Add(a,"MiliArmor1",1) and Service.Equip(a,"MiliArmor1"))
 assert(a:GetAttribute("ArmorAbsorption")==6 and a:GetAttribute("ArmorResistance")==.3)
 assert(Service.Unequip(a,"Body"))
-for id,minimum in pairs({Pistol9mm=3,PipePistol9mm=3,PipeRifle9mm=4,Rifle223=4,ServiceRifle223=4,AssaultRifle223=5,LSW223=6}) do
+assert(Service.Add(a,"MiliArmor2",1) and Service.Equip(a,"MiliArmor2"))
+assert(a:GetAttribute("ArmorAbsorption")==8 and a:GetAttribute("ArmorResistance")==.4)
+assert(Service.Snapshot(a).Equipment.Body=="MiliArmor2" and a.Character:GetAttribute("WornArmor")=="MiliArmor2")
+assert(Service.Unequip(a,"Body") and a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==0)
+for id,minimum in pairs({Pistol9mm=3,SMG9mm=4,PipePistol9mm=3,PipeRifle9mm=4,Rifle223=4,ServiceRifle223=4,AssaultRifle223=5,LSW223=6}) do
  assert(Service.Add(a,id,1))
  local previous=Service.Snapshot(a).Equipment.Hands
  strength=minimum-1;assert(not Service.Equip(a,id) and Service.Snapshot(a).Equipment.Hands==previous,"server equip gate: "..id)

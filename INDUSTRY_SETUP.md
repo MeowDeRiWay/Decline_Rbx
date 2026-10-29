@@ -81,10 +81,16 @@ world box; AP recipes were not specified and have not been invented.
 
 | Station | Recipe | Inputs | Output | Repair | XP | Seconds |
 | --- | --- | --- | --- | --- | --- | --- |
-| Workstation | 9 mm rounds | 1 Coal + 1 Chemicals + 1 Scrap | 50 Ammo9mmFMJ | 100 | 100 | 30 |
-| ArmsBench | .223 rounds | 1 Iron + 1 Coal + 1 Chemicals | 50 Ammo223FMJ | 170 | 200 | 60 |
-| ArmsBench | .223 bolt-action rifle | 25 Iron | 1 Rifle223 | 170 | 500 | 120 |
-| ArmsBench | .223 assault rifle | 25 Iron | 1 AssaultRifle223 | 170 | 500 | 120 |
+| Workstation | 9 mm pipe pistol | 1 TreeLog + 3 Scrap | 1 PipePistol9mm | 60 | 100 | 20 |
+| Workstation | 9 mm pipe rifle | 1 TreeLog + 5 Scrap | 1 PipeRifle9mm | 60 | 100 | 30 |
+| Workstation | 9 mm pistol | 1 Plank + 3 Scrap | 1 Pistol9mm | 100 | 200 | 60 |
+| Workstation | 9 mm submachine gun | 1 Plank + 5 Scrap | 1 SMG9mm | 120 | 200 | 90 |
+| Workstation | 9 mm rounds | 1 Coal + 1 Chemicals + 1 Scrap | 50 Ammo9mmFMJ | 60 | 100 | 30 |
+| ArmsBench | .223 rounds | 1 Iron + 1 Coal + 1 Chemicals | 50 Ammo223FMJ | 150 | 200 | 60 |
+| ArmsBench | .223 bolt-action rifle | 5 Iron + 2 Plank | 1 Rifle223 | 150 | 500 | 120 |
+| ArmsBench | .223 service rifle | 5 Iron + 2 Plank | 1 ServiceRifle223 | 150 | 500 | 120 |
+| ArmsBench | .223 assault rifle | 5 Iron + 2 Plank | 1 AssaultRifle223 | 150 | 500 | 120 |
+| ArmsBench | .223 light support weapon | 5 Iron + 2 Plank | 1 LSW223 | 150 | 500 | 120 |
 | Stove / Furnace | Burn logs | 5 TreeLog | 5 Coal | — | default 50 | 60 |
 | Stove / Furnace | Burn logs with charcoal | 5 TreeLog + 1 Coal | 5 Coal | — | default 50 | 30 |
 | Furnace in Workshop T2 | Smelt iron | 25 Scrap + 1 Coal | 5 Iron | — | default 50 | 120 |
@@ -199,10 +205,10 @@ Future medicines and medical materials belong here too. Advanced medical recipes
 may consume needles/syringes produced at a specialized workshop station; no such
 items or recipes are added until their definitions are supplied.
 
-The current Pistol9mm and SMG9mm crafting recipes are removed. The items remain
-available as existing gear/loot/admin grants. 9 mm ammunition remains at Workstation.
-Future homemade single-shot pistol/rifle models and recipes will be added
-separately; no placeholder weapons or invented recipes are added.
+Pistol9mm and SMG9mm recipes are restored at Workstation as of 29 October 2026.
+PipePistol9mm and PipeRifle9mm also craft there; each consumes one TreeLog rather
+than planks. SMG9mm requires Strength 4 to equip/use. Other weapon Strength gates
+remain unchanged. The recipe table above contains the current costs and Repair gates.
 
 ## Workshop Repair requirements — 27 October 2026
 
@@ -210,6 +216,5 @@ Stone tool/weapon recipes require Repair60; scrap tools/weapons require Repair10
 iron tools/weapons require Repair150. Empty bucket requires Repair100, handle60,
 and planks60. Requirements are enforced before ingredients are consumed and shown
 in recipe descriptions/menu locks. These are crafting requirements, not equipment
-requirements. The iron tool items already exist but their recipes have not yet
-been defined; their150 gate is prepared for those future recipes. Existing factory
-.223 firearms/ammunition retain their separately specified Repair170 requirement.
+requirements. Iron tool recipes are defined at Workstation with Repair150. Factory .223 firearms
+and ammunition now require Repair150; 9 mm FMJ requires Repair60 (29 October update).
