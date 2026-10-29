@@ -44,6 +44,9 @@ remote.OnServerEvent.callback(player,false);tick(.1);assert(hp.WalkSpeed==4)
 character.attrs.ShotMovementUntil=11
 player.CharacterAdded.callback();character.attrs={}
 tick(.1);assert(hp.WalkSpeed==8,"new character does not inherit shot or sprint request")
+character.attrs.InteractionLocked=true;tick(.1)
+assert(hp.WalkSpeed==0 and not character.attrs.Running,"looting and recovery override walking/sprinting")
+character.attrs.InteractionLocked=nil;tick(.1);assert(hp.WalkSpeed==8)
 print("PASS: shot pause, automatic extension, sprint reserve, competing locks, current carry speed and respawn")
 ''')
 with tempfile.TemporaryDirectory() as directory:

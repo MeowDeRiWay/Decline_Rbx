@@ -5,6 +5,7 @@ root=Path(__file__).resolve().parents[1]
 rules=(root/'src/shared/TownRules.luau').read_text()
 access=(root/'src/shared/DoorRules.luau').read_text()
 service=(root/'src/server/Services/TownDoors.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
+service=service.replace('local Animation=require(script.Parent.InteractionAnimationService)', 'local Animation={Reach=function(_,_,_,fn) fn();return true end}')
 for key in ['Rules','Access','Interaction','Config']:
  import re
  service=re.sub(r'local '+key+r' = require\([^\n]+\)', 'local '+key+' = TEST_'+key, service)

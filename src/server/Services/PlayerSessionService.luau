@@ -8,6 +8,7 @@ local Progression=require(script.Parent.ProgressionService)
 local Life=require(script.Parent.PlayerLifeService)
 local Towns=require(script.Parent.TownService)
 local Beds=require(script.Parent.HospitalBedService)
+local Animation=require(script.Parent.InteractionAnimationService)
 local Service={}
 local records={}
 local transient={MapOpen=true,HelpOpen=true,HelpHidden=true,HelpPreferenceReady=true,HelpPreferenceStatus=true,Money=true,TradeOpen=true,InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
@@ -26,6 +27,7 @@ local function corpse(record)
 end
 local function leave(player)
  Beds.Leave(player)
+ if player.Character then Animation.Cancel(player.Character) end
  local record={UserID=player.UserId,DisplayName=player.DisplayName,Attributes=player:GetAttributes(),Team=player.Team,Inventory=Inventory.Export(player)}
  records[player.UserId]=record
  local character=player.Character

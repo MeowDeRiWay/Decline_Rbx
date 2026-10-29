@@ -8,11 +8,13 @@ local Pose=require(Shared:WaitForChild("CharacterPose"))
 local Foot=require(Shared:WaitForChild("FootPlant"))
 local Punch=require(Shared:WaitForChild("UnarmedPose"))
 local Items=require(Shared.ItemConfig).Items
+local Interact=require(Shared:WaitForChild("InteractionPose"))
+local Motion=require(Shared:WaitForChild("WeaponMotion"))
 local Driver={}
 function Driver.Start(localPlayer,serverPreview)
 local records={}
 local watched={}
-local joints={"RootJoint","LeftShoulder","RightShoulder","LeftElbow","RightElbow","LeftHip","RightHip","LeftKnee","RightKnee"}
+local joints={"Waist","Neck","RootJoint","LeftShoulder","RightShoulder","LeftElbow","RightElbow","LeftHip","RightHip","LeftKnee","RightKnee"}
 local function clear(player)
  local watch=watched[player]
  if watch then for _,connection in ipairs(watch) do connection:Disconnect() end end
@@ -39,6 +41,11 @@ local function bind(player,character)
   if queued then return end;queued=true
   task.defer(function() queued=false;if watched[player]==links then rebuild() end end)
  end
+ table.insert(links,character:GetAttributeChangedSignal("InteractionMode"):Connect(function()
+  if not character:GetAttribute("InteractionMode") then return end
+  local held=character:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
+  if motor then Motion.Cancel(motor);motor.C0=motor:GetAttribute("RestC0") or motor.C0 end
+ end))
  table.insert(links,character:GetAttributeChangedSignal("BodyPoseKind"):Connect(function()
   for _,joint in ipairs(character:GetDescendants()) do if joint:IsA("Motor6D") then joint.Transform=CFrame.identity end end
  end))
@@ -70,10 +77,17 @@ RunService.PreSimulation:Connect(function(dt)
   if not root:IsDescendantOf(workspace) then continue end
   if not serverPreview and (not viewer or (root.Position-viewer.Position).Magnitude>180) then r.Last=root.Position;r.Feet=nil;continue end
   -- Frozen bodies keep the existing knockout/death pose.
-  if root.Anchored or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then r.Last=root.Position;continue end
+  if (root.Anchored and not c:GetAttribute("InteractionLocked")) or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then r.Last=root.Position;continue end
   r.Elapsed+=dt
   if player~=localPlayer and r.Elapsed<1/30 then continue end
   local elapsed=r.Elapsed;r.Elapsed=0
+  if Interact.Apply(c,root,m,workspace:GetServerTimeNow()) then r.Last=root.Position;r.Feet=nil;r.Interacting=true;continue end
+  if r.Interacting then
+   r.Interacting=nil
+   local held=c:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
+   if motor then motor.Transform=CFrame.identity end
+  end
+  m.Waist.Transform=CFrame.identity;m.Neck.Transform=CFrame.identity
   local displacement=root.Position-r.Last;r.Last=root.Position
   local velocity=Vector3.new(displacement.X,0,displacement.Z)/math.max(elapsed,.001)
   -- Ignore teleports; measure actual translation so walking into a wall is idle.

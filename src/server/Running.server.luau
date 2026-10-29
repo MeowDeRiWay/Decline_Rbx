@@ -26,7 +26,7 @@ RunService.Heartbeat:Connect(function(dt)
   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
   if not humanoid then continue end
   local shotLocked=Rules.ShotLocked(character:GetAttribute("ShotMovementUntil"),workspace:GetServerTimeNow())
-  local allowed = player:GetAttribute("AttributesConfirmed")==true and humanoid.Health > 0 and not humanoid.Sit and not humanoid.PlatformStand and not character:GetAttribute("Knockout") and not character:GetAttribute("CraftingLocked") and not shotLocked
+  local allowed = player:GetAttribute("AttributesConfirmed")==true and humanoid.Health > 0 and not humanoid.Sit and not humanoid.PlatformStand and not character:GetAttribute("Knockout") and not (character:GetAttribute("CraftingLocked") or character:GetAttribute("InteractionLocked")) and not shotLocked
   local maximum=Sprint.Maximum(player:GetAttribute("Agility"))
   local reserve=reserves[player]
   if not reserve or reserve.Character~=character then reserve={Character=character,Value=maximum,Exhausted=false};reserves[player]=reserve end
@@ -37,7 +37,7 @@ RunService.Heartbeat:Connect(function(dt)
   if character:GetAttribute("SprintRemaining")~=value then character:SetAttribute("SprintRemaining",value) end
   if character:GetAttribute("SprintMaximum")~=maximum then character:SetAttribute("SprintMaximum",maximum) end
   local multiplier = Rules.LoadMultiplier(character:GetAttribute("LoadKg"),Config,player:GetAttribute("CarryLimitKg"))
-  local speed = (player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or character:GetAttribute("CraftingLocked") or shotLocked) and 0 or (running and (player:GetAttribute("RunBonus") or .4) or (player:GetAttribute("WalkBonus") or .2))*multiplier
+  local speed = (player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or (character:GetAttribute("CraftingLocked") or character:GetAttribute("InteractionLocked")) or shotLocked) and 0 or (running and (player:GetAttribute("RunBonus") or .4) or (player:GetAttribute("WalkBonus") or .2))*multiplier
   if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
   if character:GetAttribute("Running") ~= running then character:SetAttribute("Running",running) end
  end

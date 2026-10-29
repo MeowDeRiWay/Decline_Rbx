@@ -86,6 +86,7 @@ function Service.Remove(player, id, count,key)
  return true, conditions,data
 end
 function Service.Equip(player, id,key,uid)
+ if player.Character and player.Character:GetAttribute("InteractionLocked") then return false end
  if typeof(id) ~= "string" or not ItemConfig.Items[id] or not Visuals.Validate(id) then return false end
  local requirements=ItemConfig.Items[id].Requirements
  if requirements and not require(script.Parent.ProgressionService).Meets(player,requirements) then return false end
@@ -95,6 +96,7 @@ function Service.Equip(player, id,key,uid)
  return true
 end
 function Service.Unequip(player, slot)
+ if player.Character and player.Character:GetAttribute("InteractionLocked") then return false end
  local state = states[player]
  if not state or not Rules.Unequip(state, ItemConfig.Items, ItemConfig.Slots, slot) then return false end
  update(player)
@@ -121,6 +123,7 @@ function Service.UseMedicine(player)
  return true
 end
 function Service.ToggleHolster(player)
+ if player.Character and player.Character:GetAttribute("InteractionLocked") then return false end
  local state=states[player]
  if not state then return false end
  local held=state.Equipment.Hands

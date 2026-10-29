@@ -6,6 +6,8 @@ local Chests = require(script.Parent.Services.ChestService)
 local Crafting = require(script.Parent.Services.CraftingService)
 local Farming=require(script.Parent.Services.FarmingService)
 local Beds=require(script.Parent.Services.HospitalBedService)
+local Animation=require(script.Parent.Services.InteractionAnimationService)
+local ItemConfig=require(ReplicatedStorage.Shared.ItemConfig)
 local Consumables = require(script.Parent.Services.ConsumableService)
 local folder = Instance.new("Folder")
 folder.Name, folder.Parent = "InventoryRemotes", ReplicatedStorage
@@ -40,6 +42,7 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  if not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return end
+ if character:GetAttribute("InteractionLocked") and command~="TakeAll" and command~="TransferOut" then return end
  if command=="HospitalBed" then Crafting.Close(player);Chests.Close(player);Beds.Use(player,value);return end
  if character:GetAttribute("HospitalResting") then return end
  local key
@@ -50,7 +53,7 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  if command == "Equip" then Service.Equip(player, value,key)
  elseif command == "Holster" then Service.ToggleHolster(player)
  elseif command == "Unequip" then Service.Unequip(player, value)
- elseif command == "Pickup" then WorldItems.Pickup(player, value)
+ elseif command == "Pickup" then Animation.Reach(player,value,ItemConfig.PickupDistance,function() WorldItems.Pickup(player,value) end)
  elseif command == "Drop" then WorldItems.Drop(player, value, amount,key)
  elseif command == "Farm" then Farming.Use(player,value)
  elseif command == "PlantCrop" and amount=="Potato" then Farming.Use(player,value,amount)
@@ -60,7 +63,10 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  elseif command == "Cook" then Crafting.Cook(player,value,amount)
  elseif command == "CollectRecipe" then Crafting.CollectRecipe(player,value,amount)
  elseif command == "CollectCooked" then Crafting.Collect(player,value,amount)
- elseif command == "OpenChest" then Crafting.Close(player); Chests.Open(player, value)
+ elseif command == "OpenChest" then
+  Crafting.Close(player)
+  if typeof(value)=="Instance" and value:GetAttribute("IsCorpse") then Chests.Open(player,value)
+  else Animation.Reach(player,value,ItemConfig.PickupDistance,function() Chests.Open(player,value) end) end
  elseif command == "TakeAll" then Chests.TakeAll(player)
  elseif command == "TransferIn" then Chests.Transfer(player, value, amount, true,key)
  elseif command == "TransferOut" then Chests.Transfer(player, value, amount, false,key) end

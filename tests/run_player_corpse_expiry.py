@@ -2,7 +2,7 @@
 from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-s=(root/'src/server/Services/ChestService.luau').read_text()
+s=(root/'src/server/Services/ChestService.luau').read_text().replace('local Animation=require(script.Parent.InteractionAnimationService)', 'local Animation={EndLoot=function() end,BeginLoot=function(_,_,_,opened) return opened() end}')
 s=re.sub(r'local (Inventory|Rules|Items|Interaction) = require[^\n]+\n','',s)
 setup='''
 local baseNew=Instance.new

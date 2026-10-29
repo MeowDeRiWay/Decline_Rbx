@@ -4,6 +4,7 @@ local Inventory = require(script.Parent.InventoryService)
 local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
+local Animation=require(script.Parent.InteractionAnimationService)
 local Service = {}
 local contents = setmetatable({}, {__mode = "k"})
 local sessions = {}
@@ -71,15 +72,24 @@ function Service.CreateCorpse(model,items)
 end
 function Service.Open(player, chest)
  if not reachable(player, chest) then return false end
- if not contents[chest] then contents[chest] = Rules.New() end
- sessions[player] = chest
- changed:Fire(player)
- return true
+ if sessions[player]==chest then return true end
+ if player.Character:GetAttribute("InteractionLocked") and player.Character:GetAttribute("InteractionMode")~="Reach" then return false end
+ local function opened()
+  if not reachable(player,chest) then return false end
+  if not contents[chest] then contents[chest]=Rules.New() end
+  sessions[player]=chest
+  changed:Fire(player)
+  return true
+ end
+ if chest:GetAttribute("IsCorpse") then return Animation.BeginLoot(player,chest,Items.PickupDistance,opened) end
+ return opened()
 end
 function Service.Close(player)
- sessions[player] = nil
+ sessions[player]=nil
+ Animation.EndLoot(player)
  changed:Fire(player)
 end
+
 function Service.Snapshot(player)
  local chest = sessions[player]
  return {ChestOpen = chest ~= nil, Chest = chest, ChestReadOnly = chest ~= nil and chest:GetAttribute("IsCorpse") == true, ChestName = chest and (chest:GetAttribute("DisplayName") or chest.Name), ChestStacks=chest and contents[chest] and Rules.Stacks(contents[chest],Items.Items) or {}, ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}

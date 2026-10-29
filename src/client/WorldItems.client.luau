@@ -44,7 +44,7 @@ Cursor.Subscribe("WorldItems",1,function()
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
- if not root or not camera or character:GetAttribute("Knockout") or (((player:GetAttribute("TradeOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if not root or not camera or character:GetAttribute("InteractionLocked") or character:GetAttribute("Knockout") or (((player:GetAttribute("TradeOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  if character:GetAttribute("HospitalResting") then
   Locale.Set(label,"Text","Hospital bed\n[E] Get up")

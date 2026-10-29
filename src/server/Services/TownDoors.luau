@@ -6,6 +6,7 @@ local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Rules = require(ReplicatedStorage.Shared.TownRules)
 local Access = require(ReplicatedStorage.Shared.DoorRules)
 local Config = require(ReplicatedStorage.Shared.TownConfig)
+local Animation=require(script.Parent.InteractionAnimationService)
 local Service = {}
 local doors, lastAction = {}, {}
 local walls=setmetatable({},{__mode="k"})
@@ -89,9 +90,11 @@ function Service.Admit(player, door, townID)
  local record = doors[door]
  if not record or not door:IsDescendantOf(workspace) or ancestorAttribute(door,"TownGate") ~= true
   or ancestorAttribute(door,"TownID") ~= townID or player:GetAttribute("TownID") ~= nil or not near(player,door) then return false end
- record.untilTime = workspace:GetServerTimeNow()+20
- setOpen(door,record,true)
- return true
+ return Animation.Reach(player,door,Config.InteractionDistance,function()
+  if doors[door]~=record or not near(player,door) or player:GetAttribute("TownID")~=nil or ancestorAttribute(door,"TownID")~=townID then return end
+  record.untilTime=workspace:GetServerTimeNow()+20
+  setOpen(door,record,true)
+ end)
 end
 local function register(door)
  if doors[door] or door:GetAttribute("Door") ~= true or not (door:IsA("Model") or door:IsA("BasePart")) then return end
@@ -145,8 +148,11 @@ function Service.Start(requestPassage, tell)
   if not near(player,door) then return end
   local record=doors[door]
   if Service.Allowed(player,door) then
-   record.untilTime=workspace:GetServerTimeNow()+5
-   setOpen(door,record,true)
+   Animation.Reach(player,door,Config.InteractionDistance,function()
+    if doors[door]~=record or not near(player,door) or not Service.Allowed(player,door) then return end
+    record.untilTime=workspace:GetServerTimeNow()+5
+    setOpen(door,record,true)
+   end)
   elseif player:GetAttribute("TownID")==nil and ancestorAttribute(door,"TownGate")==true and not door:GetAttribute("DoorOpen") then
    requestPassage(player,door,ancestorAttribute(door,"TownID"))
   else tell(player,"This door is locked. You do not have access.") end

@@ -47,7 +47,8 @@ local fire=action.OnServerEvent.callback
 player.attrs.AttributesConfirmed=false;fire(player);assert(c.attrs.PunchSequence==nil)
 player.attrs.AttributesConfirmed=true;c.attrs.Knockout=true;fire(player);assert(c.attrs.PunchSequence==nil)
 c.attrs.Knockout=false;player.attrs.TradeOpen=true;fire(player);assert(c.attrs.PunchSequence==nil)
-player.attrs.TradeOpen=false;fire(player)
+player.attrs.TradeOpen=false;c.attrs.InteractionLocked=true;fire(player);assert(c.attrs.PunchSequence==nil,"interaction blocks accepted melee attacks")
+c.attrs.InteractionLocked=nil;fire(player)
 assert(c.attrs.PunchSequence==1 and c.attrs.PunchStartedAt==100)
 fire(player);assert(c.attrs.PunchSequence==1,"cooldown rejection cannot restart pose or alternate hand")
 advance(.24);assert(contacts==0)
@@ -56,6 +57,11 @@ advance(.75);fire(player);assert(c.attrs.PunchSequence==2 and c.attrs.PunchStart
 advance(1);c.attrs.HandsItem="Knife";Items.Knife={Weapon=true};currentWeapon={AttacksPerMinute=40}
 fire(player);assert(c.attrs.PunchSequence==2,"armed attacks cannot publish fist animation")
 assert(CombatRules.Unarmed.AttacksPerMinute==60,"punch animation preserves attack rate")
+c.attrs.InteractionLocked=true;advance(2);c.attrs.InteractionLocked=nil;c.attrs.HandsItem=nil;currentWeapon=CombatRules.Unarmed
+fire(player);local before=contacts;c.attrs.InteractionLocked=true;c.attrs.InteractionSequence=1
+advance(.1);c.attrs.InteractionLocked=nil;advance(.15)
+assert(contacts==before,"interaction cancels pending contact even if recovery finished before its old deadline")
+c.attrs.InteractionLocked=nil
 print("PASS: accepted-only punch timestamps, cooldown/KO/trade/creation rejection, contact timing and armed isolation")
 '''
 with tempfile.TemporaryDirectory() as directory:

@@ -3,7 +3,7 @@ from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/PlayerLifeService.luau').read_text()
-source=re.sub(r'local (Defense|Inventory|Chests|Motion|Beds|BodyFall)\s*=\s*require[^\n]+\n','',source)
+source=re.sub(r'local (Defense|Inventory|Chests|Motion|Beds|BodyFall|Animation)\s*=\s*require[^\n]+\n','',source)
 for module,alias in [('TownService','Towns'),('CraftingService','Crafting'),('ProgressionService','Progression'),('EconomyService','Economy')]:
  source=source.replace(f'require(script.Parent.{module})',alias)
 setup='''
@@ -16,6 +16,7 @@ local function advance(seconds)
  clock+=seconds
  for _,timer in ipairs(table.clone(timers)) do if not timer.Done and timer.At<=clock then timer.Done=true;timer.Run() end end
 end
+local Animation={Cancel=function() end}
 local BodyFall={Play=function(c,kind) c:SetAttribute("BodyPoseKind",kind) end,Cancel=function() end,Restore=function(c) c:SetAttribute("BodyPoseKind",nil) end}
 local corpses={};local extracted=0;local resets=0;local fresh=0;local funds=0;local spawned=0;local creation=0
 local Inventory={ExtractAll=function(p) extracted+=1;return {Items={Musket=1}} end,Reset=function(p) resets+=1 end}

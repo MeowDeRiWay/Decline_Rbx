@@ -156,6 +156,11 @@ for index,id in ipairs({"PipePistol9mm","PipeRifle9mm"}) do
  advance(5);fire(player,"Fire",direction);assert(magazine.Loaded==0 and rounds.Ammo9mmFMJ==9,"empty gun cannot fire or reload itself")
  fire(player,"Reload");advance(gun.ReloadTime+.1);assert(magazine.Loaded==1 and rounds.Ammo9mmFMJ==8)
 end
+local before=magazine.Loaded
+character:SetAttribute("InteractionLocked",true);fire(player,"Fire",direction)
+assert(magazine.Loaded==before,"loot/recovery blocks server shots, regardless of client UI")
+character:SetAttribute("InteractionLocked",nil);fire(player,"Fire",direction)
+assert(magazine.Loaded==before-1,"shots resume after recovery completes")
 print("PASS: both pipe guns load exactly one 9mm round and require reload between shots")
 print("PASS: SR20 semi-auto and LSW30/700RPM reload, mode and fire timing")
 print("PASS: persistent per-weapon charge, independent identical guns, loose/loaded conservation, holster cooldown, reload cancellation, RPM/wall/direction guards, mode, sound, durability and empty notice")
