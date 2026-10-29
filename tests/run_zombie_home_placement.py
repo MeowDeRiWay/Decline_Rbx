@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/ZombieHomeService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
-source=re.sub(r'local (Area|Rules|HomeRules)\s*=\s*require[^\n]+\n','',source)
+source=re.sub(r'local (Area|Rules|HomeRules|Rig)\s*=\s*require[^\n]+\n','',source)
 setup='''
 local Random={new=function() return {NextNumber=function(_,minimum) return minimum end} end}
 function methods:GetPropertyChangedSignal(key) return event() end
@@ -55,7 +55,7 @@ assert(rays==8,"sleeping district cancels in-flight placement before further phy
 print("PASS: cached occupancy/altitude, full 40-candidate placement, eight attempts per frame, immediate cancellation after player leaves")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),setup]
-for name,path in [('HomeRules','src/shared/ZombieHomeRules.luau'),('Rules','src/shared/ResourceRules.luau'),('Area','src/server/Services/AreaService.luau')]:parts.append('local '+name+'=(function()\n'+(root/path).read_text()+'\nend)()')
+for name,path in [('Rig','src/shared/CharacterRig.luau'),('HomeRules','src/shared/ZombieHomeRules.luau'),('Rules','src/shared/ResourceRules.luau'),('Area','src/server/Services/AreaService.luau')]:parts.append('local '+name+'=(function()\n'+(root/path).read_text()+'\nend)()')
 parts+=['local Service=(function()\n'+source+'\nend)()',cases]
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'placement.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)

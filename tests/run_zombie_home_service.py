@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 s=(root/'src/server/Services/ZombieHomeService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
-s=re.sub(r'local (Area|Rules|HomeRules)\s*=\s*require[^\n]+\n','',s)
+s=re.sub(r'local (Area|Rules|HomeRules|Rig)\s*=\s*require[^\n]+\n','',s)
 a=s.index('local function spawn(home,valid)');b=s.index('local function clearBuckets',a)
 s=s[:a]+'''local function spawn(home,valid)
  assert(valid());spawned[home]=(spawned[home] or 0)+1

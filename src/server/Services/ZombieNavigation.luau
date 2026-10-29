@@ -94,9 +94,10 @@ end
 function Navigation:Ground(point,ray)
  checkpoint(self)
  local root=self.Root
+ local groundOffset=root.Size.Y/2+(self.Model:GetAttribute("RigHipHeight") or 0)
  local step=math.max(.15,root.Size.Y*.5)
  local origin=point+Vector3.new(0,step,0)
- local delta=Vector3.new(0,-step-root.Size.Y/2-.3,0)
+ local delta=Vector3.new(0,-step-groundOffset-.3,0)
  local hit=workspace:Raycast(origin,delta,ray)
  local reference=self.Model:FindFirstChild("ZombieHome")
  local home=reference and reference.Value
@@ -108,7 +109,7 @@ function Navigation:Ground(point,ray)
   if surface and (not hit or surface.Position.Y>hit.Position.Y) then hit=surface end
  end
  if not hit or hit.Normal.Y<.85 then return nil end
- local height=hit.Position.Y+root.Size.Y/2+.02
+ local height=hit.Position.Y+groundOffset+.02
  if math.abs(height-point.Y)>step then return nil end
  return Vector3.new(point.X,height,point.Z)
 end

@@ -10,6 +10,27 @@ local function bounds(root,part)
  local half=Vector3.new(math.abs(r.X)*s.X+math.abs(u.X)*s.Y+math.abs(l.X)*s.Z,math.abs(r.Y)*s.X+math.abs(u.Y)*s.Y+math.abs(l.Y)*s.Z,math.abs(r.Z)*s.X+math.abs(u.Z)*s.Y+math.abs(l.Z)*s.Z)
  return cf.Position,half
 end
+function Rig.GroundOffset(character,root)
+ local bottom=-root.Size.Y/2
+ for _,name in ipairs({"LeftLowerLeg","RightLowerLeg"}) do
+  local part=character:FindFirstChild(name)
+  if part and part:IsA("BasePart") then local p,h=bounds(root,part);bottom=math.min(bottom,p.Y-h.Y) end
+ end
+ return -bottom
+end
+function Rig.BodyBounds(character,root)
+ if not character:FindFirstChild("LowerTorso") then return character:GetBoundingBox() end
+ local minimum,maximum=Vector3.new(-root.Size.X/2,-root.Size.Y/2,-root.Size.Z/2),root.Size/2
+ for _,name in ipairs({"Head","LowerTorso","UpperTorso","LeftUpperLeg","LeftLowerLeg","RightUpperLeg","RightLowerLeg"}) do
+  local part=character:FindFirstChild(name)
+  if part and part:IsA("BasePart") then
+   local p,h=bounds(root,part)
+   minimum=Vector3.new(math.min(minimum.X,p.X-h.X),math.min(minimum.Y,p.Y-h.Y),math.min(minimum.Z,p.Z-h.Z))
+   maximum=Vector3.new(math.max(maximum.X,p.X+h.X),math.max(maximum.Y,p.Y+h.Y),math.max(maximum.Z,p.Z+h.Z))
+  end
+ end
+ return root.CFrame*CFrame.new((minimum+maximum)/2),maximum-minimum
+end
 function Rig.Prepare(character,root,humanoid)
  local parts={}
  for _,name in ipairs(names) do

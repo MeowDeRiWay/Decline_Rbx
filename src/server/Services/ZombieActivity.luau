@@ -68,9 +68,10 @@ local function teleport(record)
  if Rules.Mode(gapAt(raw))~="Minimal" then return end
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
  params.FilterDescendantsInstances={model};params.RespectCanCollide=true
+ local groundOffset=root.Size.Y/2+(model:GetAttribute("RigHipHeight") or 0)
  local step=math.max(.15,root.Size.Y*.5)
  local origin=raw+Vector3.new(0,step,0)
- local delta=Vector3.new(0,-step-root.Size.Y/2-.3,0)
+ local delta=Vector3.new(0,-step-groundOffset-.3,0)
  local floor=workspace:Raycast(origin,delta,params)
  local reference=model:FindFirstChild("ZombieHome")
  local home=reference and reference.Value
@@ -81,7 +82,7 @@ local function teleport(record)
   if hit and (not floor or hit.Position.Y>floor.Position.Y) then floor=hit end
  end
  if not floor or floor.Normal.Y<.85 then return end
- local position=Vector3.new(raw.X,floor.Position.Y+root.Size.Y/2+.02,raw.Z)
+ local position=Vector3.new(raw.X,floor.Position.Y+groundOffset+.02,raw.Z)
  if math.abs(position.Y-root.Position.Y)>step then return end
  local desired=CFrame.lookAt(position,position+Vector3.new(math.cos(angle),0,math.sin(angle)))
  local transform=desired*root.CFrame:Inverse()

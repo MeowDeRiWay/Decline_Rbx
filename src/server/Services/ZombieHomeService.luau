@@ -1,6 +1,7 @@
 local WorldActivity=require(script.Parent.WorldActivityService)
 local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Rig=require(ReplicatedStorage.Shared.CharacterRig)
 local Area = require(script.Parent.AreaService)
 local Rules = require(ReplicatedStorage.Shared.ResourceRules)
 local HomeRules = require(ReplicatedStorage.Shared.ZombieHomeRules)
@@ -39,7 +40,8 @@ local function spawn(home,valid)
  local head = source:FindFirstChild("Head")
  if not root or not root:IsA("BasePart") or not head or not head:IsA("BasePart") then return false end
  local floorBox,floorSize = home:GetBoundingBox()
- local bodyBox,bodySize = source:GetBoundingBox()
+ local bodyBox,bodySize = Rig.BodyBounds(source,root)
+ local groundOffset=Rig.GroundOffset(source,root)
  local relativeBox = root.CFrame:ToObjectSpace(bodyBox)
  local floorParams = RaycastParams.new()
  floorParams.FilterType = Enum.RaycastFilterType.Include
@@ -58,11 +60,11 @@ local function spawn(home,valid)
   local above = Vector3.new(point.X,floorBox.Position.Y+floorSize.Magnitude/2+5,point.Z)
   local hit = workspace:Raycast(above,Vector3.new(0,-floorSize.Magnitude-10,0),floorParams)
   if not hit or hit.Normal.Y < .95 then continue end
-  local position = hit.Position+Vector3.new(0,root.Size.Y/2+.03,0)
+  local position = hit.Position+Vector3.new(0,groundOffset+.03,0)
   local rootFrame = CFrame.new(position)*CFrame.Angles(0,random:NextNumber(-math.pi,math.pi),0)
   local supported = true
   for _,corner in ipairs({Vector3.new(-1,0,-1),Vector3.new(1,0,-1),Vector3.new(-1,0,1),Vector3.new(1,0,1)}) do
-   local foot = rootFrame:PointToWorldSpace(Vector3.new(corner.X*root.Size.X*.48,-root.Size.Y/2,corner.Z*root.Size.Z*.48))
+   local foot = rootFrame:PointToWorldSpace(Vector3.new(corner.X*root.Size.X*.48,-groundOffset,corner.Z*root.Size.Z*.48))
    local support = workspace:Raycast(foot+Vector3.new(0,.2,0),Vector3.new(0,-.4,0),floorParams)
    if not support or support.Normal.Y < .95 or math.abs(support.Position.Y-hit.Position.Y)>.08 then supported=false; break end
   end
@@ -81,6 +83,7 @@ local function spawn(home,valid)
   zombie:SetAttribute("Zombie_home",nil)
   zombie:SetAttribute("IsDead",nil)
   zombie:SetAttribute("IsCorpse",nil)
+  zombie:SetAttribute("ZombieAttackStartedAt",nil)
   local humanoid = zombie:FindFirstChildOfClass("Humanoid")
   if humanoid then humanoid.Health=humanoid.MaxHealth end
   local homeReference = Instance.new("ObjectValue")

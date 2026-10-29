@@ -38,7 +38,8 @@ function workspace:Blockcast(frame,size,delta)
  end
  return nil
 end
-local model={FindFirstChild=function() return nil end}
+local rigHeight=0
+local model={FindFirstChild=function() return nil end,GetAttribute=function() return rigHeight end}
 local body={Position=Vector3.new(.27,.52,-2),Size=Vector3.new(1,1,1)}
 '''
 cases='''
@@ -173,6 +174,9 @@ workspace.DescendantAdded:Fire(human)
 local exclusions=nav:Parameters();assert(table.find(exclusions.FilterDescendantsInstances,bodyModel),"new humanoid enters collision exclusion index")
 workspace.DescendantRemoving:Fire(human)
 exclusions=nav:Parameters();assert(not table.find(exclusions.FilterDescendantsInstances,bodyModel),"removed humanoid leaves collision exclusion index")
+groundY=0;rigHeight=.9
+local raised=nav:Ground(Vector3.new(0,1.42,-2),{})
+assert(raised and math.abs(raised.Y-1.42)<.00001,"articulated zombie ground follows feet, not the torso bottom")
 print("PASS: event-driven navigation index, one startup scan, runtime marker/name updates and removals")
 print("PASS: wall-hugging target and reachable endpoint on correct side; window-to-side-door detour, collision-safe portal route; real body-sized doorway clearance, fine-grid centering, collision-checked route segments, undersized door rejection")
 '''

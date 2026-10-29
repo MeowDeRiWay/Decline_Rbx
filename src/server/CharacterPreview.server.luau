@@ -3,3 +3,4 @@
 if not game:GetService("RunService"):IsStudio() then return end
 local Shared=game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 require(Shared:WaitForChild("CharacterAnimationDriver")).Start(nil,true)
+require(Shared:WaitForChild("ZombieAnimationDriver")).Start(nil,true)

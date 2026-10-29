@@ -13,8 +13,9 @@ local LootConfig = require(ReplicatedStorage.Shared.ZombieLootConfig)
 local LootRules = require(ReplicatedStorage.Shared.LootRules)
 local Items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local CombatRules=require(ReplicatedStorage.Shared.CombatRules)
-local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
-local Visuals = require(script.Parent.Services.EquipmentVisuals)
+local Rig=require(ReplicatedStorage.Shared.CharacterRig)
+local ZombiePose=require(ReplicatedStorage.Shared.ZombiePose)
+local CollectionService=game:GetService("CollectionService")
 local Noise=require(script.Parent.Services.NoiseService)
 local Damage = require(script.Parent.Services.DamageService)
 local Audio=require(script.Parent.Services.ZombieAudio)
@@ -74,26 +75,31 @@ local function prepare(model)
  if model:GetAttribute("BlocksVision")==nil then model:SetAttribute("BlocksVision",true) end
  if not positive(model:GetAttribute("SightRange")) then model:SetAttribute("SightRange",20) end
  if not positive(model:GetAttribute("ViewAngle")) then model:SetAttribute("ViewAngle",160) end
+ local rigged=Rig.Prepare(model,root,humanoid)
+ local oldHand=model:FindFirstChild("HeldItem")
+ if oldHand then oldHand:Destroy() end
+ model:SetAttribute("HandsItem",nil)
  for _,part in ipairs(model:GetDescendants()) do
   if part:IsA("BasePart") then
-   part.Anchored=true
-   part.CanQuery=true
+   part.Anchored=not rigged or part==root
+   part.CanQuery=not rigged or part==root or part==head
    part.CanCollide=part==root
    if part~=root then
     part.Massless=true
-    local weld=Instance.new("WeldConstraint")
-    weld.Name="ZombieBodyWeld"
-    weld.Part0,weld.Part1,weld.Parent=root,part,root
+    if not rigged then
+     local weld=Instance.new("WeldConstraint")
+     weld.Name="ZombieBodyWeld";weld.Part0,weld.Part1,weld.Parent=root,part,root
+    end
    end
   end
  end
+ ZombiePose.Assign(model,statRandom)
+ if rigged then CollectionService:AddTag(model,ZombiePose.Tag) end
  -- Move the authored model on the server; no R6/R15 rig is required.
  humanoid.AutoRotate=false
  model:SetAttribute("AIState","Idle")
  model:SetAttribute("TargetName","")
- local weapon = Items.ZombieHand.Weapon
- model:SetAttribute("WeaponCondition",weapon.MaxUses)
- Visuals.Apply(model,"ZombieHand")
+ local weapon=ZombiePose.Weapon
  local ready = 0
  local dead=false
  local function sync()
@@ -105,8 +111,6 @@ local function prepare(model)
   dead=true
   Audio.Play(model,"Die")
   local held = model:FindFirstChild("HeldItem")
-  local motor = held and held:FindFirstChild("WeaponGrip")
-  if motor then Motion.Cancel(motor) end
   model:SetAttribute("AIState","Dead")
   model:SetAttribute("TargetName","")
   model:SetAttribute("IsDead",true)
@@ -171,6 +175,7 @@ local function prepare(model)
  humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(sync)
  humanoid.Died:Connect(die)
  sync()
+ local groundOffset=root.Size.Y/2+(model:GetAttribute("RigHipHeight") or 0)
  local function moveToward(destination,speed,dt,stoppingDistance,ignored)
   local delta=destination-root.Position
   delta=Vector3.new(delta.X,0,delta.Z)
@@ -213,7 +218,7 @@ local function prepare(model)
   groundParams.FilterDescendantsInstances=groundExcluded
   groundParams.RespectCanCollide=true
   local stepHeight=math.max(.15,root.Size.Y*.5)
-  local ground=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),groundParams)
+  local ground=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-groundOffset-2,0),groundParams)
   -- The home floor may be non-collidable. It still supports our server-driven
   -- zombie movement; otherwise the first step would drop it to the terrain below.
   local homeReference=model:FindFirstChild("ZombieHome")
@@ -223,13 +228,13 @@ local function prepare(model)
    homeParams.FilterType=Enum.RaycastFilterType.Include
    homeParams.FilterDescendantsInstances={home}
    homeParams.RespectCanCollide=false
-   local homeGround=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-root.Size.Y/2-2,0),homeParams)
+   local homeGround=workspace:Raycast(position+Vector3.new(0,stepHeight,0),Vector3.new(0,-stepHeight-groundOffset-2,0),homeParams)
    if homeGround and homeGround.Normal.Y>=.95 and (not ground or homeGround.Position.Y>ground.Position.Y) then ground=homeGround end
   end
-  if not ground or ground.Normal.Y < .85 or math.abs(ground.Position.Y+root.Size.Y/2+.02-root.Position.Y)>stepHeight then
+  if not ground or ground.Normal.Y < .85 or math.abs(ground.Position.Y+groundOffset+.02-root.Position.Y)>stepHeight then
    model:SetAttribute("AIState","Blocked"); return false,true
   end
-  position=Vector3.new(position.X,ground.Position.Y+root.Size.Y/2+.02,position.Z)
+  position=Vector3.new(position.X,ground.Position.Y+groundOffset+.02,position.Z)
   local turned=travelFrame
   local desiredRoot=CFrame.new(position)*turned.Rotation
   model:PivotTo(desiredRoot*root.CFrame:Inverse()*model:GetPivot())
@@ -382,17 +387,13 @@ local function prepare(model)
   delta=Vector3.new(delta.X,0,delta.Z)
   local stoppingDistance=(root.Size.Z+nearest.Size.Z)/2+.15
   local attackDistance = root.Size.Z/2+nearest.Size.Z/2+weapon.Range
-  if delta.Magnitude<=attackDistance and os.clock()>=ready and (model:GetAttribute("WeaponCondition") or 0)>0 then
-   if not model:FindFirstChild("HeldItem") then Visuals.Apply(model,"ZombieHand") end
-   local held=model:FindFirstChild("HeldItem")
-   local motor=held and held:FindFirstChild("WeaponGrip")
-   if motor then
+  if delta.Magnitude<=attackDistance and os.clock()>=ready then
     ready=os.clock()+60/weapon.AttacksPerMinute
     model:SetAttribute("AIState","Attacking")
+    model:SetAttribute("ZombieAttackStartedAt",workspace:GetServerTimeNow())
     Audio.Play(model,"Attack")
     local victimRoot=nearest
-    Motion.Play(motor,weapon)
-    task.delay(Motion.HitDelay(weapon),function()
+    task.delay(ZombiePose.Contact(model:GetAttribute("ZombieAnimationType")),function()
      if dead or humanoid.Health<=0 or model:GetAttribute("ActivityMode")~="Active" or not model.Parent or not victimRoot.Parent then return end
      local victim=victimRoot.Parent:FindFirstChildOfClass("Humanoid")
      if not victim or victim.Health<=0 or victimRoot.Parent:GetAttribute("Knockout") then return end
@@ -407,11 +408,8 @@ local function prepare(model)
      local infection=ZombieStats.Infection(model:GetAttribute("Strength"))
      if infection>0 and (targetPlayer or victim.Parent:GetAttribute("OfflineUserId")) then victim.Parent:SetAttribute("Sick",math.clamp((victim.Parent:GetAttribute("Sick") or 0)+infection,0,100)) end
      local critical=statRandom:NextNumber()<(model:GetAttribute("CriticalChance") or 0)
-     if Damage.Apply(victim,CombatRules.UnarmedDamage(model:GetAttribute("MeleeBonus"),0,statRandom:NextNumber()),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextNumber(model:GetAttribute("CriticalMin") or 1.5,model:GetAttribute("CriticalMax") or 2) or 1})>0 then
-      model:SetAttribute("WeaponCondition",math.max(0,(model:GetAttribute("WeaponCondition") or 0)-1))
-     end
+     Damage.Apply(victim,CombatRules.UnarmedDamage(model:GetAttribute("MeleeBonus"),0,statRandom:NextNumber()),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextNumber(model:GetAttribute("CriticalMin") or 1.5,model:GetAttribute("CriticalMax") or 2) or 1})
     end)
-   end
   end
   -- Being close across a wall/window is not the same as arriving.
   navigate(nearest.Position,humanoid.WalkSpeed,dt,stoppingDistance,nearest.Parent)
