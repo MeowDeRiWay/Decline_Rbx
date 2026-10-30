@@ -70,7 +70,7 @@ local pistolUID=storage[b].EquipmentWeapon.SecondaryWeapon.UID
 local updates=0
 local Inventory={Export=function(p) return storage[p] end,Refresh=function() updates+=1 end,
  CorpseStorage=function() error("opening KO loot must never convert worn gear into pocket items") end,
- TakeEquippedLoot=function(p,data,id,n,key) return Rules.TransferEquipment(data,storage[p],Items.Items,id,n,key) end,
+ TakeEquippedLoot=function(p,data,id,n,key) return Rules.TransferEquipment(data,storage[p],Items.Items,id,n,key,true) end,
  Transfer=function(p,chest,id,n,into,key) return Rules.Transfer(into and storage[p] or chest,into and chest or storage[p],Items.Items,id,n,key) end}
 local Interaction={NearestPoint=function(_,pos) return pos end}
 local Animation={BeginLoot=function(_,_,_,fn) return fn() end,EndLoot=function() end}
@@ -98,7 +98,7 @@ assert(Chest.OpenKnockout(a,b) and Chest.Snapshot(a).ChestReadOnly)
 assert(not storage[b].Items.Backpack1 and storage[b].Equipment.Back=="Backpack1" and storage[b].Equipment.Body=="LeatherArmor","opening keeps worn armor/backpack in their slots")
 local armorKey,pistolKey
 for _,stack in ipairs(Chest.Snapshot(a).ChestStacks) do
- if stack.EquipmentSlot=="Body" then armorKey=stack.Key;assert(stack.ID=="LeatherArmor" and stack.Count==1) end
+ if stack.EquipmentSlot=="Body" then armorKey=stack.Key;assert(stack.ID=="LeatherArmor" and stack.Count==1 and stack.LootLocked) end
  if stack.EquipmentSlot=="SecondaryWeapon" then pistolKey=stack.Key;assert(stack.Loaded==3 and stack.Condition==123 and stack.AmmoType=="AP") end
 end
 assert(armorKey and pistolKey,"worn gear remains visible and separately selectable from pocket copies")
@@ -111,7 +111,8 @@ local grant=Rules.Add
 Rules.Add=function() return false end
 assert(not Chest.Transfer(a,"LeatherArmor",1,false,armorKey) and storage[b].Equipment.Body=="LeatherArmor" and not storage[a].Items.LeatherArmor,"failed grant leaves original armor worn")
 Rules.Add=grant
-assert(Chest.Transfer(a,"LeatherArmor",1,false,armorKey) and not storage[b].Equipment.Body and storage[b].Items.LeatherArmor==1 and storage[a].Items.LeatherArmor==1,"only the selected worn item is removed; spare pocket copy remains")
+assert(not Chest.Transfer(a,"LeatherArmor",1,false,armorKey) and storage[b].Equipment.Body=="LeatherArmor" and not storage[a].Items.LeatherArmor,"worn armor cannot be removed even with the exact key")
+assert(Chest.Transfer(a,"LeatherArmor",1,false) and storage[b].Equipment.Body=="LeatherArmor" and storage[a].Items.LeatherArmor==1,"spare pocket armor remains normal loot")
 assert(not Chest.Transfer(c,"LeatherArmor",1,false,armorKey) and not storage[c].Items.LeatherArmor,"two looters cannot take the same equipped item")
 assert(Chest.Transfer(a,"Pistol9mm",1,false,pistolKey) and not storage[b].ActiveWeaponSlot)
 assert(storage[a].Weapons.Pistol9mm[1].UID==pistolUID and storage[a].Weapons.Pistol9mm[1].Loaded==3 and storage[a].Conditions.Pistol9mm[1]==123,"equipped weapon metadata survives transfer without copying")
@@ -120,7 +121,7 @@ assert(Chest.Transfer(a,"Cloth",1,false) and storage[a].Items.Cloth==1 and stora
 b.Character:SetAttribute("CarriedByUserId",123)
 assert(not Chest.Transfer(a,"Cloth",1,false),"carrying closes the loot route")
 b.Character:SetAttribute("CarriedByUserId",nil);assert(Chest.OpenKnockout(a,b));assert(Chest.TakeAll(a))
-assert(storage[a].Items.Cloth==3 and storage[a].Items.Backpack1==1 and storage[a].Items.LeatherArmor==2 and next(storage[b].Items)==nil and next(storage[b].Equipment)==nil,"all loot moves exactly once")
+assert(storage[a].Items.Cloth==3 and storage[a].Items.Backpack1==1 and storage[a].Items.LeatherArmor==1 and next(storage[b].Items)==nil and storage[b].Equipment.Body=="LeatherArmor" and not storage[b].Equipment.Back,"all loot moves exactly once")
 b.Character.Name="Chest";b.Character:SetAttribute("Knockout",false);assert(not Chest.OpenKnockout(a,b),"revival closes patient loot even for a character named Chest")
 assert(not Chest.Transfer(c,"Cloth",1,false),"an already-open second viewer cannot loot after revival")
 print("PASS: knockout loot shares authoritative inventory, includes equipment, read-only insertion, owner refresh, carry/revival guards and no duplication")

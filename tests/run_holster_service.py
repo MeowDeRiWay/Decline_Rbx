@@ -49,9 +49,9 @@ assert(Service.Add(b,"LeatherArmor",1) and Service.Equip(b,"LeatherArmor"))
 local patientState=Service.Export(b);local equippedArmor
 for _,stack in ipairs(Rules.LootStacks(patientState,ItemConfig.Items)) do if stack.EquipmentSlot=="Body" then equippedArmor=stack.Key end end
 assert(equippedArmor and patientState.Equipment.Body=="LeatherArmor" and not patientState.Items.LeatherArmor)
-assert(Service.TakeEquippedLoot(a,patientState,"LeatherArmor",1,equippedArmor))
+assert(not Service.TakeEquippedLoot(a,patientState,"LeatherArmor",1,equippedArmor))
 Service.Refresh(b)
-assert(not patientState.Equipment.Body and Service.Snapshot(a).Items.LeatherArmor==1 and b.Character:GetAttribute("WornArmor")==nil and b:GetAttribute("ArmorAbsorption")==0)
+assert(patientState.Equipment.Body=="LeatherArmor" and not Service.Snapshot(a).Items.LeatherArmor and b.Character:GetAttribute("WornArmor")=="LeatherArmor" and b:GetAttribute("ArmorAbsorption")==2,"protected armor remains worn with its defense bonuses")
 assert(not Service.TakeEquippedLoot(a,patientState,"LeatherArmor",1,equippedArmor),"stale equipped key cannot duplicate armor")
 Service.Reset(a)
 print("PASS: Back slot equips, counts own weight, grants +10kg once, removes bonus on unequip/extraction and preserves loot")
@@ -164,6 +164,24 @@ assert(disarmed and World.Pickup(a,disarmed))
 assert(equipDraw(a,"AssaultRifle223",charged.Key) and Service.GetMagazine(a).Loaded==24 and Service.GetMagazine(a).Type=="AP","disarm conserves loaded ammunition")
 ground=false
 assert(not World.Disarm(a) and Service.Snapshot(a).Equipment.PrimaryWeapon=="AssaultRifle223","failed world placement restores held gun")
+-- KO drops the held item beside the character, but leaves the holstered slot.
+assert(Service.Add(a,"Pistol9mm",1) and Service.Equip(a,"Pistol9mm"))
+local droppingUID=Service.GetMagazine(a).UID
+local oldRay=workspace.Raycast
+function workspace:Raycast(origin,delta)
+ if math.abs(delta.Y)<.0001 then return nil end
+ return {Position=Vector3.new(origin.X,0,origin.Z)}
+end
+assert(World.DropKnockoutWeapon(a,a.Character))
+assert(not Service.Snapshot(a).Equipment.PrimaryWeapon and Service.Snapshot(a).Equipment.SecondaryWeapon=="Pistol9mm" and a.Character:GetAttribute("HandsItem")=="","only the drawn gun leaves the player")
+assert(not World.DropKnockoutWeapon(a,a.Character),"repeat KO drop cannot duplicate a holstered gun")
+local fallen
+for _,item in ipairs(worldFolder:GetChildren()) do if item:GetAttribute("Item_ID")=="AssaultRifle223" then fallen=item end end
+assert(fallen and (fallen:GetPivot().Position-a.Character.HumanoidRootPart.Position).Magnitude>.2,"KO weapon lands beside the body")
+workspace.Raycast=oldRay;ground=false
+assert(World.Pickup(a,fallen) and not World.Pickup(a,fallen))
+assert(equipDraw(a,"AssaultRifle223",charged.Key) and Service.GetMagazine(a).UID==droppingUID and Service.GetMagazine(a).Loaded==24 and Service.GetMagazine(a).Type=="AP","drop and pickup preserve the exact loaded weapon")
+assert(not World.DropKnockoutWeapon(a,a.Character) and Service.GetMagazine(a).UID==droppingUID,"no ground means no item loss")
 local corpseInventory=Service.ExtractAll(a)
 local foundLoaded=false
 for _,stack in ipairs(Rules.Stacks(corpseInventory,ItemConfig.Items)) do if stack.ID=="AssaultRifle223" and stack.Loaded==24 and stack.AmmoType=="AP" then foundLoaded=true end end

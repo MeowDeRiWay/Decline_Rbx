@@ -28,6 +28,7 @@ function Service.Finish(player,character)
  Beds.Leave(player,true)
  require(script.Parent.HandActionService).Cancel(player)
  Animation.Cancel(character)
+ require(script.Parent.WorldItemService).DropKnockoutWeapon(player,character)
  finished[character]=true
  character:SetAttribute("IsDead",true)
  character:SetAttribute("Knockout",false)
@@ -76,6 +77,7 @@ function Service.Knockout(player,character)
  Beds.Leave(player,true)
  require(script.Parent.HandActionService).Cancel(player)
  Animation.Cancel(character)
+ require(script.Parent.WorldItemService).DropKnockoutWeapon(player,character)
  local record={Pivot=character:GetPivot(),Parts={},BlocksVision=character:GetAttribute("BlocksVision")}
  for _,part in ipairs(character:GetDescendants()) do
   if part:IsA("BasePart") then record.Parts[part]={Anchored=part.Anchored,CanCollide=part.CanCollide,CanQuery=part.CanQuery} end

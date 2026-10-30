@@ -220,7 +220,7 @@ inventoryAction(owner,"CloseChest");assert(c:GetAttribute("InteractionMode")=="L
 advance(1.15);inventoryAction(owner,"Equip","Gun");assert(dispatched==1)
 print("PASS: real inventory dispatch delays pickup until hand contact and blocks equipment changes through loot/recovery")
 '''
-life=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','')
+life=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','').replace('require(script.Parent.WorldItemService).DropKnockoutWeapon(player,character)','')
 freeze=life[life.index('local function freeze(character)'):life.index('function Service.Finish')]
 knockout=life[life.index('function Service.Knockout'):life.index('function Service.Revive')]
 damage=life[life.index('function Service.Damage'):life.rindex('return Service')]

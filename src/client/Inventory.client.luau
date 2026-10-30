@@ -197,7 +197,8 @@ local function renderItems(frame, items, side)
   local key=side..":"..stack.Key
   local selection=(definition.Weapon or stack.EquipmentSlot) and {ID=id,Key=stack.Key} or id
   local caption=string.format("%s ×%d",definition.Name or id,stack.Count)
-  if stack.EquipmentSlot then caption..="\nEquipped" end
+  if stack.LootLocked then caption..="\nEquipped armor · protected while unconscious"
+  elseif stack.EquipmentSlot then caption..="\nEquipped" end
   local available=stack.Count
   local selected = math.clamp(dropAmounts[key] or 1, 1, available)
   local container = Instance.new("Frame")
@@ -212,7 +213,7 @@ local function renderItems(frame, items, side)
    tooltip.Visible = true
   end)
   row.MouseLeave:Connect(function() tooltip.Visible = false end)
-  if chestOpen and chestReadOnly and side == "Player" then continue end
+  if stack.LootLocked or (chestOpen and chestReadOnly and side == "Player") then continue end
   local actionCount=not chestOpen and ((definition.Slot and 1 or 0)+(definition.Consume and 1 or 0)+(definition.EmptyContainer and 1 or 0)) or 0
   local extraHeight=actionCount*38
   local actions = Instance.new("Frame")

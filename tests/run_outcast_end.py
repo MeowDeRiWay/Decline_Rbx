@@ -2,11 +2,13 @@
 from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
-source=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','')
+source=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','').replace('require(script.Parent.WorldItemService).DropKnockoutWeapon(player,character)','dropWeapon(player,character)')
 source=re.sub(r'local (Defense|Inventory|Chests|Motion|Beds|BodyFall|Animation)\s*=\s*require[^\n]+\n','',source)
 for module,alias in [('TownService','Towns'),('CraftingService','Crafting'),('ProgressionService','Progression'),('EconomyService','Economy')]:
  source=source.replace(f'require(script.Parent.{module})',alias)
 setup='''
+local dropAttempts=0
+local function dropWeapon(p,c) assert(p.Character==c);dropAttempts+=1 end
 Players.RespawnTime=5
 Enum.HumanoidStateType={GettingUp=1}
 function methods:ChangeState() end
@@ -35,6 +37,7 @@ end
 cases='''
 local body=prepare(a,nil)
 Service.Knockout(a,body)
+assert(dropAttempts==1);Service.Knockout(a,body);assert(dropAttempts==1,"KO drops once only")
 assert(body:GetAttribute("Knockout") and not a:GetAttribute("OutcastEnd"))
 assert(not Service.RequestRespawn(a),"respawn locked before deadline")
 advance(119);assert(not a:GetAttribute("OutcastEnd") and extracted==0 and spawned==0)

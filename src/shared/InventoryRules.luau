@@ -173,19 +173,20 @@ local function equippedStack(state,definitions,slot,id)
  return {ID=id,Key="Equipped|"..slot.."|"..Rules.StackKey(id,condition,data).."|"..tostring(data.UID or ""),Count=1,EquipmentSlot=slot,Condition=condition,Loaded=data.Loaded or 0,AmmoType=data.Type or "FMJ"}
 end
 -- Read-only presentation: worn equipment never enters the patient's pockets.
-function Rules.LootStacks(state,definitions)
+function Rules.LootStacks(state,definitions,protectArmor)
  local stacks=Rules.Stacks(state,definitions)
  for slot,id in pairs(state.Equipment) do
   local stack=equippedStack(state,definitions,slot,id)
-  if stack then table.insert(stacks,stack) end
+  if stack then stack.LootLocked=protectArmor==true and slot=="Body";table.insert(stacks,stack) end
  end
  return stacks
 end
-function Rules.TransferEquipment(source,target,definitions,id,requested,key)
+function Rules.TransferEquipment(source,target,definitions,id,requested,key,protectArmor)
  if typeof(id)~="string" or typeof(key)~="string" or not Rules.DropAmount(1,requested) or source==target then return false end
  for slot,current in pairs(source.Equipment) do
   local stack=equippedStack(source,definitions,slot,current)
   if current==id and stack and stack.Key==key then
+   if protectArmor and slot=="Body" then return false end
    local condition=source.EquipmentCondition[slot]
    local data=source.EquipmentWeapon and source.EquipmentWeapon[slot]
    -- No yields between granting the exact item and clearing its original slot.

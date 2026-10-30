@@ -231,7 +231,7 @@ function Service.SpawnLoot(loot,position,ignored)
  for _,item in ipairs(prepared) do item.Parent = folder end
  return true
 end
-local function dropHeld(state,model)
+local function dropHeld(state,model,knockoutDrop)
  local slot=state and Rules.HandSlot(state)
  local id=state and state.Equipment[slot]
  local definition=id and ItemConfig.Items[id]
@@ -241,7 +241,15 @@ local function dropHeld(state,model)
  local item=makeItem(id)
  if not item then return false end
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={model,folder}
- local hit=workspace:Raycast(root.Position+Vector3.new(0,2,0),Vector3.new(0,-12,0),params)
+ local destination=root.Position
+ if knockoutDrop then
+  local candidate=(root.CFrame*CFrame.new(Vector3.new(root.Size.X/2+.35,0,-root.Size.Z/2-.35))).Position
+  params.RespectCanCollide=true
+  if not workspace:Raycast(root.Position,candidate-root.Position,params) then destination=candidate end
+  params.RespectCanCollide=false
+ end
+ local hit=workspace:Raycast(destination+Vector3.new(0,2,0),Vector3.new(0,-12,0),params)
+ if not hit and knockoutDrop then hit=workspace:Raycast(root.Position+Vector3.new(0,2,0),Vector3.new(0,-12,0),params) end
  if not hit then item:Destroy();return false end
  place(item,hit.Position,1,id)
  item:SetAttribute("Conditions",HttpService:JSONEncode({state.EquipmentCondition[slot] or definition.Weapon.MaxUses}))
@@ -261,6 +269,12 @@ function Service.DisarmCreature(model)
  local id=model:GetAttribute("HandsItem")
  if not id or id=="ZombieHand" then return false end
  return dropHeld({Equipment={Hands=id},EquipmentCondition={},EquipmentWeapon={}},model)
+end
+function Service.DropKnockoutWeapon(player,character)
+ if player.Character~=character then return false end
+ local state=Inventory.Export(player)
+ if not dropHeld(state,character,true) then return false end
+ Inventory.Refresh(player);return true
 end
 function Service.Disarm(player)
  if not dropHeld(Inventory.Export(player),player.Character) then return false end

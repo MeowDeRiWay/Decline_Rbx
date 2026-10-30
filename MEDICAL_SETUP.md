@@ -82,8 +82,12 @@ release carried bodies before cloning them.
 
 Loot reads the patient's current authoritative InventoryService state without
 unequipping anything on open. Pocket stacks and equipped items have separate keys;
-worn items are marked Equipped in the loot UI. Only a successful selected transfer
-removes that one equipment slot; TakeAll additionally removes the remaining gear.
+worn items are marked Equipped in the loot UI. Equipped Body armor is protected
+while the patient is unconscious: the UI shows a locked label, and individual
+transfers / TakeAll both enforce protection on the server. Spare armor in pockets
+remains lootable; corpse armor is normal loot after actual death. Successful
+transfers of other gear remove only the selected slot; TakeAll skips protected
+armor and collects the remaining loot.
 Condition, magazine/type/mode and UID transfer with the exact item, without a
 storage copy. Invalid/stale transfers leave the original equipment untouched. The patient cannot receive
 inserted items. Carrying or revival invalidates the loot route. Owner capacity and
@@ -148,3 +152,13 @@ ownership/reach/LOS/bed rejection, nonduplicating KO loot, voluntary respawn and
 reconnect, bed progression/regen, day transitions, needs scaling, doubled stamina,
 localization and the five-tab help layout. Visual carrying/bed placement still
 requires a Studio multiplayer playtest with the authored character and beds.
+
+## Weapon dropped on knockout
+
+Entering KO drops the weapon actually held in the active weapon slot into
+WorldItems beside the character. Holstered weapons remain in their slots. The
+same weapon condition, unique UID, magazine/type/mode/cooldown data moves into
+that one pickup; it is removed from the owner's equipment before the body pose
+is captured. Finishing death retries only if a held weapon still exists, so it
+cannot duplicate a gun already dropped on KO. The nearby drop tests wall
+clearance and floor placement; if it cannot place a pickup, ownership is retained.

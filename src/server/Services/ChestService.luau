@@ -119,7 +119,7 @@ end
 local function lootStacks(chest)
  local storage=chest and contents[chest]
  if not storage then return {} end
- return chest:GetAttribute("Knockout") and Rules.LootStacks(storage,Items.Items) or Rules.Stacks(storage,Items.Items)
+ return chest:GetAttribute("Knockout") and Rules.LootStacks(storage,Items.Items,true) or Rules.Stacks(storage,Items.Items)
 end
 function Service.Snapshot(player)
  local chest = sessions[player]
@@ -145,12 +145,14 @@ function Service.TakeAll(player)
  local storage=contents[chest]
  for id in pairs(table.clone(storage.Items)) do Inventory.Transfer(player,storage,id,"All",false) end
  if chest:GetAttribute("Knockout") then
-  for _,stack in ipairs(Rules.LootStacks(storage,Items.Items)) do
-   if stack.EquipmentSlot then Inventory.TakeEquippedLoot(player,storage,stack.ID,1,stack.Key) end
+  for _,stack in ipairs(Rules.LootStacks(storage,Items.Items,true)) do
+   if stack.EquipmentSlot and not stack.LootLocked then Inventory.TakeEquippedLoot(player,storage,stack.ID,1,stack.Key) end
   end
  end
  refreshOwner(chest);notify(chest)
- if next(storage.Items)==nil and (not chest:GetAttribute("Knockout") or #Rules.LootStacks(storage,Items.Items)==0) then Service.Close(player) end
+  local available=false
+ for _,stack in ipairs(lootStacks(chest)) do if not stack.LootLocked then available=true;break end end
+ if not available then Service.Close(player) end
  return true
 end
 function Service.ValidateSessions()
