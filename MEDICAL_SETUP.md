@@ -10,7 +10,10 @@ Create the reusable Sound-free item models under an Items category folder, e.g.:
 IDs are exact; copying a water-bottle model is fine. Both items weigh 0.6 kg.
 MedicalAlcohol is a crafting material, not a consumable. Add it to the pharmacy's
 existing authored spawn pool as requested; no new loot frequency is invented.
-Antiseptic uses the normal inventory Drink action and returns one EmptyBottle.
+Antiseptic is a medical material, never a drink. Equip it in Medicine and press H,
+then click yourself or a nearby patient; RMB on a KO patient also offers Apply medicine.
+Each application consumes one equipped bottle and returns one EmptyBottle; the slot
+auto-refills from inventory. Neither MedicalAlcohol nor Antiseptic has a Drink action.
 
 MedStation recipe MakeAntiseptic: 5 CleanWater + 1 MedicalAlcohol -> 5 Antiseptic
 and 1 EmptyBottle (the extra alcohol container). Doctor50, one batch. Unspecified
@@ -21,7 +24,8 @@ and EmptyBottle1. Doctor100, MedStation, no sewing kit required,20seconds,100XP.
 It weighs0.1kg like both existing bandages, uses the Medicine slot/H targeting,
 and auto-refills from inventory. Healing matches GreatBandage: twice patient
 Endurance plus2HP per complete20FirstAid (existing perk multipliers/bonuses apply).
-It also removes20Sick points and makes a fixed50% poison-cure roll, without Luck.
+It removes 20 + 2*floor(healer FirstAid/20) Sick points, plus10 with Paramedic,
+and makes a fixed50% poison-cure roll, without Luck.
 It may treat Sick/poison at fullHP but never revives a KO player. No HP/debuff need
 means no item consumption; failed cure rolls still spend the bandage.
 
@@ -29,9 +33,10 @@ means no item consumption; failed cure rolls still spend the bandage.
 
 Poisoned=true increases Sick by exactly 1 point per second; the background
 threshold-based Sick growth is suppressed while poison itself supplies growth.
-A consumed antiseptic makes one authoritative random roll: 0.50 + 0.05*Luck,
-clamped at 1. A successful roll removes Poisoned, leaving existing Sick unchanged.
-The bottle is spent even on failure. There is no roll without consuming an item.
+Applied antiseptic always removes 20 + floor(healer FirstAid/20) Sick, including
+on a failed cure roll. Its poison cure chance is 0.25 + 0.05*healer Luck, clamped
+at1 (Luck10 =75%). Paramedic affects neither its Sick reduction nor HP.
+A successful roll additionally clears Poisoned. No roll without spending medicine.
 
 MedicalConfig.ZombiePoisonEnabled=false, following the user's final instruction.
 The optional chance is 0.05 and is checked only after actual positive zombie
@@ -43,13 +48,15 @@ HospitalResting suppresses poison/sickness progression and survival damage.
 HospitalBedService treats Sick at 2 points/second, with no natural HP regeneration
 until Sick reaches zero and poisoning clears. Normal bed regeneration then resumes
 at the existing HospitalRegenMultiplier cadence (default every20seconds). A KO
-patient can be revived automatically on that treatment tick and remains on bed.
+patient accumulates normal bed HP while still unconscious. Only when Sick=0,
+Poisoned=false and HP>=50%MaxHP does the bed automatically revive them, retaining
+HP and the bed pose. Manual Doctor cannot bypass these bed conditions.
 Empty Food or Water prevents HP regeneration even at a bed. These treatment rates
 are explicit defaults in MedicalConfig, not hardcoded into authored models.
 
 ## Player actions and carrying
 
-RMB on a knocked-out player offers Doctor, Loot player, Pick up player. Doctor
+RMB on a knocked-out player offers Apply medicine, Doctor, Loot player, Pick up player. Doctor
 uses the existing skill roll, cooldown and range/LOS authority; H and4 shortcuts
 remain available. RMB on a corpse also offers Search body. Menus block local
 weapon activation; all remote actions independently validate on the server.
@@ -72,6 +79,29 @@ Loot uses the patient's current authoritative InventoryService state, including
 unequipped equipment; no duplicate storage copy is made. The patient cannot receive
 inserted items. Carrying or revival invalidates the loot route. Owner capacity and
 visuals refresh as items leave. Money remains in the pre-existing protected system.
+
+## Knockout treatment and examination
+
+KO freezes Sick increases (poison and background progression) and prevents needs
+or debuffs from draining accumulated HP. Hunger/thirst still consume normally.
+Bandages and antiseptic can treat KO patients; neither wakes them. Successful
+Doctor revival retains treated HP, with the existing revival HP floor/perk bonuses.
+After waking, sickness/poison resume their ordinary progression.
+
+QuickExamination (Quick examination), Doctor150, one rank, reveals a nearby
+other KO patient's HP, Sick, poison, starvation and dehydration. The live readout
+appears during medical targeting or in their RMB menu, within3studs. It grants
+no healing, cure chance or revival bonus. Paramedic retains +10HP for every bandage
+and Doctor revival, and adds10 extra Sick removal only to SterileBandage.
+
+## Bullet filtering
+
+BulletCast ignores WorldItems and Item_ID roots, plus entire KO characters.
+They do not absorb damage, range/penetration budget or impact effects. Conscious
+characters, including their equipped item geometry, remain valid targets. The
+same filter guards muzzle clearance so a bottle cannot reject a shot. Dormant
+WorldActivity item/KO records are also excluded from bullet-specific virtual rays.
+Pickup, medical, carry and other interaction queries keep their existing rules.
 
 ## Voluntary respawn
 

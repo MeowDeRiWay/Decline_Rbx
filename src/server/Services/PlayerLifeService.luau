@@ -99,6 +99,7 @@ function Service.Revive(player,lockSeconds,healingBonus)
  local hp=character and character:FindFirstChildOfClass("Humanoid")
  if not record or not hp or hp.Health<=0 or finished[character] or not character:GetAttribute("Knockout") then return false end
  if workspace:GetServerTimeNow()<(player:GetAttribute("ReviveLockedUntil") or 0) then return false end
+ if character:GetAttribute("HospitalResting") and (hp.Health<hp.MaxHealth*.5 or (character:GetAttribute("Sick") or 0)>0 or character:GetAttribute("Poisoned")) then return false end
  if character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
  knocked[character]=nil
  BodyFall.Restore(character)
@@ -106,7 +107,7 @@ function Service.Revive(player,lockSeconds,healingBonus)
  for part,flags in pairs(record.Parts) do
   if part.Parent then part.Anchored=flags.Anchored;part.CanCollide=flags.CanCollide;part.CanQuery=flags.CanQuery end
  end
- hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0)+(healingBonus or 0))
+ hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,math.max(hp.Health,2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0)+(healingBonus or 0)))
  hp:ChangeState(Enum.HumanoidStateType.GettingUp)
  character:SetAttribute("Knockout",false);character:SetAttribute("KnockoutEndsAt",nil)
  character:SetAttribute("Health",hp.Health);character:SetAttribute("BlocksVision",record.BlocksVision)

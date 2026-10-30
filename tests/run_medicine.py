@@ -3,12 +3,12 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 medicine=(root/'src/server/Medicine.server.luau').read_text().replace('local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', 'local Literal={Protect=function(v) return v end}')
-medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight)=require[^\n]+\n','',medicine)
+medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight|Medical|Config)=require[^\n]+\n','',medicine)
 life=(root/'src/server/Services/PlayerLifeService.luau').read_text()
 life=life[life.index('function Service.Knockout'):life.index('function Service.Damage')]
 setup='''
 local Animation={Cancel=function() end}
-local Beds={Leave=function() end}
+local Beds={Leave=function() end,Reposition=function() end}
 a:LoadCharacterAsync();b:LoadCharacterAsync();c:LoadCharacterAsync()
 Enum.HumanoidStateType={GettingUp=1}
 for _,p in ipairs({a,b,c}) do
@@ -64,7 +64,9 @@ a.Character:SetAttribute("MedicineItem","Bandage")
 local standing=b.Character:GetPivot()
 Life.Knockout(b,b.Character);local oldTimer=function() end
 assert(b.Character:GetAttribute("Knockout") and b.Character.HumanoidRootPart.Anchored and b.Character:GetAttribute("BodyPoseKind")=="Knockout")
-use("Bandage",b);assert(b.Character:GetAttribute("Knockout") and equipped==before-1,"bandages cannot revive")
+local koXP=xp;local koStock=equipped
+use("Bandage",b);assert(b.Character:GetAttribute("Knockout") and equipped==koStock-1 and b.Character.Humanoid.Health==13,"bandages treat KO without waking")
+xp=koXP;b.Character.Humanoid.Health=1
 roll=.1;use("Doctor",b);assert(b.Character:GetAttribute("Knockout"),"20 Doctor misses at10% boundary")
 local cooldown=a:GetAttribute("DoctorReadyAt")
 roll=0;use("Doctor",b);assert(b.Character:GetAttribute("Knockout") and a:GetAttribute("DoctorReadyAt")==cooldown,"failed attempt also has10s cooldown")
@@ -103,7 +105,7 @@ a:SetAttribute("SkillFirstAid",100);a:SetAttribute("FirstAidMultiplier",1);a:Set
 b.Character:SetAttribute("Knockout",false);b.Character:SetAttribute("Sick",35);b.Character:SetAttribute("Poisoned",true)
 b.Character.Humanoid.MaxHealth=100;b.Character.Humanoid.Health=50;equipped=5;roll=.5
 use("Bandage",b)
-assert(b.Character.Humanoid.Health==70 and b.Character:GetAttribute("Sick")==15 and b.Character:GetAttribute("Poisoned") and equipped==4,"sterile heals2END+2per20, removes20Sick and50% remains fixed despite Luck10")
+assert(b.Character.Humanoid.Health==70 and b.Character:GetAttribute("Sick")==5 and b.Character:GetAttribute("Poisoned") and equipped==4,"sterile heals2END+2per20, removes30Sick and50% remains fixed despite Luck10")
 b.Character.Humanoid.Health=100;roll=.499
 local priorXP=xp
 use("Bandage",b)
@@ -111,15 +113,35 @@ assert(b.Character.Humanoid.Health==100 and b.Character:GetAttribute("Sick")==0 
 use("Bandage",b);assert(equipped==3,"healthy full-HP target consumes nothing")
 b.Character:SetAttribute("Poisoned",true);equipped=0
 use("Bandage",b);assert(b.Character:GetAttribute("Poisoned"),"no item means no cure roll")
-equipped=3;b.Character:SetAttribute("Knockout",true);b.Character:SetAttribute("Sick",40)
-use("Bandage",b);assert(equipped==3 and b.Character:GetAttribute("Sick")==40,"sterile bandages never revive or treat KO")
+equipped=3;b.Character:SetAttribute("Knockout",false);Life.Knockout(b,b.Character);b.Character:SetAttribute("Sick",40)
+b.Character.Humanoid.Health=30;roll=.1
+use("Bandage",b);assert(equipped==2 and b.Character:GetAttribute("Sick")==10 and b.Character.Humanoid.Health==50 and b.Character:GetAttribute("Knockout"),"sterile treats KO without waking")
+b.Character:SetAttribute("Poisoned",true);b.Character:SetAttribute("Sick",100);b.Character.Humanoid.Health=40
+a.Character:SetAttribute("MedicineItem","Antiseptic");a:SetAttribute("Paramedic",true);a:SetAttribute("MedicalHealingBonus",10)
+equipped=5;roll=.75
+use("Bandage",b);assert(b.Character:GetAttribute("Sick")==75 and b.Character:GetAttribute("Poisoned") and b.Character.Humanoid.Health==40 and equipped==4,"failed antiseptic still removes25 Sick at FirstAid100; Paramedic adds no HP or Sick reduction")
+roll=.749;use("Bandage",b);assert(b.Character:GetAttribute("Sick")==50 and not b.Character:GetAttribute("Poisoned") and b.Character:GetAttribute("Knockout"),"Luck10 has75% cure, not100%, and never wakes KO")
+a:SetAttribute("Luck",0);b.Character:SetAttribute("Poisoned",true);b.Character:SetAttribute("Sick",100);roll=.25
+use("Bandage",b);assert(b.Character:GetAttribute("Poisoned") and b.Character:GetAttribute("Sick")==75,"base25% exclusive boundary")
+roll=.249;use("Bandage",b);assert(not b.Character:GetAttribute("Poisoned") and b.Character:GetAttribute("Sick")==50)
+a.Character:SetAttribute("MedicineItem","SterileBandage");equipped=3;b.Character.Humanoid.Health=40;b.Character:SetAttribute("Sick",100)
+use("Bandage",b);assert(b.Character.Humanoid.Health==70 and b.Character:GetAttribute("Sick")==60 and b.Character:GetAttribute("Knockout"),"Paramedic adds10 HP and10 extra Sick removal only to sterile")
+b:SetAttribute("ReviveLockedUntil",0);clock+=10;a:SetAttribute("SkillDoctor",200);a:SetAttribute("MedicalHealingBonus",0);b:SetAttribute("ReviveHealthBonus",0)
+use("Doctor",b);assert(not b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==70,"doctor preserves accumulated bandage HP")
+a:SetAttribute("Paramedic",false)
+Life.Knockout(b,b.Character);b:SetAttribute("ReviveLockedUntil",0);b.Character:SetAttribute("HospitalResting",true);b.Character:SetAttribute("Sick",0);b.Character:SetAttribute("Poisoned",false)
+b.Character.Humanoid.Health=49;assert(not Life.Revive(b,0,0),"doctor cannot bypass bed50% requirement")
+b.Character.Humanoid.Health=50;b.Character:SetAttribute("Sick",1);assert(not Life.Revive(b,0,0))
+b.Character:SetAttribute("Sick",0);b.Character:SetAttribute("Poisoned",true);assert(not Life.Revive(b,0,0))
+b.Character:SetAttribute("Poisoned",false);assert(Life.Revive(b,0,0) and b.Character.Humanoid.Health==50)
+b.Character:SetAttribute("HospitalResting",false)
 b.Character:SetAttribute("Knockout",false)
 a.Character.Humanoid.Health=50;a.Character.Humanoid.MaxHealth=100;a.Character:SetAttribute("Sick",30);a:SetAttribute("Endurance",5)
 priorXP=xp;use("Bandage",a)
-assert(a.Character.Humanoid.Health==70 and a.Character:GetAttribute("Sick")==10 and xp==priorXP,"self-treatment preserves the no-self-XP rule")
-print("PASS: sterile healing, fixed50% cure boundaries, -20Sick clamp, item consumption, full-HP debuff treatment, KO rejection and self-treatment")
+assert(a.Character.Humanoid.Health==70 and a.Character:GetAttribute("Sick")==0 and xp==priorXP,"self-treatment preserves the no-self-XP rule")
+print("PASS: sterile healing, fixed50% sterile and25%+Luck antiseptic cure boundaries, scaled Sick clamp, item consumption, full-HP debuff treatment, KO treatment without waking, retained HP and self-treatment")
 print("PASS: medical authority, self/other actual HP XP, medicine consumption, overheal, wall/range guards; doctor chance, both cooldowns, restoration and stale knockout timer safety")
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Rules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup.replace('LIFE',life),medicine,cases]
+parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Medical=(function()\n'+(root/'src/shared/MedicalRules.luau').read_text()+'\nend)()\nlocal Config=(function()\n'+(root/'src/shared/MedicalConfig.luau').read_text()+'\nend)()\nlocal Rules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup.replace('LIFE',life),medicine,cases]
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'test.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)

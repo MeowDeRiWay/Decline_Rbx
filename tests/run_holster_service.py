@@ -24,6 +24,13 @@ end
 setup=setup.replace('journalPlaceholder','(function()\n'+(root/'src/server/Services/JournalService.luau').read_text()+'\nend)()')
 cases='''
 a:LoadCharacterAsync();Service.Reset(a)
+assert(Service.Add(a,"Antiseptic",2) and Service.Equip(a,"Antiseptic"))
+assert(a.Character:GetAttribute("MedicineItem")=="Antiseptic")
+assert(Service.UseMedicine(a) and Service.Snapshot(a).Items.EmptyBottle==1 and a.Character:GetAttribute("MedicineItem")=="Antiseptic")
+assert(Service.UseMedicine(a) and Service.Snapshot(a).Items.EmptyBottle==2 and a.Character:GetAttribute("MedicineItem")=="")
+assert(not Service.UseMedicine(a) and Service.Snapshot(a).Items.EmptyBottle==2,"no free medicine or bottles")
+
+a:LoadCharacterAsync();Service.Reset(a)
 a:SetAttribute("BaseCarryLimitKg",25);a:SetAttribute("CarryLimitKg",25)
 assert(Service.Add(a,"Backpack1",1) and a:GetAttribute("CarryLimitKg")==25,"unequipped backpacks give no bonus")
 assert(Service.Equip(a,"Backpack1") and a:GetAttribute("CarryLimitKg")==35 and a.Character:GetAttribute("WornBack")=="Backpack1")

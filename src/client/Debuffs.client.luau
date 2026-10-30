@@ -6,5 +6,5 @@ local label=Instance.new("TextLabel");label.AnchorPoint=Vector2.new(1,0);label.P
 Run.Heartbeat:Connect(function()
  local c=player.Character
  label.Visible=c~=nil and c:GetAttribute("Poisoned")==true and not c:GetAttribute("IsDead")
- if label.Visible then label.Text=c:GetAttribute("HospitalResting") and "Poisoning: hospital treatment" or "Poisoning: Sick +1 per second" end
+ if label.Visible then label.Text=c:GetAttribute("Knockout") and "Poisoning: paused while knocked out" or c:GetAttribute("HospitalResting") and "Poisoning: hospital treatment" or "Poisoning: Sick +1 per second" end
 end)

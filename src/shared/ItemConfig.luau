@@ -33,7 +33,7 @@ ItemConfig.Items = {
  },
  Coal = {Name="Charcoal",Weight=.2,Description="Charcoal made by burning tree logs. Used for smelting and ammunition."},
  MedicalAlcohol={Name="Medical alcohol",Weight=.6,Description="Medical alcohol used to prepare antiseptic. Not drinking water."},
- Antiseptic={Name="Antiseptic",Weight=.6,ConsumeAction="Drink",EmptyContainer="EmptyBottle",ReturnItems={EmptyBottle=1},Consume={CurePoison=true},Description="One dose attempts to cure poisoning: 50% base chance plus 5 percentage points per Luck. Existing sickness remains."},
+ Antiseptic={Name="Antiseptic",Weight=.6,Slot="Medicine",Description="Apply from the Medicine slot with H. Reduces Sick by 20 plus 1 per 20 First Aid on every use. Poison cure chance: 25% plus 5 percentage points per Luck. Cannot be drunk."},
  Chemicals = {Name="Chemicals",Weight=.2,Description="Scavenged chemical compounds used to produce ammunition."},
  Iron = {Name="Iron",Weight=1,ResourceMaterial="Iron",Description="Smelted iron used for industrial firearms and ammunition."},
  MiliArmor1={Name="Military armor",Weight=5,Slot="Body",Armor={Absorption=6,Resistance=.3},Description="The most talented craftsmen among the remnants of this world began using Kevlar to protect against bites from the infected, adding iron plates to stop bullets."},
@@ -181,7 +181,7 @@ ItemConfig.Items.MachineGun308={Name=".308 machine gun",Weight=9,Slot="Hands",
  Description="Heavy machine gun. Uses Heavy weapons. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
  Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="308",ShotDistance=100,Magazine=60,ReloadTime=5,Speed=750,Range=450,Damage=30,DamageMin=25,DamageMax=30,RPM=600},
  Weapon={Damage=30,DamageMin=25,DamageMax=30,DamageType="Bullet",MaxUses=5000,AttacksPerMinute=600}}
-ItemConfig.Items.SterileBandage={Name="Sterile bandage",Weight=.1,Slot="Medicine",Description="Restores twice the target Endurance plus 2 HP per 20 First Aid of the healer. Reduces Sick by 20 points and has a fixed 50% chance to cure poisoning. Cannot revive."}
+ItemConfig.Items.SterileBandage={Name="Sterile bandage",Weight=.1,Slot="Medicine",Description="Restores twice the target Endurance plus 2 HP per 20 First Aid. Reduces Sick by 20 plus 2 per 20 First Aid, and 10 more with Paramedic. Fixed 50% poison cure chance. Does not wake knocked-out patients."}
 ItemConfig.Items.GreatBandage={Name="Great bandage",Weight=.1,Slot="Medicine",Description="Restores twice the target Endurance plus 2 HP per 20 First Aid of the healer. Equip in Medicine."}
 ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Restores target Endurance plus 1 HP per 20 First Aid of the healer. Equip in Medicine. H, then click yourself or a nearby player."}
 for _,kind in ipairs({"FMJ","AP"}) do

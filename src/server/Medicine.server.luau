@@ -6,6 +6,8 @@ local Progression=require(script.Parent.Services.ProgressionService)
 local Life=require(script.Parent.Services.PlayerLifeService)
 local Journal=require(script.Parent.Services.JournalService)
 local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
+local Medical=require(ReplicatedStorage.Shared.MedicalRules)
+local Config=require(ReplicatedStorage.Shared.MedicalConfig)
 local Sight=require(ReplicatedStorage.Shared.Sight)
 local remote=Instance.new("RemoteEvent");remote.Name="MedicalAction";remote.Parent=ReplicatedStorage
 local last,doctorReady={},{}
@@ -34,23 +36,30 @@ remote.OnServerEvent:Connect(function(player,mode,target)
  if mode=="Bandage" then
   local medicine=character:GetAttribute("MedicineItem")
   local sterile=medicine=="SterileBandage"
+  local antiseptic=medicine=="Antiseptic"
+  local reduction=Medical.SickReduction(medicine,player:GetAttribute("SkillFirstAid"),player:GetAttribute("Paramedic"))
   local sick=patient:GetAttribute("Sick") or 0
   local poisoned=patient:GetAttribute("Poisoned")==true
-  if patient:GetAttribute("Knockout") or (health.Health>=health.MaxHealth and not (sterile and (sick>0 or poisoned))) then return end
-  if not Inventory.UseMedicine(player) then Journal.Send(player,"Equip a bandage in the Medicine slot first.");return end
-  local amount=math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine,player:GetAttribute("MedicalHealingBonus")))
+  if antiseptic and sick<=0 and not poisoned then return end
+  if not antiseptic and health.Health>=health.MaxHealth and not (sterile and (sick>0 or poisoned)) then return end
+  if not Inventory.UseMedicine(player) then Journal.Send(player,"Equip a medical item in the Medicine slot first.");return end
+  local amount=antiseptic and 0 or math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine,player:GetAttribute("MedicalHealingBonus")))
   health.Health+=amount;patient:SetAttribute("Health",health.Health)
-  if sterile then
-   patient:SetAttribute("Sick",math.max(0,sick-20))
+  if sterile or antiseptic then
+   local removed=math.min(sick,reduction)
+   patient:SetAttribute("Sick",math.max(0,sick-reduction))
+   Journal.Send(player,string.format("Treatment removed %g Sick.",removed))
+   if target~=player then Journal.Send(target,string.format("Treatment removed %g Sick.",removed)) end
    if poisoned then
-    local cured=random:NextNumber()<.5
+    local chance=antiseptic and Medical.CureChance(player:GetAttribute("Luck"),Config) or .5
+    local cured=random:NextNumber()<chance
     if cured then patient:SetAttribute("Poisoned",false) end
     Journal.Send(player,cured and "Poisoning cured." or "The treatment did not cure poisoning.")
     if target~=player then Journal.Send(target,cured and "Poisoning cured." or "The treatment did not cure poisoning.") end
    end
   end
-  Journal.Send(player,string.format("You restored %g HP to %s.",amount,target==player and "yourself" or Literal.Protect(target.Name)))
-  if target~=player then
+  if amount>0 then Journal.Send(player,string.format("You restored %g HP to %s.",amount,target==player and "yourself" or Literal.Protect(target.Name))) end
+  if target~=player and amount>0 then
    Progression.Award(player,amount)
    Journal.Send(target,string.format("%s restored %g HP to you.",Literal.Protect(player.Name),amount))
   end

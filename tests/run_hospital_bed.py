@@ -8,7 +8,7 @@ source=source.replace('require(script.Parent.BodyFallService)','BodyFall').repla
 setup='''
 local Debuffs={Treat=function(c,dt) local sick=math.max(0,(c:GetAttribute("Sick") or 0)-2*dt);c:SetAttribute("Sick",sick);if sick==0 then c:SetAttribute("Poisoned",false) end;return sick==0 end}
 local BodyFall={Restore=function() end}
-local Life={Revive=function(p) p.Character:SetAttribute("Knockout",false);p.Character.Humanoid.Health=2;return true end}
+local Life={Revive=function(p) p.Character:SetAttribute("Knockout",false);return true end}
 local regenMessages={}
 local Journal={Send=function(_,text) table.insert(regenMessages,text) end}
 local Items={PickupDistance=2}
@@ -68,7 +68,10 @@ clock+=10;Beds.Step();assert(b.Character:GetAttribute("Sick")==0,"Sick clamps at
 b.Character.Humanoid.Health=0;assert(Beds.Leave(b,true))
 assert(not b.Character.HumanoidRootPart.Anchored,"KO transition restores upright state before knockout captures pose")
 b.Character.Humanoid.Health=20;assert(Beds.Use(b,bed));b.Character:SetAttribute("Knockout",true)
-clock+=10;Beds.Step();assert(bed:GetAttribute("HospitalBedUserId")==b.UserId and not b.Character:GetAttribute("Knockout"),"bed revives and retains patient")
+b.Character.Humanoid.Health=1;b.Character:SetAttribute("Sick",2);b.Character:SetAttribute("Poisoned",true)
+clock+=10;Beds.Step();assert(b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==1,"bed clears debuffs before accumulating HP")
+for _,expected in ipairs({7,13,19}) do clock+=10;Beds.Step();assert(b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==expected,"bed does not revive below50%") end
+clock+=10;Beds.Step();assert(bed:GetAttribute("HospitalBedUserId")==b.UserId and not b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==25,"bed revives at exact50% with no debuffs and retains HP")
 Beds.Leave(b)
 b.Character:SetAttribute("Knockout",false);b.Character.HumanoidRootPart.Anchored=false
 assert(Beds.Use(b,bed));bed:SetAttribute("HospitalBed",false);Beds.Step()

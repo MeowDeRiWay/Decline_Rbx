@@ -1,3 +1,4 @@
+local BulletCast=require(game:GetService("ReplicatedStorage").Shared.BulletCast)
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Inventory=require(script.Parent.Services.InventoryService)
@@ -99,10 +100,9 @@ action.OnServerEvent:Connect(function(player,command,direction)
  local origin=muzzle:IsA("Attachment") and muzzle.WorldPosition or muzzle:GetPivot().Position
  if (origin-root.Position).Magnitude>5 then return end
  -- A muzzle embedded through a nearby wall must not bypass that wall.
- local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}
  local shoulder=Vector3.new(root.Position.X,origin.Y,root.Position.Z)
- if workspace:Raycast(root.Position,shoulder-root.Position,params)
-  or workspace:Raycast(shoulder,origin-shoulder,params) then return end
+ if BulletCast.Raycast(root.Position,shoulder-root.Position,{character})
+  or BulletCast.Raycast(shoulder,origin-shoulder,{character}) then return end
  direction=direction.Unit
  if not Projectiles.Fire(player,character,origin,direction,gun,state.Type,id) then return end
  -- Only an accepted shot stops walking; rejected input and reload do not.

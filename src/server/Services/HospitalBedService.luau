@@ -84,16 +84,16 @@ function Service.Step()
    if treating then record.NextTick=now+60/multiplier(record.Bed) end
    if clear and (character:GetAttribute("Food") or 100)>0 and (character:GetAttribute("Water") or 100)>0 and now>=record.NextTick then
     record.NextTick=now+60/multiplier(record.Bed)
-    if character:GetAttribute("Knockout") then
-     player:SetAttribute("ReviveLockedUntil",0)
-     if require(script.Parent.PlayerLifeService).Revive(player,0,0) then pose(record) end
-    end
     local amount=character:GetAttribute("Regeneration") or 0
     if typeof(amount)=="number" and amount==amount and amount>0 and amount<math.huge then
      local before=hp.Health;hp.Health=math.min(hp.MaxHealth,hp.Health+amount)
      if hp.Health>before then Journal.Send(player,string.format("Regeneration restored %g HP.",hp.Health-before)) end
      character:SetAttribute("Health",hp.Health)
     end
+   end
+   if clear and character:GetAttribute("Knockout") and hp.Health>=hp.MaxHealth*.5 then
+    player:SetAttribute("ReviveLockedUntil",0)
+    if require(script.Parent.PlayerLifeService).Revive(player,0,0) then pose(record) end
    end
   end
  end

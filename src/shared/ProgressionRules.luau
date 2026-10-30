@@ -13,7 +13,8 @@ Rules.Perks={
  {ID="Lifegiver",Name="Lifegiver",Max=2,Attributes={Endurance=7},Description="+1 maximum HP per character level, per rank."},
  {ID="Criticals",Name="More criticals",Max=2,Attributes={Luck=7},Description="Doubles Luck-based critical chance per rank."},
  {ID="FieldHospital",Name="Field hospital",Max=1,Skills={Doctor=100},Description="Patients you revive can be revived again after 5 minutes instead of 10."},
- {ID="Medic",Name="Paramedic",Max=1,Skills={FirstAid=150},Description="Adds 10 HP to all first aid and revival operations."},
+ {ID="QuickExamination",Name="Quick examination",Max=1,Skills={Doctor=150},Description="Shows health, sickness and debuffs of nearby knocked-out players during medical targeting or in their right-click menu."},
+ {ID="Medic",Name="Paramedic",Max=1,Skills={FirstAid=150},Description="Adds 10 HP to bandages and revival. Sterile bandages also remove 10 extra Sick. Does not affect antiseptic."},
  {ID="HardCriticals",Name="Brutal criticals",Max=1,Attributes={Luck=7},Skills={Doctor=150},Description="Sets critical damage to a fixed 2.5 multiplier."},
  {ID="DoctorFortune",Name="Fortune favors doctors",Max=1,Attributes={Luck=7},Skills={Doctor=200},Description="Luck + 10% chance on a successful revival to restore full health and remove the patient's revival lock."},
  {ID="SilentRun",Name="Silent running",Max=1,Attributes={Agility=7},Skills={Sneak=150},Description="Sneak also reduces running noise."},
@@ -157,7 +158,7 @@ function Rules.Bonuses(stats,perks,level,total)
   UnarmedArmorClass=15*(p.UnarmedEvade or 0),ReviveLockReduction=180*(p.QuickRecovery or 0),ReviveHealthBonus=.2*(p.QuickRecovery or 0),MeleeIgnoreAbsorption=2*(p.PiercingStrike or 0),MeleeIgnoreResistance=.1*(p.PiercingStrike or 0),SniperCriticalBonus=.1*(p.Sniper or 0),CowboyMultiplier=(p.Cowboy or 0)>0 and 1.15 or 1,ScroungerMultiplier=(p.Scrounger or 0)>0 and 1.25 or 1,PlantKnowledge=(p.Botanist or 0)>0,GreenhouseYieldMultiplier=(p.KhersonMelons or 0)>0 and 1.5 or 1,
   BackstabCritical=(p.SilentDeath or 0)>0,UnarmedDamageBonus=10*(p.UnarmedDamage or 0),ArmorBypassChance=(p.LivingAnatomy or 0)>0 and .1 or 0,
   CriticalMin=(p.HardCriticals or 0)>0 and 2.5 or 1.5,CriticalMax=(p.HardCriticals or 0)>0 and 2.5 or 2,DoctorFortuneChance=(p.DoctorFortune or 0)>0 and (.1+.01*stats.Luck) or 0,SilentRunning=(p.SilentRun or 0)>0,CraftCostMultiplier=(p.Economist or 0)>0 and .8 or 1,ExperienceMultiplier=1+(p.GoodStudent or 0),NightAccuracyMultiplier=(p.CatEyes or 0)>0 and .9 or .5,Observant=(p.Observant or 0)>0,DamageAbsorption=2*(p.Armadillo or 0),DamageResistance=.1*(p.Armadillo or 0),LowHealthResistance=(p.NotSoEasy or 0)>0 and .1 or 0,PistolCriticalBonus=(p.Duelist or 0)>0 and .1 or 0,DisarmChance=(p.DroppedIt or 0)>0 and .1 or 0,EquippedWeaponWeightMultiplier=(p.WeaponPart or 0)>0 and 0 or 1,
-  RangedDamageBonus=2*(p.RangedDamage or 0),FirstAidMultiplier=1,MedicalHealingBonus=10*(p.Medic or 0),ReviveLockSeconds=(p.FieldHospital or 0)>0 and 300 or 600}
+  RangedDamageBonus=2*(p.RangedDamage or 0),FirstAidMultiplier=1,MedicalHealingBonus=10*(p.Medic or 0),Paramedic=(p.Medic or 0)>0,QuickExamination=(p.QuickExamination or 0)>0,ReviveLockSeconds=(p.FieldHospital or 0)>0 and 300 or 600}
 end
 function Rules.Meets(state,requirements)
  if not state.Confirmed then return false end

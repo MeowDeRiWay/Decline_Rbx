@@ -3,6 +3,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
+local BulletCast=require(ReplicatedStorage.Shared.BulletCast)
 local Damage=require(script.Parent.DamageService)
 local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
 local Service={}
@@ -71,7 +72,7 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  return true
 end
 local function damageVictim(bullet,victim)
- if not victim.Parent or victim.Health<=0 then return end
+ if not victim.Parent or victim.Health<=0 or victim.Parent:GetAttribute("Knockout") then return end
 if Damage.RollHit(bullet.Player,victim,bullet.SightBonus,bullet.Skill) then
  victim.Parent:SetAttribute("LastDamagerID",bullet.Player.UserId)
  victim.Parent:SetAttribute("LastHitItem",bullet.ItemID)
@@ -93,9 +94,8 @@ RunService.Heartbeat:Connect(function(dt)
   local stopped=false
   for _=1,16 do
    if distance<=.00001 or bullet.Remaining<=.00001 then break end
-   local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances=bullet.Ignored
-   local hit=workspace:Raycast(bullet.Position,bullet.Direction*distance,params)
-   local dormant=WorldActivity.Raycast(bullet.Position,bullet.Direction*distance,bullet.Ignored,bullet.IgnoredDormant)
+   local hit=BulletCast.Raycast(bullet.Position,bullet.Direction*distance,bullet.Ignored)
+   local dormant=WorldActivity.Raycast(bullet.Position,bullet.Direction*distance,bullet.Ignored,bullet.IgnoredDormant,true)
    if dormant and (not hit or dormant.Distance<(hit.Position-bullet.Position).Magnitude) then hit=dormant else dormant=nil end
    if not hit then bullet.Position+=bullet.Direction*distance;bullet.Remaining-=distance;break end
    local traveled=(hit.Position-bullet.Position).Magnitude

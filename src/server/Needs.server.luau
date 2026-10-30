@@ -61,7 +61,7 @@ RunService.Heartbeat:Connect(function(dt)
   local weight = math.max(0, numberAttribute(character, "LoadKg", 0))
   rate += weight * Config.WeightConsumption
   Debuffs.Step(character,step)
-  local food, water, sick, damage = Rules.Step(numberAttribute(character, "Food", 100), numberAttribute(character, "Water", 100), numberAttribute(character, "Sick", 0), rate, step, Config,humanoid.MaxHealth,character:GetAttribute("HospitalResting"),character:GetAttribute("Poisoned"))
+  local food, water, sick, damage = Rules.Step(numberAttribute(character, "Food", 100), numberAttribute(character, "Water", 100), numberAttribute(character, "Sick", 0), rate, step, Config,humanoid.MaxHealth,character:GetAttribute("HospitalResting"),character:GetAttribute("Poisoned"),character:GetAttribute("Knockout"))
   character:SetAttribute("Food", food)
   character:SetAttribute("Water", water)
   character:SetAttribute("Sick", sick)

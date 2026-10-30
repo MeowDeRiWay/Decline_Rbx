@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile,re
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Firearms.server.luau').read_text()
-service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression|Noise|Config)=require[^\n]+\n','',service)
+service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression|Noise|Config|BulletCast)=require[^\n]+\n','',service)
 mock='''
 local function signal() return {Connect=function(self,fn) self.callback=fn end} end
 local changed=signal()
@@ -64,6 +64,7 @@ local ReplicatedStorage={}
 game={GetService=function(_,name) return name=="Players" and Players or ReplicatedStorage end}
 Enum={RaycastFilterType={Exclude=1}}
 RaycastParams={new=function() return {} end}
+local BulletCast={Raycast=function(origin,delta) return workspace:Raycast(origin,delta) end}
 local rays={}
 local wall=false
 workspace={GetServerTimeNow=function() return time end,Raycast=function(_,origin,delta)

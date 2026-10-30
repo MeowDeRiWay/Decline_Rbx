@@ -328,7 +328,7 @@ local function geometry(d)
  end
  return d.Frame,d.Size,d.Query
 end
-function Service.Raycast(origin,delta,ignored,consumed)
+function Service.Raycast(origin,delta,ignored,consumed,bulletOnly)
  local length=delta.Magnitude;if length<.00001 then return nil end
  local direction=delta/length;local cell=Config.BucketSize
  local candidates={}
@@ -340,6 +340,7 @@ function Service.Raycast(origin,delta,ignored,consumed)
  local closest
  for record in pairs(candidates) do
   if record.State=="Active" then continue end
+  if bulletOnly and (record.Kind=="Item" or record.Root:GetAttribute("Knockout")) then continue end
   if skipped(record.Root,ignored) then continue end
   local a,b=Ballistics.Interval(origin,direction,record.Frame,record.Size)
   if not a or b<0 or a>length then continue end

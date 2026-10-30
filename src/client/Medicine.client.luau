@@ -8,13 +8,16 @@ local player=Players.LocalPlayer
 local remote=ReplicatedStorage:WaitForChild("MedicalAction")
 local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
 local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
+local Medical=require(ReplicatedStorage.Shared.MedicalRules)
+local MedicalConfig=require(ReplicatedStorage.Shared.MedicalConfig)
+local Examination=require(script.Parent.PatientExamination)
 local View=require(script.Parent.EventVisibility)
 local Theme=require(ReplicatedStorage.Shared.UITheme)
 local Layout=require(script.Parent.HUDLayout)
 local highlight=Instance.new("Highlight");highlight.Name="MedicalTarget";highlight.DepthMode=Enum.HighlightDepthMode.Occluded;highlight.FillTransparency=.65;highlight.OutlineTransparency=0;highlight.Enabled=false;highlight.Parent=workspace
 local gui=Instance.new("ScreenGui");gui.Name="MedicalAim";gui.ResetOnSpawn=false;gui.IgnoreGuiInset=true;gui.Parent=player:WaitForChild("PlayerGui")
-local hint=Instance.new("TextLabel");hint.Size=UDim2.fromOffset(250,58);hint.BackgroundColor3=Theme.Card;hint.TextColor3=Theme.Text;hint.Font=Theme.Font;hint.TextSize=14;hint.TextWrapped=true;hint.Visible=false;hint.Parent=gui
-local function bandage(id) return id=="Bandage" or id=="GreatBandage" or id=="SterileBandage" end
+local hint=Instance.new("TextLabel");hint.Size=UDim2.fromOffset(310,154);hint.BackgroundColor3=Theme.Card;hint.TextColor3=Theme.Text;hint.Font=Theme.Font;hint.TextSize=14;hint.TextWrapped=true;hint.Visible=false;hint.Parent=gui
+local function bandage(id) return id=="Bandage" or id=="GreatBandage" or id=="SterileBandage" or id=="Antiseptic" end
 local selected
 local function blocked()
  if player:GetAttribute("PlayerContextOpen") then return true end
@@ -26,7 +29,7 @@ Input.InputBegan:Connect(function(key,processed)
  if key.KeyCode==Enum.KeyCode.H and not blocked() then
   if player:GetAttribute("MedicalMode")=="Bandage" then cancel();return end
   local c=player.Character
-  if not c or not bandage(c:GetAttribute("MedicineItem")) then Layout.Log:Fire("Equip a bandage in the Medicine slot first.");return end
+  if not c or not bandage(c:GetAttribute("MedicineItem")) then Layout.Log:Fire("Equip a medical item in the Medicine slot first.");return end
   player:SetAttribute("MedicalMode","Bandage")
  elseif (key.KeyCode==Enum.KeyCode.Four or key.KeyCode==Enum.KeyCode.KeypadFour) and not blocked() then
   if player:GetAttribute("MedicalMode")=="Doctor" then cancel();return end
@@ -68,11 +71,15 @@ Run.RenderStepped:Connect(function()
  if mode=="Doctor" then
   local cooldown=math.max(0,math.ceil((player:GetAttribute("DoctorReadyAt") or 0)-workspace:GetServerTimeNow()))
   text=cooldown>0 and ("Doctor · ready in "..cooldown.."s") or string.format("Doctor · %g%% chance · 4 to cancel\nClick a nearby knocked-out player",Rules.ReviveChance(player:GetAttribute("SkillDoctor"))*100)
+ elseif character:GetAttribute("MedicineItem")=="Antiseptic" then
+  text=string.format("Antiseptic · Sick -%g · cure %g%% · H to cancel",Medical.SickReduction("Antiseptic",player:GetAttribute("SkillFirstAid")),Medical.CureChance(player:GetAttribute("Luck"),MedicalConfig)*100)
  else text=string.format("First aid · %g HP · H to cancel\nClick yourself or a nearby player",Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),(selected or player):GetAttribute("Endurance"),character:GetAttribute("MedicineItem"),player:GetAttribute("MedicalHealingBonus"))) end
  if selected then
   local body=selected.Character:FindFirstChild("HumanoidRootPart")
   if body and (body.Position-root.Position).Magnitude>3 then text="Move closer to "..Locale.Raw(selected.Name) end
  end
- hint.Text=text;hint.Position=UDim2.fromOffset(math.clamp(mouse.X+18,0,math.max(0,camera.ViewportSize.X-250)),math.clamp(mouse.Y+18,0,math.max(0,camera.ViewportSize.Y-58)));hint.Visible=true
+ local status=selected and Examination.Text(selected)
+ if status then text..="\n"..status end
+ hint.Text=text;hint.Position=UDim2.fromOffset(math.clamp(mouse.X+18,0,math.max(0,camera.ViewportSize.X-310)),math.clamp(mouse.Y+18,0,math.max(0,camera.ViewportSize.Y-154)));hint.Visible=true
 end)
 player.CharacterRemoving:Connect(cancel)

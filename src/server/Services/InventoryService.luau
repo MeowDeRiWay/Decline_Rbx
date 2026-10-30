@@ -127,9 +127,10 @@ function Service.ReplaceOne(player,source,target)
 end
 function Service.UseMedicine(player)
  local state=states[player]
- if not state or (state.Equipment.Medicine~="Bandage" and state.Equipment.Medicine~="GreatBandage" and state.Equipment.Medicine~="SterileBandage") then return false end
+ if not state or (state.Equipment.Medicine~="Bandage" and state.Equipment.Medicine~="GreatBandage" and state.Equipment.Medicine~="SterileBandage" and state.Equipment.Medicine~="Antiseptic") then return false end
  local medicine=state.Equipment.Medicine
  state.Equipment.Medicine=nil;state.EquipmentCondition.Medicine=nil
+ if medicine=="Antiseptic" then Rules.Add(state,ItemConfig.Items,"EmptyBottle",1) end
  if (state.Items[medicine] or 0)>0 then Rules.Equip(state,ItemConfig.Items,ItemConfig.Slots,medicine) end
  update(player)
  return true

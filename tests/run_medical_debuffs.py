@@ -33,13 +33,13 @@ assert(Debuffs.ZombieHit(a.Character,{NextNumber=function() return .049 end}))
 a.Character:SetAttribute("Poisoned",false)
 assert(not Debuffs.ZombieHit(a.Character,{NextNumber=function() return .05 end}),"5% boundary is exclusive")
 MedicalConfig.ZombiePoisonEnabled=false
-Debuffs.Poison(a.Character);roll=.5
-assert(Consume.Consume(a,"Antiseptic") and a.Character:GetAttribute("Poisoned") and stock.Antiseptic==3 and stock.EmptyBottle==1)
-roll=.49
-assert(Consume.Consume(a,"Antiseptic") and not a.Character:GetAttribute("Poisoned") and a.Character:GetAttribute("Sick")==40)
-Debuffs.Poison(a.Character);a:SetAttribute("Luck",10);roll=.999
-assert(Consume.Consume(a,"Antiseptic") and not a.Character:GetAttribute("Poisoned") and stock.EmptyBottle==3)
-assert(Consume.Consume(a,"Antiseptic") and not Consume.Consume(a,"Antiseptic"),"no inventory means no additional rolls")
+Debuffs.Poison(a.Character)
+a.Character:SetAttribute("Knockout",true);Debuffs.Step(a.Character,100)
+assert(a.Character:GetAttribute("Sick")==40,"KO freezes poisoning growth")
+a.Character:SetAttribute("Knockout",false)
+assert(not Consume.Consume(a,"Antiseptic") and stock.Antiseptic==4 and not stock.EmptyBottle,"antiseptic cannot be drunk")
+assert(not Consume.Consume(a,"MedicalAlcohol"),"alcohol is only a material")
+assert(Items.Items.Antiseptic.Slot=="Medicine" and not Items.Items.Antiseptic.Consume and not Items.Items.MedicalAlcohol.Consume)
 local recipe=Recipes.MakeAntiseptic
 assert(recipe.Station=="MedStation" and recipe.Requirements.Skills.Doctor==50 and not recipe.Requirements.Skills.FirstAid)
 local plan=assert(Craft.Plan({CleanWater=5,MedicalAlcohol=1},recipe,1))

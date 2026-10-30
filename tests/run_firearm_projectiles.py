@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/FirearmProjectiles.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
-service=re.sub(r'local (Rules|Damage|Accuracy)=require[^\n]+\n','',service)
+service=re.sub(r'local (Rules|Damage|Accuracy|BulletCast)=require[^\n]+\n','',service)
 mock='''
 local Accuracy={SightBonus=function() return 0 end,ForWeapon=function() return 25 end}
 function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
@@ -28,6 +28,7 @@ local lastOptions
 local Damage={RollHit=function() return true end,Apply=function(_,amount,_,_,_,options) lastOptions=options;dealt+=amount*(options and options.CriticalMultiplier or 1);return amount end,Miss=function() error("unexpected miss") end}
 local parts={}
 workspace={}
+function workspace:FindFirstChild() end
 function workspace:Raycast(origin,delta,params)
  local best,nearest=nil,math.huge
  for _,part in ipairs(parts) do
@@ -44,7 +45,7 @@ end
 local function group(kind)
  local g={Parent=workspace,children={}}
  function g:IsA(class) return class=="Model" end
- function g:GetAttribute(key) return key=="Material" and kind or nil end
+ function g:GetAttribute(key) return self.attributes and self.attributes[key] or key=="Material" and kind or nil end
  function g:GetDescendants() return self.children end
  function g:FindFirstChildOfClass() end
  function g:SetAttribute() end
@@ -53,7 +54,7 @@ end
 local function part(parent,z,depth)
  local p={Parent=parent,CFrame=CFrame.new(Vector3.new(0,0,z)),Size=Vector3.new(2,3,depth),CanQuery=true,Shape=1,Material={Name="Plastic"}}
  function p:IsA(class) return class=="Part" or class=="BasePart" end
- function p:GetAttribute() end
+ function p:GetAttribute() return nil end
  function p:IsDescendantOf(object) local a=self.Parent while a do if a==object then return true end;a=a.Parent end;return false end
  table.insert(parent.children,p);table.insert(parts,p);return p
 end
@@ -74,6 +75,26 @@ local function run(kind,ammo)
  return dealt
 end
 local clear=run(nil,"FMJ");assert(clear>0)
+-- A real shot must reach the standing target through nested item parts and KO.
+parts={};packets={};dealt=0
+local bottle=group(nil);bottle.attributes={Item_ID="CleanWater"};part(bottle,1,.4)
+local bag=group(nil);bag.attributes={Item_ID="Backpack1"};part(bag,2,.4)
+local unconscious=group(nil);unconscious.attributes={Knockout=true}
+function unconscious:FindFirstChildOfClass() return {Health=50,Parent=self} end
+part(unconscious,3,.5);part(target,5,.5)
+Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AssaultRifle223")
+for i=1,60 do heartbeat.fire(1/60) end
+assert(math.abs(dealt-clear)<1e-8,"items and KO neither stop nor weaken bullets")
+local flesh=0
+for _,packet in ipairs(packets) do for _,e in ipairs(packet) do if e.Kind=="Impact" then assert(e.Material=="Flesh");flesh+=1 end end end
+assert(flesh==1,"ignored objects emit no hit effects; standing target still hit")
+-- Worn item geometry continues to represent a conscious character's hitbox.
+local armor=group(nil);armor.Parent=target;armor.attributes={Item_ID="MiliArmor1"}
+local armorPart=part(armor,1,.4)
+assert(BulletCast.Ignored(armorPart)==nil)
+unconscious.attributes.Knockout=false
+assert(BulletCast.Ignored(unconscious.children[1])==nil,"revived players are hittable immediately")
+
 for _,caliber in ipairs({"9mm","223","308"}) do
  definition.Caliber=caliber
  local wood=run("Wood","FMJ")
@@ -140,5 +161,5 @@ print("PASS: real swept projectile loop hits moving targets, thin two-layer wall
 '''
 with tempfile.TemporaryDirectory() as directory:
  path=Path(directory)/'projectiles.luau'
- path.write_text((root/'tests/city_geometry.fixture.luau').read_text()+'\nlocal Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items\nlocal Rules=(function()\n'+(root/'src/shared/FirearmRules.luau').read_text()+'\nend)()\n'+mock+'\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
+ path.write_text((root/'tests/city_geometry.fixture.luau').read_text()+'\nlocal Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items\nlocal Rules=(function()\n'+(root/'src/shared/FirearmRules.luau').read_text()+'\nend)()\n'+mock+'\nlocal BulletCast=(function()\n'+(root/'src/shared/BulletCast.luau').read_text()+'\nend)()\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
  subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)
