@@ -100,7 +100,7 @@ loner:SetAttribute("TownID",nil);loner:SetAttribute("TeamID",nil)
 lonerBody:SetAttribute("Knockout",true);lonerBody:SetAttribute("KnockoutEndsAt",clock+120)
 ko[lonerBody]={Pivot=lonerBody:GetPivot(),Parts={},BlocksVision=true}
 Players.PlayerRemoving:Fire(loner);loner.Parent=nil;lonerBody:Destroy()
-local beforeLoads=loads;advance(120)
+local beforeLoads=loads;advance(300)
 local lonerBack=player(1001);Players.PlayerAdded:Fire(lonerBack)
 assert(lonerBack:GetAttribute("OutcastEnd")==true and lonerBack.Character==nil and loads==beforeLoads,"offline neutral death restores ending instead of spawning")
 Players.PlayerRemoving:Fire(lonerBack);lonerBack.Parent=nil

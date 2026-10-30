@@ -2,13 +2,18 @@ local Lighting=game:GetService("Lighting")
 local Run=game:GetService("RunService")
 local Service={}
 local hour,speed,paused=8,1,false
+local day=1
 local last=workspace:GetServerTimeNow()
 local function advance()
  local now=workspace:GetServerTimeNow()
- if not paused then hour=(hour+(now-last)*speed/150)%24 end
+ if not paused then
+  local total=hour+(now-last)*speed/150
+  day+=math.max(0,math.floor(total/24));hour=total%24
+ end
  last=now
 end
 local function publish()
+ workspace:SetAttribute("WorldDay",day)
  Lighting.ClockTime=hour
  workspace:SetAttribute("DayClockHour",hour)
  workspace:SetAttribute("DayClockSpeed",speed)

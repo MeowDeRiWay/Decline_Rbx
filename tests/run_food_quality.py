@@ -3,8 +3,11 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 s=(root/'src/server/Services/ConsumableService.luau').read_text()
-s=re.sub(r'local (Items|Rules|Inventory)\s*=\s*require[^\n]+\n','',s)
+s=re.sub(r'local (Items|Rules|Inventory|Debuffs|Journal)\s*=\s*require[^\n]+\n','',s)
 mock='''
+local Debuffs={Antiseptic=function() return false end}
+local Journal={Send=function() end}
+local Random={new=function() return {} end}
 a:LoadCharacterAsync();local hp=a.Character.Humanoid;hp.Health=90
 local stock={DirtyWaterBucket=1,Ramsay_BoiledPotato=1,Ramsay_MashedPotatoesWithSausage_2=1}
 local Inventory={Remove=function(_,id,n) if (stock[id] or 0)<n then return false end;stock[id]-=n;return true end,Add=function(_,id,n) stock[id]=(stock[id] or 0)+n;return true end}

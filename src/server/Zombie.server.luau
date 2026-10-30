@@ -22,13 +22,16 @@ local Audio=require(script.Parent.Services.ZombieAudio)
 local Chests = require(script.Parent.Services.ChestService)
 local Progression=require(ReplicatedStorage.Shared.ProgressionRules)
 local ZombieStats=require(ReplicatedStorage.Shared.ZombieStats)
+local Debuffs=require(script.Parent.Services.DebuffService)
 local statRandom=Random.new()
 local registered = setmetatable({},{__mode="k"})
 local baseStats=setmetatable({},{__mode="k"})
 local function applyDayStats(model,hp,base)
  local stats=table.clone(base)
  if workspace:GetAttribute("IsNight") then for id,value in pairs(stats) do stats[id]=value+2 end end
- local derived=Progression.Bonuses(stats)
+ local level=math.max(0,(workspace:GetAttribute("WorldDay") or 1)-1)
+ local derived=Progression.Bonuses(stats,nil,level)
+ model:SetAttribute("CharacterLevel",level);model:SetAttribute("DailyDamageBonus",level)
  local skills=Progression.SkillValues(stats)
  local ratio=hp.MaxHealth>0 and hp.Health/hp.MaxHealth or 1
  for id,value in pairs(stats) do model:SetAttribute(id,value) end
@@ -37,12 +40,14 @@ local function applyDayStats(model,hp,base)
  model:SetAttribute("SightRange",derived.ViewRange);model:SetAttribute("MoveSpeed",derived.RunBonus)
  hp.MaxHealth=derived.MaxHealth;hp.Health=hp.MaxHealth*ratio;hp.WalkSpeed=derived.RunBonus
 end
-workspace:GetAttributeChangedSignal("IsNight"):Connect(function()
+local function refreshStats()
  for model,base in pairs(baseStats) do
   local hp=model:FindFirstChildOfClass("Humanoid")
   if model.Parent and hp and hp.Health>0 and not model:GetAttribute("IsDead") then applyDayStats(model,hp,base) end
  end
-end)
+end
+workspace:GetAttributeChangedSignal("IsNight"):Connect(refreshStats)
+workspace:GetAttributeChangedSignal("WorldDay"):Connect(refreshStats)
 local function positive(value)
  return typeof(value)=="number" and value==value and value>0 and value<math.huge
 end
@@ -360,10 +365,9 @@ local function prepare(model)
      if hit and not hit.Instance:IsDescendantOf(victimRoot.Parent) then return end
      if not Damage.RollHit(model,victim,0,model:GetAttribute("SkillUnarmed")) then Damage.Miss(victim.Parent,model);return end
      local targetPlayer=Players:GetPlayerFromCharacter(victim.Parent)
-     local infection=ZombieStats.Infection(model:GetAttribute("Strength"))
-     if infection>0 and (targetPlayer or victim.Parent:GetAttribute("OfflineUserId")) then victim.Parent:SetAttribute("Sick",math.clamp((victim.Parent:GetAttribute("Sick") or 0)+infection,0,100)) end
      local critical=statRandom:NextNumber()<(model:GetAttribute("CriticalChance") or 0)
-     Damage.Apply(victim,CombatRules.UnarmedDamage(model:GetAttribute("MeleeBonus"),0,statRandom:NextNumber()),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextNumber(model:GetAttribute("CriticalMin") or 1.5,model:GetAttribute("CriticalMax") or 2) or 1})
+     local dealt=Damage.Apply(victim,CombatRules.UnarmedDamage(model:GetAttribute("MeleeBonus"),0,statRandom:NextNumber())+(model:GetAttribute("DailyDamageBonus") or 0),weapon.DamageType,root.Position,"Melee",{Attacker=model,HitChecked=true,CriticalMultiplier=critical and statRandom:NextNumber(model:GetAttribute("CriticalMin") or 1.5,model:GetAttribute("CriticalMax") or 2) or 1})
+     if dealt>0 and targetPlayer then Debuffs.ZombieHit(victim.Parent,statRandom) end
     end)
   end
   -- Being close across a wall/window is not the same as arriving.

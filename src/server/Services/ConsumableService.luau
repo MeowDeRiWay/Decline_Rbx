@@ -2,6 +2,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
 local Rules = require(ReplicatedStorage.Shared.ConsumableRules)
 local Inventory = require(script.Parent.InventoryService)
+local Debuffs=require(script.Parent.DebuffService)
+local Journal=require(script.Parent.JournalService)
+local random=Random.new()
 local Service = {}
 function Service.Consume(player, id)
  local definition = typeof(id) == "string" and Items.Items[id]
@@ -21,6 +24,10 @@ function Service.Consume(player, id)
  character:SetAttribute("Sick", newSick)
  character:SetAttribute("Water",newWater)
  humanoid.Health=math.min(humanoid.MaxHealth,humanoid.Health+(definition.Consume.Health or 0));character:SetAttribute("Health",humanoid.Health)
+ if definition.Consume.CurePoison then
+  local cured=Debuffs.Antiseptic(player,random)
+  Journal.Send(player,cured and "Poisoning cured." or "The dose did not cure poisoning.")
+ end
  for returned,count in pairs(definition.ReturnItems or {}) do Inventory.Add(player,returned,count) end
  return true
 end

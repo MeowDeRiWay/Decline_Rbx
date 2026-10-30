@@ -20,6 +20,8 @@ for source,uk,ru in entries:
    indices={int(x) for x in re.findall(r'{(\d+)}',text)}
    assert indices==set(range(1,len(slots)+1)),(source,text,indices,len(slots))
 parts.append('local dictionary=Rules.New(groups)')
+for text in re.findall(r'Text=\[\[(.*?)\]\]',(root/'src/client/HowToPlay.client.luau').read_text(),re.S):
+ parts.append('assert(dictionary.Exact['+json.dumps(text)+'],"Missing help-page translation")')
 for module in ['ItemConfig','CraftConfig','ProgressionRules']:
  parts.append('local data=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
  parts.append('''for id,item in pairs(data.Items or data.Recipes or data.Perks or data) do

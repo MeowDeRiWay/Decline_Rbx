@@ -8,14 +8,15 @@ local Animation=require(script.Parent.InteractionAnimationService)
 local Service = {}
 local contents = setmetatable({}, {__mode = "k"})
 local sessions = {}
+local knockoutOwners=setmetatable({},{__mode="k"})
 local changed = Instance.new("BindableEvent")
 Service.Changed = changed.Event
 local function reachable(player, chest)
- if typeof(chest) ~= "Instance" or not chest:IsA("Model") or (chest.Name ~= "Chest" and chest:GetAttribute("IsCorpse") ~= true) or not chest:IsDescendantOf(workspace) or not chest:FindFirstChildWhichIsA("BasePart", true) then return false end
+ if typeof(chest) ~= "Instance" or not chest:IsA("Model") or (chest.Name ~= "Chest" and chest:GetAttribute("IsCorpse") ~= true and chest:GetAttribute("Knockout")~=true) or not chest:IsDescendantOf(workspace) or not chest:FindFirstChildWhichIsA("BasePart", true) then return false end
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  local root = character and character:FindFirstChild("HumanoidRootPart")
- if not root or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return false end
+ if not root or not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") or character:GetAttribute("CarryingUserId") or chest:GetAttribute("CarriedByUserId") then return false end
  local nearest = Interaction.NearestPoint(chest,root.Position)
  local delta = nearest - root.Position
  if delta.Magnitude > Items.PickupDistance then return false end
@@ -70,18 +71,38 @@ function Service.CreateCorpse(model,items)
   end
  end)
 end
+function Service.OpenKnockout(player,patient)
+ local character=patient.Character
+ if player==patient or not character or not character:GetAttribute("Knockout") or character:GetAttribute("CarriedByUserId") then return false end
+ if not reachable(player,character) then return false end
+ knockoutOwners[character]=patient.UserId
+ character:SetAttribute("DisplayName",patient.DisplayName)
+ return Service.Open(player,character)
+end
+local function refreshOwner(chest)
+ local id=knockoutOwners[chest];local owner=id and Players:GetPlayerByUserId(id)
+ if owner then Inventory.Refresh(owner) end
+end
 function Service.Open(player, chest)
  if not reachable(player, chest) then return false end
  if sessions[player]==chest then return true end
  if player.Character:GetAttribute("InteractionLocked") and player.Character:GetAttribute("InteractionMode")~="Reach" then return false end
  local function opened()
   if not reachable(player,chest) then return false end
+  if chest:GetAttribute("Knockout") then
+   local owner=knockoutOwners[chest] and Players:GetPlayerByUserId(knockoutOwners[chest]) or Players:GetPlayerFromCharacter(chest)
+   if not owner or owner.Character~=chest then return false end
+   local storage=Inventory.Export(owner)
+   if not storage then return false end
+   knockoutOwners[chest]=owner.UserId
+   Inventory.CorpseStorage(storage);contents[chest]=storage;Inventory.Refresh(owner)
+  end
   if not contents[chest] then contents[chest]=Rules.New() end
   sessions[player]=chest
   changed:Fire(player)
   return true
  end
- if chest:GetAttribute("IsCorpse") then return Animation.BeginLoot(player,chest,Items.PickupDistance,opened) end
+ if chest:GetAttribute("IsCorpse") or chest:GetAttribute("Knockout") then return Animation.BeginLoot(player,chest,Items.PickupDistance,opened) end
  return opened()
 end
 function Service.Close(player)
@@ -92,25 +113,25 @@ end
 
 function Service.Snapshot(player)
  local chest = sessions[player]
- return {ChestOpen = chest ~= nil, Chest = chest, ChestReadOnly = chest ~= nil and chest:GetAttribute("IsCorpse") == true, ChestName = chest and (chest:GetAttribute("DisplayName") or chest.Name), ChestStacks=chest and contents[chest] and Rules.Stacks(contents[chest],Items.Items) or {}, ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}
+ return {ChestOpen = chest ~= nil, Chest = chest, ChestReadOnly = chest ~= nil and (chest:GetAttribute("IsCorpse") == true or chest:GetAttribute("Knockout")==true), ChestName = chest and (chest:GetAttribute("DisplayName") or chest.Name), ChestStacks=chest and contents[chest] and Rules.Stacks(contents[chest],Items.Items) or {}, ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}
 end
 function Service.Transfer(player, id, requested, intoChest,key)
  local chest = sessions[player]
  if not reachable(player, chest) then Service.Close(player); return false end
- if intoChest and chest:GetAttribute("IsCorpse") == true then return false end
+ if intoChest and (chest:GetAttribute("IsCorpse") == true or chest:GetAttribute("Knockout")) then return false end
  if typeof(id) ~= "string" or not Items.Items[id] then return false end
  local storage = contents[chest]
  if not Inventory.Transfer(player, storage, id, requested, intoChest,key) then return false end
- notify(chest)
+ refreshOwner(chest);notify(chest)
  return true
 end
 function Service.TakeAll(player)
  local chest=sessions[player]
  if not reachable(player,chest) then Service.Close(player); return false end
- if chest:GetAttribute("IsCorpse")~=true then return false end
+ if chest:GetAttribute("IsCorpse")~=true and chest:GetAttribute("Knockout")~=true then return false end
  local storage=contents[chest]
  for id in pairs(table.clone(storage.Items)) do Inventory.Transfer(player,storage,id,"All",false) end
- notify(chest)
+ refreshOwner(chest);notify(chest)
  if next(storage.Items)==nil then Service.Close(player) end
  return true
 end

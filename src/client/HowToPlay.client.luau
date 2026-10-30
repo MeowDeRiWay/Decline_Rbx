@@ -57,7 +57,7 @@ Mouse - Face / aim
 
 COMBAT
 LMB - Attack
-RMB - Aim
+RMB - Player actions: Doctor, Loot or Carry. While carrying: Put body down or Place on bed.
 R - Reload
 V - Change fire mode
 B - Change ammunition type
@@ -107,12 +107,12 @@ Reconnect protection is there to save your character if you lose your connection
 A LITTLE MEDICAL ADVICE
 If you find someone's body, take a moment to try your Doctor skill with 4: activate it, then click the nearby knocked-out player. You might save someone a lot of time and earn a pleasant "Thank you!"
 
-If they are from another settlement... well, you could always wait out the two-minute knockout and loot them instead.
+Knocked-out players can be looted through the right-click menu. You can also carry them to a free hospital bed. Running while carrying someone uses twice as much stamina.
 
 Patience and looting solve a surprising number of problems.
 
 THE PRICE OF GOING ALONE
-If you die without belonging to a town, your character's story ends. Someone can still revive you during the two-minute knockout. Once that time is up, you must choose a town and create a new character.]]},
+If you die without belonging to a town, your character's story ends. The two-minute knockout timer unlocks voluntary respawn; it does not kill you. You can wait for rescue and hospital treatment. If you choose to respawn without a town, your current character's story ends.]]},
  {Name="Resources",Title="RESOURCES",Text=[[YES, IT STARTS WITH TREES
 Sorry I could not think of a better opening than chopping wood. Cliche? Absolutely. Guilty as charged. I will come up with something better later.
 
@@ -124,6 +124,17 @@ Build a Market - it is a free town building - and sell your resources there.
 Keep in mind that passive income is $1 x player level per payout. That very important crafter might not have any money at the start...
 
 Help the people who know how to make things, and they will help you.]]},
+ {Name="Zombies",Title="ZOMBIES",Text=[[THE WORLD GETS HARDER
+Every completed in-game day gives all living and newly spawned zombies one additional level and +1 damage per hit. Extra levels increase their maximum HP. The first day has no daily bonus. Night attribute bonuses still apply.
+
+RESCUE AND SURVIVAL
+A knockout does not automatically kill you. After two minutes you may choose Respawn, or wait for someone to carry you to a hospital bed. Right-click a knocked-out player for Doctor, Loot or Carry. Right-click while carrying to put them down; right-click a free hospital bed to place the patient.
+
+POISONING
+Poisoning raises Sick by 1 point per second. Antiseptic makes one cure roll: 50% plus 5 percentage points per Luck, capped at 100%. A successful dose removes poisoning, but does not erase existing Sick. Hospital beds suppress progression and reduce Sick to zero before normal healing. Zombie hits currently DO NOT apply poisoning or direct infection; the optional 5% poisoning rule is prepared but disabled.
+
+NEEDS MATTER
+Empty hunger and thirst each deal 0.5% maximum HP per three seconds; Sick at 100 deals 1% per three seconds. These effects add together. Ordinary regeneration stops while any of them is damaging you.]]},
 }
 local tabs={}
 local currentPage=1

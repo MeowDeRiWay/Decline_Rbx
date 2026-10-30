@@ -1,0 +1,104 @@
+# Medical rescue and escalating zombies — 30 October 2026
+
+## Authored items
+
+Create the reusable Sound-free item models under an Items category folder, e.g.:
+
+- `ServerStorage/Items/CraftMedicine/MedicalAlcohol`
+- `ServerStorage/Items/CraftMedicine/Antiseptic`
+
+IDs are exact; copying a water-bottle model is fine. Both items weigh 0.6 kg.
+MedicalAlcohol is a crafting material, not a consumable. Add it to the pharmacy's
+existing authored spawn pool as requested; no new loot frequency is invented.
+Antiseptic uses the normal inventory Drink action and returns one EmptyBottle.
+
+MedStation recipe MakeAntiseptic: 5 CleanWater + 1 MedicalAlcohol -> 5 Antiseptic
+and 1 EmptyBottle (the extra alcohol container). Doctor50, one batch. Unspecified
+craft duration/XP use initial defaults of 60 seconds and 100 XP per finished batch.
+The three existing cloth/bandage recipes still need the reusable SewingKit.
+No sterile-bandage recipe has been invented while its definition is unfinished.
+
+## Poison and sickness
+
+Poisoned=true increases Sick by exactly 1 point per second; the background
+threshold-based Sick growth is suppressed while poison itself supplies growth.
+A consumed antiseptic makes one authoritative random roll: 0.50 + 0.05*Luck,
+clamped at 1. A successful roll removes Poisoned, leaving existing Sick unchanged.
+The bottle is spent even on failure. There is no roll without consuming an item.
+
+MedicalConfig.ZombiePoisonEnabled=false, following the user's final instruction.
+The optional chance is 0.05 and is checked only after actual positive zombie
+melee damage to a live player. Direct per-hit infection remains disabled; the old
+ZombieStats.Infection helper is preserved for future use. Poison can be tested by
+setting a character's Poisoned attribute on the server.
+
+HospitalResting suppresses poison/sickness progression and survival damage.
+HospitalBedService treats Sick at 2 points/second, with no natural HP regeneration
+until Sick reaches zero and poisoning clears. Normal bed regeneration then resumes
+at the existing HospitalRegenMultiplier cadence (default every20seconds). A KO
+patient can be revived automatically on that treatment tick and remains on bed.
+Empty Food or Water prevents HP regeneration even at a bed. These treatment rates
+are explicit defaults in MedicalConfig, not hardcoded into authored models.
+
+## Player actions and carrying
+
+RMB on a knocked-out player offers Doctor, Loot player, Pick up player. Doctor
+uses the existing skill roll, cooldown and range/LOS authority; H and4 shortcuts
+remain available. RMB on a corpse also offers Search body. Menus block local
+weapon activation; all remote actions independently validate on the server.
+
+Pickup requires an active confirmed carrier, another live knocked-out player,
+3stud distance and clear LOS. Patients on beds, already carried players, chains
+and self-carry are rejected. A carrier's weapon goes into inventory; weapons cannot
+be equipped/used while carrying. Held patients follow the carrier in front with
+an animated supporting-arm pose; their KO deadline does not reset. Running drains
+sprint reserve twice as quickly, without changing recovery or ordinary walking.
+
+RMB anywhere while carrying offers Put body down. RMB on a free tagged hospital
+bed also offers Place on bed. Invalid/occupied beds leave the patient carried.
+The existing Model HospitalBed=true, optional BedSurface/BedPoint and normal
+2stud interaction reach are reused. Carry ownership clears on either participant
+leaving, carrier KO/death, patient revival or replacement. Disconnect snapshots
+release carried bodies before cloning them.
+
+Loot uses the patient's current authoritative InventoryService state, including
+unequipped equipment; no duplicate storage copy is made. The patient cannot receive
+inserted items. Carrying or revival invalidates the loot route. Owner capacity and
+visuals refresh as items leave. Money remains in the pre-existing protected system.
+
+## Voluntary respawn
+
+The120second KO deadline now unlocks the on-screen Respawn button. It never
+implicitly calls Finish. Patients may wait past it for rescue, carrying or bed
+treatment. The server verifies the deadline and current KO record before accepting
+respawn. Town members retain normal respawn afterward; unaffiliated characters
+retain Game Over/new-character acknowledgement after choosing to finish.
+Reconnect keeps the deadline and KO record; offline bodies still use the existing
+300second disconnect grace, rather than the KO deadline causing earlier death.
+
+## Needs and regeneration
+
+Damage is proportional to maximum HP: empty hunger and empty thirst each deal
+0.5%/3seconds; Sick100 deals1%/3seconds. Rates add and integrate across Needs updates,
+independent of frame rate. Survival damage bypasses armor/dodge. Normal minute
+regeneration checks the actual Food/Water/Sick values and is disabled by any active
+need damage. The HUD updates health normally.
+
+## Daily zombie progression
+
+DayClockService publishes WorldDay, starting at1. Each real midnight crossed by
+the advancing game clock increments it; directly setting admin clock hour does not
+create free days. The initial game day has zombie level0; each completed day adds
+one level and one flat pre-critical melee damage. Level HP follows the existing
+attribute/level formula (+4MaxHP/level). Existing zombies retain their health
+fraction; new spawns use the current day. Night attribute bonuses remain.
+
+The handbook has a separate Zombies tab in EN/UK/RU, also explaining rescue,
+voluntary respawn, current disabled zombie poisoning and percentage need damage.
+No profanity is included in game text.
+
+Tests cover actual damage/cure consumption, craft counts/Doctor gate, carrier
+ownership/reach/LOS/bed rejection, nonduplicating KO loot, voluntary respawn and
+reconnect, bed progression/regen, day transitions, needs scaling, doubled stamina,
+localization and the five-tab help layout. Visual carrying/bed placement still
+requires a Studio multiplayer playtest with the authored character and beds.

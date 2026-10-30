@@ -11,7 +11,7 @@ local Beds=require(script.Parent.HospitalBedService)
 local Animation=require(script.Parent.InteractionAnimationService)
 local Service={}
 local records={}
-local transient={MapOpen=true,HelpOpen=true,HelpHidden=true,HelpPreferenceReady=true,HelpPreferenceStatus=true,Money=true,TradeOpen=true,InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
+local transient={MapOpen=true,HelpOpen=true,HelpHidden=true,HelpPreferenceReady=true,HelpPreferenceStatus=true,Money=true,TradeOpen=true,InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,PlayerContextOpen=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
 local function disconnect(record)
  if record.HealthConnection then record.HealthConnection:Disconnect();record.HealthConnection=nil end
 end
@@ -26,6 +26,7 @@ local function corpse(record)
  if not record.Attributes.TownID then record.Attributes.OutcastEnd=true end
 end
 local function leave(player)
+ if player.Character and (player.Character:GetAttribute("CarryingUserId") or player.Character:GetAttribute("CarriedByUserId")) then require(script.Parent.CarryService).ReleasePlayer(player) end
  Beds.Leave(player)
  if player.Character then Animation.Cancel(player.Character) end
  local record={UserID=player.UserId,DisplayName=player.DisplayName,Attributes=player:GetAttributes(),Team=player.Team,Inventory=Inventory.Export(player)}
@@ -77,7 +78,6 @@ local function leave(player)
   if value<=0 then corpse(record) end
  end)
  local timeout=Config.ReconnectGraceSeconds
- if record.Knockout then timeout=math.min(timeout,math.max(0,(body:GetAttribute("KnockoutEndsAt") or 0)-workspace:GetServerTimeNow())) end
  task.delay(timeout,function() if records[record.UserID]==record then corpse(record) end end)
  if health.Health<=0 then corpse(record) end
 end
@@ -90,7 +90,6 @@ local function added(player)
   if player.Parent~=Players or records[player.UserId]~=record then return end
   if record.Body then
    local deadline=record.Body:GetAttribute("OfflineUntil") or 0
-   if record.Knockout then deadline=math.min(deadline,record.Body:GetAttribute("KnockoutEndsAt") or 0) end
    local health=record.Body:FindFirstChildOfClass("Humanoid")
    if workspace:GetServerTimeNow()>=deadline or not health or health.Health<=0 then corpse(record) end
   end

@@ -97,6 +97,7 @@ function Service.Remove(player, id, count,key)
  return true, conditions,data
 end
 function Service.Equip(player, id,key,uid)
+ if player.Character and player.Character:GetAttribute("CarryingUserId") and ItemConfig.Items[id] and ItemConfig.Items[id].Slot=="Hands" then return false end
  if player.Character and player.Character:GetAttribute("InteractionLocked") then return false end
  if typeof(id) ~= "string" or not ItemConfig.Items[id] or not Visuals.Validate(id) then return false end
  local requirements=ItemConfig.Items[id].Requirements
@@ -219,6 +220,7 @@ function Service.UnloadMagazine(player,kind)
 end
 function Service.Refresh(player) update(player) end
 function Service.GetWeapon(player)
+ if player.Character and player.Character:GetAttribute("CarryingUserId") then return nil end
  local state = states[player]
  local definition=state and ItemConfig.Items[state.Equipment.Hands]
  if definition and definition.Requirements and not require(script.Parent.ProgressionService).Meets(player,definition.Requirements) then return nil end

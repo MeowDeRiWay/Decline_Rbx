@@ -13,8 +13,8 @@ local Lighting={}
 local workspace={attrs={}}
 function workspace:GetServerTimeNow() return clock end
 function workspace:GetAttribute(k) return self.attrs[k] end
-function workspace:SetAttribute(k,v) self.attrs[k]=v;if self.changed then self.changed() end end
-function workspace:GetAttributeChangedSignal() return {Connect=function(_,fn) workspace.changed=fn end} end
+function workspace:SetAttribute(k,v) local old=self.attrs[k];self.attrs[k]=v;if old~=v and self.changed and self.changed[k] then self.changed[k]() end end
+function workspace:GetAttributeChangedSignal(k) return {Connect=function(_,fn) workspace.changed=workspace.changed or {};workspace.changed[k]=fn end} end
 local Run={Heartbeat={Connect=function(_,fn) beat=fn end}}
 local game={GetService=function(_,name) return name=="Lighting" and Lighting or Run end}
 '''
@@ -33,8 +33,8 @@ clock=1500;beat(1);assert(Lighting.ClockTime==18 and workspace.attrs.IsNight)
 assert(hp.MaxHealth==36 and hp.Health==36 and m.attrs.Intelligence==3 and m.attrs.Luck==7 and m.attrs.Strength==6)
 hp.Health=18
 clock=3300;beat(1);assert(Lighting.ClockTime==6 and not workspace.attrs.IsNight)
-assert(hp.MaxHealth==24 and hp.Health==12 and m.attrs.Intelligence==1,"transition preserves health fraction and base attributes")
-clock=3600;beat(1);assert(Lighting.ClockTime==8,"full day lasts exactly3600seconds")
+assert(hp.MaxHealth==28 and hp.Health==14 and m.attrs.Intelligence==1,"transition preserves health fraction and base attributes")
+clock=3600;beat(1);assert(Lighting.ClockTime==8 and workspace.attrs.WorldDay==2 and m.attrs.CharacterLevel==1 and m.attrs.DailyDamageBonus==1,"one-hour day adds level/HP and flat damage")
 hp.Health=0;clock=5100;beat(1);assert(hp.Health==0,"night cannot revive a corpse")
 print("PASS: one-hour day cycle, dawn/dusk, all zombie attributes +2, health fraction, no corpse revival")
 '''

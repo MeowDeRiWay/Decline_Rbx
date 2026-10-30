@@ -32,7 +32,7 @@ RunService.Heartbeat:Connect(function(dt)
   if not reserve or reserve.Character~=character then reserve={Character=character,Value=maximum,Exhausted=false};reserves[player]=reserve end
   local moving=humanoid.MoveDirection.Magnitude>.01
   local running
-  reserve.Value,reserve.Exhausted,running=Sprint.Step(reserve.Value,maximum,reserve.Exhausted,wantsRun,moving,allowed,dt)
+  reserve.Value,reserve.Exhausted,running=Sprint.Step(reserve.Value,maximum,reserve.Exhausted,wantsRun,moving,allowed,dt,character:GetAttribute("CarryingUserId") and 2 or 1)
   local value=math.floor(reserve.Value*10)/10
   if character:GetAttribute("SprintRemaining")~=value then character:SetAttribute("SprintRemaining",value) end
   if character:GetAttribute("SprintMaximum")~=maximum then character:SetAttribute("SprintMaximum",maximum) end

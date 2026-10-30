@@ -36,8 +36,11 @@ cases='''
 local body=prepare(a,nil)
 Service.Knockout(a,body)
 assert(body:GetAttribute("Knockout") and not a:GetAttribute("OutcastEnd"))
+assert(not Service.RequestRespawn(a),"respawn locked before deadline")
 advance(119);assert(not a:GetAttribute("OutcastEnd") and extracted==0 and spawned==0)
-advance(1);assert(a:GetAttribute("OutcastEnd") and extracted==1 and body:GetAttribute("IsDead"))
+advance(1);assert(body:GetAttribute("Knockout") and extracted==0,"deadline cannot kill a patient")
+assert(Service.RequestRespawn(a))
+assert(a:GetAttribute("OutcastEnd") and extracted==1 and body:GetAttribute("IsDead"))
 local corpse;for c,items in pairs(corpses) do corpse=c;assert(items.Items.Musket==1) end
 assert(corpse and corpse.Parent==workspace.PlayerCorpses and corpse:GetAttribute("BodyPoseKind")=="Death","corpse changes from fetal KO to relaxed death")
 advance(600);assert(spawned==0,"no default or town respawn before acknowledgement")
@@ -49,10 +52,13 @@ assert(a.Character==nil and body.destroyed and not corpse.destroyed,"remove hidd
 assert(fresh==1 and resets==1 and funds==1 and creation==1)
 assert(not a:GetAttribute("OutcastEnd") and not a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CharacterLevel")==0 and a:GetAttribute("Money")==0)
 assert(not Service.RestartOutcast(a) and fresh==1,"replayed acknowledgement cannot reset the new character")
-local citizen=prepare(b,1);Service.Knockout(b,citizen);advance(120)
+local citizen=prepare(b,1);Service.Knockout(b,citizen)
+local moved=CFrame.new(Vector3.new(5,2,3));assert(Service.MoveKnockout(b,moved) and Service.KnockoutRecord(citizen).Pivot==moved)
+advance(120)
 assert(not b:GetAttribute("OutcastEnd") and spawned==0)
+assert(citizen:GetAttribute("Knockout") and Service.RequestRespawn(b))
 advance(5);assert(spawned==1,"town member keeps normal respawn")
-local revived=prepare(c,nil);Service.Knockout(c,revived);local old=timers[#timers]
+local revived=prepare(c,nil);Service.Knockout(c,revived);local old={Run=function() end}
 assert(Service.Revive(c,0,0));old.Run();assert(not c:GetAttribute("OutcastEnd"),"successful doctor revival cancels terminal death")
 -- Reconnection can restore the authoritative ending attribute without an old shell.
 d.Character=nil;d:SetAttribute("TownID",nil);d:SetAttribute("OutcastEnd",true)

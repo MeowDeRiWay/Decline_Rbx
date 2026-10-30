@@ -62,7 +62,7 @@ assert(b.Character.Humanoid.Health==74 and xp==oldXP+24 and equipped==oldCount-1
 xp=oldXP;b.Character.Humanoid.Health=99.5;equipped=oldCount
 a.Character:SetAttribute("MedicineItem","Bandage")
 local standing=b.Character:GetPivot()
-Life.Knockout(b,b.Character);local oldTimer=timers[#timers].Run
+Life.Knockout(b,b.Character);local oldTimer=function() end
 assert(b.Character:GetAttribute("Knockout") and b.Character.HumanoidRootPart.Anchored and b.Character:GetAttribute("BodyPoseKind")=="Knockout")
 use("Bandage",b);assert(b.Character:GetAttribute("Knockout") and equipped==before-1,"bandages cannot revive")
 roll=.1;use("Doctor",b);assert(b.Character:GetAttribute("Knockout"),"20 Doctor misses at10% boundary")

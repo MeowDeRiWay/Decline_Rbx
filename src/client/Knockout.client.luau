@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local ContextActionService=game:GetService("ContextActionService")
 local StarterGui=game:GetService("StarterGui")
+local remote=game:GetService("ReplicatedStorage"):WaitForChild("PlayerContextAction")
 local resetAllowed
 local player=Players.LocalPlayer
 local gui=Instance.new("ScreenGui")
@@ -22,6 +23,10 @@ label.Parent=gui
 local corner=Instance.new("UICorner")
 corner.CornerRadius=UDim.new(0,10)
 corner.Parent=label
+local respawn=Instance.new("TextButton")
+respawn.AnchorPoint=Vector2.new(.5,0);respawn.Position=UDim2.new(.5,0,0,138);respawn.Size=UDim2.fromOffset(220,36)
+respawn.BackgroundColor3=Color3.fromRGB(57,57,44);respawn.TextColor3=Color3.fromRGB(199,205,171);respawn.Font=Enum.Font.RobotoMono;respawn.TextSize=16;respawn.Text="Respawn";respawn.Visible=false;respawn.Parent=gui
+respawn.Activated:Connect(function() remote:FireServer("Respawn") end)
 ContextActionService:BindActionAtPriority("KnockoutNoMovement",function()
  local character=player.Character
  return character and character:GetAttribute("Knockout") and Enum.ContextActionResult.Sink or Enum.ContextActionResult.Pass
@@ -34,7 +39,9 @@ RunService.RenderStepped:Connect(function()
   local ok=pcall(function() StarterGui:SetCore("ResetButtonCallback",allowed) end)
   if ok then resetAllowed=allowed end
  end
+ respawn.Visible=false
  if not label.Visible then return end
  local seconds=math.max(0,math.ceil((character:GetAttribute("KnockoutEndsAt") or 0)-workspace:GetServerTimeNow()))
- label.Text=string.format("Knocked out\nDeath in %02d:%02d",math.floor(seconds/60),seconds%60)
+ respawn.Visible=seconds==0
+ label.Text=seconds==0 and "Knocked out\nRespawn available" or string.format("Knocked out\nRespawn in %02d:%02d",math.floor(seconds/60),seconds%60)
 end)

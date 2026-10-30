@@ -33,5 +33,8 @@ GameConfig.WorkConsumption = 0.01
 GameConfig.WeightConsumption = 0.001
 GameConfig.SickThreshold = 50
 GameConfig.SickGrowth = 0.05
-GameConfig.NeedsDamage = 0.1
+GameConfig.NeedsDamage = 0.1 -- Legacy fallback for external rules callers.
+GameConfig.NeedsDamagePeriod = 3
+GameConfig.StarvationDamageFraction = .005
+GameConfig.SicknessDamageFraction = .01
 return GameConfig

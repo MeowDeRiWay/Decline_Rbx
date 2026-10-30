@@ -149,8 +149,11 @@ local function returnText(definition)
  table.sort(names)
  return #names>0 and ("Returns "..table.concat(names,", ")) or ""
 end
+local MedicalRules=require(ReplicatedStorage.Shared.MedicalRules)
+local MedicalConfig=require(ReplicatedStorage.Shared.MedicalConfig)
 local function effectText(definition)
  local effects = definition.Consume
+ if effects and effects.CurePoison then return string.format("Poison cure chance %g%%",MedicalRules.CureChance(player:GetAttribute("Luck"),MedicalConfig)*100) end
  if definition.CarryBonusKg then return string.format("Carrying capacity +%g kg",definition.CarryBonusKg) end
  if definition.Armor then
   return string.format("Armor %g / %g%%\nAbsorption / resistance",definition.Armor.Absorption or 0,(definition.Armor.Resistance or 0)*100)

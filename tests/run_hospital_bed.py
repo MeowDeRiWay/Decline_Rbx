@@ -3,8 +3,12 @@ from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/HospitalBedService.luau').read_text()
-source=re.sub(r'local (Items|Interaction|Journal)=require[^\n]+\n','',source)
+source=re.sub(r'local (Items|Interaction|Journal|Debuffs)=require[^\n]+\n','',source)
+source=source.replace('require(script.Parent.BodyFallService)','BodyFall').replace('require(script.Parent.PlayerLifeService)','Life')
 setup='''
+local Debuffs={Treat=function(c,dt) local sick=math.max(0,(c:GetAttribute("Sick") or 0)-2*dt);c:SetAttribute("Sick",sick);if sick==0 then c:SetAttribute("Poisoned",false) end;return sick==0 end}
+local BodyFall={Restore=function() end}
+local Life={Revive=function(p) p.Character:SetAttribute("Knockout",false);p.Character.Humanoid.Health=2;return true end}
 local regenMessages={}
 local Journal={Send=function(_,text) table.insert(regenMessages,text) end}
 local Items={PickupDistance=2}
@@ -29,6 +33,14 @@ local blocked=false
 function workspace:Raycast() return blocked and {Instance=wall} or nil end
 '''
 cases='''
+local originalRay=workspace.Raycast
+function workspace:Raycast(_,_,params)
+ if not table.find(params.FilterDescendantsInstances,b.Character) then return {Instance=b.Character.HumanoidRootPart} end
+end
+b.Character:SetAttribute("Knockout",true)
+assert(Beds.PlacePatient(a,b,bed),"the carried patient must not block LOS to their own bed")
+assert(Beds.Leave(b));b.Character:SetAttribute("Knockout",false);b.Character.HumanoidRootPart.Anchored=false
+workspace.Raycast=originalRay
 blocked=true;assert(not Beds.Use(a,bed),"wall blocks entering bed")
 blocked=false;bed.Position=Vector3.new(3,0,0);assert(not Beds.Use(a,bed),"two-stud reach enforced")
 bed.Position=Vector3.zero
@@ -37,25 +49,27 @@ local start=a.Character:GetPivot()
 assert(Beds.Use(a,bed) and a.Character:GetAttribute("HospitalResting") and a.Character.HumanoidRootPart.Anchored)
 assert(not a.Character.HumanoidRootPart.CanCollide and bed:GetAttribute("HospitalBedUserId")==a.UserId)
 assert(not Beds.Use(b,bed),"one patient per bed")
-clock+=19;Beds.Step();assert(a.Character.Humanoid.Health==20)
-clock+=1;Beds.Step();assert(a.Character.Humanoid.Health==26 and a.Character:GetAttribute("Sick")==34,"default3x means6HP and6Sick every20seconds")
+a.Character:SetAttribute("Poisoned",true)
+clock+=19;Beds.Step();assert(a.Character.Humanoid.Health==20 and a.Character:GetAttribute("Sick")==2)
+clock+=1;Beds.Step();assert(a.Character:GetAttribute("Sick")==0 and not a.Character:GetAttribute("Poisoned") and a.Character.Humanoid.Health==20,"clear consequences before HP regeneration")
+clock+=20;Beds.Step();assert(a.Character.Humanoid.Health==26)
 assert(regenMessages[#regenMessages]=="Regeneration restored 6 HP.")
 a.Character.Humanoid.Health=49;clock+=20;Beds.Step()
-assert(regenMessages[#regenMessages]=="Regeneration restored 1 HP.","reports actual healing, not requested amount")
+assert(regenMessages[#regenMessages]=="Regeneration restored 1 HP.")
 local messageCount=#regenMessages
-assert(a.Character.Humanoid.Health==50 and a.Character:GetAttribute("Sick")==28,"Sick uses full regeneration even when HP is capped")
-clock+=20;Beds.Step();assert(#regenMessages==messageCount,"full HP does not spam healed messages");assert(a.Character:GetAttribute("Sick")==22,"Sick treatment continues at full HP")
+clock+=20;Beds.Step();assert(#regenMessages==messageCount)
 assert(Beds.Use(a,nil) and a.Character:GetPivot()==start and not a.Character.HumanoidRootPart.Anchored)
 assert(a.Character.HumanoidRootPart.CanCollide and a.Character.Humanoid.AutoRotate and not bed:GetAttribute("HospitalBedUserId"),"get up restores pose, controls and vacancy")
 bed:SetAttribute("HospitalRegenMultiplier",6)
-assert(Beds.Use(a,bed));clock+=9;Beds.Step();assert(a.Character:GetAttribute("Sick")==22)
-clock+=1;Beds.Step();assert(a.Character:GetAttribute("Sick")==16,"configured6x ticks every10seconds")
+assert(Beds.Use(a,bed));a.Character.Humanoid.Health=20;clock+=9;Beds.Step();assert(a.Character.Humanoid.Health==20)
+clock+=1;Beds.Step();assert(a.Character.Humanoid.Health==26,"configured6x ticks every10seconds")
 Beds.Leave(a);assert(Beds.Use(b,bed));b.Character:SetAttribute("Sick",2)
 clock+=10;Beds.Step();assert(b.Character:GetAttribute("Sick")==0,"Sick clamps at zero")
 b.Character.Humanoid.Health=0;assert(Beds.Leave(b,true))
 assert(not b.Character.HumanoidRootPart.Anchored,"KO transition restores upright state before knockout captures pose")
 b.Character.Humanoid.Health=20;assert(Beds.Use(b,bed));b.Character:SetAttribute("Knockout",true)
-Beds.Step();assert(not bed:GetAttribute("HospitalBedUserId") and b.Character.Humanoid.Health==20,"KO frees bed without revival or healing")
+clock+=10;Beds.Step();assert(bed:GetAttribute("HospitalBedUserId")==b.UserId and not b.Character:GetAttribute("Knockout"),"bed revives and retains patient")
+Beds.Leave(b)
 b.Character:SetAttribute("Knockout",false);b.Character.HumanoidRootPart.Anchored=false
 assert(Beds.Use(b,bed));bed:SetAttribute("HospitalBed",false);Beds.Step()
 assert(not b.Character:GetAttribute("HospitalResting") and not b.Character.HumanoidRootPart.Anchored,"disabled bed releases patient")

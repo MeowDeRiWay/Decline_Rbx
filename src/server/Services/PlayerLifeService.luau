@@ -24,6 +24,7 @@ local function freeze(character)
 end
 function Service.Finish(player,character)
  if finished[character] or player.Character~=character then return end
+ if character:GetAttribute("CarryingUserId") or character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
  Beds.Leave(player,true)
  Animation.Cancel(character)
  finished[character]=true
@@ -70,6 +71,7 @@ function Service.Finish(player,character)
 end
 function Service.Knockout(player,character)
  if character:GetAttribute("Knockout") or finished[character] then return end
+ if character:GetAttribute("CarryingUserId") or character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
  Beds.Leave(player,true)
  Animation.Cancel(character)
  local record={Pivot=character:GetPivot(),Parts={},BlocksVision=character:GetAttribute("BlocksVision")}
@@ -89,9 +91,7 @@ function Service.Knockout(player,character)
  Chests.Close(player)
  freeze(character)
  BodyFall.Play(character,"Knockout")
- task.delay(120,function()
-  if player.Parent==Players and player.Character==character and knocked[character]==record and character:GetAttribute("Knockout") then Service.Finish(player,character) end
- end)
+
 end
 function Service.Revive(player,lockSeconds,healingBonus)
  local character=player.Character
@@ -99,6 +99,7 @@ function Service.Revive(player,lockSeconds,healingBonus)
  local hp=character and character:FindFirstChildOfClass("Humanoid")
  if not record or not hp or hp.Health<=0 or finished[character] or not character:GetAttribute("Knockout") then return false end
  if workspace:GetServerTimeNow()<(player:GetAttribute("ReviveLockedUntil") or 0) then return false end
+ if character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
  knocked[character]=nil
  BodyFall.Restore(character)
  character:PivotTo(record.Pivot)
@@ -109,18 +110,26 @@ function Service.Revive(player,lockSeconds,healingBonus)
  hp:ChangeState(Enum.HumanoidStateType.GettingUp)
  character:SetAttribute("Knockout",false);character:SetAttribute("KnockoutEndsAt",nil)
  character:SetAttribute("Health",hp.Health);character:SetAttribute("BlocksVision",record.BlocksVision)
+ if character:GetAttribute("HospitalResting") then Beds.Reposition(player) end
  player:SetAttribute("ReviveLockedUntil",workspace:GetServerTimeNow()+math.max(0,lockSeconds-(player:GetAttribute("ReviveLockReduction") or 0)))
  return true
 end
--- Reconnect clones keep the original knockout pose/flags and death deadline.
+-- The deadline unlocks voluntary respawn; it never kills an online patient.
+function Service.RequestRespawn(player)
+ local character=player.Character
+ if not character or not character:GetAttribute("Knockout") or not knocked[character] or workspace:GetServerTimeNow()<(character:GetAttribute("KnockoutEndsAt") or math.huge) then return false end
+ Service.Finish(player,character);return true
+end
+function Service.MoveKnockout(player,frame)
+ local character=player.Character;local record=character and knocked[character]
+ if not record or not character:GetAttribute("Knockout") then return false end
+ BodyFall.Restore(character);character:PivotTo(frame);record.Pivot=frame
+ freeze(character);BodyFall.Play(character,"Knockout");return true
+end
 function Service.KnockoutRecord(character) return knocked[character] end
 function Service.ResumeKnockout(player,character,record)
  knocked[character]=record
  BodyFall.Play(character,"Knockout")
- local remaining=math.max(0,(character:GetAttribute("KnockoutEndsAt") or 0)-workspace:GetServerTimeNow())
- task.delay(remaining,function()
-  if player.Parent==Players and player.Character==character and knocked[character]==record and character:GetAttribute("Knockout") then Service.Finish(player,character) end
- end)
 end
 function Service.OfflineCorpse(character,storage,userID,displayName)
  Animation.Cancel(character)

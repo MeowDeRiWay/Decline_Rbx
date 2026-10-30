@@ -32,6 +32,8 @@ ItemConfig.Items = {
   Description = "Salvaged scrap metal.",
  },
  Coal = {Name="Charcoal",Weight=.2,Description="Charcoal made by burning tree logs. Used for smelting and ammunition."},
+ MedicalAlcohol={Name="Medical alcohol",Weight=.6,Description="Medical alcohol used to prepare antiseptic. Not drinking water."},
+ Antiseptic={Name="Antiseptic",Weight=.6,ConsumeAction="Drink",EmptyContainer="EmptyBottle",ReturnItems={EmptyBottle=1},Consume={CurePoison=true},Description="One dose attempts to cure poisoning: 50% base chance plus 5 percentage points per Luck. Existing sickness remains."},
  Chemicals = {Name="Chemicals",Weight=.2,Description="Scavenged chemical compounds used to produce ammunition."},
  Iron = {Name="Iron",Weight=1,ResourceMaterial="Iron",Description="Smelted iron used for industrial firearms and ammunition."},
  MiliArmor1={Name="Military armor",Weight=5,Slot="Body",Armor={Absorption=6,Resistance=.3},Description="The most talented craftsmen among the remnants of this world began using Kevlar to protect against bites from the infected, adding iron plates to stop bullets."},

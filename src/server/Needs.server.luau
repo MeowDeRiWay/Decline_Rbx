@@ -4,6 +4,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local Life = require(script.Parent.Services.PlayerLifeService)
 local Rules = require(ReplicatedStorage.Shared:WaitForChild("NeedsRules"))
+local Debuffs=require(script.Parent.Services.DebuffService)
+local Medical=require(ReplicatedStorage.Shared.MedicalRules)
 local active = {}
 local function numberAttribute(character, name, fallback)
  local value = character:GetAttribute(name)
@@ -58,12 +60,14 @@ RunService.Heartbeat:Connect(function(dt)
   if character:GetAttribute("Working") == true then rate += Config.WorkConsumption end
   local weight = math.max(0, numberAttribute(character, "LoadKg", 0))
   rate += weight * Config.WeightConsumption
-  local food, water, sick, damage = Rules.Step(numberAttribute(character, "Food", 100), numberAttribute(character, "Water", 100), numberAttribute(character, "Sick", 0), rate, step, Config)
+  Debuffs.Step(character,step)
+  local food, water, sick, damage = Rules.Step(numberAttribute(character, "Food", 100), numberAttribute(character, "Water", 100), numberAttribute(character, "Sick", 0), rate, step, Config,humanoid.MaxHealth,character:GetAttribute("HospitalResting"),character:GetAttribute("Poisoned"))
   character:SetAttribute("Food", food)
   character:SetAttribute("Water", water)
   character:SetAttribute("Sick", sick)
   character:SetAttribute("LoadKg", weight)
   -- Direct health subtraction ensures survival damage is not blocked by spawn ForceField.
-  if damage > 0 then Life.Damage(player,humanoid,damage) end
+  character:SetAttribute("NeedsHarmful",Medical.Harmful(food,water,sick))
+  if damage > 0 and not character:GetAttribute("HospitalResting") then Life.Damage(player,humanoid,damage,true,true) end
  end
 end)

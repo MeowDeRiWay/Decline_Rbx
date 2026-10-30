@@ -56,24 +56,24 @@ for _,o in ipairs(objects) do
  if o.Name=="PageHeading" then heading=o end
  if o.Name=="PageBody" then body=o end
  if o.Name=="HelpScroll" then scroll=o end
- for index=1,4 do if o.Name=="HelpTab"..index then tabs[index]=o end end
+ for index=1,5 do if o.Name=="HelpTab"..index then tabs[index]=o end end
  if o.Name=="HowToPlayButton" then help=o end
  if o.Text=="Got it" then done=o end
  if o.ClassName=="TextButton" and string.find(o.Text or "","Don't show",1,true) then check=o end
 end
 assert(gui and check and help and done and not gui.Enabled)
-assert(#tabs==4 and tabs[1].Attributes.Selected and heading.Text=="CONTROLS")
+assert(#tabs==5 and tabs[1].Attributes.Selected and heading.Text=="CONTROLS")
 assert(string.find(body.Text,"4 - Doctor",1,true))
-local expected={"CONTROLS","GETTING STARTED & BUILDS","SOCIETY","RESOURCES"}
-for index=1,4 do
+local expected={"CONTROLS","GETTING STARTED & BUILDS","SOCIETY","RESOURCES","ZOMBIES"}
+for index=1,5 do
  scroll.CanvasPosition={0,999}
  tabs[index].Activated:Fire()
  assert(heading.Text==expected[index] and tabs[index].Attributes.Selected)
- for other=1,4 do assert(tabs[other].Attributes.Selected==(other==index)) end
+ for other=1,5 do assert(tabs[other].Attributes.Selected==(other==index)) end
  assert(scroll.CanvasPosition==Vector2.zero,"switching tabs resets scroll")
  assert(body.Size[1]==616 and scroll.CanvasSize[2]==measures[#measures].Height+24,"canvas covers the full wrapped page")
 end
-assert(string.find(body.Text,"$1 x player level",1,true))
+assert(string.find(body.Text,"+1 damage",1,true) and string.find(body.Text,"DO NOT apply poisoning",1,true))
 assert(scroll.Active and scroll.ClipsDescendants and scroll.AutomaticCanvasSize==Enum.AutomaticSize.None)
 for _,fn in ipairs(jobs) do fn() end
 if mode=="hidden" then
@@ -96,7 +96,7 @@ assert(scale.Scale>0 and scale.Scale<1,"small screens fit the complete panel")
 check.Activated:Fire();assert(calls[#calls]==false,"can reenable at next login")
 help.Activated:Fire();assert(not gui.Enabled)
 player:SetAttribute("InventoryOpen",true);help.Activated:Fire();assert(not gui.Enabled,"do not overlap another menu")
-print("PASS: help UI "..mode..", startup ordering, movement blocking/cleanup, checkbox, manual reopen, four tabs and wrapped scroll extent")
+print("PASS: help UI "..mode..", startup ordering, movement blocking/cleanup, checkbox, manual reopen, five tabs and wrapped scroll extent")
 '''
 with tempfile.TemporaryDirectory() as d:
  for mode in ['show','hidden']:
