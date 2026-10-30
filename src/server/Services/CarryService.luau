@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local Run=game:GetService("RunService")
 local Shared=game:GetService("ReplicatedStorage").Shared
 local Config=require(Shared.MedicalConfig)
+local Pose=require(Shared.CarryPose)
 local Life=require(script.Parent.PlayerLifeService)
 local Fall=require(script.Parent.BodyFallService)
 local Beds=require(script.Parent.HospitalBedService)
@@ -45,7 +46,7 @@ function Service.Pickup(player,patient)
  if hit and not hit.Instance:IsDescendantOf(character) then return false end
  Chests.Close(player);require(script.Parent.CraftingService).Close(player)
  Inventory.ClearHands(player)
- Fall.Cancel(character)
+ if not Fall.Carry(character,Pose.Frame(player.Character,body,root)) then return false end
  local record={Patient=patient,Character=character,CarrierCharacter=player.Character,Upright=root.CFrame}
  carrying[player]=record;carriedBy[patient]=player
  character:SetAttribute("CarriedByUserId",player.UserId);player.Character:SetAttribute("CarryingUserId",patient.UserId)
@@ -62,7 +63,15 @@ Run.Heartbeat:Connect(function()
  for player,record in pairs(carrying) do
   local root=active(player)
   if not root or player.Character~=record.CarrierCharacter or record.Patient.Parent~=Players or record.Patient.Character~=record.Character or not record.Character.Parent or not record.Character:GetAttribute("Knockout") then Service.Drop(player)
-  else record.Upright=root.CFrame;record.Character:PivotTo(root.CFrame*CFrame.new(0,.35,-.6)*CFrame.Angles(0,0,math.pi/2)) end
+  else
+   record.Upright=root.CFrame
+   local body=record.Character:FindFirstChild("HumanoidRootPart")
+   if not body then Service.Drop(player)
+   else
+    local target=Pose.Frame(record.CarrierCharacter,body,root)
+    record.Character:PivotTo(target*body.CFrame:Inverse()*record.Character:GetPivot())
+   end
+  end
  end
 end)
 Players.PlayerRemoving:Connect(Service.ReleasePlayer)

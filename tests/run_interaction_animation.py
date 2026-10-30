@@ -8,6 +8,7 @@ s=(root/'tests/rig_math.fixture.luau').read_text()+helpers
 for alias,path in [('Pose','src/shared/CharacterPose.luau'),('Rig','src/shared/CharacterRig.luau'),('Foot','src/shared/FootPlant.luau'),('Punch','src/shared/UnarmedPose.luau'),('geometry','tests/character_geometry.fixture.luau')]: s+='\nlocal '+alias+'='+module(path)
 s+='\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')
 s+='\nlocal HandPose='+module('src/shared/HandActionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')
+s+='\nlocal CarryPose='+module('src/shared/CarryPose.luau')
 s+='\n'+(root/'tests/character_animation.fixture.luau').read_text()
 s+=r'''
 function CFrame.lookAt(position,target)
@@ -89,7 +90,7 @@ service=(root/'src/server/Services/InteractionAnimationService.luau').read_text(
 service=re.sub(r'local (Shared|Pose|Interaction|Motion)=.*\n','',service)
 s+='\nlocal Animation=(function()\nlocal Pose=Interact\n'+service+'\nend)()'
 controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose)\s*=.*\n','',controller)
 s+='\nlocal Driver=(function()\n'+controller+'\nend)()\nDriver.Start(owner,false)'
 s+=r'''
 local object=target();local contacts=0

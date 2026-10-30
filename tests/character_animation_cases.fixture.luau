@@ -99,3 +99,10 @@ assert(wrist("Left").Z<-.7 and wrist("Right").Z>-.4,"next accepted punch uses th
 serverTime+=2;RunService.PreSimulation:Fire(1/30)
 assert(wrist("Left").Y<-.3 and wrist("Right").Y<-.3,"both arms return to idle after combat")
 print("PASS: alternating unarmed punches, opposite-hand guard, synchronized contact and idle recovery")
+
+c:SetAttribute("CarryingUserId",123);RunService.PreSimulation:Fire(1/30)
+local supporting,free=wrist("Left"),wrist("Right")
+assert(supporting.X<-root.Size.X/2 and supporting.Y>0,"left arm supports the patient on the left shoulder")
+assert(free.Y<-.3,"right arm stays free instead of cradling the patient in both arms")
+c:SetAttribute("CarryingUserId",nil)
+print("PASS: carrier left-arm shoulder support and free right arm")

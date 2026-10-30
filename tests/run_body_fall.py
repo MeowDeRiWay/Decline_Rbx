@@ -9,6 +9,7 @@ s+='\nlocal Pose='+module('src/shared/CharacterPose.luau')
 s+='\nlocal Rig='+module('src/shared/CharacterRig.luau')
 s+='\nlocal Fall='+module('src/shared/BodyFallPose.luau').replace('local Pose=require(script.Parent.CharacterPose)','')
 s+='\nlocal geometry='+module('tests/character_geometry.fixture.luau')
+s+='\nlocal CarryPose='+module('src/shared/CarryPose.luau')
 s+=r'''
 -- Tween endpoint integration; interpolation itself is Roblox's CFrame:Lerp.
 function cm:Lerp(other,a) assert(a==0 or a==1);return a==0 and self or other end
@@ -156,6 +157,28 @@ for _,kind in ipairs({"Knockout","Death"}) do
  near(limb.CFrame:ToObjectSpace(sleeve.CFrame).Position,offset.Position)
  near(torso.CFrame:ToObjectSpace(backpack.CFrame).Position,backOffset.Position)
 end
+local carrier,carrierRoot=build(.7)
+local patient,patientRoot,patientJoints=build(.7)
+Service.Play(patient,"Knockout");local stale=tweens[#tweens]
+local shoulderFrame=CarryPose.Frame(carrier,patientRoot,carrierRoot)
+assert(Service.Carry(patient,shoulderFrame) and stale.Cancelled)
+stale:Finish()
+near(patientRoot.CFrame.Position,shoulderFrame.Position)
+assert(patient:GetAttribute("BodyPoseKind")=="Carried" and patientRoot.CFrame.LookVector.Y<-.99,"patient is prone over shoulder, never curled on side")
+local localPoint=carrierRoot.CFrame:PointToObjectSpace(patientRoot.Position)
+assert(localPoint.X<-.2 and localPoint.Y>.4,"patient is on the left shoulder above carrier torso")
+for _,j in ipairs(patientJoints) do if j.Name:find("Knee") then assert(j.C0.LookVector:Dot(Fall.Rest(j).LookVector)>.8,"carried knees are relaxed, not fetal") end end
+assert(patient:FindFirstChild("LeftLowerArm").Position.Y<patientRoot.Position.Y-.15 and patient:FindFirstChild("RightLowerArm").Position.Y<patientRoot.Position.Y-.15,"both unconscious arms hang down")
+assert(patient:FindFirstChild("LeftLowerLeg").Position.Y<patientRoot.Position.Y-.2,"unconscious legs hang behind the shoulder")
+Service.Restore(patient);assert(not patient:GetAttribute("BodyPoseKind"))
+Service.Play(patient,"Knockout");tweens[#tweens]:Finish();grounded(patient)
+Service.Carry(armored,CarryPose.Frame(carrier,aroot,carrierRoot))
+near(limb.CFrame:ToObjectSpace(sleeve.CFrame).Position,offset.Position)
+near(torso.CFrame:ToObjectSpace(backpack.CFrame).Position,backOffset.Position)
+Service.Restore(armored)
+near(limb.CFrame:ToObjectSpace(sleeve.CFrame).Position,offset.Position)
+near(torso.CFrame:ToObjectSpace(backpack.CFrame).Position,backOffset.Position)
+print("PASS: left shoulder prone carry, hanging arms/legs, relaxed knees, interrupted KO cancellation, ground drop and attached armor/backpack preservation")
 print("PASS: fetal KO, relaxed death, restore/cancellation, directional zombie falls, head/feet arm poses and final ground contact on authored rig, marked plates, Terrain, ignored walls/furniture/home floors and missing-ground guard")
 '''
 with tempfile.TemporaryDirectory() as d:

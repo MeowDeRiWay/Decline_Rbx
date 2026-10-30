@@ -9,6 +9,7 @@ local Foot=require(Shared:WaitForChild("FootPlant"))
 local Punch=require(Shared:WaitForChild("UnarmedPose"))
 local Items=require(Shared.ItemConfig).Items
 local Interact=require(Shared:WaitForChild("InteractionPose"))
+local CarryPose=require(Shared:WaitForChild("CarryPose"))
 local HandPose=require(Shared:WaitForChild("HandActionPose"))
 local Motion=require(Shared:WaitForChild("WeaponMotion"))
 local Driver={}
@@ -180,12 +181,16 @@ RunService.PreSimulation:Connect(function(dt)
    local offset=shoulder:GetAttribute("StandingOffset") or Vector3.zero
    local upper,lower=shoulder:GetAttribute("UpperVector"),shoulder:GetAttribute("LowerVector")
    if not rest or not upper or not lower or not shoulder.Part0 or not shoulder.Part1 or not elbow.Part0 or not elbow.Part1 then continue end
-   if c:GetAttribute("CarryingUserId") then
-    local target=root.CFrame:PointToWorldSpace(Vector3.new(side=="Left" and -.25 or .25,.2,-.55))
+   if c:GetAttribute("CarryingUserId") and side=="Left" then
+    local target=CarryPose.SupportPoint(c,root)
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
     local s,e=Pose.Arm(upper,lower,delta,Vector3.new(side=="Left" and -1 or 1,-1,.2))
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
+   elseif c:GetAttribute("CarryingUserId") then
+    local swing=math.sin(r.Phase)*r.Amount*.6
+    shoulder.Transform=standing:Inverse()*CFrame.Angles(swing,0,0)*standing
+    elbow.Transform=CFrame.identity
    elseif equipped and (side=="Right" or twoHands) then
     -- Primary hand at the grip; support hand toward the barrel. Clamp reach in IK.
     local support=held:FindFirstChild("LeftHandGrip",true)

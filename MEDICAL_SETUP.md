@@ -65,8 +65,12 @@ weapon activation; all remote actions independently validate on the server.
 Pickup requires an active confirmed carrier, another live knocked-out player,
 3stud distance and clear LOS. Patients on beds, already carried players, chains
 and self-carry are rejected. A carrier's weapon goes into inventory; weapons cannot
-be equipped/used while carrying. Held patients follow the carrier in front with
-an animated supporting-arm pose; their KO deadline does not reset. Running drains
+be equipped/used while carrying. Carried patients lie belly-down over the carrier's left shoulder with relaxed,
+hanging arms and legs. The carrier supports them with the left hand, leaving
+the right arm free. The server applies the replicated Carried C0 pose once and
+moves its root with the shoulder; viewers never reuse the fetal ground pose.
+Armor/backpack/holster attachments retain their body-relative offsets through
+carry, drop and hospital transitions. The KO deadline does not reset. Running drains
 sprint reserve twice as quickly, without changing recovery or ordinary walking.
 
 RMB anywhere while carrying offers Put body down. RMB on a free tagged hospital

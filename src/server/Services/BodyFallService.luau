@@ -13,16 +13,36 @@ local function bodyJoints(model)
  end
  return joints
 end
-function Service.Restore(model)
+local function staticPose(model,frame,kind)
  Service.Cancel(model)
  local root=model:FindFirstChild("HumanoidRootPart")
- if not root then return end
- local joints=bodyJoints(model);local targets={}
- for _,j in ipairs(joints) do targets[j]=Fall.Rest(j);j.C0=targets[j];j.Transform=CFrame.identity end
- for part,cf in pairs(Fall.Solve(root,root.CFrame,joints,targets)) do part.CFrame=cf end
- model:SetAttribute("BodyPoseKind",nil)
+ if not root then return false end
+ local joints=bodyJoints(model)
+ local targets={}
+ if kind then targets=Fall.Targets(joints,kind,false)
+ else for _,j in ipairs(joints) do targets[j]=Fall.Rest(j) end end
+ local offsets,attachments={},{}
+ -- Keep armor, backpacks, holstered weapons and legacy parts attached to the
+ -- same body part when changing from fetal KO to shoulder carry and back.
+ for _,part in ipairs(model:GetDescendants()) do
+  if part:IsA("BasePart") then offsets[part]=root.CFrame:ToObjectSpace(part.CFrame) end
+  if part:IsA("WeldConstraint") and (part.Name=="ArmorWeld" or part.Name=="BackWeld" or part.Name=="HolsterWeld") and part.Part0 and part.Part1 then
+   attachments[part.Part1]={Parent=part.Part0,Offset=part.Part0.CFrame:ToObjectSpace(part.Part1.CFrame)}
+  end
+ end
+ for _,j in ipairs(joints) do j.C0=targets[j];j.Transform=CFrame.identity end
+ local solved=Fall.Solve(root,frame or root.CFrame,joints,targets)
+ for part,attachment in pairs(attachments) do
+  if solved[attachment.Parent] then solved[part]=solved[attachment.Parent]*attachment.Offset end
+ end
+ local rootFrame=frame or root.CFrame
+ for part,offset in pairs(offsets) do part.CFrame=solved[part] or rootFrame*offset end
+ model:SetAttribute("BodyPoseKind",kind)
  model:SetAttribute("BodyFallUprightRotation",nil)
+ return true
 end
+function Service.Restore(model) return staticPose(model,nil,nil) end
+function Service.Carry(model,frame) return staticPose(model,frame,"Carried") end
 -- Only explicitly marked ground plates (or Terrain) support bodies. Skip
 -- intervening furniture/walls instead of treating their top faces as ground.
 local function groundBelow(origin,model)

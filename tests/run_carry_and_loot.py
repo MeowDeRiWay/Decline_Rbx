@@ -11,12 +11,22 @@ function game:GetService(name) if name=="RunService" then return Run end;return 
 local oldNew=CFrame.new
 function CFrame.new(x,y,z) return oldNew(type(x)=="number" and Vector3.new(x,y,z) or x) end
 function CFrame.Angles() return CFrame.new() end
+local oldIndex=cfmeta.__index
+cfmeta.__index=function(frame,key)
+ if key=="Inverse" then return function(self) return CFrame.new(-self.Position.X,-self.Position.Y,-self.Position.Z) end end
+ return oldIndex(frame,key)
+end
+local oldPivot=methods.PivotTo
+function methods:PivotTo(frame)
+ oldPivot(self,frame)
+ local root=self:FindFirstChild("HumanoidRootPart");if root then root.CFrame=frame end
+end
 for _,p in ipairs({a,b,c}) do p:LoadCharacterAsync() end
 b.Character:SetAttribute("Knockout",true);b.Character:SetAttribute("KnockoutEndsAt",clock-100)
 local Config={InteractionDistance=3}
 local moves=0
 local Life={MoveKnockout=function(p,frame) moves+=1;p.Character:PivotTo(frame);return true end}
-local Fall={Cancel=function() end}
+local Fall={Carry=function(c,frame) c:SetAttribute("BodyPoseKind","Carried");c:PivotTo(frame);return true end}
 local allowed=true;local placed
 local Beds={CanPlace=function() return allowed end,PlacePatient=function(_,patient,bed) placed={patient,bed};return true end}
 local Inventory={ClearHands=function() return true end}
@@ -24,7 +34,8 @@ local Chests={Close=function() end}
 local Crafting={Close=function() end}
 '''
 carry=(root/'src/server/Services/CarryService.luau').read_text()
-carry=re.sub(r'local (Config|Life|Fall|Beds|Inventory|Chests)=require[^\n]+\n','',carry).replace('require(script.Parent.CraftingService)','Crafting')
+carry=re.sub(r'local (Config|Life|Fall|Beds|Inventory|Chests|Pose)=require[^\n]+\n','',carry).replace('require(script.Parent.CraftingService)','Crafting')
+s+='\nlocal Pose=(function()\n'+(root/'src/shared/CarryPose.luau').read_text()+'\nend)()'
 s+='\nlocal Carry=(function()\n'+carry+'\nend)()'
 s+='''
 assert(not Carry.Pickup(a,a) and not Carry.Pickup(a,c))
@@ -35,6 +46,7 @@ function workspace:Raycast() return {Instance=wall} end
 assert(not Carry.Pickup(a,b),"wall blocks pickup")
 function workspace:Raycast() return nil end
 assert(Carry.Pickup(a,b) and Carry.Patient(a)==b and a.Character:GetAttribute("CarryingUserId")==b.UserId)
+assert(b.Character:GetAttribute("BodyPoseKind")=="Carried" and b.Character:GetPivot().Position.X<0,"pickup replaces fetal KO with a left shoulder pose immediately")
 assert(not Carry.Pickup(c,b),"one carrier per patient")
 beat();assert(b.Character:GetAttribute("Knockout") and b.Character:GetAttribute("KnockoutEndsAt")==clock-100,"carrying an overdue patient never kills or resets their timer")
 allowed=false;assert(not Carry.PlaceOnBed(a,wall) and Carry.Patient(a)==b,"occupied/invalid bed does not drop patient")
