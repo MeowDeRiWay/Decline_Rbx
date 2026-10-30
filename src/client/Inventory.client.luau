@@ -433,7 +433,8 @@ redraw = function()
  for order, slot in ipairs(ItemConfig.Slots) do
   local id = snapshot.Equipment[slot]
   local definition = id and ItemConfig.Items[id]
-  local caption = slot .. "\n" .. (definition and (definition.Name or id) .. "  •  Click to unequip" or "Empty")
+  local slotName=({PrimaryWeapon="Two-handed weapon [1]",SecondaryWeapon="One-handed weapon [2]",Hands="Utility hands"})[slot] or slot
+  local caption = slotName .. "\n" .. (definition and (definition.Name or id) .. "  •  Click to unequip" or "Empty")
   local row = button(equipment, caption, UDim2.new(), UDim2.new(1, -8, 0, 66))
   row.LayoutOrder = order
   row.AutoButtonColor = id ~= nil

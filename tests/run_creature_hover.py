@@ -3,13 +3,14 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/client/CreatureHover.client.luau').read_text()
-source=re.sub(r'local (Theme|Accuracy|Affiliation|Items|View|Cursor)=require[^\n]+\n','',source)
+source=re.sub(r'local (Theme|Accuracy|Affiliation|Items|View|Cursor|UI)=require[^\n]+\n','',source)
 setup='''
 a:LoadCharacterAsync()
 local playerGui=make("PlayerGui","PlayerGui",a)
 local target=make("Model","Zombie",workspace,{ClientVisible=true,DisplayName="zombie"})
 local hp=make("Humanoid","Humanoid",target);hp.Health=30;hp.MaxHealth=30
 local head=make("Part","Head",target);local targetRoot=make("Part","HumanoidRootPart",target);targetRoot.Position=Vector3.new(1,0,0)
+local UI={Set=function(object,key,value) object[key]=value end}
 local Theme={Card={},Accent={},Text={},Font={}}
 local Accuracy={Chance=function() return 75 end,ForWeapon=function() return 50 end,NightMultiplier=function() return 1 end}
 local Affiliation={Friendly=function() return false end};local Items={};local View={Targets={[target]=true}}

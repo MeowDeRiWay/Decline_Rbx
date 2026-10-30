@@ -27,7 +27,7 @@ local function refresh()
   player:SetAttribute("MedicalMode",nil)
   Context:BindActionAtPriority("OutcastEndBlock",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+20,
    Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump,
-   Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.Four,Enum.KeyCode.KeypadFour,Enum.KeyCode.F6)
+   Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.KeypadOne,Enum.KeyCode.KeypadTwo,Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.Four,Enum.KeyCode.KeypadFour,Enum.KeyCode.F6)
  else Context:UnbindAction("OutcastEndBlock") end
 end
 okay.Activated:Connect(function()

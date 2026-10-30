@@ -26,6 +26,7 @@ function Service.Finish(player,character)
  if finished[character] or player.Character~=character then return end
  if character:GetAttribute("CarryingUserId") or character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
  Beds.Leave(player,true)
+ require(script.Parent.HandActionService).Cancel(player)
  Animation.Cancel(character)
  finished[character]=true
  character:SetAttribute("IsDead",true)
@@ -73,6 +74,7 @@ function Service.Knockout(player,character)
  if character:GetAttribute("Knockout") or finished[character] then return end
  if character:GetAttribute("CarryingUserId") or character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
  Beds.Leave(player,true)
+ require(script.Parent.HandActionService).Cancel(player)
  Animation.Cancel(character)
  local record={Pivot=character:GetPivot(),Parts={},BlocksVision=character:GetAttribute("BlocksVision")}
  for _,part in ipairs(character:GetDescendants()) do

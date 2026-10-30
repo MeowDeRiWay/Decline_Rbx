@@ -19,7 +19,7 @@ local Life={MoveKnockout=function(p,frame) moves+=1;p.Character:PivotTo(frame);r
 local Fall={Cancel=function() end}
 local allowed=true;local placed
 local Beds={CanPlace=function() return allowed end,PlacePatient=function(_,patient,bed) placed={patient,bed};return true end}
-local Inventory={Unequip=function() return true end}
+local Inventory={ClearHands=function() return true end}
 local Chests={Close=function() end}
 local Crafting={Close=function() end}
 '''

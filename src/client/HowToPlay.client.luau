@@ -50,7 +50,10 @@ local scroll=make("ScrollingFrame",page,{Name="HelpScroll",Position=UDim2.fromOf
 local body=label(scroll,"",UDim2.fromOffset(18,0),UDim2.fromOffset(BODY_WIDTH,0),16)
 body.Name="PageBody"
 local pages={
- {Name="Controls",Title="CONTROLS",Text=[[MOVEMENT
+ {Name="Controls",Title="CONTROLS",Text=[[WEAPON SLOTS AND MEDICINE
+1: draw or stow your two-handed weapon (back). 2: draw or stow your pistol or knife (hip). Switching stows the held item before drawing the other. Equip weapons into these slots from inventory. H: stow the weapon and draw the Medicine item; click yourself or a nearby patient to treat. Treatment plays an animation before applying its effect. Press H again to put medicine away.
+
+MOVEMENT
 WASD - Move
 Shift - Run
 Mouse - Face / aim
@@ -193,7 +196,7 @@ local function setOpen(value)
   player:SetAttribute("MedicalMode",nil)
   Context:BindActionAtPriority("HelpBlockInput",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+10,
    Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump,
-   Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.R,Enum.KeyCode.V,Enum.KeyCode.B,Enum.KeyCode.F6,Enum.KeyCode.Four,Enum.KeyCode.KeypadFour)
+   Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.KeypadOne,Enum.KeyCode.KeypadTwo,Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.R,Enum.KeyCode.V,Enum.KeyCode.B,Enum.KeyCode.F6,Enum.KeyCode.Four,Enum.KeyCode.KeypadFour)
   Run:BindToRenderStep("HelpStopMovement",Enum.RenderPriority.Camera.Value+4,function()
    local character=player.Character
    local humanoid=character and character:FindFirstChildOfClass("Humanoid")

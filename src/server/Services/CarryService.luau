@@ -11,7 +11,7 @@ local Service={}
 local carrying,carriedBy={},{}
 local function active(player)
  local c=player.Character;local hp=c and c:FindFirstChildOfClass("Humanoid")
- return player.Parent==Players and not player:GetAttribute("TradeOpen") and c and hp and hp.Health>0 and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") and not c:GetAttribute("CraftingLocked") and not c:GetAttribute("InteractionLocked") and not c:GetAttribute("HospitalResting") and player:GetAttribute("AttributesConfirmed")==true and c:FindFirstChild("HumanoidRootPart")
+ return player.Parent==Players and not player:GetAttribute("TradeOpen") and c and hp and hp.Health>0 and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") and not c:GetAttribute("CraftingLocked") and not (c:GetAttribute("InteractionLocked") or c:GetAttribute("HandsBusy")) and not c:GetAttribute("HospitalResting") and player:GetAttribute("AttributesConfirmed")==true and c:FindFirstChild("HumanoidRootPart")
 end
 function Service.Patient(player) local r=carrying[player];return r and r.Patient end
 function Service.Drop(player)
@@ -44,7 +44,7 @@ function Service.Pickup(player,patient)
  local hit=workspace:Raycast(root.Position,body.Position-root.Position,params)
  if hit and not hit.Instance:IsDescendantOf(character) then return false end
  Chests.Close(player);require(script.Parent.CraftingService).Close(player)
- Inventory.Unequip(player,"Hands")
+ Inventory.ClearHands(player)
  Fall.Cancel(character)
  local record={Patient=patient,Character=character,CarrierCharacter=player.Character,Upright=root.CFrame}
  carrying[player]=record;carriedBy[patient]=player

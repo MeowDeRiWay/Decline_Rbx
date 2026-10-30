@@ -3,6 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/PlayerSessionService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
+source=source.replace('require(script.Parent.HandActionService).Cancel(player)','')
 source=re.sub(r'local (Config|Inventory|Progression|Life|Towns|Beds|Animation)=require[^\n]+\n','',source)
 setup='''
 local Animation={Cancel=function() end}

@@ -99,13 +99,14 @@ print("PASS: actual model, 11 joints, authored orientations/gap, height, repeate
 source+='\n'+(root/'tests/character_animation.fixture.luau').read_text()
 controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
 import re
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose)\s*=.*\n','',controller)
 controller=controller.replace('return Driver','Driver.Start(Players.LocalPlayer,false)')
-source+='\nlocal Motion={Cancel=function() end}\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
+source+='\nlocal HandPose={Apply=function() end}\nlocal Motion={Cancel=function() end}\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
 source+='\n'+(root/'tests/equipment_pose_cases.fixture.luau').read_text()
 service=(root/'src/server/Services/EquipmentVisuals.luau').read_text()
 service=re.sub(r'local (ServerStorage|ReplicatedStorage|Items) = [^\n]+\n','',service)
-source+='\ndo\nlocal ServerStorage=serverStorage\nlocal Items='+module('src/shared/ItemConfig.luau')+'\nlocal Visuals=(function()\n'+service+'\nend)()\n'
+source+='\nfunction methods:FindFirstChildWhichIsA(kind,recurse) for _,part in ipairs(recurse and self:GetDescendants() or self:GetChildren()) do if part:IsA(kind) then return part end end end\ndo\nlocal ServerStorage=serverStorage\nlocal Items='+module('src/shared/ItemConfig.luau')+'\nlocal Visuals=(function()\n'+service+'\nend)()\n'
+source+='\nlocal StoragePose='+module('src/shared/HandActionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\nlocal Holsters='+module('src/server/Services/HolsterVisuals.luau').replace('require(game:GetService("ReplicatedStorage").Shared.HandActionPose)','StoragePose')
 source+=r'''
 for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife"}) do
  Visuals.Apply(c,id)
@@ -122,6 +123,17 @@ for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel
  near(point,held.CFrame.Position)
 end
 print("PASS: actual equipment positions for both pistols, closer rifle grip, knife/axe/shovel and movable grip")
+for _,entry in ipairs({{"PrimaryWeapon","Rifle223"},{"SecondaryWeapon","Pistol9mm"}}) do
+ local slot,id=entry[1],entry[2]
+ assert(Holsters.Apply(c,slot,id,Visuals.Template))
+ local model=c:FindFirstChild("Holstered"..slot);local part=model:FindFirstChildWhichIsA("BasePart",true)
+ assert(part and not part.Anchored and part.Massless and not part.CanCollide and not part.CanTouch and not part.CanQuery)
+ near(part.CFrame.Position,StoragePose.StorageFrame(c,root,slot).Position)
+ local weld=part:FindFirstChild("HolsterWeld");assert(weld and weld.Part1==part and weld.Part0~=root)
+ assert(Holsters.Apply(c,slot,id,Visuals.Template) and c:FindFirstChild("Holstered"..slot)==model,"refresh does not clone another visible weapon")
+ assert(Holsters.Apply(c,slot,nil,Visuals.Template) and not c:FindFirstChild("Holstered"..slot))
+end
+print("PASS: holstered weapon template pivots, torso anchors, massless non-query parts, idempotence and removal")
 end
 '''
 with tempfile.TemporaryDirectory() as directory:

@@ -66,7 +66,7 @@ Context:BindActionAtPriority("PlayerContextMenu",function(_,state)
   if kind=="Bed" and not value:GetAttribute("HospitalBedUserId") then table.insert(options,{"Place on bed",function() remote:FireServer("Bed",value) end}) end
   table.insert(options,{"Put body down",function() remote:FireServer("Drop") end})
  elseif kind=="Patient" then
-  options={{"Apply medicine",function() medical:FireServer("Bandage",value) end},{"Doctor",function() medical:FireServer("Doctor",value) end},{"Loot player",function() remote:FireServer("Loot",value) end},{"Pick up player",function() remote:FireServer("Carry",value) end}}
+  options={{"Apply medicine",function() player:SetAttribute("MedicalMode","Bandage");inventory:FireServer("ReadyMedicine",true) end},{"Doctor",function() medical:FireServer("Doctor",value) end},{"Loot player",function() remote:FireServer("Loot",value) end},{"Pick up player",function() remote:FireServer("Carry",value) end}}
  elseif kind=="Corpse" then options={{"Search body",function() inventory:FireServer("OpenChest",value) end}} end
  if #options==0 then close();return Enum.ContextActionResult.Pass end
  show(options,kind=="Patient" and value or nil);return Enum.ContextActionResult.Sink

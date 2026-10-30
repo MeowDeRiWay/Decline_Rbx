@@ -2,7 +2,7 @@
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
 ItemConfig.PickupDistance = 2
-ItemConfig.Slots = {"Body", "Hands", "Back", "Additional", "Medicine"}
+ItemConfig.Slots = {"Body", "PrimaryWeapon", "SecondaryWeapon", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
  Money = {Name="Banknote",Weight=0,Currency=true,Description="Money is credited directly to your protected account when picked up."},
  ZombieHand = {
@@ -211,6 +211,12 @@ for id,definition in pairs(ItemConfig.Items) do
   definition.Requirements=definition.Requirements or {}
   definition.Requirements.Attributes=definition.Requirements.Attributes or {}
   definition.Requirements.Attributes.Strength=strength
+ end
+end
+-- Weapons belong to their own persistent slots; Hands remains for utility items.
+for id,item in pairs(ItemConfig.Items) do
+ if item.Weapon and id~="ZombieHand" then
+  item.Slot=(item.CraftTool=="Knife" or (item.Firearm and item.Firearm.Category=="Pistol")) and "SecondaryWeapon" or "PrimaryWeapon"
  end
 end
 return ItemConfig

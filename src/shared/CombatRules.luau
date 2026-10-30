@@ -5,10 +5,10 @@ function Rules.UnarmedDamage(strengthBonus,flatBonus,roll)
  return math.max(0,strengthBonus or 0)*(.75+.45*math.clamp(roll,0,1))+(flatBonus or 0)
 end
 function Rules.GetWeapon(state,definitions)
- local id = state.Equipment.Hands
+ local id = state.Equipment[state.ActiveWeaponSlot or "Hands"]
  if not id or id=="" then return Rules.Unarmed end
  local definition = id and definitions[id]
- local remaining = state.EquipmentCondition.Hands
+ local remaining = state.EquipmentCondition[state.ActiveWeaponSlot or "Hands"]
  if not definition or not definition.Weapon then return nil end
  return definition.Weapon
 end

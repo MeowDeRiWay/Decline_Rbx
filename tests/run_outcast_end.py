@@ -2,7 +2,7 @@
 from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
-source=(root/'src/server/Services/PlayerLifeService.luau').read_text()
+source=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','')
 source=re.sub(r'local (Defense|Inventory|Chests|Motion|Beds|BodyFall|Animation)\s*=\s*require[^\n]+\n','',source)
 for module,alias in [('TownService','Towns'),('CraftingService','Crafting'),('ProgressionService','Progression'),('EconomyService','Economy')]:
  source=source.replace(f'require(script.Parent.{module})',alias)

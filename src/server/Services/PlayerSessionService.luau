@@ -29,6 +29,7 @@ local function leave(player)
  if player.Character and (player.Character:GetAttribute("CarryingUserId") or player.Character:GetAttribute("CarriedByUserId")) then require(script.Parent.CarryService).ReleasePlayer(player) end
  Beds.Leave(player)
  if player.Character then Animation.Cancel(player.Character) end
+ require(script.Parent.HandActionService).Cancel(player)
  local record={UserID=player.UserId,DisplayName=player.DisplayName,Attributes=player:GetAttributes(),Team=player.Team,Inventory=Inventory.Export(player)}
  records[player.UserId]=record
  local character=player.Character

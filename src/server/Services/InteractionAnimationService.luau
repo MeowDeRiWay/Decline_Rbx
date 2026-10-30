@@ -37,7 +37,7 @@ local function begin(player,target,range,aimPoint)
  local c=player.Character
  local root=c and c:FindFirstChild("HumanoidRootPart")
  local hp=c and c:FindFirstChildOfClass("Humanoid")
- if not root or not hp or hp.Health<=0 or hp.Sit or hp.PlatformStand or root.Anchored or c:GetAttribute("InteractionLocked") or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") or c:GetAttribute("HospitalResting") or c:GetAttribute("CraftingLocked") or c:GetAttribute("Reloading") then return end
+ if not root or not hp or hp.Health<=0 or hp.Sit or hp.PlatformStand or root.Anchored or c:GetAttribute("InteractionLocked") or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") or c:GetAttribute("HospitalResting") or c:GetAttribute("CraftingLocked") or (c:GetAttribute("Reloading") or c:GetAttribute("HandsBusy")) then return end
  if typeof(target)~="Instance" or not target:IsDescendantOf(workspace) or (not target:IsA("Model") and not target:IsA("BasePart")) then return end
  local point=Interaction.NearestPoint(target,root.Position)
  if (point-root.Position).Magnitude>range then return end

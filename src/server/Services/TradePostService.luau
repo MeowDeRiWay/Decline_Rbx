@@ -35,7 +35,7 @@ function Service.Register(object)
 end
 local function near(player,post)
  local c=player.Character;local root=c and c:FindFirstChild("HumanoidRootPart");local hp=c and c:FindFirstChildOfClass("Humanoid")
- if player:GetAttribute("AttributesConfirmed")~=true or not root or not hp or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") or c:GetAttribute("HospitalResting") or c:GetAttribute("CraftingLocked") or not post:IsDescendantOf(workspace) then return false end
+ if player:GetAttribute("AttributesConfirmed")~=true or not root or not hp or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") or c:GetAttribute("HospitalResting") or (c:GetAttribute("CraftingLocked") or c:GetAttribute("HandsBusy")) or not post:IsDescendantOf(workspace) then return false end
  local point=Interaction.NearestPoint(post,root.Position)
  if (point-root.Position).Magnitude>Items.PickupDistance then return false end
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={c}

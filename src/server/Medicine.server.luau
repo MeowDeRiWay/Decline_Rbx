@@ -10,17 +10,22 @@ local Medical=require(ReplicatedStorage.Shared.MedicalRules)
 local Config=require(ReplicatedStorage.Shared.MedicalConfig)
 local Sight=require(ReplicatedStorage.Shared.Sight)
 local remote=Instance.new("RemoteEvent");remote.Name="MedicalAction";remote.Parent=ReplicatedStorage
+local Hands=require(script.Parent.Services.HandActionService)
 local last,doctorReady={},{}
 local random=Random.new()
-remote.OnServerEvent:Connect(function(player,mode,target)
+local handle
+handle=function(player,mode,target,contact)
  if mode~="Bandage" and mode~="Doctor" then return end
  if typeof(target)~="Instance" or not target:IsA("Player") or target.Parent~=Players then return end
  local now=workspace:GetServerTimeNow()
- if now-(last[player] or -math.huge)<.5 then return end
- last[player]=now
+ if not contact then
+  if now-(last[player] or -math.huge)<.5 then return end
+  last[player]=now
+ end
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")
+ if character and character:GetAttribute("HandsBusy") and not contact then return end
  if not root or not hp or hp.Health<=0 or player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or character:GetAttribute("CraftingLocked") then return end
  local patient=target.Character
  local body=patient and patient:FindFirstChild("HumanoidRootPart")
@@ -34,6 +39,10 @@ remote.OnServerEvent:Connect(function(player,mode,target)
   if obstacle and not obstacle.Instance:IsDescendantOf(patient) then return end
  end
  if mode=="Bandage" then
+  if not character:GetAttribute("MedicalHeld") then return end
+  if not contact then
+   return Hands.Treat(player,target,function() return handle(player,mode,target,true) end)
+  end
   local medicine=character:GetAttribute("MedicineItem")
   local sterile=medicine=="SterileBandage"
   local antiseptic=medicine=="Antiseptic"
@@ -63,6 +72,7 @@ remote.OnServerEvent:Connect(function(player,mode,target)
    Progression.Award(player,amount)
    Journal.Send(target,string.format("%s restored %g HP to you.",Literal.Protect(player.Name),amount))
   end
+  return true
  else
   if target==player or not patient:GetAttribute("Knockout") then return end
   if now<math.max(doctorReady[player] or 0,player:GetAttribute("DoctorReadyAt") or 0) then Journal.Send(player,"Doctor is on cooldown.");return end
@@ -77,5 +87,6 @@ remote.OnServerEvent:Connect(function(player,mode,target)
    Journal.Send(target,Literal.Protect(player.Name).." revived you.")
   end
  end
-end)
+end
+remote.OnServerEvent:Connect(function(player,mode,target) handle(player,mode,target,false) end)
 Players.PlayerRemoving:Connect(function(player) last[player]=nil;doctorReady[player]=nil end)

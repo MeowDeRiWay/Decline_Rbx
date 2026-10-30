@@ -3,10 +3,11 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 medicine=(root/'src/server/Medicine.server.luau').read_text().replace('local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', 'local Literal={Protect=function(v) return v end}')
-medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight|Medical|Config)=require[^\n]+\n','',medicine)
-life=(root/'src/server/Services/PlayerLifeService.luau').read_text()
+medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight|Medical|Config|Hands)=require[^\n]+\n','',medicine)
+life=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','')
 life=life[life.index('function Service.Knockout'):life.index('function Service.Damage')]
 setup='''
+local Hands={Treat=function(_,_,apply) return apply() end}
 local Animation={Cancel=function() end}
 local Beds={Leave=function() end,Reposition=function() end}
 a:LoadCharacterAsync();b:LoadCharacterAsync();c:LoadCharacterAsync()
@@ -41,7 +42,7 @@ a:SetAttribute("SkillFirstAid",25);a:SetAttribute("FirstAidMultiplier",1);a:SetA
 '''
 cases='''
 local remote=ReplicatedStorage.MedicalAction
-local function use(mode,target) clock+=.6;remote.OnServerEvent:Fire(a,mode,target) end
+local function use(mode,target) a.Character:SetAttribute("MedicalHeld",true);clock+=.6;remote.OnServerEvent:Fire(a,mode,target) end
 b.Character.Humanoid.Health=70
 use("Bandage",b)
 assert(b.Character.Humanoid.Health==82 and equipped==2 and xp==12,"actual healing, one bandage and HP-based XP")
@@ -139,6 +140,20 @@ b.Character:SetAttribute("Knockout",false)
 a.Character.Humanoid.Health=50;a.Character.Humanoid.MaxHealth=100;a.Character:SetAttribute("Sick",30);a:SetAttribute("Endurance",5)
 priorXP=xp;use("Bandage",a)
 assert(a.Character.Humanoid.Health==70 and a.Character:GetAttribute("Sick")==0 and xp==priorXP,"self-treatment preserves the no-self-XP rule")
+
+local pending
+Hands.Treat=function(_,_,apply) pending=apply;return true end
+a.Character:SetAttribute("MedicineItem","Bandage");a.Character:SetAttribute("Knockout",false)
+b.Character.Humanoid.Health=20;equipped=2
+use("Bandage",b);assert(pending and equipped==2 and b.Character.Humanoid.Health==20,"treatment never consumes or heals at animation start")
+b.Character.HumanoidRootPart.Position=Vector3.new(4,0,0);pending()
+assert(equipped==2 and b.Character.Humanoid.Health==20,"range rechecked at medical contact")
+b.Character.HumanoidRootPart.Position=Vector3.zero
+use("Bandage",b);wall=true;pending();wall=false
+assert(equipped==2 and b.Character.Humanoid.Health==20,"wall appearing during animation cancels effect")
+use("Bandage",b);a.Character:SetAttribute("Knockout",true);pending();a.Character:SetAttribute("Knockout",false)
+assert(equipped==2 and b.Character.Humanoid.Health==20,"incapacitation before contact spends no item")
+use("Bandage",b);pending();assert(equipped==1 and b.Character.Humanoid.Health>20,"valid medical contact applies the normal effect once")
 print("PASS: sterile healing, fixed50% sterile and25%+Luck antiseptic cure boundaries, scaled Sick clamp, item consumption, full-HP debuff treatment, KO treatment without waking, retained HP and self-treatment")
 print("PASS: medical authority, self/other actual HP XP, medicine consumption, overheal, wall/range guards; doctor chance, both cooldowns, restoration and stale knockout timer safety")
 '''

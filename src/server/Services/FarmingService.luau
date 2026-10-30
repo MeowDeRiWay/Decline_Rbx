@@ -159,7 +159,7 @@ function Service.Use(player,model,crop)
   model:SetAttribute("Watering",math.min(capacity(model),water+Config.BucketWater))
   Journal.Send(player,"You watered the garden bed.");return true
  end
- if inventory.Equipment.Hands then Journal.Send(player,"Empty your hands to plant, harvest or clear rotten plants.");return false end
+ if inventory.ActiveWeaponSlot or inventory.MedicalHeld or inventory.Equipment.Hands then Journal.Send(player,"Empty your hands to plant, harvest or clear rotten plants.");return false end
  if ready and crop then return false end
  if ready then
   local amount,harvested=0,0;local kept={}

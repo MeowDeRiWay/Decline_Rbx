@@ -7,12 +7,14 @@ helpers=(root/'tests/run_character_rig.py').read_text().split("source+=r'''")[1]
 s=(root/'tests/rig_math.fixture.luau').read_text()+helpers
 for alias,path in [('Pose','src/shared/CharacterPose.luau'),('Rig','src/shared/CharacterRig.luau'),('Foot','src/shared/FootPlant.luau'),('Punch','src/shared/UnarmedPose.luau'),('geometry','tests/character_geometry.fixture.luau')]: s+='\nlocal '+alias+'='+module(path)
 s+='\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')
+s+='\nlocal HandPose='+module('src/shared/HandActionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')
 s+='\n'+(root/'tests/character_animation.fixture.luau').read_text()
 s+=r'''
 function CFrame.lookAt(position,target)
  local back=-(target-position).Unit;local right=Vector3.yAxis:Cross(back).Unit;local up=back:Cross(right)
  return cf(position,{right.X,up.X,back.X,right.Y,up.Y,back.Y,right.Z,up.Z,back.Z})
 end
+function cm.__sub(frame,v) return cf(frame.Position-v,frame.R) end
 function cm:Lerp(other,t)
  if t==0 then return self elseif t==1 then return other end
  local relative=self:Inverse()*other
@@ -44,6 +46,7 @@ local function advance(dt)
  for _,j in ipairs(ready) do j.Run() end
  RunService.PreSimulation:Fire(1/30)
 end
+local Hands={}
 local Motion={Cancel=function() end}
 local Interaction={NearestPoint=function(target) return target.CFrame.Position end}
 local function reset()
@@ -86,7 +89,7 @@ service=(root/'src/server/Services/InteractionAnimationService.luau').read_text(
 service=re.sub(r'local (Shared|Pose|Interaction|Motion)=.*\n','',service)
 s+='\nlocal Animation=(function()\nlocal Pose=Interact\n'+service+'\nend)()'
 controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose)\s*=.*\n','',controller)
 s+='\nlocal Driver=(function()\n'+controller+'\nend)()\nDriver.Start(owner,false)'
 s+=r'''
 local object=target();local contacts=0
@@ -216,7 +219,7 @@ inventoryAction(owner,"CloseChest");assert(c:GetAttribute("InteractionMode")=="L
 advance(1.15);inventoryAction(owner,"Equip","Gun");assert(dispatched==1)
 print("PASS: real inventory dispatch delays pickup until hand contact and blocks equipment changes through loot/recovery")
 '''
-life=(root/'src/server/Services/PlayerLifeService.luau').read_text()
+life=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','')
 freeze=life[life.index('local function freeze(character)'):life.index('function Service.Finish')]
 knockout=life[life.index('function Service.Knockout'):life.index('function Service.Revive')]
 damage=life[life.index('function Service.Damage'):life.rindex('return Service')]
@@ -239,6 +242,32 @@ assert(Animation.BeginLoot(owner,zeroTarget,1,function() error("dead") end))
 hp.Health=0;Life.Knockout(owner,c)
 assert(knocked[c].Parts[root].Anchored==false,"HealthChanged at zero HP also restores ownership before the KO snapshot")
 print("PASS: actual lethal Life.Damage and zero-HP HealthChanged during looting enter KO with correct revival anchoring")
+'''
+s+=r'''
+reset();local held,motor=heldWeapon();local m=poseMotors()
+for _,slot in ipairs({"PrimaryWeapon","SecondaryWeapon","Medicine"}) do
+ c:SetAttribute("HandActionSlot",slot);c:SetAttribute("HandActionStartedAt",serverTime)
+ c:SetAttribute("HandAction","Stow")
+ assert(HandPose.Apply(c,root,m,serverTime+HandPose.StowContact))
+ local final=root.CFrame*motor.C0*motor.Transform
+ near(final.Position,HandPose.StorageFrame(c,root,slot).Position)
+ c:SetAttribute("HandAction","Draw")
+ HandPose.Apply(c,root,m,serverTime+HandPose.DrawDuration)
+ near((motor.C0*motor.Transform).Position,motor.C0.Position)
+end
+local selfFrame
+for _,mode in ipairs({"TreatSelf","TreatOther"}) do
+ c:SetAttribute("HandAction",mode);c:SetAttribute("HandTreatmentPoint",root.CFrame:PointToWorldSpace(Vector3.new(0,-.3,-.7)))
+ HandPose.Apply(c,root,m,serverTime+.5)
+ local f=motor.C0*motor.Transform
+ if mode=="TreatSelf" then selfFrame=f else assert((f.Position-selfFrame.Position).Magnitude>.15,"other treatment reaches the patient rather than actor chest") end
+ for _,side in ipairs({"Left","Right"}) do
+  local transform=m[side.."Shoulder"].Transform
+  assert(transform.R[1]==transform.R[1],"both treatment hands remain finite")
+ end
+end
+c:SetAttribute("HandAction",nil);assert(not HandPose.Apply(c,root,m,serverTime))
+print("PASS: actual hand poses stow/draw at spine/hip/pouch pivots and distinct self/other two-hand treatment")
 '''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'interaction.luau';p.write_text(s)

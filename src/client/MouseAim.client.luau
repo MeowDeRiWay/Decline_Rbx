@@ -12,7 +12,7 @@ RunService:BindToRenderStep("DeclineMouseAim", Enum.RenderPriority.Camera.Value 
  local camera = workspace.CurrentCamera
  if not root or not humanoid or not camera then return end
  humanoid.AutoRotate = false
- if (character:GetAttribute("Knockout") or character:GetAttribute("InteractionLocked")) or humanoid.Health <= 0 or humanoid.Sit or humanoid.PlatformStand or root.Anchored then return end
+ if (character:GetAttribute("Knockout") or (character:GetAttribute("InteractionLocked") or character:GetAttribute("MedicalTreating"))) or humanoid.Health <= 0 or humanoid.Sit or humanoid.PlatformStand or root.Anchored then return end
  if (((player:GetAttribute("TradeOpen") or ((player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or player:GetAttribute("AdminOpen"))) or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then return end
  if UserInputService:GetFocusedTextBox() or GuiService.MenuIsOpen or not UserInputService.MouseEnabled then return end
  -- ViewportPointToRay takes raw mouse coordinates, without subtracting the top bar.

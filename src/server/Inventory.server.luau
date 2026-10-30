@@ -8,6 +8,7 @@ local Farming=require(script.Parent.Services.FarmingService)
 local Beds=require(script.Parent.Services.HospitalBedService)
 local Animation=require(script.Parent.Services.InteractionAnimationService)
 local ItemConfig=require(ReplicatedStorage.Shared.ItemConfig)
+local Hands=require(script.Parent.Services.HandActionService)
 local Consumables = require(script.Parent.Services.ConsumableService)
 local folder = Instance.new("Folder")
 folder.Name, folder.Parent = "InventoryRemotes", ReplicatedStorage
@@ -42,6 +43,7 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  if not humanoid or humanoid.Health <= 0 or character:GetAttribute("Knockout") then return end
+ if character:GetAttribute("HandsBusy") then return end
  if character:GetAttribute("InteractionLocked") and command~="TakeAll" and command~="TransferOut" then return end
  if command=="HospitalBed" then Crafting.Close(player);Chests.Close(player);Beds.Use(player,value);return end
  if character:GetAttribute("HospitalResting") then return end
@@ -51,6 +53,8 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
   key=value.Key;value=value.ID
  end
  if command == "Equip" then Service.Equip(player, value,key)
+ elseif command == "WeaponSlot" then Hands.Switch(player,value)
+ elseif command == "ReadyMedicine" then Hands.Medicine(player,value==true)
  elseif command == "Holster" then Service.ToggleHolster(player)
  elseif command == "Unequip" then Service.Unequip(player, value)
  elseif command == "Pickup" then Animation.Reach(player,value,ItemConfig.PickupDistance,function() WorldItems.Pickup(player,value) end)

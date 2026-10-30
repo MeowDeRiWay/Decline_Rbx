@@ -1,5 +1,7 @@
 local Rules = {}
 local serial=0
+function Rules.HandSlot(state) return state.ActiveWeaponSlot or "Hands" end
+function Rules.HandItem(state) return state.Equipment[Rules.HandSlot(state)] end
 function Rules.New()
  return {Items = {}, Equipment = {}, Conditions = {}, EquipmentCondition = {}, Weapons = {}, EquipmentWeapon = {}}
 end
@@ -128,6 +130,17 @@ function Rules.Unequip(state, definitions, slots, slot)
 end
 -- Return items from retired slots to inventory without losing their metadata.
 function Rules.ReconcileEquipment(state,definitions,slots)
+ -- Migrate an older session's held weapon without copying its unique magazine.
+ local held=state.Equipment.Hands
+ local target=held and definitions[held] and definitions[held].Slot
+ if target=="PrimaryWeapon" or target=="SecondaryWeapon" then
+  if not state.Equipment[target] then
+   state.Equipment[target]=held;state.EquipmentCondition[target]=state.EquipmentCondition.Hands
+   state.EquipmentWeapon[target]=state.EquipmentWeapon.Hands;state.ActiveWeaponSlot=target
+   state.Equipment.Hands=nil;state.EquipmentCondition.Hands=nil;state.EquipmentWeapon.Hands=nil
+  else Rules.Unequip(state,definitions,slots,"Hands") end
+ end
+ if state.ActiveWeaponSlot and not state.Equipment[state.ActiveWeaponSlot] then state.ActiveWeaponSlot=nil end
  for slot,id in pairs(state.Equipment) do
   if not table.find(slots,slot) and definitions[id] then
    local condition=state.EquipmentCondition[slot]
@@ -142,7 +155,7 @@ end
 function Rules.Weight(state, definitions, ammoMultiplier,equippedMultiplier)
  local total = 0
  for id, count in pairs(state.Items) do total += (definitions[id].Weight or 0) * count * (definitions[id].Ammo and (ammoMultiplier or 1) or 1) end
- for _, id in pairs(state.Equipment) do total += (definitions[id].Weight or 0)*(definitions[id].Weapon and (equippedMultiplier or 1) or 1) end
+ for slot, id in pairs(state.Equipment) do total += (definitions[id].Weight or 0)*(definitions[id].Weapon and slot==Rules.HandSlot(state) and (equippedMultiplier or 1) or 1) end
  local function magazine(id,data)
   local gun=definitions[id].Firearm
   local ammo=gun and definitions["Ammo"..gun.Caliber..(data.Type or "FMJ")]

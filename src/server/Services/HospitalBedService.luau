@@ -30,7 +30,7 @@ function Service.CanPlace(player,bed,patient)
  if typeof(bed)~="Instance" or not bed:IsA("Model") or bed:GetAttribute("HospitalBed")~=true or not bed:IsDescendantOf(workspace) or occupied[bed] or not bedFrame(bed) then return false end
  local character=player.Character;local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")
- if not root or not hp or hp.Health<=0 or player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or character:GetAttribute("CraftingLocked") or character:GetAttribute("CreatingCharacter") or root.Anchored then return false end
+ if not root or not hp or hp.Health<=0 or player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or character:GetAttribute("CraftingLocked") or character:GetAttribute("HandsBusy") or character:GetAttribute("CreatingCharacter") or root.Anchored then return false end
  local nearest=Interaction.NearestPoint(bed,root.Position)
  if (nearest-root.Position).Magnitude>Items.PickupDistance then return false end
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}

@@ -232,7 +232,8 @@ function Service.SpawnLoot(loot,position,ignored)
  return true
 end
 local function dropHeld(state,model)
- local id=state and state.Equipment.Hands
+ local slot=state and Rules.HandSlot(state)
+ local id=state and state.Equipment[slot]
  local definition=id and ItemConfig.Items[id]
  if not definition or not definition.Weapon or id=="ZombieHand" or not model then return false end
  local root=model:FindFirstChild("HumanoidRootPart")
@@ -243,11 +244,11 @@ local function dropHeld(state,model)
  local hit=workspace:Raycast(root.Position+Vector3.new(0,2,0),Vector3.new(0,-12,0),params)
  if not hit then item:Destroy();return false end
  place(item,hit.Position,1,id)
- item:SetAttribute("Conditions",HttpService:JSONEncode({state.EquipmentCondition.Hands or definition.Weapon.MaxUses}))
- local data=state.EquipmentWeapon and state.EquipmentWeapon.Hands
+ item:SetAttribute("Conditions",HttpService:JSONEncode({state.EquipmentCondition[slot] or definition.Weapon.MaxUses}))
+ local data=state.EquipmentWeapon and state.EquipmentWeapon[slot]
  if data then item:SetAttribute("WeaponData",HttpService:JSONEncode({data})) end
- state.Equipment.Hands=nil;state.EquipmentCondition.Hands=nil
- if state.EquipmentWeapon then state.EquipmentWeapon.Hands=nil end
+ state.Equipment[slot]=nil;state.EquipmentCondition[slot]=nil;state.ActiveWeaponSlot=nil
+ if state.EquipmentWeapon then state.EquipmentWeapon[slot]=nil end
  EquipmentVisuals.Apply(model,nil)
  item.Parent=folder
  return true

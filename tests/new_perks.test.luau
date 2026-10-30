@@ -38,7 +38,8 @@ assert(C.Plan({Rags=4},recipe,1).Ingredients.Rags==4 and not C.Plan({Rags=4},rec
 assert(C.Discount(recipes.MakePlanks,.8).Ingredients.TreeLog==1,"no free ingredient via rounding")
 assert(Noise.StepRadius(30,true,nil,true)==7 and Noise.StepRadius(30,true)==10 and Noise.StepRadius(30,false)==2)
 local inv=I.New();I.Add(inv,Items.Items,"Pistol9mm",1);I.Equip(inv,Items.Items,Items.Slots,"Pistol9mm")
-inv.EquipmentWeapon.Hands.Loaded=10
+inv.ActiveWeaponSlot="SecondaryWeapon"
+inv.EquipmentWeapon.SecondaryWeapon.Loaded=10
 assert(math.abs(I.Weight(inv,Items.Items,1,0)-.08)<1e-8,"only equipped gun base weight excluded; ammo retained")
 local four=R.Bonuses({Strength=5,Attention=5,Endurance=6,Intelligence=6,Agility=8,Luck=5},{SilentDeath=1,UnarmedDamage=1,LivingAnatomy=1,FastFeet=1})
 assert(four.BackstabCritical and four.UnarmedDamageBonus==10 and four.ArmorBypassChance==.1)

@@ -9,6 +9,7 @@ local Foot=require(Shared:WaitForChild("FootPlant"))
 local Punch=require(Shared:WaitForChild("UnarmedPose"))
 local Items=require(Shared.ItemConfig).Items
 local Interact=require(Shared:WaitForChild("InteractionPose"))
+local HandPose=require(Shared:WaitForChild("HandActionPose"))
 local Motion=require(Shared:WaitForChild("WeaponMotion"))
 local Driver={}
 function Driver.Start(localPlayer,serverPreview)
@@ -45,6 +46,10 @@ local function bind(player,character)
   if not character:GetAttribute("InteractionMode") then return end
   local held=character:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
   if motor then Motion.Cancel(motor);motor.C0=motor:GetAttribute("RestC0") or motor.C0 end
+ end))
+ table.insert(links,character:GetAttributeChangedSignal("HandAction"):Connect(function()
+  local held=character:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
+  if motor then motor.Transform=CFrame.identity end
  end))
  table.insert(links,character:GetAttributeChangedSignal("BodyPoseKind"):Connect(function()
   for _,joint in ipairs(character:GetDescendants()) do if joint:IsA("Motor6D") then joint.Transform=CFrame.identity end end
@@ -128,7 +133,7 @@ RunService.PreSimulation:Connect(function(dt)
   end
   local held=c:FindFirstChild("HeldItem")
   local definition=Items[c:GetAttribute("HandsItem")]
-  local equipped=held and definition and (definition.Firearm or definition.Weapon)
+  local equipped=held and definition and (definition.Firearm or definition.Weapon or definition.Slot=="Medicine")
   local twoHands=definition and (definition.Firearm or definition.HarvestTool=="Axe" or definition.HarvestTool=="Shovel")
   local grip=held and (held:FindFirstChild("RightHandGrip",true) or held:FindFirstChild("_HandGrip",true))
   local targetFrame=equipped and (grip and grip:IsA("Attachment") and grip.WorldCFrame or held:GetPivot())
@@ -181,6 +186,7 @@ RunService.PreSimulation:Connect(function(dt)
     elbow.Transform=CFrame.identity
    end
   end
+  HandPose.Apply(c,root,m,workspace:GetServerTimeNow())
  end
 end)
 

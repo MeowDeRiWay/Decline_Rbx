@@ -21,7 +21,7 @@ local function reachable(player,stove)
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")
- if not root or not hp or hp.Health<=0 or character:GetAttribute("Knockout") then return false end
+ if not root or not hp or hp.Health<=0 or (character:GetAttribute("Knockout") or character:GetAttribute("HandsBusy")) then return false end
  local near=Interaction.NearestPoint(stove,root.Position)
  local delta=near-root.Position
  if delta.Magnitude>Items.PickupDistance then return false end
@@ -40,7 +40,7 @@ local function unlock(job)
  if character and character.Parent then
   character:SetAttribute("CraftingLocked",false)
   local hp=character:FindFirstChildOfClass("Humanoid")
-  if job.Root and job.Root.Parent and hp and hp.Health>0 and not character:GetAttribute("Knockout") then job.Root.Anchored=job.WasAnchored end
+  if job.Root and job.Root.Parent and hp and hp.Health>0 and not (character:GetAttribute("Knockout") or character:GetAttribute("HandsBusy")) then job.Root.Anchored=job.WasAnchored end
  end
 end
 local function cancel(stove,job)

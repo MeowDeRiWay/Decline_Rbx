@@ -115,9 +115,11 @@ button("Skills\n[T]",792,48,88,function() Layout.Skills:Fire() end)
 button("Cha [C]",792,94,88,function() Layout.Character:Fire() end)
 local medicine=button("Medicine [H]",792,4,110,function()
  local c=player.Character
- if player:GetAttribute("MedicalMode") then player:SetAttribute("MedicalMode",nil)
- elseif c and (c:GetAttribute("MedicineItem")=="Bandage" or c:GetAttribute("MedicineItem")=="GreatBandage") then player:SetAttribute("MedicalMode","Bandage")
- else Layout.Log:Fire("Equip a bandage in the Medicine slot first.") end
+ if not c or c:GetAttribute("HandsBusy") then return end
+ local remote=ReplicatedStorage.InventoryRemotes.Action
+ if player:GetAttribute("MedicalMode")=="Bandage" then player:SetAttribute("MedicalMode",nil);remote:FireServer("ReadyMedicine",false)
+ elseif c:GetAttribute("MedicineItem")~="" then player:SetAttribute("MedicalMode","Bandage");if not c:GetAttribute("MedicalHeld") then remote:FireServer("ReadyMedicine",true) end
+ else Layout.Log:Fire("Equip a medical item in the Medicine slot first.") end
 end)
 local combat=Instance.new("Frame")
 combat.Position=UDim2.fromOffset(918,60);combat.Size=UDim2.fromOffset(62,62);combat.BackgroundColor3=Theme.Card;combat.Parent=bar;Theme.Bevel(combat)

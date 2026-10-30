@@ -114,7 +114,7 @@ local function setOpen(open)
   player:SetAttribute("MedicalMode",nil);recenter();request:FireServer()
   Context:BindActionAtPriority("MapBlockInput",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+12,
    Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump,
-   Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.R,Enum.KeyCode.V,Enum.KeyCode.B,Enum.KeyCode.Four,Enum.KeyCode.KeypadFour,Enum.KeyCode.F6)
+   Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.KeypadOne,Enum.KeyCode.KeypadTwo,Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.R,Enum.KeyCode.V,Enum.KeyCode.B,Enum.KeyCode.Four,Enum.KeyCode.KeypadFour,Enum.KeyCode.F6)
  else Context:UnbindAction("MapBlockInput") end
 end
 close.Activated:Connect(function() setOpen(false) end)

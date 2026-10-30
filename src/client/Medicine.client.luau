@@ -6,6 +6,7 @@ local Run=game:GetService("RunService")
 local GuiService=game:GetService("GuiService")
 local player=Players.LocalPlayer
 local remote=ReplicatedStorage:WaitForChild("MedicalAction")
+local inventory=ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("Action")
 local Affiliation=require(ReplicatedStorage.Shared.AffiliationRules)
 local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
 local Medical=require(ReplicatedStorage.Shared.MedicalRules)
@@ -27,10 +28,12 @@ local function cancel() player:SetAttribute("MedicalMode",nil);selected=nil;high
 Input.InputBegan:Connect(function(key,processed)
  if processed or Input:GetFocusedTextBox() then return end
  if key.KeyCode==Enum.KeyCode.H and not blocked() then
-  if player:GetAttribute("MedicalMode")=="Bandage" then cancel();return end
+  if player.Character and player.Character:GetAttribute("HandsBusy") then return end
+  if player:GetAttribute("MedicalMode")=="Bandage" then cancel();inventory:FireServer("ReadyMedicine",false);return end
   local c=player.Character
   if not c or not bandage(c:GetAttribute("MedicineItem")) then Layout.Log:Fire("Equip a medical item in the Medicine slot first.");return end
   player:SetAttribute("MedicalMode","Bandage")
+  if not c:GetAttribute("MedicalHeld") then inventory:FireServer("ReadyMedicine",true) end
  elseif (key.KeyCode==Enum.KeyCode.Four or key.KeyCode==Enum.KeyCode.KeypadFour) and not blocked() then
   if player:GetAttribute("MedicalMode")=="Doctor" then cancel();return end
   if player:GetAttribute("AttributesConfirmed")~=true then return end
@@ -38,7 +41,7 @@ Input.InputBegan:Connect(function(key,processed)
  elseif key.KeyCode==Enum.KeyCode.Escape then cancel()
  elseif key.UserInputType==Enum.UserInputType.MouseButton1 and not blocked() then
   local mode=player:GetAttribute("MedicalMode")
-  if mode and selected then remote:FireServer(mode,selected) end
+  if mode and selected and player.Character and not player.Character:GetAttribute("HandsBusy") and (mode~="Bandage" or player.Character:GetAttribute("MedicalHeld")) then remote:FireServer(mode,selected) end
  end
 end)
 Run.RenderStepped:Connect(function()
@@ -80,6 +83,7 @@ Run.RenderStepped:Connect(function()
  end
  local status=selected and Examination.Text(selected)
  if status then text..="\n"..status end
+ if character:GetAttribute("HandsBusy") then text="Readying or applying medicine..." end
  hint.Text=text;hint.Position=UDim2.fromOffset(math.clamp(mouse.X+18,0,math.max(0,camera.ViewportSize.X-310)),math.clamp(mouse.Y+18,0,math.max(0,camera.ViewportSize.Y-154)));hint.Visible=true
 end)
 player.CharacterRemoving:Connect(cancel)

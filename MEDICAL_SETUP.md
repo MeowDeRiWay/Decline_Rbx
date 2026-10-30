@@ -12,7 +12,8 @@ MedicalAlcohol is a crafting material, not a consumable. Add it to the pharmacy'
 existing authored spawn pool as requested; no new loot frequency is invented.
 Antiseptic is a medical material, never a drink. Equip it in Medicine and press H,
 then click yourself or a nearby patient; RMB on a KO patient also offers Apply medicine.
-Each application consumes one equipped bottle and returns one EmptyBottle; the slot
+H now first stows weapons and draws medicine; treatment uses an animation before
+server-validated contact (see WEAPON_SLOTS_SETUP.md). Each application consumes one equipped bottle and returns one EmptyBottle; the slot
 auto-refills from inventory. Neither MedicalAlcohol nor Antiseptic has a Drink action.
 
 MedStation recipe MakeAntiseptic: 5 CleanWater + 1 MedicalAlcohol -> 5 Antiseptic
