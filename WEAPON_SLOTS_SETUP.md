@@ -33,7 +33,7 @@ are cosmetic copies named `HolsteredPrimaryWeapon` / `HolsteredSecondaryWeapon`,
 not pickups or additional inventory items. They are massless, non-colliding,
 non-touching and non-queryable. `HolsterWeld` follows torso and body-fall poses.
 
-Defaults place the long weapon along the left back and the one-handed weapon on
+Defaults place the long weapon along the right back, magazine facing outward, and the one-handed weapon on
 the right hip. If an authored rig needs a more exact fit, add optional attachments:
 
 - `UpperTorso/PrimaryWeaponHolster`
@@ -77,3 +77,15 @@ stats, movement and sprint tests pass. Four older pure-test files
 (progression_rules, tool_tiers, stove_fuel, resource_rules) already fail unchanged
 on the parent commit f5012a9 due to old balance expectations; baseline failures
 were reproduced separately and are not changes introduced by weapon slots.
+
+## Right-hand draw refinement
+
+Long weapons now use the right back with the grip above the mid-back and their
+magazine/local -Y side facing outward. Their draw/stow path passes outboard and
+above the right shoulder, not linearly through the torso. Both slots use only the
+right hand during the transfer. The left support hand releases at the start of
+stowing and smoothly joins the ordinary holding pose near the end of drawing;
+it cannot jump to a pistol's forward grip on the item-spawn frame.
+Uploaded Items.rbxm model measurements are included in a geometry regression
+fixture to verify the real rifle/SMG pivots and magazine direction. Medicine
+storage and self/other treatment paths retain their previous behavior.

@@ -7,11 +7,38 @@ function Pose.StorageFrame(c,root,slot)
  local attachment=torso:FindFirstChild(slot.."Holster")
  if attachment and attachment:IsA("Attachment") then return attachment.WorldCFrame end
  if slot=="PrimaryWeapon" then
-  return torso.CFrame*CFrame.new(-torso.Size.X*.42,-torso.Size.Y*.25,torso.Size.Z/2+.16)*CFrame.Angles(math.rad(95),0,math.rad(-18))
+  return torso.CFrame*CFrame.new(torso.Size.X*.42,torso.Size.Y*.15,torso.Size.Z/2+.16)*CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.rad(95),0,math.pi)
  elseif slot=="SecondaryWeapon" then
   return torso.CFrame*CFrame.new(torso.Size.X/2+.13,-torso.Size.Y*.5,.02)*CFrame.Angles(math.rad(-90),0,0)
  end
  return root.CFrame*CFrame.new(root.Size.X*.5,-root.Size.Y*.2,-root.Size.Z*.3)
+end
+-- The long weapon travels beside and above the right shoulder. A direct lerp
+-- from the firing grip to the back would send it through the chest.
+function Pose.WeaponFrame(c,root,slot,heldFrame,weight)
+ local stored=Pose.StorageFrame(c,root,slot)
+ if slot~="PrimaryWeapon" then return heldFrame:Lerp(stored,weight) end
+ local torso=c:FindFirstChild("UpperTorso") or root
+ local rotation=torso.CFrame:ToObjectSpace(stored)
+ rotation=rotation-rotation.Position
+ local x=torso.Size.X/2+.18
+ local y=torso.Size.Y/2+.18
+ local z=torso.Size.Z/2+.22
+ local front=torso.CFrame*CFrame.new(x,y,-z)*rotation
+ local back=torso.CFrame*CFrame.new(x,y,z)*rotation
+ -- Clear the side before rotating. Rolling 180 degrees during a single
+ -- chest-to-back lerp sweeps the stock through the body on real rifle models.
+ local side=CFrame.new(front.Position)*(heldFrame-heldFrame.Position)
+ local raised=front*CFrame.Angles(0,0,-math.pi)
+ if weight<.20 then return heldFrame:Lerp(side,smooth(weight/.20)) end
+ if weight<.38 then return side:Lerp(raised,smooth((weight-.20)/.18)) end
+ if weight<.78 then
+  local progress=smooth((weight-.38)/.40)
+  -- Roll gradually while crossing above the shoulder, rather than snapping
+  -- through a half-turn in one short frame at the front of the chest.
+  return raised:Lerp(back*CFrame.Angles(0,0,-math.pi),progress)*CFrame.Angles(0,0,math.pi*progress)
+ end
+ return back:Lerp(stored,smooth((weight-.78)/.22))
 end
 function Pose.Weight(mode,t)
  if mode=="Stow" then return smooth(t/Pose.StowContact) end
@@ -33,8 +60,10 @@ function Pose.Apply(c,root,m,now)
   local localFrame=rest
   if mode=="Stow" or mode=="Draw" then
    local grip=held:FindFirstChild("_HandGrip",true)
-   local desired=storage*(grip and grip.CFrame or CFrame.identity):Inverse()
-   localFrame=rest:Lerp(root.CFrame:ToObjectSpace(desired),Pose.Weight(mode,t))
+   local gripOffset=grip and grip.CFrame or CFrame.identity
+   local heldFrame=root.CFrame*rest*gripOffset
+   local desired=Pose.WeaponFrame(c,root,slot,heldFrame,Pose.Weight(mode,t))*gripOffset:Inverse()
+   localFrame=root.CFrame:ToObjectSpace(desired)
   elseif mode=="TreatSelf" or mode=="TreatOther" then
    local point=c:GetAttribute("HandTreatmentPoint") or root.CFrame:PointToWorldSpace(Vector3.new(0,0,-.4))
    if mode=="TreatSelf" then point=root.CFrame:PointToWorldSpace(Vector3.new(-root.Size.X*.18,root.Size.Y*.2,-root.Size.Z/2-.12)) end
@@ -61,9 +90,18 @@ function Pose.Apply(c,root,m,now)
     if mode=="Draw" and not gripWorld then
      local fromSlot=c:GetAttribute("HandActionFromSlot")
      local from=fromSlot and Pose.StorageFrame(c,root,fromSlot).Position or (anchor+root.CFrame:VectorToWorldSpace(standing:VectorToWorldSpace(upper+lower)))
-     aim=from+(storage.Position-from)*smooth(t/Pose.DrawContact)
+     local progress=smooth(t/Pose.DrawContact)
+     if slot=="PrimaryWeapon" then
+      aim=Pose.WeaponFrame(c,root,slot,CFrame.new(from),progress).Position
+     else aim=from+(storage.Position-from)*progress end
     end
-   elseif slot=="PrimaryWeapon" and gripWorld then aim=gripWorld.Position+gripWorld.LookVector*.18 end
+   elseif slot=="PrimaryWeapon" or slot=="SecondaryWeapon" then
+    -- Only the right hand draws/stows. Release the support hand early when
+    -- stowing and blend it into the firing grip only after the draw is clear.
+    local support=mode=="Draw" and smooth((t-(Pose.DrawDuration-.14))/.14) or 1-smooth(t/.12)
+    shoulder.Transform=CFrame.identity:Lerp(shoulder.Transform,support)
+    elbow.Transform=CFrame.identity:Lerp(elbow.Transform,support)
+   end
   else
    local point=c:GetAttribute("HandTreatmentPoint") or root.Position
    if mode=="TreatSelf" then point=root.CFrame:PointToWorldSpace(Vector3.new(-root.Size.X*.18,root.Size.Y*.2,-root.Size.Z/2-.12)) end

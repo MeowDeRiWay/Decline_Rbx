@@ -269,6 +269,48 @@ end
 c:SetAttribute("HandAction",nil);assert(not HandPose.Apply(c,root,m,serverTime))
 print("PASS: actual hand poses stow/draw at spine/hip/pouch pivots and distinct self/other two-hand treatment")
 '''
+s+='\nlocal UploadedWeapons='+module('tests/weapon_holster_geometry.fixture.luau')
+s+=r'''
+reset();local held,motor=heldWeapon();local m=poseMotors()
+local torso=c:FindFirstChild("UpperTorso")
+local stored=HandPose.StorageFrame(c,root,"PrimaryWeapon")
+local localStored=torso.CFrame:ToObjectSpace(stored)
+assert(localStored.Position.X>0 and localStored.Position.Z>torso.Size.Z/2,"long weapons belong on right back")
+assert(torso.CFrame:VectorToObjectSpace(stored:VectorToWorldSpace(Vector3.new(0,-1,0))).Z>.9,"magazine side faces away from back")
+local heldFrame=root.CFrame*CFrame.new(.24,.28,-.2575)
+for id,item in pairs(UploadedWeapons) do
+ local primary=not id:find("Pistol")
+ if primary then
+  for step=0,100 do
+   local weight=step/100
+   local f=HandPose.WeaponFrame(c,root,"PrimaryWeapon",heldFrame,weight)
+   local p=torso.CFrame:PointToObjectSpace(f.Position)
+   if weight>=.38 and weight<=.78 then
+    assert(p.X>torso.Size.X/2+.17 and p.Y>torso.Size.Y/2+.17,"the shoulder crossing stays outside and above the torso")
+   end
+   for _,part in ipairs(item.Parts) do
+    local partFrame=f*cf(part.Position,part.Rotation)
+    for _,x in ipairs({-.5,.5}) do for _,y in ipairs({-.5,.5}) do for _,z in ipairs({-.5,.5}) do
+     local v=torso.CFrame:PointToObjectSpace(partFrame:PointToWorldSpace(Vector3.new(x*part.Size.X,y*part.Size.Y,z*part.Size.Z)))
+     assert(not (math.abs(v.X)<torso.Size.X/2-.002 and math.abs(v.Y)<torso.Size.Y/2-.002 and math.abs(v.Z)<torso.Size.Z/2-.002),string.format("%s step %d point %.4f %.4f %.4f geometry must not pass through torso",id,step,v.X,v.Y,v.Z))
+    end end end
+   end
+  end
+ end
+end
+-- Simulate the ordinary pistol controller having already put the support hand
+-- forward on the model-spawn frame; the draw overlay must neutralize that pose.
+c:SetAttribute("HandAction","Draw");c:SetAttribute("HandActionSlot","SecondaryWeapon");c:SetAttribute("HandActionStartedAt",serverTime)
+m.LeftShoulder.Transform=CFrame.Angles(-1.2,0,0);m.LeftElbow.Transform=CFrame.Angles(-.8,0,0)
+HandPose.Apply(c,root,m,serverTime+HandPose.DrawContact)
+near(m.LeftShoulder.Transform.Position,Vector3.zero)
+assert(math.abs(m.LeftShoulder.Transform.R[6])<1e-8 and math.abs(m.LeftElbow.Transform.R[6])<1e-8,"no left-arm pistol spawn-frame snap")
+c:SetAttribute("HandActionSlot","PrimaryWeapon");m.LeftShoulder.Transform=CFrame.Angles(-1.2,0,0)
+HandPose.Apply(c,root,m,serverTime+HandPose.DrawContact)
+assert(math.abs(m.LeftShoulder.Transform.R[6])<1e-8,"only right hand draws the long weapon too")
+c:SetAttribute("HandAction",nil)
+print("PASS: uploaded rifle/SMG parts clear torso throughout shoulder path, right-side outward magazine fit and no early pistol/long-weapon support hand")
+'''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'interaction.luau';p.write_text(s)
  subprocess.run([sys.argv[1],str(p)],check=True)
