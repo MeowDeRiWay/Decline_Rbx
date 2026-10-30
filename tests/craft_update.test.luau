@@ -8,7 +8,7 @@ for _,id in ipairs({"MakeRifle223","MakeAssaultRifle223","MakeLSW223","MakeServi
  local recipe=C[id]
  assert(recipe.Ingredients.Iron==5 and recipe.Ingredients.Plank==2 and recipe.Requirements.Skills.Repair==150)
 end
-assert(C.MakeSewingKit.Ingredients.Scrap==5 and C.MakeSewingKit.Requirements.Skills.Repair==80)
+assert(C.MakeSewingKit.Ingredients.Scrap==5 and C.MakeSewingKit.Requirements.Skills.Repair==60)
 assert(C.MakeBandage.Requirements.Skills.FirstAid==50 and C.MakeGreatBandage.Requirements.Skills.FirstAid==100)
 for _,recipe in pairs(C) do
  if recipe.Ingredients.Cloth or recipe.Ingredients.Rags then

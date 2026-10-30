@@ -45,7 +45,7 @@ function Visuals.CaptureTemplate(item, id)
 end
 function Visuals.Validate(id)
  local definition = Items.Items[id]
- if not definition or (definition.Slot ~= "Hands" and definition.Slot~="Body") then return true end
+ if not definition or (definition.Slot ~= "Hands" and definition.Slot~="Body" and definition.Slot~="Back") then return true end
  if not templateFor(id) then
   warn("[Decline] Missing equipment template: ServerStorage/Items/" .. id)
   return false

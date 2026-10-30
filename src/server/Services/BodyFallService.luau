@@ -75,7 +75,7 @@ function Service.Play(model,kind)
  local offsets={}
  local attachments={}
  for _,j in ipairs(model:GetDescendants()) do
-  if j:IsA("WeldConstraint") and j.Name=="ArmorWeld" and j.Part0 and j.Part1 and frames[j.Part0] then
+  if j:IsA("WeldConstraint") and (j.Name=="ArmorWeld" or j.Name=="BackWeld") and j.Part0 and j.Part1 and frames[j.Part0] then
    attachments[j.Part1]={Parent=j.Part0,Offset=j.Part0.CFrame:ToObjectSpace(j.Part1.CFrame)}
    frames[j.Part1]=frames[j.Part0]*attachments[j.Part1].Offset
   end

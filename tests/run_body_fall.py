@@ -147,9 +147,14 @@ local limb=armored:FindFirstChild("LeftLowerArm")
 local sleeve=new("Part",armored);sleeve.Name="Sleeve";sleeve.Transparency=0;sleeve.Size=Vector3.new(.2,.2,.2)
 local offset=CFrame.new(.01,0,.02);sleeve.CFrame=limb.CFrame*offset
 local weld=new("WeldConstraint",sleeve);weld.Name="ArmorWeld";weld.Part0=limb;weld.Part1=sleeve
+local torso=armored:FindFirstChild("UpperTorso")
+local backpack=new("Part",armored);backpack.Name="Backpack";backpack.Transparency=0;backpack.Size=Vector3.new(.2,.4,.2)
+local backOffset=CFrame.new(0,0,.25);backpack.CFrame=torso.CFrame*backOffset
+local backWeld=new("WeldConstraint",backpack);backWeld.Name="BackWeld";backWeld.Part0=torso;backWeld.Part1=backpack
 for _,kind in ipairs({"Knockout","Death"}) do
  Service.Play(armored,kind);tweens[#tweens]:Finish();grounded(armored)
  near(limb.CFrame:ToObjectSpace(sleeve.CFrame).Position,offset.Position)
+ near(torso.CFrame:ToObjectSpace(backpack.CFrame).Position,backOffset.Position)
 end
 print("PASS: fetal KO, relaxed death, restore/cancellation, directional zombie falls, head/feet arm poses and final ground contact on authored rig, marked plates, Terrain, ignored walls/furniture/home floors and missing-ground guard")
 '''

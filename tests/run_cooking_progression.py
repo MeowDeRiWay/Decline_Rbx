@@ -205,7 +205,7 @@ Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,stove))
 assert(Service.Snapshot(a).CookingReady.Ramsay_BoiledPotato==5 and not Service.Snapshot(a).CookingReady.Coal,"coal cooks twice as fast without producing charcoal")
 print("PASS: one fuel for five servings, one wood charcoal byproduct, wood60s versus coal30s, no unfueled bypass")
 Service.Close(a);assert(Service.Open(a,bench))
-for id,required in pairs({MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeBucket=100,MakeHandle=60,MakePlanks=60}) do
+for id,required in pairs({MakeBackpack1=60,MakeSewingKit=60,MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeBucket=100,MakeHandle=60,MakePlanks=60}) do
  for item,count in pairs(Recipes[id].Ingredients) do stock[item]=count end
  repair=required-1
  assert(not Service.Cook(a,id,1),id.." must reject Repair one below threshold")
@@ -214,6 +214,12 @@ for id,required in pairs({MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapSho
  assert(Service.Cook(a,id,1),id.." must accept exact Repair threshold");callbacks[#callbacks]()
 end
 print("PASS: actual tool/component craft Repair boundaries60/100 and no ingredients lost on rejection")
+stock.Cloth=3;repair=60;sewing=false
+assert(not Service.Cook(a,"MakeBackpack1",1) and stock.Cloth==3,"backpack requires reusable sewing kit")
+sewing=true;assert(Service.Cook(a,"MakeBackpack1",1) and stock.Cloth==0 and durations[#durations]==60)
+callbacks[#callbacks]();assert(Service.Snapshot(a).CookingReady.Backpack1==2)
+assert(Service.CollectRecipe(a,"MakeBackpack1","All") and stock.Backpack1==2)
+print("PASS: starter backpack uses three cloth, Repair60, reusable kit and sixty seconds; kit itself unlocks at60")
 print("PASS: industrial recipe inputs, Repair gates, exact XP/output, town/factory separation, Furnace T2 gate, unattended processing, charcoal fuel and food byproducts")
 
 '''

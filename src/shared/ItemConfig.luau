@@ -39,6 +39,7 @@ ItemConfig.Items = {
  Kevlar={Name="Kevlar",Weight=.2,Description="Protective fabric used to craft military armor."},
  LeatherArmor2={Name="Reinforced leather jacket",Weight=3,Slot="Body",Armor={Absorption=4,Resistance=.15},Description="Given the circumstances, a few plates were sewn into the jacket to protect the body and arms. Better than it used to be."},
  LeatherArmor={Name="Leather jacket",Weight=2,Slot="Body",Armor={Absorption=2,Resistance=.1},Description="A well-made leather jacket with a few decorative touches."},
+ Backpack1={Name="Simple backpack",Weight=1,Slot="Back",CarryBonusKg=10,Description="A simple handmade backpack. Increases carrying capacity by 10 kg while equipped."},
  Apron = {Name = "Apron", Weight = 0.5, Slot = "Additional", Description = "An apron worn over clothing."},
  SewingKit={Name="Sewing kit",Weight=0.2,CraftTool="SewingKit",CraftSpeed=1,Description="A reusable tool required to craft items from cloth and rags. Keep it in your inventory."},
  Cloth = {

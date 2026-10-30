@@ -53,6 +53,8 @@ function Service.Sync(player)
  -- Clear retired talent effects for all consumers during transition.
  for id,value in pairs({KnifeMultiplier=1,MeleeAbsorption=0,CriticalNegation=0,PreserveDurabilityChance=0,AmmoWeightMultiplier=1}) do bonus[id]=value end
  for _,category in ipairs({"Automatic","Pistol","Rifle","MachineGun"}) do bonus[category.."AccuracyBonus"]=0;bonus[category.."CritChance"]=0 end
+ player:SetAttribute("BaseCarryLimitKg",bonus.CarryLimitKg)
+ bonus.CarryLimitKg+=player:GetAttribute("EquipmentCarryBonusKg") or 0
  bonus.Accuracy=totals.Unarmed
  for id,value in pairs(bonus) do player:SetAttribute(id,value) end
  local character=player.Character

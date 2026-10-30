@@ -1,5 +1,11 @@
 -- Hand-authored Ukrainian and Russian translations. English source is stable.
 return {
+ {"Simple backpack","Простий рюкзак","Простой рюкзак"},
+ {"A simple handmade backpack. Increases carrying capacity by 10 kg while equipped.","Простий саморобний рюкзак. Збільшує вантажність на 10 кг, поки екіпірований.","Простой самодельный рюкзак. Увеличивает грузоподъёмность на 10 кг, пока экипирован."},
+ {"Make simple backpack","Пошити простий рюкзак","Сшить простой рюкзак"},
+ {"Sew a simple backpack from three cloth. Requires Repair 60 and a reusable sewing kit in your inventory.","Пошийте простий рюкзак із трьох одиниць тканини. Потрібні ремонт 60 і багаторазовий швейний набір в інвентарі.","Сшейте простой рюкзак из трёх единиц ткани. Нужны ремонт 60 и многоразовый швейный набор в инвентаре."},
+ {"Carrying capacity +%g kg","Вантажність +{1} кг","Грузоподъёмность +{1} кг"},
+
  {"A well-made leather jacket with a few decorative touches.","Шкіряна курточка, добре пошита та трохи прикрашена.","Кожаная курточка, хорошо сшитая и немного украшенная."},
  {"Given the circumstances, a few plates were sewn into the jacket to protect the body and arms. Better than it used to be.","Враховуючи оточення, у куртку зашили декілька пластин для захисту тіла та рук. Краще, ніж було до того.","Учитывая обстановку, в куртку вшили несколько пластин для защиты тела и рук. Лучше, чем было раньше."},
  {"The most talented craftsmen among the remnants of this world began using Kevlar to protect against bites from the infected, adding iron plates to stop bullets.","Найталановитіші майстри залишків цього світу почали використовувати кевлар для захисту від укусів інфікованих та додавати залізні пластини для захисту від куль.","Самые талантливые мастера остатков этого мира начали использовать кевлар для защиты от укусов заражённых и добавлять железные пластины для защиты от пуль."},
@@ -135,7 +141,7 @@ return {
  {"Make cloth","Зшити тканину","Сшить ткань"},
  {"Sew two rags into one cloth using a sewing kit.","Зшити два клапті ганчір’я в одну тканину набором для шиття.","Сшить два лоскута тряпья в одну ткань набором для шитья."},
  {"Make sewing kit","Виготовити набір для шиття","Изготовить набор для шитья"},
- {"Make a reusable sewing kit from five scrap. Requires Repair 80.","Виготовити багаторазовий набір для шиття з п’яти одиниць брухту. Потрібен Ремонт 80.","Изготовить многоразовый набор для шитья из пяти единиц лома. Нужен Ремонт 80."},
+ {"Make a reusable sewing kit from five scrap. Requires Repair 60.","Виготовити багаторазовий набір для шиття з п’яти одиниць брухту. Потрібен Ремонт 60.","Изготовить многоразовый набор для шитья из пяти единиц лома. Нужен Ремонт 60."},
  {"Slice sausage","Нарізати ковбасу","Нарезать колбасу"},
  {"Slice a sausage into five pieces using a knife.","Нарізати ковбасу ножем на п’ять шматків.","Нарезать колбасу ножом на пять ломтиков."},
  {"Boil potatoes","Зварити картоплю","Сварить картофель"},

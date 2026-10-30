@@ -151,6 +151,7 @@ local function returnText(definition)
 end
 local function effectText(definition)
  local effects = definition.Consume
+ if definition.CarryBonusKg then return string.format("Carrying capacity +%g kg",definition.CarryBonusKg) end
  if definition.Armor then
   return string.format("Armor %g / %g%%\nAbsorption / resistance",definition.Armor.Absorption or 0,(definition.Armor.Resistance or 0)*100)
  end

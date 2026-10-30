@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/InventoryService.luau').read_text()
-service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|Journal)\s*=\s*require[^\n]+\n','',service)
+service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|BackVisuals|Journal)\s*=\s*require[^\n]+\n','',service)
 service=service.replace('require(script.Parent.CraftingService).Close(player)','Crafting.Close(player)').replace('require(script.Parent.ProgressionService).Meets','Progression.Meets')
 setup='''
 local strength=10
@@ -11,6 +11,7 @@ local Progression={Meets=function(_,req) return not req.Attributes or strength>=
 local Crafting={Close=function() end}
 local Journal=journalPlaceholder
 local notices=ReplicatedStorage:FindFirstChild("PersonalNotice").sent
+local BackVisuals={Apply=function(c,id) c:SetAttribute("WornBack",id) end}
 local ArmorVisuals={Apply=function(c,id) c:SetAttribute("WornArmor",id) end}
 local Visuals={Apply=function() end,Validate=function() return true end,Template=function() return {} end}
 local baseNew=Instance.new
@@ -23,6 +24,17 @@ end
 setup=setup.replace('journalPlaceholder','(function()\n'+(root/'src/server/Services/JournalService.luau').read_text()+'\nend)()')
 cases='''
 a:LoadCharacterAsync();Service.Reset(a)
+a:SetAttribute("BaseCarryLimitKg",25);a:SetAttribute("CarryLimitKg",25)
+assert(Service.Add(a,"Backpack1",1) and a:GetAttribute("CarryLimitKg")==25,"unequipped backpacks give no bonus")
+assert(Service.Equip(a,"Backpack1") and a:GetAttribute("CarryLimitKg")==35 and a.Character:GetAttribute("WornBack")=="Backpack1")
+assert(a.Character:GetAttribute("LoadKg")==1,"equipped backpack contributes its own weight")
+for _=1,5 do Service.Refresh(a);assert(a:GetAttribute("CarryLimitKg")==35,"refresh never stacks the same bonus") end
+assert(Service.Unequip(a,"Back") and a:GetAttribute("CarryLimitKg")==25 and a.Character:GetAttribute("WornBack")==nil)
+assert(Service.Equip(a,"Backpack1"))
+local extracted=Service.ExtractAll(a)
+assert(extracted.Items.Backpack1==1 and a:GetAttribute("CarryLimitKg")==25 and a:GetAttribute("EquipmentCarryBonusKg")==0,"corpse extraction clears equipment bonus and preserves item")
+Service.Reset(a)
+print("PASS: Back slot equips, counts own weight, grants +10kg once, removes bonus on unequip/extraction and preserves loot")
 assert(Service.Add(a,"AssaultRifle223",1,{17}))
 assert(Service.Equip(a,"AssaultRifle223"))
 assert(Service.ToggleHolster(a) and Service.Snapshot(a).Equipment.Hands==nil)

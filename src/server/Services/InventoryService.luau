@@ -5,6 +5,7 @@ local Rules = require(ReplicatedStorage.Shared.InventoryRules)
 local CombatRules = require(ReplicatedStorage.Shared.CombatRules)
 local Visuals = require(script.Parent.EquipmentVisuals)
 local ArmorVisuals=require(script.Parent.ArmorVisuals)
+local BackVisuals=require(script.Parent.BackVisuals)
 local Service = {}
 local states = {}
 local disconnected = {}
@@ -27,7 +28,15 @@ local function update(player)
  local armor=body and body.Armor
  if armor then absorption=armor.Absorption or 0;resistance=armor.Resistance or 0 end
  player:SetAttribute("HandsEquipped",state.Equipment.Hands or "");player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,.9))
+ local back=state.Equipment.Back and ItemConfig.Items[state.Equipment.Back]
+ local carryBonus=back and back.CarryBonusKg or 0
+ local baseCarry=player:GetAttribute("BaseCarryLimitKg")
+ if baseCarry==nil then baseCarry=player:GetAttribute("CarryLimitKg") or 20;player:SetAttribute("BaseCarryLimitKg",baseCarry) end
+ player:SetAttribute("EquipmentCarryBonusKg",carryBonus)
+ player:SetAttribute("CarryLimitKg",baseCarry+carryBonus)
  if player.Character then
+  player.Character:SetAttribute("CarryLimitKg",baseCarry+carryBonus)
+  BackVisuals.Apply(player.Character,state.Equipment.Back,state.Equipment.Back and Visuals.Template(state.Equipment.Back),back)
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")))
   Visuals.Apply(player.Character, state.Equipment.Hands)
   ArmorVisuals.Apply(player.Character,state.Equipment.Body,state.Equipment.Body and Visuals.Template(state.Equipment.Body))
