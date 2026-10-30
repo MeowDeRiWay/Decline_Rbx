@@ -195,8 +195,9 @@ local function renderItems(frame, items, side)
   local ammo=definition.Firearm and ItemConfig.Items["Ammo"..definition.Firearm.Caliber..(stack.AmmoType or "FMJ")]
   if ammo then itemWeight+=(stack.Loaded or 0)*ammo.Weight*multiplier end
   local key=side..":"..stack.Key
-  local selection=definition.Weapon and {ID=id,Key=stack.Key} or id
+  local selection=(definition.Weapon or stack.EquipmentSlot) and {ID=id,Key=stack.Key} or id
   local caption=string.format("%s ×%d",definition.Name or id,stack.Count)
+  if stack.EquipmentSlot then caption..="\nEquipped" end
   local available=stack.Count
   local selected = math.clamp(dropAmounts[key] or 1, 1, available)
   local container = Instance.new("Frame")

@@ -47,14 +47,19 @@ print("PASS: carry authority, wall/range/self/living target denial, exclusive ow
 '''
 for variable,path in [('Rules','src/shared/InventoryRules.luau'),('Items','src/shared/ItemConfig.luau')]:s+='\nlocal '+variable+'=(function()\n'+(root/path).read_text()+'\nend)()'
 s+='''
-local storage={[a]=Rules.New(),[b]=Rules.New()}
+local storage={[a]=Rules.New(),[b]=Rules.New(),[c]=Rules.New()}
 Rules.Add(storage[b],Items.Items,"Cloth",3)
 Rules.Add(storage[b],Items.Items,"Backpack1",1)
 Rules.Equip(storage[b],Items.Items,Items.Slots,"Backpack1")
+Rules.Add(storage[b],Items.Items,"LeatherArmor",2);Rules.Equip(storage[b],Items.Items,Items.Slots,"LeatherArmor")
+Rules.Add(storage[b],Items.Items,"Pistol9mm",1,{123},{{Loaded=3,Type="AP",Mode="Single"}})
+Rules.Equip(storage[b],Items.Items,Items.Slots,"Pistol9mm");storage[b].ActiveWeaponSlot="SecondaryWeapon"
+local pistolUID=storage[b].EquipmentWeapon.SecondaryWeapon.UID
 local updates=0
 local Inventory={Export=function(p) return storage[p] end,Refresh=function() updates+=1 end,
- CorpseStorage=function(data) for _,slot in ipairs(Items.Slots) do if data.Equipment[slot] then Rules.Unequip(data,Items.Items,Items.Slots,slot) end end;return data end,
- Transfer=function(p,chest,id,n,into) return Rules.Transfer(into and storage[p] or chest,into and chest or storage[p],Items.Items,id,n) end}
+ CorpseStorage=function() error("opening KO loot must never convert worn gear into pocket items") end,
+ TakeEquippedLoot=function(p,data,id,n,key) return Rules.TransferEquipment(data,storage[p],Items.Items,id,n,key) end,
+ Transfer=function(p,chest,id,n,into,key) return Rules.Transfer(into and storage[p] or chest,into and chest or storage[p],Items.Items,id,n,key) end}
 local Interaction={NearestPoint=function(_,pos) return pos end}
 local Animation={BeginLoot=function(_,_,_,fn) return fn() end,EndLoot=function() end}
 local baseNew=Instance.new
@@ -78,14 +83,34 @@ assert(Chest.OpenKnockout(a,b));b.Character:SetAttribute("Knockout",false)
 assert(not pendingOpen() and storage[b].Equipment.Back=="Backpack1","revival before opening cancels without touching inventory")
 b.Character:SetAttribute("Knockout",true);Animation.BeginLoot=beginLoot
 assert(Chest.OpenKnockout(a,b) and Chest.Snapshot(a).ChestReadOnly)
-assert(storage[b].Items.Backpack1==1 and storage[b].Equipment.Back==nil,"equipment joins same authoritative loot inventory")
+assert(not storage[b].Items.Backpack1 and storage[b].Equipment.Back=="Backpack1" and storage[b].Equipment.Body=="LeatherArmor","opening keeps worn armor/backpack in their slots")
+local armorKey,pistolKey
+for _,stack in ipairs(Chest.Snapshot(a).ChestStacks) do
+ if stack.EquipmentSlot=="Body" then armorKey=stack.Key;assert(stack.ID=="LeatherArmor" and stack.Count==1) end
+ if stack.EquipmentSlot=="SecondaryWeapon" then pistolKey=stack.Key;assert(stack.Loaded==3 and stack.Condition==123 and stack.AmmoType=="AP") end
+end
+assert(armorKey and pistolKey,"worn gear remains visible and separately selectable from pocket copies")
+Chest.Close(a)
+assert(storage[b].Equipment.Body=="LeatherArmor" and storage[b].Items.LeatherArmor==1,"merely opening/closing never strips equipment")
+assert(Chest.OpenKnockout(a,b));assert(Chest.OpenKnockout(c,b))
+assert(not Chest.Transfer(a,"LeatherArmor",2,false,armorKey) and storage[b].Equipment.Body=="LeatherArmor","equipped item count cannot be forged")
+assert(not Chest.Transfer(a,"LeatherArmor",1,false,armorKey.."forged"))
+local grant=Rules.Add
+Rules.Add=function() return false end
+assert(not Chest.Transfer(a,"LeatherArmor",1,false,armorKey) and storage[b].Equipment.Body=="LeatherArmor" and not storage[a].Items.LeatherArmor,"failed grant leaves original armor worn")
+Rules.Add=grant
+assert(Chest.Transfer(a,"LeatherArmor",1,false,armorKey) and not storage[b].Equipment.Body and storage[b].Items.LeatherArmor==1 and storage[a].Items.LeatherArmor==1,"only the selected worn item is removed; spare pocket copy remains")
+assert(not Chest.Transfer(c,"LeatherArmor",1,false,armorKey) and not storage[c].Items.LeatherArmor,"two looters cannot take the same equipped item")
+assert(Chest.Transfer(a,"Pistol9mm",1,false,pistolKey) and not storage[b].ActiveWeaponSlot)
+assert(storage[a].Weapons.Pistol9mm[1].UID==pistolUID and storage[a].Weapons.Pistol9mm[1].Loaded==3 and storage[a].Conditions.Pistol9mm[1]==123,"equipped weapon metadata survives transfer without copying")
 assert(not Chest.Transfer(a,"Cloth",1,true),"cannot insert items into patient")
-assert(Chest.Transfer(a,"Cloth",1,false) and storage[a].Items.Cloth==1 and storage[b].Items.Cloth==2 and updates>=2)
+assert(Chest.Transfer(a,"Cloth",1,false) and storage[a].Items.Cloth==1 and storage[b].Items.Cloth==2 and updates>=1)
 b.Character:SetAttribute("CarriedByUserId",123)
 assert(not Chest.Transfer(a,"Cloth",1,false),"carrying closes the loot route")
 b.Character:SetAttribute("CarriedByUserId",nil);assert(Chest.OpenKnockout(a,b));assert(Chest.TakeAll(a))
-assert(storage[a].Items.Cloth==3 and storage[a].Items.Backpack1==1 and next(storage[b].Items)==nil,"all loot moves exactly once")
-b.Character:SetAttribute("Knockout",false);assert(not Chest.OpenKnockout(a,b),"revival closes patient loot")
+assert(storage[a].Items.Cloth==3 and storage[a].Items.Backpack1==1 and storage[a].Items.LeatherArmor==2 and next(storage[b].Items)==nil and next(storage[b].Equipment)==nil,"all loot moves exactly once")
+b.Character.Name="Chest";b.Character:SetAttribute("Knockout",false);assert(not Chest.OpenKnockout(a,b),"revival closes patient loot even for a character named Chest")
+assert(not Chest.Transfer(c,"Cloth",1,false),"an already-open second viewer cannot loot after revival")
 print("PASS: knockout loot shares authoritative inventory, includes equipment, read-only insertion, owner refresh, carry/revival guards and no duplication")
 '''
 with tempfile.TemporaryDirectory() as d:

@@ -184,6 +184,11 @@ function Service.Transfer(player, storage, id, requested, intoStorage,key)
  update(player)
  return true
 end
+function Service.TakeEquippedLoot(player,source,id,requested,key)
+ local own=states[player]
+ if not own or not source or not Rules.TransferEquipment(source,own,ItemConfig.Items,id,requested,key) then return false end
+ update(player);return true
+end
 function Service.ConsumeIngredients(player,recipe,count)
  local state=states[player]
  if not state then return false end

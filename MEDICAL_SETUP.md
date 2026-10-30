@@ -76,8 +76,12 @@ The existing Model HospitalBed=true, optional BedSurface/BedPoint and normal
 leaving, carrier KO/death, patient revival or replacement. Disconnect snapshots
 release carried bodies before cloning them.
 
-Loot uses the patient's current authoritative InventoryService state, including
-unequipped equipment; no duplicate storage copy is made. The patient cannot receive
+Loot reads the patient's current authoritative InventoryService state without
+unequipping anything on open. Pocket stacks and equipped items have separate keys;
+worn items are marked Equipped in the loot UI. Only a successful selected transfer
+removes that one equipment slot; TakeAll additionally removes the remaining gear.
+Condition, magazine/type/mode and UID transfer with the exact item, without a
+storage copy. Invalid/stale transfers leave the original equipment untouched. The patient cannot receive
 inserted items. Carrying or revival invalidates the loot route. Owner capacity and
 visuals refresh as items leave. Money remains in the pre-existing protected system.
 

@@ -13,6 +13,11 @@ local changed = Instance.new("BindableEvent")
 Service.Changed = changed.Event
 local function reachable(player, chest)
  if typeof(chest) ~= "Instance" or not chest:IsA("Model") or (chest.Name ~= "Chest" and chest:GetAttribute("IsCorpse") ~= true and chest:GetAttribute("Knockout")~=true) or not chest:IsDescendantOf(workspace) or not chest:FindFirstChildWhichIsA("BasePart", true) then return false end
+ local ownerID=knockoutOwners[chest]
+ if ownerID then
+  local owner=Players:GetPlayerByUserId(ownerID)
+  if not chest:GetAttribute("Knockout") or not owner or owner.Character~=chest or (contents[chest] and Inventory.Export(owner)~=contents[chest]) then return false end
+ end
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -95,7 +100,7 @@ function Service.Open(player, chest)
    local storage=Inventory.Export(owner)
    if not storage then return false end
    knockoutOwners[chest]=owner.UserId
-   Inventory.CorpseStorage(storage);contents[chest]=storage;Inventory.Refresh(owner)
+   contents[chest]=storage
   end
   if not contents[chest] then contents[chest]=Rules.New() end
   sessions[player]=chest
@@ -111,9 +116,14 @@ function Service.Close(player)
  changed:Fire(player)
 end
 
+local function lootStacks(chest)
+ local storage=chest and contents[chest]
+ if not storage then return {} end
+ return chest:GetAttribute("Knockout") and Rules.LootStacks(storage,Items.Items) or Rules.Stacks(storage,Items.Items)
+end
 function Service.Snapshot(player)
  local chest = sessions[player]
- return {ChestOpen = chest ~= nil, Chest = chest, ChestReadOnly = chest ~= nil and (chest:GetAttribute("IsCorpse") == true or chest:GetAttribute("Knockout")==true), ChestName = chest and (chest:GetAttribute("DisplayName") or chest.Name), ChestStacks=chest and contents[chest] and Rules.Stacks(contents[chest],Items.Items) or {}, ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}
+ return {ChestOpen = chest ~= nil, Chest = chest, ChestReadOnly = chest ~= nil and (chest:GetAttribute("IsCorpse") == true or chest:GetAttribute("Knockout")==true), ChestName = chest and (chest:GetAttribute("DisplayName") or chest.Name), ChestStacks=lootStacks(chest), ChestItems = chest and contents[chest] and table.clone(contents[chest].Items) or {}}
 end
 function Service.Transfer(player, id, requested, intoChest,key)
  local chest = sessions[player]
@@ -121,7 +131,10 @@ function Service.Transfer(player, id, requested, intoChest,key)
  if intoChest and (chest:GetAttribute("IsCorpse") == true or chest:GetAttribute("Knockout")) then return false end
  if typeof(id) ~= "string" or not Items.Items[id] then return false end
  local storage = contents[chest]
- if not Inventory.Transfer(player, storage, id, requested, intoChest,key) then return false end
+ local equipped=not intoChest and chest:GetAttribute("Knockout") and typeof(key)=="string" and key:sub(1,9)=="Equipped|"
+ if equipped then
+  if not Inventory.TakeEquippedLoot(player,storage,id,requested,key) then return false end
+ elseif not Inventory.Transfer(player,storage,id,requested,intoChest,key) then return false end
  refreshOwner(chest);notify(chest)
  return true
 end
@@ -131,8 +144,13 @@ function Service.TakeAll(player)
  if chest:GetAttribute("IsCorpse")~=true and chest:GetAttribute("Knockout")~=true then return false end
  local storage=contents[chest]
  for id in pairs(table.clone(storage.Items)) do Inventory.Transfer(player,storage,id,"All",false) end
+ if chest:GetAttribute("Knockout") then
+  for _,stack in ipairs(Rules.LootStacks(storage,Items.Items)) do
+   if stack.EquipmentSlot then Inventory.TakeEquippedLoot(player,storage,stack.ID,1,stack.Key) end
+  end
+ end
  refreshOwner(chest);notify(chest)
- if next(storage.Items)==nil then Service.Close(player) end
+ if next(storage.Items)==nil and (not chest:GetAttribute("Knockout") or #Rules.LootStacks(storage,Items.Items)==0) then Service.Close(player) end
  return true
 end
 function Service.ValidateSessions()

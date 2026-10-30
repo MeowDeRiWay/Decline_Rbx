@@ -165,6 +165,40 @@ function Rules.Weight(state, definitions, ammoMultiplier,equippedMultiplier)
  for slot,data in pairs(state.EquipmentWeapon or {}) do magazine(state.Equipment[slot],data) end
  return total
 end
+local function equippedStack(state,definitions,slot,id)
+ local item=definitions[id]
+ if not item or item.Lootable==false then return nil end
+ local condition=state.EquipmentCondition[slot]
+ local data=state.EquipmentWeapon and state.EquipmentWeapon[slot] or {}
+ return {ID=id,Key="Equipped|"..slot.."|"..Rules.StackKey(id,condition,data).."|"..tostring(data.UID or ""),Count=1,EquipmentSlot=slot,Condition=condition,Loaded=data.Loaded or 0,AmmoType=data.Type or "FMJ"}
+end
+-- Read-only presentation: worn equipment never enters the patient's pockets.
+function Rules.LootStacks(state,definitions)
+ local stacks=Rules.Stacks(state,definitions)
+ for slot,id in pairs(state.Equipment) do
+  local stack=equippedStack(state,definitions,slot,id)
+  if stack then table.insert(stacks,stack) end
+ end
+ return stacks
+end
+function Rules.TransferEquipment(source,target,definitions,id,requested,key)
+ if typeof(id)~="string" or typeof(key)~="string" or not Rules.DropAmount(1,requested) or source==target then return false end
+ for slot,current in pairs(source.Equipment) do
+  local stack=equippedStack(source,definitions,slot,current)
+  if current==id and stack and stack.Key==key then
+   local condition=source.EquipmentCondition[slot]
+   local data=source.EquipmentWeapon and source.EquipmentWeapon[slot]
+   -- No yields between granting the exact item and clearing its original slot.
+   if not Rules.Add(target,definitions,id,1,condition~=nil and {condition} or nil,data and {data} or nil) then return false end
+   source.Equipment[slot]=nil;source.EquipmentCondition[slot]=nil
+   if source.EquipmentWeapon then source.EquipmentWeapon[slot]=nil end
+   if source.ActiveWeaponSlot==slot then source.ActiveWeaponSlot=nil end
+   if slot=="Medicine" then source.MedicalHeld=nil end
+   return true
+  end
+ end
+ return false
+end
 function Rules.Transfer(source, target, definitions, id, requested,key)
  if typeof(id) ~= "string" or not definitions[id] then return false end
  local count = Rules.DropAmount(Rules.Available(source,id,key), requested)
