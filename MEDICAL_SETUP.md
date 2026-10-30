@@ -16,7 +16,14 @@ MedStation recipe MakeAntiseptic: 5 CleanWater + 1 MedicalAlcohol -> 5 Antisepti
 and 1 EmptyBottle (the extra alcohol container). Doctor50, one batch. Unspecified
 craft duration/XP use initial defaults of 60 seconds and 100 XP per finished batch.
 The three existing cloth/bandage recipes still need the reusable SewingKit.
-No sterile-bandage recipe has been invented while its definition is unfinished.
+SterileBandage is now defined: GreatBandage1 + Antiseptic1 -> SterileBandage1
+and EmptyBottle1. Doctor100, MedStation, reusable SewingKit,20seconds,100XP.
+It weighs0.1kg like both existing bandages, uses the Medicine slot/H targeting,
+and auto-refills from inventory. Healing matches GreatBandage: twice patient
+Endurance plus2HP per complete20FirstAid (existing perk multipliers/bonuses apply).
+It also removes20Sick points and makes a fixed50% poison-cure roll, without Luck.
+It may treat Sick/poison at fullHP but never revives a KO player. No HP/debuff need
+means no item consumption; failed cure rolls still spend the bandage.
 
 ## Poison and sickness
 

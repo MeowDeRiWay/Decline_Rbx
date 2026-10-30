@@ -188,7 +188,7 @@ function Rules.SpendPerk(state,id)
  return false
 end
 function Rules.FirstAid(skill,multiplier,endurance,medicine,bonus)
- local quality=medicine=="GreatBandage" and 2 or 1
+ local quality=(medicine=="GreatBandage" or medicine=="SterileBandage") and 2 or 1
  return quality*((endurance or 0)+math.floor(math.clamp(skill or 0,0,300)/20))*(multiplier or 1)+(bonus or 0)
 end
 function Rules.ReviveChance(skill) return math.clamp((skill or 0)/200,0,1) end

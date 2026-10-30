@@ -1,5 +1,11 @@
 -- Medical items, rescue actions and status messages.
 return {
+ {"Sterile bandage","Стерильний бинт","Стерильный бинт"},
+ {"Restores twice the target Endurance plus 2 HP per 20 First Aid of the healer. Reduces Sick by 20 points and has a fixed 50% chance to cure poisoning. Cannot revive.","Відновлює подвійну витривалість пацієнта та 2 HP за кожні повні 20 Першої допомоги лікаря. Зменшує Sick на 20 пунктів і має фіксований шанс 50% вилікувати отруєння. Не виводить із нокауту.","Восстанавливает удвоенную выносливость пациента и 2 HP за каждые полные 20 Первой помощи лекаря. Снижает Sick на 20 пунктов и имеет фиксированный шанс 50% вылечить отравление. Не выводит из нокаута."},
+ {"Make sterile bandage","Виготовити стерильний бинт","Изготовить стерильный бинт"},
+ {"Sterilize one great bandage with one antiseptic. Requires Doctor 100 and a reusable sewing kit in your inventory.","Стерилізуйте один покращений бинт одним антисептиком. Потрібні Лікар 100 і багаторазовий швейний набір в інвентарі.","Стерилизуйте один улучшенный бинт одним антисептиком. Нужны Врач 100 и многоразовый швейный набор в инвентаре."},
+ {"The treatment did not cure poisoning.","Процедура не вилікувала отруєння.","Процедура не вылечила отравление."},
+
  {"Medical alcohol","Медичний спирт","Медицинский спирт"},
  {"Medical alcohol used to prepare antiseptic. Not drinking water.","Медичний спирт для виготовлення антисептика. Не питна вода.","Медицинский спирт для изготовления антисептика. Не питьевая вода."},
  {"Antiseptic","Антисептик","Антисептик"},

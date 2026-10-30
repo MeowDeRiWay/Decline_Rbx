@@ -14,7 +14,7 @@ local Layout=require(script.Parent.HUDLayout)
 local highlight=Instance.new("Highlight");highlight.Name="MedicalTarget";highlight.DepthMode=Enum.HighlightDepthMode.Occluded;highlight.FillTransparency=.65;highlight.OutlineTransparency=0;highlight.Enabled=false;highlight.Parent=workspace
 local gui=Instance.new("ScreenGui");gui.Name="MedicalAim";gui.ResetOnSpawn=false;gui.IgnoreGuiInset=true;gui.Parent=player:WaitForChild("PlayerGui")
 local hint=Instance.new("TextLabel");hint.Size=UDim2.fromOffset(250,58);hint.BackgroundColor3=Theme.Card;hint.TextColor3=Theme.Text;hint.Font=Theme.Font;hint.TextSize=14;hint.TextWrapped=true;hint.Visible=false;hint.Parent=gui
-local function bandage(id) return id=="Bandage" or id=="GreatBandage" end
+local function bandage(id) return id=="Bandage" or id=="GreatBandage" or id=="SterileBandage" end
 local selected
 local function blocked()
  if player:GetAttribute("PlayerContextOpen") then return true end

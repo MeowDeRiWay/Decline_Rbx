@@ -45,6 +45,13 @@ assert(recipe.Station=="MedStation" and recipe.Requirements.Skills.Doctor==50 an
 local plan=assert(Craft.Plan({CleanWater=5,MedicalAlcohol=1},recipe,1))
 assert(plan.Ingredients.CleanWater==5 and plan.Ingredients.MedicalAlcohol==1 and plan.Outputs.Antiseptic==5 and plan.Outputs.EmptyBottle==1)
 assert(not Craft.Plan({CleanWater=4,MedicalAlcohol=1},recipe,1))
+local sterile=Recipes.MakeSterileBandage
+assert(sterile.Station=="MedStation" and sterile.Requirements.Skills.Doctor==100 and sterile.Tool=="SewingKit" and sterile.Duration==20)
+local plan=assert(Craft.Plan({GreatBandage=1,Antiseptic=1},sterile,1))
+assert(plan.Ingredients.GreatBandage==1 and plan.Ingredients.Antiseptic==1 and plan.Outputs.SterileBandage==1 and plan.Outputs.EmptyBottle==1)
+assert(not Craft.Plan({GreatBandage=1},sterile,1) and not Craft.Plan({Antiseptic=1},sterile,1))
+assert(Craft.Speed({},sterile)==nil and Craft.Speed({SewingKit=1},sterile)==1)
+assert(Items.Items.SterileBandage.Slot=="Medicine" and Items.Items.SterileBandage.Weight==Items.Items.GreatBandage.Weight)
 print("PASS: poison progression/suppression/removal, disabled and exact5% toggle, luck cure boundaries, real dose consumption/bottles and exact Doctor50 recipe")
 '''
 with tempfile.TemporaryDirectory() as d:

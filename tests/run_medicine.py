@@ -98,6 +98,26 @@ assert(b.Character.Humanoid.Health==72,"paramedic adds ten to ordinary bandage")
 a.Character:SetAttribute("MedicineItem","GreatBandage");b.Character.Humanoid.Health=50;use("Bandage",b)
 assert(b.Character.Humanoid.Health==84,"paramedic adds ten, not twenty, to great bandage")
 a.Character:SetAttribute("Knockout",true);b.Character.Humanoid.Health=50;before=equipped;use("Bandage",b);assert(equipped==before,"incapacitated healer denied")
+a.Character:SetAttribute("Knockout",false);a.Character:SetAttribute("MedicineItem","SterileBandage")
+a:SetAttribute("SkillFirstAid",100);a:SetAttribute("FirstAidMultiplier",1);a:SetAttribute("MedicalHealingBonus",0);a:SetAttribute("Luck",10);b:SetAttribute("Luck",10);b:SetAttribute("Endurance",5)
+b.Character:SetAttribute("Knockout",false);b.Character:SetAttribute("Sick",35);b.Character:SetAttribute("Poisoned",true)
+b.Character.Humanoid.MaxHealth=100;b.Character.Humanoid.Health=50;equipped=5;roll=.5
+use("Bandage",b)
+assert(b.Character.Humanoid.Health==70 and b.Character:GetAttribute("Sick")==15 and b.Character:GetAttribute("Poisoned") and equipped==4,"sterile heals2END+2per20, removes20Sick and50% remains fixed despite Luck10")
+b.Character.Humanoid.Health=100;roll=.499
+local priorXP=xp
+use("Bandage",b)
+assert(b.Character.Humanoid.Health==100 and b.Character:GetAttribute("Sick")==0 and not b.Character:GetAttribute("Poisoned") and equipped==3 and xp==priorXP,"full HP permits actual debuff treatment, no fictitious healing XP")
+use("Bandage",b);assert(equipped==3,"healthy full-HP target consumes nothing")
+b.Character:SetAttribute("Poisoned",true);equipped=0
+use("Bandage",b);assert(b.Character:GetAttribute("Poisoned"),"no item means no cure roll")
+equipped=3;b.Character:SetAttribute("Knockout",true);b.Character:SetAttribute("Sick",40)
+use("Bandage",b);assert(equipped==3 and b.Character:GetAttribute("Sick")==40,"sterile bandages never revive or treat KO")
+b.Character:SetAttribute("Knockout",false)
+a.Character.Humanoid.Health=50;a.Character.Humanoid.MaxHealth=100;a.Character:SetAttribute("Sick",30);a:SetAttribute("Endurance",5)
+priorXP=xp;use("Bandage",a)
+assert(a.Character.Humanoid.Health==70 and a.Character:GetAttribute("Sick")==10 and xp==priorXP,"self-treatment preserves the no-self-XP rule")
+print("PASS: sterile healing, fixed50% cure boundaries, -20Sick clamp, item consumption, full-HP debuff treatment, KO rejection and self-treatment")
 print("PASS: medical authority, self/other actual HP XP, medicine consumption, overheal, wall/range guards; doctor chance, both cooldowns, restoration and stale knockout timer safety")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Rules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup.replace('LIFE',life),medicine,cases]

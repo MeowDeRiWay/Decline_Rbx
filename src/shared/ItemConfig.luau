@@ -181,6 +181,7 @@ ItemConfig.Items.MachineGun308={Name=".308 machine gun",Weight=9,Slot="Hands",
  Description="Heavy machine gun. Uses Heavy weapons. R reloads available ammo; B selects FMJ/AP; V switches fire mode.",
  Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="308",ShotDistance=100,Magazine=60,ReloadTime=5,Speed=750,Range=450,Damage=30,DamageMin=25,DamageMax=30,RPM=600},
  Weapon={Damage=30,DamageMin=25,DamageMax=30,DamageType="Bullet",MaxUses=5000,AttacksPerMinute=600}}
+ItemConfig.Items.SterileBandage={Name="Sterile bandage",Weight=.1,Slot="Medicine",Description="Restores twice the target Endurance plus 2 HP per 20 First Aid of the healer. Reduces Sick by 20 points and has a fixed 50% chance to cure poisoning. Cannot revive."}
 ItemConfig.Items.GreatBandage={Name="Great bandage",Weight=.1,Slot="Medicine",Description="Restores twice the target Endurance plus 2 HP per 20 First Aid of the healer. Equip in Medicine."}
 ItemConfig.Items.Bandage={Name="Bandage",Weight=.1,Slot="Medicine",Description="Restores target Endurance plus 1 HP per 20 First Aid of the healer. Equip in Medicine. H, then click yourself or a nearby player."}
 for _,kind in ipairs({"FMJ","AP"}) do

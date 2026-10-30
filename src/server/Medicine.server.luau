@@ -32,11 +32,23 @@ remote.OnServerEvent:Connect(function(player,mode,target)
   if obstacle and not obstacle.Instance:IsDescendantOf(patient) then return end
  end
  if mode=="Bandage" then
-  if patient:GetAttribute("Knockout") or health.Health>=health.MaxHealth then return end
   local medicine=character:GetAttribute("MedicineItem")
+  local sterile=medicine=="SterileBandage"
+  local sick=patient:GetAttribute("Sick") or 0
+  local poisoned=patient:GetAttribute("Poisoned")==true
+  if patient:GetAttribute("Knockout") or (health.Health>=health.MaxHealth and not (sterile and (sick>0 or poisoned))) then return end
   if not Inventory.UseMedicine(player) then Journal.Send(player,"Equip a bandage in the Medicine slot first.");return end
   local amount=math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine,player:GetAttribute("MedicalHealingBonus")))
   health.Health+=amount;patient:SetAttribute("Health",health.Health)
+  if sterile then
+   patient:SetAttribute("Sick",math.max(0,sick-20))
+   if poisoned then
+    local cured=random:NextNumber()<.5
+    if cured then patient:SetAttribute("Poisoned",false) end
+    Journal.Send(player,cured and "Poisoning cured." or "The treatment did not cure poisoning.")
+    if target~=player then Journal.Send(target,cured and "Poisoning cured." or "The treatment did not cure poisoning.") end
+   end
+  end
   Journal.Send(player,string.format("You restored %g HP to %s.",amount,target==player and "yourself" or Literal.Protect(target.Name)))
   if target~=player then
    Progression.Award(player,amount)
