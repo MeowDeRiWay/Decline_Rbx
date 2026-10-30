@@ -15,6 +15,23 @@ local Driver={}
 function Driver.Start(localPlayer,serverPreview)
 local records={}
 local watched={}
+local function capture(r)
+ local transforms={}
+ for name,motor in pairs(r.Motors) do transforms[name]=motor.Transform end
+ r.Transforms=transforms
+ local held=r.Character:FindFirstChild("HeldItem")
+ local motor=held and held:FindFirstChild("WeaponGrip")
+ r.WeaponMotor=motor;r.WeaponTransform=motor and motor.Transform or nil
+end
+local function replay(r)
+ for name,transform in pairs(r.Transforms) do r.Motors[name].Transform=transform end
+ local motor=r.WeaponMotor
+ if motor and motor.Parent and r.WeaponTransform then motor.Transform=r.WeaponTransform end
+end
+local function invalidate(player,character)
+ local r=records[player]
+ if r and r.Character==character then r.Transforms=nil;r.WeaponMotor=nil end
+end
 local joints={"Waist","Neck","RootJoint","LeftShoulder","RightShoulder","LeftElbow","RightElbow","LeftHip","RightHip","LeftKnee","RightKnee"}
 local function clear(player)
  local watch=watched[player]
@@ -35,7 +52,16 @@ local function bind(player,character)
    if not motor or not motor:IsA("Motor6D") then records[player]=nil;return end
    motors[name]=motor
   end
-  records[player]={Character=character,Root=root,HP=hp,Motors=motors,Phase=0,Amount=0,Last=root.Position,Elapsed=0}
+  local previous=records[player]
+  local same=previous and previous.Character==character and previous.Root==root and previous.HP==hp
+  if same then for name,motor in pairs(motors) do if previous.Motors[name]~=motor then same=false;break end end end
+  if same then
+   -- Sounds, attachments and held-item visuals stream in frequently. They do
+   -- not replace the rig and must not restart gait or discard planted feet.
+   previous.Transforms=nil;previous.WeaponMotor=nil
+  else
+   records[player]={Character=character,Root=root,HP=hp,Motors=motors,Phase=0,Amount=0,Last=root.Position,Elapsed=0}
+  end
  end
  local queued=false
  local function queue()
@@ -43,15 +69,18 @@ local function bind(player,character)
   task.defer(function() queued=false;if watched[player]==links then rebuild() end end)
  end
  table.insert(links,character:GetAttributeChangedSignal("InteractionMode"):Connect(function()
+  invalidate(player,character)
   if not character:GetAttribute("InteractionMode") then return end
   local held=character:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
   if motor then Motion.Cancel(motor);motor.C0=motor:GetAttribute("RestC0") or motor.C0 end
  end))
  table.insert(links,character:GetAttributeChangedSignal("HandAction"):Connect(function()
+  invalidate(player,character)
   local held=character:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
   if motor then motor.Transform=CFrame.identity end
  end))
  table.insert(links,character:GetAttributeChangedSignal("BodyPoseKind"):Connect(function()
+  invalidate(player,character)
   for _,joint in ipairs(character:GetDescendants()) do if joint:IsA("Motor6D") then joint.Transform=CFrame.identity end end
  end))
  table.insert(links,character.DescendantAdded:Connect(queue))
@@ -80,13 +109,17 @@ RunService.PreSimulation:Connect(function(dt)
  for player,r in pairs(records) do
   local c,root,hp,m=r.Character,r.Root,r.HP,r.Motors
   if not root:IsDescendantOf(workspace) then continue end
-  if not serverPreview and (not viewer or (root.Position-viewer.Position).Magnitude>180) then r.Last=root.Position;r.Feet=nil;continue end
+  if not serverPreview and (not viewer or (root.Position-viewer.Position).Magnitude>180) then r.Last=root.Position;r.Feet=nil;r.Transforms=nil;r.Elapsed=0;continue end
   -- Frozen bodies keep the existing knockout/death pose.
-  if (root.Anchored and not c:GetAttribute("InteractionLocked")) or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then r.Last=root.Position;continue end
+  if (root.Anchored and not c:GetAttribute("InteractionLocked")) or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then r.Last=root.Position;r.Feet=nil;r.Transforms=nil;r.Elapsed=0;continue end
   r.Elapsed+=dt
-  if player~=localPlayer and r.Elapsed<1/30 then continue end
+  if player~=localPlayer and r.Elapsed<1/30 and r.Transforms then
+   -- Animator/native updates can overwrite Transform each simulation step.
+   -- Throttle the IK work, never the presentation of the last valid pose.
+   replay(r);continue
+  end
   local elapsed=r.Elapsed;r.Elapsed=0
-  if Interact.Apply(c,root,m,workspace:GetServerTimeNow()) then r.Last=root.Position;r.Feet=nil;r.Interacting=true;continue end
+  if Interact.Apply(c,root,m,workspace:GetServerTimeNow()) then r.Last=root.Position;r.Feet=nil;r.Interacting=true;if player~=localPlayer then capture(r) end;continue end
   if r.Interacting then
    r.Interacting=nil
    local held=c:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
@@ -187,6 +220,7 @@ RunService.PreSimulation:Connect(function(dt)
    end
   end
   HandPose.Apply(c,root,m,workspace:GetServerTimeNow())
+  if player~=localPlayer then capture(r) end
  end
 end)
 

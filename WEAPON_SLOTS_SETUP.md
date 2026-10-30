@@ -89,3 +89,15 @@ it cannot jump to a pistol's forward grip on the item-spawn frame.
 Uploaded Items.rbxm model measurements are included in a geometry regression
 fixture to verify the real rifle/SMG pivots and magazine direction. Medicine
 storage and self/other treatment paths retain their previous behavior.
+
+## Remote animation frame stability
+
+Remote IK is still calculated at approximately30Hz, but the resulting body and
+held-item Motor6D.Transform values are reapplied every PreSimulation step. This
+prevents intervening Animator/native updates from showing the authored pose on
+skipped frames. The owner keeps its existing full-frequency pose calculation.
+Cosmetic descendant changes (including shot sounds) no longer recreate the gait
+record or discard planted feet when the rig joints are unchanged. Distance culling,
+KO/death and streaming replacement invalidate caches and restart feet safely.
+The regression simulates Transform resets at60/120/144Hz, verifies pose continuity,
+keeps the IK budget, preserves feet across sounds, and checks KO/revival ownership.

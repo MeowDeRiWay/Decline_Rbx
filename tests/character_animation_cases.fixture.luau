@@ -16,6 +16,41 @@ assert(shoulder.Transform==before,"knockout pose left untouched")
 c:SetAttribute("Knockout",false)
 local remoteHip=oc:FindFirstChild("LeftHip",true)
 assert(remoteHip.Transform,"other player is animated on this viewer")
+-- Animator/native updates may reset Transform before PreSimulation. Remote
+-- pose calculation is intentionally throttled, but presentation must not be.
+local remoteHeld=Instance.new("Part",oc);remoteHeld.Name="HeldItem";remoteHeld.CFrame=otherRoot.CFrame*CFrame.new(.3,.2,-.3)
+oc:SetAttribute("HandsItem","Gun");oc.DescendantAdded:Fire(remoteHeld);flush()
+local remoteRootJoint=oc:FindFirstChild("RootJoint",true)
+local remoteShoulder=oc:FindFirstChild("RightShoulder",true)
+RunService.PreSimulation:Fire(1/30)
+local footStep=Foot.Step
+local remoteCalculations,remoteInitializations=0,0
+Foot.Step=function(state,neutral,...)
+ if neutral.Left.X>.5 then remoteCalculations+=1;if not state then remoteInitializations+=1 end end
+ return footStep(state,neutral,...)
+end
+for _,fps in ipairs({60,120,144}) do
+ for frame=1,24 do
+  for _,joint in ipairs(oc:GetDescendants()) do if joint:IsA("Motor6D") then joint.Transform=CFrame.identity end end
+  serverTime+=1/fps;RunService.PreSimulation:Fire(1/fps)
+  assert(remoteRootJoint.Transform.Position.Y<-.001,"remote crouch/legs must survive engine resets on every simulation frame")
+  local rotation=remoteShoulder.Transform.R
+  assert(math.abs(rotation[6])+math.abs(rotation[8])+math.abs(rotation[3])>.01,"remote firearm pose cannot alternate with authored neutral arms")
+ end
+end
+assert(remoteCalculations<50,"replaying poses must retain the remote IK calculation budget")
+local oldInitializations=remoteInitializations
+local shotSound=Instance.new("Sound",remoteHeld);shotSound.Name="ShotSound"
+oc.DescendantAdded:Fire(shotSound);flush();RunService.PreSimulation:Fire(1/30)
+assert(remoteInitializations==oldInitializations,"a shot sound must not reset planted feet and gait state")
+Foot.Step=footStep
+local frozen=CFrame.new(0,-.25,0)
+oc:SetAttribute("Knockout",true);remoteRootJoint.Transform=frozen
+RunService.PreSimulation:Fire(1/120)
+assert(remoteRootJoint.Transform==frozen,"a cached living pose must never overwrite remote KO")
+oc:SetAttribute("Knockout",false);RunService.PreSimulation:Fire(1/120)
+assert(remoteRootJoint.Transform~=frozen and remoteRootJoint.Transform.Position.Y<0,"revival recomputes fresh feet immediately")
+print("PASS: remote poses reapplied at60/120/144Hz despite per-frame engine resets, throttled IK retained and cosmetic descendants preserve planted feet")
 otherRoot.CFrame=CFrame.new(300,0,0)*otherRoot.CFrame
 local previous=remoteHip.Transform
 RunService.PreSimulation:Fire(1/30);assert(remoteHip.Transform==previous,"distant rigs do no pose work")
