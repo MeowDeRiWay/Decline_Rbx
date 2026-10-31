@@ -233,3 +233,9 @@ A T2 Workshop furnace refines 1–5 Iron into the same amount of Steel using one
 per batch (Repair150, 60 seconds). Steel templates are optional for now: the
 corresponding iron models are reused until SteelAxe/SteelShovel/SteelKnife/Steel
 models are added. Authored steel templates take precedence over fallbacks.
+
+
+Crafting now supports sequential repeat queues and automatically delivers each
+completed process to pockets. Materials and reusable tools can come from ordinary
+chests within 5 studs of the station. See CRAFT_QUEUE_SETUP.md for reservation,
+cancellation/refund, unattended jobs and client/server request details.

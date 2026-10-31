@@ -1,4 +1,5 @@
 local Rules = {}
+Rules.MaxQueue=1000
 function Rules.Discount(recipe,multiplier)
  local result=table.clone(recipe);result.Ingredients={}
  for id,amount in pairs(recipe.Ingredients) do result.Ingredients[id]=math.max(1,math.ceil(amount*(multiplier or 1))) end
@@ -48,6 +49,27 @@ function Rules.Plan(items,recipe,count)
  for id,amount in pairs(recipe.Byproducts or {}) do outputs[id]=(outputs[id] or 0)+amount*count end
  for id,amount in pairs(recipe.FuelByproducts or {}) do outputs[id]=(outputs[id] or 0)+amount end
  return {Ingredients=inputs,Outputs=outputs}
+end
+-- Existing numeric requests remain a single batch; structured requests repeat it.
+function Rules.QueuePlan(items,recipe,requested)
+ local batch,repeats= requested,1
+ if typeof(requested)=="table" then batch=requested.Batch;repeats=requested.Repeats end
+ local all=repeats=="All"
+ if not all and (typeof(repeats)~="number" or repeats~=repeats or repeats%1~=0 or repeats<1 or repeats>Rules.MaxQueue) then return nil end
+ local stock=table.clone(items)
+ local cycles={}
+ for _=1,all and Rules.MaxQueue or repeats do
+  local count=Rules.Batch(Rules.Available(stock,recipe),batch,recipe.MaxBatch)
+  if not count then if all then break else return nil end end
+  local plan=Rules.Plan(stock,recipe,count)
+  if not plan then return nil end
+  for id,amount in pairs(plan.Ingredients) do
+   if (stock[id] or 0)<amount then return nil end
+   stock[id]-=amount
+  end
+  plan.Count=count;table.insert(cycles,plan)
+ end
+ return #cycles>0 and cycles or nil
 end
 function Rules.Outputs(recipe)
  local result={}

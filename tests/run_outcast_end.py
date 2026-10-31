@@ -26,7 +26,7 @@ local Chests={Close=function() end,CreatePlayerCorpse=function(c,items) corpses[
 local Motion={Cancel=function() end};local Beds={Leave=function() end};local Defense={Resolve=function(a) return a end}
 local Progression={NewCharacter=function(p) assert(p.Character==nil);fresh+=1;p:SetAttribute("CharacterLevel",0);p:SetAttribute("AttributesConfirmed",false) end}
 local Economy={Reset=function(p) funds+=1;p:SetAttribute("Money",0) end}
-local Crafting={Close=function() end}
+local Crafting={Close=function() end,CancelPlayer=function() end}
 local Towns={LoadCharacter=function(p) spawned+=1 end,ResetForCreation=function(p) creation+=1;p:SetAttribute("HasSpawned",nil) end}
 local function prepare(p,town)
  p:SetAttribute("TownID",town);p:SetAttribute("OutcastEnd",nil);p:SetAttribute("AttributesConfirmed",true)

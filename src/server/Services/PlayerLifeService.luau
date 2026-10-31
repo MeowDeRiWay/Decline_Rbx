@@ -25,6 +25,7 @@ end
 function Service.Finish(player,character)
  if finished[character] or player.Character~=character then return end
  if character:GetAttribute("CarryingUserId") or character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
+ require(script.Parent.CraftingService).CancelPlayer(player)
  Beds.Leave(player,true)
  require(script.Parent.HandActionService).Cancel(player)
  Animation.Cancel(character)
@@ -74,6 +75,7 @@ end
 function Service.Knockout(player,character)
  if character:GetAttribute("Knockout") or finished[character] then return end
  if character:GetAttribute("CarryingUserId") or character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
+ require(script.Parent.CraftingService).CancelPlayer(player)
  Beds.Leave(player,true)
  require(script.Parent.HandActionService).Cancel(player)
  Animation.Cancel(character)

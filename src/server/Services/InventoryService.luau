@@ -66,7 +66,7 @@ function Service.ExtractAll(player)
 end
 function Service.RemovePlayer(player)
  -- Cancel/refund before detaching the inventory, regardless of event callback order.
- require(script.Parent.CraftingService).Close(player)
+ require(script.Parent.CraftingService).CancelPlayer(player)
  disconnected[player.UserId]=states[player] or disconnected[player.UserId]
  states[player]=nil
 end

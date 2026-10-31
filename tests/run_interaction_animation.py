@@ -198,7 +198,7 @@ handler=(root/'src/server/Inventory.server.luau').read_text()
 handler=handler[handler.index('action.OnServerEvent:Connect(function(player, command, value, amount)')+len('action.OnServerEvent:Connect(function(player, command, value, amount)'):handler.rindex('end)')]
 s+=r'''
 local dispatched=0
-local Crafting={Close=function() end}
+local Crafting={Close=function() end,CancelPlayer=function() end}
 local Service={Equip=function() dispatched+=1 end,ToggleHolster=function() dispatched+=1 end,Unequip=function() dispatched+=1 end}
 local ItemConfig={PickupDistance=1}
 local lastAction={}
@@ -220,7 +220,7 @@ inventoryAction(owner,"CloseChest");assert(c:GetAttribute("InteractionMode")=="L
 advance(1.15);inventoryAction(owner,"Equip","Gun");assert(dispatched==1)
 print("PASS: real inventory dispatch delays pickup until hand contact and blocks equipment changes through loot/recovery")
 '''
-life=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','').replace('require(script.Parent.WorldItemService).DropKnockoutWeapon(player,character)','')
+life=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','').replace('require(script.Parent.WorldItemService).DropKnockoutWeapon(player,character)','').replace('require(script.Parent.CraftingService).CancelPlayer(player)','')
 freeze=life[life.index('local function freeze(character)'):life.index('function Service.Finish')]
 knockout=life[life.index('function Service.Knockout'):life.index('function Service.Revive')]
 damage=life[life.index('function Service.Damage'):life.rindex('return Service')]

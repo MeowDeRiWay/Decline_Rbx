@@ -7,6 +7,7 @@ local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Animation=require(script.Parent.InteractionAnimationService)
 local Service = {}
 local contents = setmetatable({}, {__mode = "k"})
+local craftChests=setmetatable({},{__mode="k"})
 local sessions = {}
 local knockoutOwners=setmetatable({},{__mode="k"})
 local changed = Instance.new("BindableEvent")
@@ -90,6 +91,7 @@ local function refreshOwner(chest)
 end
 function Service.Open(player, chest)
  if not reachable(player, chest) then return false end
+ if chest.Name=="Chest" then craftChests[chest]=true end
  if sessions[player]==chest then return true end
  if player.Character:GetAttribute("InteractionLocked") and player.Character:GetAttribute("InteractionMode")~="Reach" then return false end
  local function opened()
@@ -154,6 +156,46 @@ function Service.TakeAll(player)
  for _,stack in ipairs(lootStacks(chest)) do if not stack.LootLocked then available=true;break end end
  if not available then Service.Close(player) end
  return true
+end
+local function trackCraftChest(object)
+ if object:IsA("Model") and object.Name=="Chest" then craftChests[object]=true end
+end
+local craftIndexStarted=false
+local function startCraftIndex()
+ if craftIndexStarted then return end
+ craftIndexStarted=true
+ for _,object in ipairs(workspace:GetDescendants()) do trackCraftChest(object) end
+ workspace.DescendantAdded:Connect(trackCraftChest)
+end
+function Service.CraftSources(player,station)
+ startCraftIndex()
+ local result={}
+ if not station or not station:IsDescendantOf(workspace) then return result end
+ local character=player.Character
+ local center=station:GetPivot().Position
+ for chest in pairs(craftChests) do
+  if chest.Name~="Chest" or not chest:IsDescendantOf(workspace) or chest:GetAttribute("IsCorpse") or chest:GetAttribute("Knockout")
+   or knockoutOwners[chest] or chest:GetAttribute("TradePost") or not chest:FindFirstChildWhichIsA("BasePart",true) then continue end
+  local nearest=Interaction.NearestPoint(chest,center)
+  local distance=(nearest-center).Magnitude
+  if distance>5 then continue end
+  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+  params.FilterDescendantsInstances=character and {character,station} or {station}
+  local hit=workspace:Raycast(center,nearest-center,params)
+  if hit and not hit.Instance:IsDescendantOf(chest) then continue end
+  contents[chest]=contents[chest] or Rules.New()
+  Rules.ReconcileEquipment(contents[chest],Items.Items,Items.Slots)
+  table.insert(result,{Chest=chest,State=contents[chest],Distance=distance})
+ end
+ table.sort(result,function(a,b) return a.Distance<b.Distance end)
+ return result
+end
+function Service.CraftChanged(sources)
+ for _,source in ipairs(sources) do if source.Chest then notify(source.Chest) end end
+end
+function Service.CraftRefundTarget(source,fallback)
+ if source.Chest and (not source.Chest.Parent or contents[source.Chest]~=source.State) then return fallback end
+ return source.State
 end
 function Service.ValidateSessions()
  for player,chest in pairs(sessions) do if not reachable(player,chest) then Service.Close(player) end end

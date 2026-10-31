@@ -5,11 +5,11 @@ root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/InventoryService.luau').read_text()
 service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|BackVisuals|HolsterVisuals|Journal)\s*=\s*require[^\n]+\n','',service)
 service=service.replace('require(script.Parent.HandActionService)','Hands')
-service=service.replace('require(script.Parent.CraftingService).Close(player)','Crafting.Close(player)').replace('require(script.Parent.ProgressionService).Meets','Progression.Meets')
+service=service.replace('require(script.Parent.CraftingService).CancelPlayer(player)','Crafting.CancelPlayer(player)').replace('require(script.Parent.ProgressionService).Meets','Progression.Meets')
 setup='''
 local strength=10
 local Progression={Meets=function(_,req) return not req.Attributes or strength>=(req.Attributes.Strength or 0) end}
-local Crafting={Close=function() end}
+local Crafting={CancelPlayer=function() end}
 local Journal=journalPlaceholder
 local notices=ReplicatedStorage:FindFirstChild("PersonalNotice").sent
 local HolsterVisuals={Apply=function() end}
@@ -263,7 +263,7 @@ assert(Service.Unequip(a,"Hands"))
 Service.Start()
 assert(Service.Add(a,"AssaultRifle223",1) and equipDraw(a,"AssaultRifle223"))
 local mag=Service.GetMagazine(a);mag.Loaded=7;mag.Type="AP"
-Crafting.Close=function(p) Service.Add(p,"Plank",1) end
+Crafting.CancelPlayer=function(p) Service.Add(p,"Plank",1) end
 Service.RemovePlayer(a);a.Parent=nil
 local rejoined=player(a.UserId);Players.PlayerAdded:Fire(rejoined)
 rejoined.Character=make("Model","Returned",workspace,{ReturningSession=true});rejoined.CharacterAdded:Fire(rejoined.Character)
