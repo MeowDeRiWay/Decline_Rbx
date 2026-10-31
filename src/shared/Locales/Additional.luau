@@ -1,5 +1,6 @@
 -- Manual UI terminology.
 return {
+ {"Pockets are empty","Кишені порожні","Карманы пусты"},
  {"Queued processes: %d · Results go to pockets","Процесів у черзі: {1} · Результати — у кишені","Процессов в очереди: {1} · Результаты — в карманы"},
  {"Processes","Процесів","Процессов"},
  {"Start queue","Запустити чергу","Запустить очередь"},

@@ -189,7 +189,7 @@ local function renderItems(frame, items, side)
   local x,y=ItemConfig.Items[a.ID].Name or a.ID,ItemConfig.Items[b.ID].Name or b.ID
   return x==y and a.Key<b.Key or x<y
  end)
- if #stacks==0 then text(frame,side=="Chest" and "Chest is empty" or "Inventory is empty",UDim2.new(),UDim2.new(1,-8,0,50)) end
+ if #stacks==0 then text(frame,side=="Chest" and (chestReadOnly and "Pockets are empty" or "Chest is empty") or "Inventory is empty",UDim2.new(),UDim2.new(1,-8,0,50)) end
  for order,stack in ipairs(stacks) do
   local id=stack.ID
   local definition=ItemConfig.Items[id]

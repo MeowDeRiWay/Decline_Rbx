@@ -82,24 +82,27 @@ local recipes = {
  SmeltSteel={Name="Smelt steel",Station="Furnace",WorkshopLevel=2,Description="Refine one iron per steel, up to five steel per batch, using one charcoal. Requires Repair 150 and a Workshop T2 furnace; you may leave.",Ingredients={Iron=1},Fuel={ID="Coal",Count=1},Output="Steel",OutputCount=1,MaxBatch=5,Duration=60,XP=100,Requirements={Skills={Repair=150}}},
  BoilPotatoes = {
   Name = "Boil potatoes", Food=true, Station = "Stove",
-  Description = "Boil potatoes using one bottle of clean water per potato.",
+  Description = "Boil potatoes using one bottle of clean water per potato. Requires Cook 50.",
   Ingredients = {Potato = 1, CleanWater = 1}, Output = "BoiledPotato", OutputCount = 1, MaxBatch = 5, Duration = 60,
+  Requirements = {Skills = {Cook = 50}},
  },
  SliceSausage = {
   Name = "Slice sausage", Food=true, Station = "CuttingBoard",
-  Description = "Slice a sausage into five pieces using a knife.",
+  Description = "Slice a sausage into five pieces using a knife. Requires Cook 50.",
   Ingredients = {Sausage = 1}, Output = "SausageSlice", OutputCount = 5,
   Tool = "Knife", MaxBatch = 1, Duration = 10, RequiresPresence = true,
+  Requirements = {Skills = {Cook = 50}},
  },
  MashedPotatoesWithSausage = {
   Name = "Mashed potatoes with sausage", Food=true, Station = "CuttingBoard",
-  Description = "Prepare mashed potatoes with sausage using either type of plate.",
+  Description = "Prepare mashed potatoes with sausage using either type of plate. Requires Cook 50.",
   Ingredients = {BoiledPotato = 1, SausageSlice = 1},
   Variants = {
    {Ingredient = "WoodenPlate", Output = "MashedPotatoesWithSausage_1"},
    {Ingredient = "Plate", Output = "MashedPotatoesWithSausage_2"},
   },
   OutputCount = 1, MaxBatch = 1, Duration = 20, RequiresPresence = true,
+  Requirements = {Skills = {Cook = 50}},
  },
 }
 

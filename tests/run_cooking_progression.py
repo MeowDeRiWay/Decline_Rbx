@@ -24,7 +24,7 @@ local doctor=false
 local sewing=true
 local repair=300
 local xp,bonuses=0,0
-local Progression={Meets=function(_,requirement) if requirement.Skills.Repair then return repair>=requirement.Skills.Repair end;return doctor end,CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
+local Progression={Meets=function(_,requirement) if requirement.Skills.Repair then return repair>=requirement.Skills.Repair end;if requirement.Skills.Cook then return true end;return doctor end,CraftEffects=function(_,station,count) return ProgressionRules.CraftEffects(cookState,station,count) end,CanStation=function(_,name) return name=="Workstation" or allowed end,
  CraftXP=function(_,recipe,count) xp+=ProgressionRules.CraftExperience(recipe,count) end,
  Loot=function(_,items) bonuses+=1; return items end}
 local stock={Potato=10,CleanWater=10,TreeLog=5}
@@ -254,6 +254,19 @@ for id,entry in pairs({MakeBandage={"FirstAid",50},MakeGreatBandage={"FirstAid",
  medicalSkills[entry[1]]=entry[2]
  assert(Service.Cook(a,id,1),id.." accepts exact threshold without the other medical skill")
  callbacks[#callbacks]()
+end
+local cooking=49
+Progression.Meets=function(_,requirements) return not requirements.Skills.Cook or cooking>=requirements.Skills.Cook end
+for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","SliceSausage","MashedPotatoesWithSausage"}) do
+ local recipe=Recipes[id]
+ assert(recipe.Requirements.Skills.Cook==50)
+ Service.Close(a);assert(Service.Open(a,recipe.Station=="Stove" and stove or board))
+ for item,n in pairs(recipe.Ingredients) do stock[item]=n end
+ if recipe.Fuel then stock[recipe.Fuel.ID]=recipe.Fuel.Count end
+ if recipe.Variants then stock[recipe.Variants[1].Ingredient]=1 end
+ cooking=49;assert(not Service.Cook(a,id,1),id.." rejects Cook49")
+ for item,n in pairs(recipe.Ingredients) do assert(stock[item]==n,"skill denial consumes nothing") end
+ cooking=50;assert(Service.Cook(a,id,1),id.." accepts Cook50");callbacks[#callbacks]()
 end
 print("PASS: industrial recipe inputs, Repair gates, exact XP/output, town/factory separation, Furnace T2 gate, unattended processing, charcoal fuel and food byproducts")
 

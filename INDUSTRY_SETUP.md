@@ -248,3 +248,9 @@ LeatherArmor60; LeatherArmor2 80; MiliArmor1 100; MiliArmor2 130.
 Medical recipes: Bandage FirstAid50; GreatBandage FirstAid75;
 SterileBandage FirstAid100 (replaces Doctor100); Antiseptic Doctor50.
 Costs, station placement, duration, XP and treatment effects are unchanged.
+
+Food crafting requires Cook50 for BoilPotatoes (both fuels), SliceSausage and
+MashedPotatoesWithSausage. The requirement is checked on queue creation and every
+process completion, and shown in all recipe descriptions/locales. Boiling water
+keeps its existing requirements. Empty bodies use “Pockets are empty”; ordinary
+chests and the player's own inventory retain their respective empty messages.
