@@ -177,6 +177,7 @@ The shooter hears shot/reload through a local non-positional copy, preserving th
 | --- | --- | --- | --- | --- | --- |
 | Rifle223 | 23–27 | 5 | 40 | LightWeapons | Bolt-action |
 | ServiceRifle223 | 21–25 | 20 | 300 | LightWeapons | Semi-auto only |
+| MarksmanRifle223 (Enfild X7) | 21–25 | 20 | 300 | LightWeapons | Semi-auto only |
 | AssaultRifle223 | 19–23 | 24 | 600 | LightWeapons | Auto/single |
 | LSW223 | 18–22 | 30 | 700 | HeavyWeapons | Auto/single |
 
@@ -200,3 +201,9 @@ equipment armor values counted. Back/Additional/Hands/Medicine remain usable for
 their own items but do not add separate armor layers. Items in retired equipment
 slots are returned to inventory with their condition and weapon/ammo metadata
 preserved when inventory state is refreshed or extracted into a corpse.
+
+Enfild X7 initially uses ServiceRifle223 combat values (Strength 4, 3.2 kg, 2.5 s reload). Its Sight uses the existing model accuracy mechanic. Both X7 and LSW cost 7 Iron + 2 Plank; X7 requires ArmsBench/Repair 150, 120 s, 500 XP. Standard .223 FMJ and Rifle223 now use Workstation.
+
+## .308 marksman rifle
+
+`MarksmanRifle308` uses the X7 configuration with .308 ammunition and 30–34 damage: 20 rounds, semi-auto only, 300 RPM, LightWeapons, Strength 4, 3.2 kg, 2.5 s reload. Sight accuracy comes from the authored model. No crafting recipe until steel and its crafting station exist.

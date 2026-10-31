@@ -86,11 +86,12 @@ world box; AP recipes were not specified and have not been invented.
 | Workstation | 9 mm pistol | 1 Plank + 3 Scrap | 1 Pistol9mm | 100 | 200 | 60 |
 | Workstation | 9 mm submachine gun | 1 Plank + 5 Scrap | 1 SMG9mm | 120 | 200 | 90 |
 | Workstation | 9 mm rounds | 1 Coal + 1 Chemicals + 1 Scrap | 50 Ammo9mmFMJ | 60 | 100 | 30 |
-| ArmsBench | .223 rounds | 1 Iron + 1 Coal + 1 Chemicals | 50 Ammo223FMJ | 150 | 200 | 60 |
-| ArmsBench | .223 bolt-action rifle | 5 Iron + 2 Plank | 1 Rifle223 | 150 | 500 | 120 |
+| Workstation | .223 rounds | 1 Iron + 1 Coal + 1 Chemicals | 50 Ammo223FMJ | 150 | 200 | 60 |
+| Workstation | .223 bolt-action rifle | 5 Iron + 2 Plank | 1 Rifle223 | 150 | 500 | 120 |
 | ArmsBench | .223 service rifle | 5 Iron + 2 Plank | 1 ServiceRifle223 | 150 | 500 | 120 |
 | ArmsBench | .223 assault rifle | 5 Iron + 2 Plank | 1 AssaultRifle223 | 150 | 500 | 120 |
-| ArmsBench | .223 light support weapon | 5 Iron + 2 Plank | 1 LSW223 | 150 | 500 | 120 |
+| ArmsBench | .223 light support weapon | 7 Iron + 2 Plank | 1 LSW223 | 150 | 500 | 120 |
+| ArmsBench | Enfild X7 | 7 Iron + 2 Plank | 1 MarksmanRifle223 | 150 | 500 | 120 |
 | Stove / Furnace | Burn logs | 5 TreeLog | 5 Coal | — | default 50 | 60 |
 | Stove / Furnace | Burn logs with charcoal | 5 TreeLog + 1 Coal | 5 Coal | — | default 50 | 30 |
 | Furnace in Workshop T2 | Smelt iron | 25 Scrap + 1 Coal | 5 Iron | — | default 50 | 120 |

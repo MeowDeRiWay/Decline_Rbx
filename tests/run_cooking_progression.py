@@ -145,16 +145,22 @@ repair=60
 local before=xp
 assert(Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==99 and stock.Coal==9 and stock.Chemicals==9)
 callbacks[#callbacks]();assert(xp==before+100 and Service.Snapshot(a).CookingReady.Ammo9mmFMJ==50)
-assert(not Service.Cook(a,"MakeRifle223",1),"factory recipe unavailable on town bench")
-local arms=make("Model","Custom weapons machine",workspace,{WeaponStation=true});make("Part","Part",arms)
-Service.Close(a);assert(Service.Open(a,arms));stock.Iron=100;stock.Plank=10
+stock.Iron=100;stock.Plank=20
 repair=149;assert(not Service.Cook(a,"MakeAmmo223",1));repair=150
-for _,id in ipairs({"MakeAmmo223","MakeRifle223","MakeAssaultRifle223","MakeLSW223","MakeServiceRifle223"}) do
+for _,id in ipairs({"MakeAmmo223","MakeRifle223"}) do
  before=xp;local recipe=Recipes[id]
  assert(Service.Cook(a,id,1));callbacks[#callbacks]()
  assert(xp==before+recipe.XP and Service.Snapshot(a).CookingReady[recipe.Output]==recipe.OutputCount)
 end
-assert(stock.Iron==79 and not Service.Cook(a,"MakePistol9mm",1))
+assert(not Service.Cook(a,"MakeMarksmanRifle223",1),"marksman rifle requires arms bench")
+local arms=make("Model","Custom weapons machine",workspace,{WeaponStation=true});make("Part","Part",arms)
+Service.Close(a);assert(Service.Open(a,arms))
+for _,id in ipairs({"MakeAssaultRifle223","MakeLSW223","MakeServiceRifle223","MakeMarksmanRifle223"}) do
+ before=xp;local recipe=Recipes[id]
+ assert(Service.Cook(a,id,1));callbacks[#callbacks]()
+ assert(xp==before+recipe.XP and Service.Snapshot(a).CookingReady[recipe.Output]==recipe.OutputCount)
+end
+assert(stock.Iron==70 and not Service.Cook(a,"MakePistol9mm",1))
 stock.Cloth=5;stock.Chemicals=1;repair=100;sewing=false
 assert(not Service.Cook(a,"MakeKevlar",1) and stock.Cloth==5 and stock.Chemicals==1)
 sewing=true;assert(Service.Cook(a,"MakeKevlar",1) and stock.Cloth==0 and stock.Chemicals==0 and durations[#durations]==60)

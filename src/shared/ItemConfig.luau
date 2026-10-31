@@ -149,6 +149,12 @@ ItemConfig.Items.AssaultRifle223={Name=".223 assault rifle",Weight=3.2,Slot="Han
 ItemConfig.Items.ServiceRifle223={Name=".223 service rifle",Weight=3.2,Slot="Hands",Description="An ordinary carbine once owned by some civilians for self-defense. It was loved for its reliability and quality engineering.",
  Firearm={Category="Rifle",Skill="LightWeapons",SingleOnly=true,BoltAction=false,HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=20,ReloadTime=2.5,Speed=750,Range=350,Damage=25,DamageMin=21,DamageMax=25,RPM=300},
  Weapon={Damage=25,DamageMin=21,DamageMax=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
+ItemConfig.Items.MarksmanRifle223={Name="Enfild X7",Weight=3.2,Slot="Hands",Description="A .223 bullpup marksman rifle. Fires single shots.",
+ Firearm={Category="Rifle",Skill="LightWeapons",SingleOnly=true,BoltAction=false,HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=20,ReloadTime=2.5,Speed=750,Range=350,Damage=25,DamageMin=21,DamageMax=25,RPM=300},
+ Weapon={Damage=25,DamageMin=21,DamageMax=25,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
+ItemConfig.Items.MarksmanRifle308={Name=".308 marksman rifle",Weight=3.2,Slot="Hands",Description="A .308 marksman rifle. Fires single shots.",
+ Firearm={Category="Rifle",Skill="LightWeapons",SingleOnly=true,BoltAction=false,HoldHeightRatio=.4,Caliber="308",ShotDistance=80,Magazine=20,ReloadTime=2.5,Speed=750,Range=350,Damage=34,DamageMin=30,DamageMax=34,RPM=300},
+ Weapon={Damage=34,DamageMin=30,DamageMax=34,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=300}}
 ItemConfig.Items.LSW223={Name=".223 light support weapon",Weight=6,Slot="Hands",Description="A rifle reworked into a machine gun. An improved gas system and firing mechanism made it a fully fledged light machine gun. Someone thought to put a scope on it. Turns out, it is handy.",
  Firearm={Category="MachineGun",Skill="HeavyWeapons",HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=30,ReloadTime=2.5,Speed=750,Range=350,Damage=22,DamageMin=18,DamageMax=22,RPM=700},
  Weapon={Damage=22,DamageMin=18,DamageMax=22,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=700}}

@@ -151,12 +151,12 @@ definition.BoltAction=nil;definition.SingleOnly=false;assert(math.abs(run(nil,"F
 definition.Category="Pistol";cowboy=1.15
 assert(math.abs(run(nil,"FMJ")-clear*1.15)<1e-6,"cowboy pistol damage")
 critChance=0;sniper=0;cowboy=1
-for _,entry in ipairs({{"LSW223",18,22},{"ServiceRifle223",21,25},{"AssaultRifle223",19,23},{"Rifle223",23,27}}) do
+for _,entry in ipairs({{"LSW223",18,22},{"ServiceRifle223",21,25},{"MarksmanRifle223",21,25},{"MarksmanRifle308",30,34},{"AssaultRifle223",19,23},{"Rifle223",23,27}}) do
  definition=Items[entry[1]].Firearm
  highRoll=false;assert(math.abs(run(nil,"FMJ")-entry[2]*clear/25)<1e-6,entry[1].." minimum damage")
  highRoll=true;assert(math.abs(run(nil,"AP")-entry[3]*clear/25)<1e-6,entry[1].." maximum damage")
 end
-print("PASS: all four configured .223 weapons roll exact new damage endpoints")
+print("PASS: configured .223 and .308 marksman weapons roll exact new damage endpoints")
 print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, FMJ/AP wall parity and caliber gates, metal/unknown stop and exact air range")
 '''
 with tempfile.TemporaryDirectory() as directory:

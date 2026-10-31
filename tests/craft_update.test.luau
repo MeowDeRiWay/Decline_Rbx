@@ -4,9 +4,9 @@ local P=require("../src/shared/ProgressionRules")
 for id,xp in pairs({MakePlanks=75,MakeHandle=25,MakeAxe=50,MakeShovel=50,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeIronAxe=200,MakeIronShovel=200,MakeIronKnife=200,MakeBucket=100,MakeCloth=25,MakeBandage=50,MakeGreatBandage=100}) do
  assert(P.CraftExperience(C[id],1)==xp,id)
 end
-for _,id in ipairs({"MakeRifle223","MakeAssaultRifle223","MakeLSW223","MakeServiceRifle223"}) do
+for _,id in ipairs({"MakeRifle223","MakeAssaultRifle223","MakeLSW223","MakeServiceRifle223","MakeMarksmanRifle223"}) do
  local recipe=C[id]
- assert(recipe.Ingredients.Iron==5 and recipe.Ingredients.Plank==2 and recipe.Requirements.Skills.Repair==150)
+ assert(recipe.Ingredients.Iron==((id=="MakeLSW223" or id=="MakeMarksmanRifle223") and 7 or 5) and recipe.Ingredients.Plank==2 and recipe.Requirements.Skills.Repair==150)
 end
 assert(C.MakeSewingKit.Ingredients.Scrap==5 and C.MakeSewingKit.Requirements.Skills.Repair==60)
 assert(C.MakeBandage.Requirements.Skills.FirstAid==50 and C.MakeGreatBandage.Requirements.Skills.FirstAid==100)
@@ -50,3 +50,5 @@ for _,id in ipairs({"BoilWater","BoilWaterCoal"}) do
 end
 assert(C.BoilWater.Duration==60 and C.BoilWaterCoal.Duration==30)
 print("PASS: boil 1-5 water bottles, one fuel, no XP or Ramsay water alias, coal twice as fast")
+
+assert(C.MakeAmmo223.Station=="Workstation" and C.MakeRifle223.Station=="Workstation")
