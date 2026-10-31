@@ -12,7 +12,7 @@ your empty shell is now just another part of its scenery.
 
 Only OK sends the server acknowledgement. The server checks that the player is
 actually awaiting this ending and has no living character or town. It removes
-the hidden old shell, resets inventory, money, level/XP, attributes, perks,
+the hidden old shell, resets inventory, level/XP, attributes, perks,
 tagged/manual/passive skills and spawn history, then exposes town selection.
 Joining a town creates a fresh character with the normal creation UI and full
 initial health. Repeated acknowledgements cannot reset the new character.
@@ -36,3 +36,6 @@ visual/play verification is still required.
 Manual check: leave town, get knocked out, wait two minutes, observe the ending
 without respawn; click OK, choose town, confirm a new build. Verify the former
 body still contains its loot, and town-member death still respawns as before.
+
+Account money is now persistent in DeclineMoney_v1 and survives this fresh-character
+flow. Economy.Reset only restarts the passive-income timer; it does not clear cash.

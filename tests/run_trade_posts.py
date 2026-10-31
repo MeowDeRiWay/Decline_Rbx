@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parents[1]
 trade=(root/'src/server/Services/TradePostService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 trade=re.sub(r'local (Items|Rules|MoneyRules|Interaction|Config|Inventory|Wallet|Towns)=require[^\n]+\n','',trade)
 wallet=(root/'src/server/Services/EconomyService.luau').read_text()
-wallet=re.sub(r'local R=require[^\n]+\n','local R=MoneyRules\n',wallet)
+wallet=re.sub(r'local R=require[^\n]+\n','local R=MoneyRules\n',wallet).replace('local Store=require(script.Parent.MoneyStore)','local Store=WalletStore')
 setup='''
 workspace.DescendantAdded=event()
 local Config={ReconnectGraceSeconds=300}
@@ -13,6 +13,7 @@ local Interaction={NearestPoint=function(object) return object.Position or Vecto
 local inventory={}
 local Inventory={Changed=event()}
 local function own(player) inventory[player.UserId]=inventory[player.UserId] or Rules.New();return inventory[player.UserId] end
+function Inventory.Export(player) return own(player) end
 function Inventory.Snapshot(player) local s=own(player);return {Items=table.clone(s.Items),Stacks=Rules.Stacks(s,Items.Items)} end
 function Inventory.Transfer(player,storage,id,amount,into,key)
  local source,target=own(player),storage;if not into then source,target=storage,own(player) end
@@ -107,7 +108,7 @@ print("PASS: actual wallet income, foreign buyers/member claims, quantity/price/
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
 for name,path in [('Items','ItemConfig'),('Rules','InventoryRules'),('MoneyRules','EconomyRules')]:
     parts.append(f'local {name}=(function()\n'+(root/f'src/shared/{path}.luau').read_text()+'\nend)()')
-parts += [setup,'local Wallet=(function()\n'+wallet+'\nend)()','local Service=(function()\n'+trade+'\nend)()',cases]
+parts += [(root/'tests/fixtures/money_store_engine.luau').read_text(),'local WalletStore=(function()\n'+(root/'src/server/Services/MoneyStore.luau').read_text().replace('local R=require(game:GetService("ReplicatedStorage").Shared.EconomyRules)','local R=MoneyRules')+'\nend)()',setup,'local Wallet=(function()\n'+wallet+'\nend)()','local Service=(function()\n'+trade+'\nend)()',cases]
 with tempfile.TemporaryDirectory() as directory:
     path=Path(directory)/'trade.luau';path.write_text('\n'.join(parts))
     subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

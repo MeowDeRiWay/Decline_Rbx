@@ -91,7 +91,7 @@ tax to the new maximum. Sales have no separate percentage tax.
 
 Every 120 seconds an online confirmed player earns **$1 × current character level**.
 There is no offline income; level 0 earns zero. Death, ordinary respawn and city
-changes do not remove account money. The balance is shown in the HUD and shop.
+changes, new characters and server changes do not remove account money. The balance is shown in the HUD and shop.
 It cannot be looted from a body, dropped, deposited in a chest or stolen from the
 player inventory. Buying goods and mayoral tax are the only implemented payments.
 
@@ -104,8 +104,24 @@ must retain Item_ID=Money and its BanknoteValue. Each note credits its denominat
 times Quantity, then disappears. It never becomes a droppable inventory item.
 Invalid denominations are rejected. Admin GiveItem Money credits $1 per unit.
 
-The ledger is server-owned and keyed by UserId; modifying a display attribute
-does not change money. Returning to the same running server restores the account,
-including shop proceeds earned while disconnected. This currently follows the
-game's in-memory session storage: account balances, shops, goods and prices do
-**not** persist across server shutdowns or transfers to a different server.
+The ledger is server-owned and keyed by Roblox UserId; modifying a display
+attribute does not change money. `MoneyStore` persists balances in the
+`DeclineMoney_v1` DataStore, using `User_<UserId>` keys. It saves changes after a
+short 2-second coalescing delay, on departure and during server shutdown. Failed
+saves retain the cached balance and retry after 10 seconds. An abrupt server crash
+can still lose changes that have not reached DataStore.
+
+Loading failures never replace saved money with zero: cash operations wait until
+the account loads, and the HUD shows `$…`. A 180-second session lease, renewed
+every 60 seconds, prevents another server from overwriting an active account.
+After an unclean shutdown, access can wait for that lease to expire. Offline shop
+payments load and save the seller's account, then release it. If that account is
+active on another server, the payment is rejected without transferring goods.
+Two-account payments are atomic within the running server, but their DataStore
+writes are separate; this is not a cross-account durable transaction system.
+
+For Studio persistence tests, enable **Enable Studio Access to API Services** in
+Game Settings > Security. Verify a credit survives leaving and joining a fresh
+server, and that starting a new character keeps the account balance. Shops,
+goods and prices still follow in-memory session storage; only account money
+persists across server shutdowns.

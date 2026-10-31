@@ -11,7 +11,7 @@ local Beds=require(script.Parent.HospitalBedService)
 local Animation=require(script.Parent.InteractionAnimationService)
 local Service={}
 local records={}
-local transient={MapOpen=true,HelpOpen=true,HelpHidden=true,HelpPreferenceReady=true,HelpPreferenceStatus=true,Money=true,TradeOpen=true,InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,PlayerContextOpen=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
+local transient={MapOpen=true,HelpOpen=true,HelpHidden=true,HelpPreferenceReady=true,HelpPreferenceStatus=true,Money=true,MoneyReady=true,MoneyStatus=true,TradeOpen=true,InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,PlayerContextOpen=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
 local function disconnect(record)
  if record.HealthConnection then record.HealthConnection:Disconnect();record.HealthConnection=nil end
 end

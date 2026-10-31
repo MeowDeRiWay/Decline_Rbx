@@ -119,7 +119,13 @@ function Service.Command(player,command,key,amount)
   local price=record.Prices[key]
   if not count or not MoneyRules.Integer(price,1,1000000000) or count*price>MoneyRules.Maximum then return false end
   record.Busy=true
-  local ok=Wallet.Transfer(player.UserId,record.Owner,count*price,function() return Inventory.Transfer(player,record.Storage,stack.ID,count,false,key) end)
+  local seller=record.Owner
+  local character=player.Character
+  local inventory=Inventory.Export(player)
+  local ok=Wallet.Transfer(player.UserId,seller,count*price,function()
+   if record.Owner~=seller or record.Prices[key]~=price or player.Character~=character or Inventory.Export(player)~=inventory or not near(player,record.Model) then return false end
+   return Inventory.Transfer(player,record.Storage,stack.ID,count,false,key)
+  end)
   record.Busy=false;visual(record);Service.Publish(record,ok and "Purchase complete." or "Purchase failed: check your balance and available stock.",player);return ok
  end
  return false

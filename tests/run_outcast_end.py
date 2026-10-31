@@ -25,7 +25,7 @@ local Inventory={ExtractAll=function(p) extracted+=1;return {Items={Musket=1}} e
 local Chests={Close=function() end,CreatePlayerCorpse=function(c,items) corpses[c]=items end}
 local Motion={Cancel=function() end};local Beds={Leave=function() end};local Defense={Resolve=function(a) return a end}
 local Progression={NewCharacter=function(p) assert(p.Character==nil);fresh+=1;p:SetAttribute("CharacterLevel",0);p:SetAttribute("AttributesConfirmed",false) end}
-local Economy={Reset=function(p) funds+=1;p:SetAttribute("Money",0) end}
+local Economy={Reset=function(p) funds+=1 end}
 local Crafting={Close=function() end,CancelPlayer=function() end}
 local Towns={LoadCharacter=function(p) spawned+=1 end,ResetForCreation=function(p) creation+=1;p:SetAttribute("HasSpawned",nil) end}
 local function prepare(p,town)
@@ -57,7 +57,7 @@ a:SetAttribute("CharacterLevel",20);a:SetAttribute("Money",1000);a:SetAttribute(
 assert(Service.RestartOutcast(a))
 assert(a.Character==nil and body.destroyed and not corpse.destroyed,"remove hidden shell but retain lootable corpse")
 assert(fresh==1 and resets==1 and funds==1 and creation==1)
-assert(not a:GetAttribute("OutcastEnd") and not a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CharacterLevel")==0 and a:GetAttribute("Money")==0)
+assert(not a:GetAttribute("OutcastEnd") and not a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CharacterLevel")==0 and a:GetAttribute("Money")==1000)
 assert(not Service.RestartOutcast(a) and fresh==1,"replayed acknowledgement cannot reset the new character")
 local citizen=prepare(b,1);Service.Knockout(b,citizen)
 local moved=CFrame.new(Vector3.new(5,2,3));assert(Service.MoveKnockout(b,moved) and Service.KnockoutRecord(citizen).Pivot==moved)
