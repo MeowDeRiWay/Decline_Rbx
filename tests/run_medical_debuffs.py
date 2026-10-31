@@ -46,7 +46,7 @@ local plan=assert(Craft.Plan({CleanWater=5,MedicalAlcohol=1},recipe,1))
 assert(plan.Ingredients.CleanWater==5 and plan.Ingredients.MedicalAlcohol==1 and plan.Outputs.Antiseptic==5 and plan.Outputs.EmptyBottle==1)
 assert(not Craft.Plan({CleanWater=4,MedicalAlcohol=1},recipe,1))
 local sterile=Recipes.MakeSterileBandage
-assert(sterile.Station=="MedStation" and sterile.Requirements.Skills.Doctor==100 and sterile.Tool==nil and sterile.Duration==20)
+assert(sterile.Station=="MedStation" and sterile.Requirements.Skills.FirstAid==100 and not sterile.Requirements.Skills.Doctor and sterile.Tool==nil and sterile.Duration==20)
 local plan=assert(Craft.Plan({GreatBandage=1,Antiseptic=1},sterile,1))
 assert(plan.Ingredients.GreatBandage==1 and plan.Ingredients.Antiseptic==1 and plan.Outputs.SterileBandage==1 and plan.Outputs.EmptyBottle==1)
 assert(not Craft.Plan({GreatBandage=1},sterile,1) and not Craft.Plan({Antiseptic=1},sterile,1))

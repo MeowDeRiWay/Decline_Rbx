@@ -58,7 +58,7 @@ assert(#c:FindFirstChild("EquippedArmor"):GetDescendants()==3,"Anchor is not wor
 local item=Items.Items.LeatherArmor;local recipe=Recipes.MakeLeatherArmor
 assert(item.Slot=="Body" and item.Weight==2 and item.Armor.Absorption==2 and item.Armor.Resistance==.1)
 assert(Defense.Resolve(20,item.Armor.Resistance,item.Armor.Absorption)==16)
-assert(recipe.Station=="Workstation" and recipe.Duration==60 and recipe.Requirements.Skills.Repair==100 and recipe.RequiresPresence)
+assert(recipe.Station=="Workstation" and recipe.Duration==60 and recipe.Requirements.Skills.Repair==60 and recipe.RequiresPresence)
 assert(recipe.Ingredients.Cloth==6 and recipe.Ingredients.SewingKit==nil and recipe.Tool=="SewingKit")
 assert(Craft.Speed({},recipe)==nil and Craft.Speed({SewingKit=1},recipe)==1)
 assert(not Craft.Plan({Cloth=5},recipe,1))
@@ -67,7 +67,7 @@ assert(plan.Ingredients.Cloth==6 and plan.Ingredients.SewingKit==nil and plan.Ou
 local improved=Items.Items.LeatherArmor2;local upgrade=Recipes.MakeLeatherArmor2
 assert(improved.Slot=="Body" and improved.Weight==3 and improved.Armor.Absorption==4 and improved.Armor.Resistance==.15)
 assert(Defense.Resolve(20,improved.Armor.Resistance,improved.Armor.Absorption)==13)
-assert(upgrade.Station=="Workstation" and upgrade.Duration==60 and upgrade.Requirements.Skills.Repair==140 and upgrade.Tool=="SewingKit")
+assert(upgrade.Station=="Workstation" and upgrade.Duration==60 and upgrade.Requirements.Skills.Repair==80 and upgrade.Tool=="SewingKit")
 assert(not Craft.Plan({LeatherArmor=1,Scrap=4},upgrade,1) and not Craft.Plan({Scrap=5},upgrade,1))
 local upgraded=assert(Craft.Plan({LeatherArmor=1,Scrap=5,SewingKit=1},upgrade,1))
 assert(upgraded.Ingredients.LeatherArmor==1 and upgraded.Ingredients.Scrap==5 and upgraded.Ingredients.SewingKit==nil and upgraded.Outputs.LeatherArmor2==1)

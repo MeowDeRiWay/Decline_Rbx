@@ -83,14 +83,14 @@ world box; AP recipes were not specified and have not been invented.
 | --- | --- | --- | --- | --- | --- | --- |
 | Workstation | 9 mm pipe pistol | 1 TreeLog + 3 Scrap | 1 PipePistol9mm | 50 | 100 | 20 |
 | Workstation | 9 mm pipe rifle | 1 TreeLog + 5 Scrap | 1 PipeRifle9mm | 50 | 100 | 30 |
-| Workstation | 9 mm pistol | 1 Plank + 3 Scrap | 1 Pistol9mm | 100 | 200 | 60 |
-| Workstation | 9 mm submachine gun | 1 Plank + 5 Scrap | 1 SMG9mm | 120 | 200 | 90 |
+| Workstation | 9 mm pistol | 1 Plank + 3 Scrap | 1 Pistol9mm | 75 | 200 | 60 |
+| Workstation | 9 mm submachine gun | 1 Plank + 5 Scrap | 1 SMG9mm | 90 | 200 | 90 |
 | Workstation | 9 mm rounds | 1 Coal + 1 Chemicals + 1 Scrap | 50 Ammo9mmFMJ | 50 | 100 | 30 |
-| Workstation | .223 rounds | 1 Iron + 1 Coal + 1 Chemicals | 50 Ammo223FMJ | 150 | 200 | 60 |
-| Workstation | .223 bolt-action rifle | 5 Iron + 2 Plank | 1 Rifle223 | 150 | 500 | 120 |
-| ArmsBench | .223 service rifle | 5 Iron + 2 Plank | 1 ServiceRifle223 | 150 | 500 | 120 |
-| ArmsBench | .223 assault rifle | 5 Iron + 2 Plank | 1 AssaultRifle223 | 150 | 500 | 120 |
-| ArmsBench | .223 light support weapon | 7 Iron + 2 Plank | 1 LSW223 | 150 | 500 | 120 |
+| Workstation | .223 rounds | 1 Iron + 1 Coal + 1 Chemicals | 50 Ammo223FMJ | 100 | 200 | 60 |
+| Workstation | .223 bolt-action rifle | 5 Iron + 2 Plank | 1 Rifle223 | 100 | 500 | 120 |
+| ArmsBench | .223 service rifle | 5 Iron + 2 Plank | 1 ServiceRifle223 | 110 | 500 | 120 |
+| ArmsBench | .223 assault rifle | 5 Iron + 2 Plank | 1 AssaultRifle223 | 120 | 500 | 120 |
+| ArmsBench | .223 light support weapon | 7 Iron + 2 Plank | 1 LSW223 | 140 | 500 | 120 |
 | ArmsBench | Enfild X7 | 7 Iron + 2 Plank | 1 MarksmanRifle223 | 150 | 500 | 120 |
 | Stove / Furnace | Burn logs | 5 TreeLog | 5 Coal | — | default 50 | 60 |
 | Stove / Furnace | Burn logs with charcoal | 5 TreeLog + 1 Coal | 5 Coal | — | default 50 | 30 |
@@ -201,7 +201,7 @@ level requirement for iron smelting remains a separate existing building rule.
 
 Each station must be a Model with at least one BasePart. Put MedStation=true on
 the hospital's medical table. Bandages belong exclusively here: five rags,
-Doctor 100, 20 seconds, one per queue; existing perk discounts still apply.
+First Aid 100, 20 seconds, one per queue; existing perk discounts still apply.
 Future medicines and medical materials belong here too. Advanced medical recipes
 may consume needles/syringes produced at a specialized workshop station; no such
 items or recipes are added until their definitions are supplied.
@@ -214,11 +214,10 @@ remain unchanged. The recipe table above contains the current costs and Repair g
 ## Workshop Repair requirements — 27 October 2026
 
 Stone tools are retired. Scrap tools/weapons require Repair50; iron tools/weapons
-require Repair100; steel tools/weapons require Repair150. Empty bucket requires Repair100, handle50,
+require Repair100; steel tools/weapons require Repair150. Empty bucket requires Repair50, handle50,
 and planks50. Requirements are enforced before ingredients are consumed and shown
 in recipe descriptions/menu locks. These are crafting requirements, not equipment
-requirements. Iron tool recipes are defined at Workstation with Repair100. Factory .223 firearms
-and ammunition now require Repair150; 9 mm FMJ requires Repair50 (29 October update).
+requirements. Iron tool recipes are defined at Workstation with Repair100. The .223 crafting gates are Ammo/Rifle100, Service110, Assault120, Marksman130 and LSW140; 9 mm FMJ requires Repair50.
 
 
 ## Craft categories — 31 October 2026
@@ -239,3 +238,13 @@ Crafting now supports sequential repeat queues and automatically delivers each
 completed process to pockets. Materials and reusable tools can come from ordinary
 chests within 5 studs of the station. See CRAFT_QUEUE_SETUP.md for reservation,
 cancellation/refund, unattended jobs and client/server request details.
+
+
+## Craft skill balance — 31 October 2026
+
+Repair: bucket50; Pistol9mm75; SMG9mm90; Ammo223FMJ100; Rifle223100;
+ServiceRifle223110; AssaultRifle223120; MarksmanRifle223130; LSW223140;
+LeatherArmor60; LeatherArmor2 80; MiliArmor1 100; MiliArmor2 130.
+Medical recipes: Bandage FirstAid50; GreatBandage FirstAid75;
+SterileBandage FirstAid100 (replaces Doctor100); Antiseptic Doctor50.
+Costs, station placement, duration, XP and treatment effects are unchanged.
