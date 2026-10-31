@@ -9,6 +9,8 @@ workspace.DescendantAdded=event()
 local world=make("Folder","WorldItems",workspace);world.ChildAdded=event()
 local box=make("Model","AmmoBox223FMJ",world,{Caliber="223",AmmoType="FMJ",MaxAmmo=50})
 make("Part","Part",box)
+local obsoleteCash=make("Part","bill",world)
+local obsoleteTaggedCash=make("Part","CashModel",world,{Item_ID="Money"})
 local randomCalls=0
 local Random={new=function() return {NextNumber=function() randomCalls+=1;return .999 end} end}
 local grants={}
@@ -17,6 +19,7 @@ local EquipmentVisuals={CaptureTemplate=function() end,Template=function() end}
 a:LoadCharacterAsync()
 '''
 cases='''
+assert(obsoleteCash.destroyed and obsoleteTaggedCash.destroyed,"existing world currency models are removed")
 assert(box:GetAttribute("AmmoCount")==50 and randomCalls==1,"box rolls only once despite repeat registration")
 assert(Service.Pickup(a,box) and grants.Ammo223FMJ==50 and box.destroyed,"box unpacks into loose inventory rounds")
 assert(not Service.Pickup(b,box) and grants.Ammo223FMJ==50,"same box cannot be collected twice")
@@ -76,13 +79,13 @@ function workspace:Raycast() error("out-of-range pickup must not raycast") end
 assert(not Service.Pickup(a,blocked),"head fallback cannot extend the two-stud reach limit")
 Interaction.NearestPoint=nearest
 function workspace:Raycast() return nil end
-local banknote=make("Part","Money",world,{Item_ID="Money",Quantity=1,BanknoteValue=50})
 local beforeMoney=Wallet.Balance(a)
-assert(Service.Pickup(a,banknote) and Wallet.Balance(a)==beforeMoney+50 and not grants.Money,"banknote credits protected account instead of inventory")
-assert(not Service.Pickup(b,banknote) and Wallet.Balance(a)==beforeMoney+50,"banknote cannot be credited twice")
-local bad=make("Part","Money",world,{Item_ID="Money",Quantity=1,BanknoteValue=.5})
-assert(not Service.Pickup(a,bad) and not bad.destroyed,"invalid denomination stays uncollected")
-print("PASS: denomination-based protected money pickup, no inventory cash or double collection")
+for _,id in ipairs({"Money","Bill","bill"}) do
+ assert(not ItemConfig.Items[id] and ItemConfig.RetiredItems[id],"physical currency is retired")
+ local retired=make("Part",id,world,{Item_ID=id,Quantity=1,BanknoteValue=50})
+ assert(not Service.Pickup(a,retired) and not grants[id] and Wallet.Balance(a)==beforeMoney,"retired cash cannot grant money or enter pockets")
+end
+print("PASS: physical banknotes removed; account money cannot be picked up")
 print("PASS: box1..MaxAmmo rolls once, pickup grants loose rounds once, dropped-stack exact quantity")
 print("PASS: tabletop head ray, upper shelf item top/center, solid-wall rejection, root-based reach limit")
 '''

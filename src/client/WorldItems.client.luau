@@ -44,7 +44,7 @@ Cursor.Subscribe("WorldItems",1,function()
  local character = player.Character
  local root = character and character:FindFirstChild("HumanoidRootPart")
  local camera = workspace.CurrentCamera
- if not root or not camera or character:GetAttribute("InteractionLocked") or character:GetAttribute("Knockout") or (((player:GetAttribute("TradeOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
+ if not root or not camera or character:GetAttribute("InteractionLocked") or character:GetAttribute("Knockout") or ((((player:GetAttribute("TradeOpen") or player:GetAttribute("ExchangeOpen")) or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) or GuiService.MenuIsOpen or UserInputService:GetFocusedTextBox() then return end
  local mouse = UserInputService:GetMouseLocation()
  if character:GetAttribute("HospitalResting") then
   Locale.Set(label,"Text","Hospital bed\n[E] Get up")
@@ -111,7 +111,6 @@ Cursor.Subscribe("WorldItems",1,function()
  highlight.Adornee, highlight.Enabled = item, true
  local count = item:GetAttribute("Quantity") or 1
  local caption = (definition.Name or item.Name) .. (count > 1 and " ×" .. tostring(count) or "")
- if definition.Currency then caption="$"..tostring((item:GetAttribute("BanknoteValue") or 0)*count).." banknote" end
  Locale.Set(label,"Text",caption .. (reachable and "\n[E] Pick up" or "\nToo far"))
  label.Position = UDim2.fromOffset(math.clamp(mouse.X + 16, 0, math.max(0, camera.ViewportSize.X - 200)), math.clamp(mouse.Y + 16, 0, math.max(0, camera.ViewportSize.Y - 44)))
  label.Visible = true
@@ -121,7 +120,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
  if not processed and input.KeyCode==Enum.KeyCode.E and character and character:GetAttribute("HospitalResting") and not GuiService.MenuIsOpen and not UserInputService:GetFocusedTextBox() then
   action:FireServer("HospitalBed");return
  end
- if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not (((player:GetAttribute("TradeOpen") or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
+ if not processed and input.KeyCode == Enum.KeyCode.E and hovered and reachable and not ((((player:GetAttribute("TradeOpen") or player:GetAttribute("ExchangeOpen")) or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or (player:GetAttribute("TownMenuOpen") or player:GetAttribute("FarmMenuOpen")) or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then
   if tradeHovered then tradeAction:FireServer("Open",hovered);return end
   action:FireServer(bedHovered and "HospitalBed" or farmHovered and "Farm" or stoveHovered and "OpenStove" or (chestHovered and "OpenChest" or "Pickup"), hovered)
  end

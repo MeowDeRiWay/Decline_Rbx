@@ -87,22 +87,19 @@ The mayor does not pay themselves. Insufficient funds collect only the current
 balance, without debt or a negative balance. A wall downgrade clamps the effective
 tax to the new maximum. Sales have no separate percentage tax.
 
-## Protected money account and banknotes
+## Protected account money
 
 Every 120 seconds an online confirmed player earns **$1 × current character level**.
 There is no offline income; level 0 earns zero. Death, ordinary respawn and city
 changes, new characters and server changes do not remove account money. The balance is shown in the HUD and shop.
 It cannot be looted from a body, dropped, deposited in a chest or stolen from the
-player inventory. Buying goods and mayoral tax are the only implemented payments.
+player inventory. Goods can be bought through the market; players can exchange money and items
+locally. Existing mayoral tax also uses account money.
 
-For a physical banknote, create a Model or Part named **`Money`**, with numeric
-**`BanknoteValue`** (a positive integer, for example 1, 5, 10, 20, 50 or 100).
-A different name may use string `Item_ID = "Money"`. Put map notes in WorldItems
-or directly in Workspace/organizational folders as with other world loot; place
-templates in `ServerStorage/Items` to use authored item pools. A money pool template
-must retain Item_ID=Money and its BanknoteValue. Each note credits its denomination
-times Quantity, then disappears. It never becomes a droppable inventory item.
-Invalid denominations are rejected. Admin GiveItem Money credits $1 per unit.
+Money is an account balance, not an inventory item. Physical `Money`, `Bill` and
+`bill` items are retired: they are excluded from item pools and admin item lists,
+removed from old inventories and destroyed when registered in the world. They
+cannot be picked up, dropped or used to credit an account.
 
 The ledger is server-owned and keyed by Roblox UserId; modifying a display
 attribute does not change money. `MoneyStore` persists balances in the
@@ -125,3 +122,32 @@ Game Settings > Security. Verify a credit survives leaving and joining a fresh
 server, and that starting a new character keeps the account balance. Shops,
 goods and prices still follow in-memory session storage; only account money
 persists across server shutdowns.
+
+
+## Local player exchange
+
+Right-click a conscious player and choose **Exchange**. Both players must be alive,
+confirmed, within **5 studs**, with no solid wall between them. A player can have
+only one invitation/exchange open. The recipient has 30 seconds to accept.
+
+The window shows your pockets, your offer and the partner's offer. Choose a
+quantity to add/remove items; enter a whole-dollar amount and press **Offer money**.
+Equipped items must be unequipped first. Either side may offer only money or only
+items, so gifts and barter are supported without dummy items or world cash.
+
+Both players must confirm the same revision of the offer. Changing an item or
+amount resets both confirmations and starts a 2-second review delay. Losing an
+offered item resets consent too. There is no escrow before completion: cancelling
+leaves the assets where they are. At the final confirmation, the server rechecks
+characters, pocket inventories, distance, walls, balances and item quantities. It
+stages both inventory changes before committing either side, preserving each
+weapon's condition, unique identity and loaded magazine. Money comes from the
+existing persistent account; its same DataStore crash limitations apply.
+
+Moving away, a knockout/death, character replacement, leaving the server, closing
+the window or 3 minutes without an offer change cancels the exchange. Other game
+menus cancel the client window; combat and world controls respect ExchangeOpen.
+Test with two Studio clients: money-only gift, bilateral item/cash barter, changed
+proposal after one confirmation, depleted funds, wall/range rejection and leaving
+mid-trade. Both clients should see the updated result, and a fresh server should
+restore the final saved account money.

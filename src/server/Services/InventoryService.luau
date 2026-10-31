@@ -84,7 +84,6 @@ function Service.CorpseStorage(state)
  return state
 end
 function Service.Add(player, id, count, conditions,weaponData)
- if ItemConfig.Items[id] and ItemConfig.Items[id].Currency then return require(script.Parent.EconomyService).Credit(player,count) end
  local state = states[player]
  if not state or not Rules.Add(state, ItemConfig.Items, id, count, conditions,weaponData) then return false end
  update(player)
@@ -183,6 +182,17 @@ function Service.Transfer(player, storage, id, requested, intoStorage,key)
  if not Rules.Transfer(source, target, ItemConfig.Items, id, requested,key) then return false end
  update(player)
  return true
+end
+-- Called only by the exchange service inside the non-yielding wallet commit.
+function Service.Exchange(a,b,offerA,offerB,expectedA,expectedB)
+ local own,other=states[a],states[b]
+ if not own or not other or own~=expectedA or other~=expectedB then return false end
+ local left,right=require(ReplicatedStorage.Shared.ExchangeRules).Stage(own,other,ItemConfig.Items,offerA,offerB)
+ if not left then return false end
+ for _,entry in ipairs({{own,left},{other,right}}) do
+  for _,key in ipairs({"Items","Conditions","Weapons"}) do entry[1][key]=entry[2][key] end
+ end
+ update(a);update(b);return true
 end
 function Service.TakeEquippedLoot(player,source,id,requested,key)
  local own=states[player]

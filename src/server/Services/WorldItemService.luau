@@ -36,10 +36,6 @@ local function register(item)
  local id=itemID(item)
  if ItemConfig.RetiredItems and ItemConfig.RetiredItems[id] then item:Destroy();return end
  if not ItemConfig.Items[id] then return end
- if ItemConfig.Items[id].Currency and not require(ReplicatedStorage.Shared.EconomyRules).Banknote(item) then
-  if not warned[item] then warn("[Decline] Money model needs a positive integer BanknoteValue attribute: "..item:GetFullName());warned[item]=true end
-  return
- end
  EquipmentVisuals.CaptureTemplate(item,id)
  local box=ItemConfig.Items[id].AmmoBox
  if box and item:GetAttribute("AmmoCount")==nil then
@@ -141,11 +137,6 @@ function Service.Pickup(player, item)
   end
  end
  -- No yields between inventory grant and destruction: only one player can win.
- if ItemConfig.Items[id].Currency then
-  local value=require(ReplicatedStorage.Shared.EconomyRules).Banknote(item)
-  if not value or not require(script.Parent.EconomyService).Credit(player,value*count) then return false end
-  item:Destroy();return true
- end
  local conditions = nil
  local encoded = item:GetAttribute("Conditions")
  if encoded then

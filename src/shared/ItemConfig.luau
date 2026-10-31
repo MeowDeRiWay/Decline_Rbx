@@ -2,10 +2,9 @@
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
 ItemConfig.PickupDistance = 2
-ItemConfig.RetiredItems={StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Axe=true,Showel=true}
+ItemConfig.RetiredItems={Money=true,Bill=true,bill=true,StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Axe=true,Showel=true}
 ItemConfig.Slots = {"Body", "PrimaryWeapon", "SecondaryWeapon", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
- Money = {Name="Banknote",Weight=0,Currency=true,Description="Money is credited directly to your protected account when picked up."},
  ZombieHand = {
   Name = "Zombie hand", Weight = 0, Slot = "Hands", Lootable = false,
   Description = "A zombie's right hand.",

@@ -10,7 +10,7 @@ Input.InputBegan:Connect(function(input,processed)
  if input.KeyCode==Enum.KeyCode.One or input.KeyCode==Enum.KeyCode.KeypadOne then slot="PrimaryWeapon"
  elseif input.KeyCode==Enum.KeyCode.Two or input.KeyCode==Enum.KeyCode.KeypadTwo then slot="SecondaryWeapon" end
  if not slot then return end
- for _,key in ipairs({"TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","MapOpen","HelpOpen","PlayerContextOpen","OutcastEnd"}) do if player:GetAttribute(key) then return end end
+ for _,key in ipairs({"ExchangeOpen","TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","MapOpen","HelpOpen","PlayerContextOpen","OutcastEnd"}) do if player:GetAttribute(key) then return end end
  local c=player.Character
  if not c or c:GetAttribute("HandsBusy") or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then return end
  player:SetAttribute("MedicalMode",nil)

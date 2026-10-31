@@ -205,7 +205,7 @@ local function setOpen(value)
  else Context:UnbindAction("HelpBlockInput");Run:UnbindFromRenderStep("HelpStopMovement") end
 end
 local function busy()
- for _,name in ipairs({"LoadingScreenOpen","TownMenuOpen","ProgressionOpen","InventoryOpen","TradeOpen","GroupOpen","AdminOpen","FarmMenuOpen","CharacterLoading","OutcastEnd","MapOpen"}) do
+ for _,name in ipairs({"LoadingScreenOpen","TownMenuOpen","ProgressionOpen","InventoryOpen","TradeOpen","ExchangeOpen","GroupOpen","AdminOpen","FarmMenuOpen","CharacterLoading","OutcastEnd","MapOpen"}) do
   if player:GetAttribute(name) then return true end
  end
  return false

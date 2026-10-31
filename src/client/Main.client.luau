@@ -17,7 +17,7 @@ local orbiting=false
 local previousMouseBehavior
 local function blocked()
  if Input:GetFocusedTextBox() or GuiService.MenuIsOpen then return true end
- for _,name in ipairs({"TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","LoadingScreenOpen","HelpOpen","MapOpen"}) do
+ for _,name in ipairs({"ExchangeOpen","TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","LoadingScreenOpen","HelpOpen","MapOpen"}) do
   if player:GetAttribute(name) then return true end
  end
  return false
@@ -39,7 +39,7 @@ Input.InputEnded:Connect(function(input)
 end)
 Input.WindowFocusReleased:Connect(stopOrbit)
 player.CharacterRemoving:Connect(stopOrbit)
-for _,name in ipairs({"TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","LoadingScreenOpen","HelpOpen","MapOpen"}) do
+for _,name in ipairs({"ExchangeOpen","TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","LoadingScreenOpen","HelpOpen","MapOpen"}) do
  player:GetAttributeChangedSignal(name):Connect(function() if blocked() then stopOrbit() end end)
 end
 local function minimumHeight()

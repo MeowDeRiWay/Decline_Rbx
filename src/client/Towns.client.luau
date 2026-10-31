@@ -335,7 +335,7 @@ hoverLabel.TextColor3 = Color3.fromRGB(240,240,235)
 hoverLabel.Font, hoverLabel.TextSize, hoverLabel.Visible = Theme.Font, 15, false
 hoverLabel.Parent = gui
 Cursor.Subscribe("Towns",3,function()
- if player:GetAttribute("TradeOpen") then hovered=nil;highlight.Enabled=false;hoverLabel.Visible=false;return end
+ if (player:GetAttribute("TradeOpen") or player:GetAttribute("ExchangeOpen")) then hovered=nil;highlight.Enabled=false;hoverLabel.Visible=false;return end
  local time = workspace:GetServerTimeNow()
  for index = #queue,1,-1 do if queue[index].EndsAt <= time then table.remove(queue,index) end end
  local request = queue[1]
@@ -383,7 +383,7 @@ Cursor.Subscribe("Towns",3,function()
  end
 end)
 UserInputService.InputBegan:Connect(function(input,processed)
- if player:GetAttribute("TradeOpen") then return end
+ if (player:GetAttribute("TradeOpen") or player:GetAttribute("ExchangeOpen")) then return end
  if player.Character and player.Character:GetAttribute("HospitalResting") then return end
  if processed or UserInputService:GetFocusedTextBox() then return end
  if queue[1] and (input.KeyCode == Enum.KeyCode.Y or input.KeyCode == Enum.KeyCode.N) then reply(input.KeyCode == Enum.KeyCode.Y)

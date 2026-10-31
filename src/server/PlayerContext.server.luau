@@ -2,6 +2,8 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Carry=require(script.Parent.Services.CarryService)
 local Chests=require(script.Parent.Services.ChestService)
+local Exchange=require(script.Parent.Services.PlayerExchangeService)
+Exchange.Start()
 local Life=require(script.Parent.Services.PlayerLifeService)
 local remote=Instance.new("RemoteEvent");remote.Name="PlayerContextAction";remote.Parent=ReplicatedStorage
 local last={}
@@ -9,7 +11,8 @@ remote.OnServerEvent:Connect(function(player,action,target)
  local now=os.clock();if now-(last[player] or -math.huge)<.2 then return end;last[player]=now
  if action=="Respawn" then Life.RequestRespawn(player);return end
  if player:GetAttribute("AttributesConfirmed")~=true then return end
- if action=="Carry" then Carry.Pickup(player,target)
+ if action=="Exchange" then Exchange.Invite(player,target)
+ elseif action=="Carry" then Carry.Pickup(player,target)
  elseif action=="Drop" then Carry.Drop(player)
  elseif action=="Bed" then Carry.PlaceOnBed(player,target)
  elseif action=="Loot" then

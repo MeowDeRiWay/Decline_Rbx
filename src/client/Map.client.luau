@@ -103,7 +103,7 @@ local function recenter()
 end
 local function busy()
  if GuiService.MenuIsOpen then return true end
- for _,name in ipairs({"TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","HelpOpen","LoadingScreenOpen","OutcastEnd"}) do if player:GetAttribute(name) then return true end end
+ for _,name in ipairs({"ExchangeOpen","TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","FarmMenuOpen","HelpOpen","LoadingScreenOpen","OutcastEnd"}) do if player:GetAttribute(name) then return true end end
  return false
 end
 local function setOpen(open)

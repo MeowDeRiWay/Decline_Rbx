@@ -18,7 +18,7 @@ local examined
 local function close() examined=nil;gui.Enabled=false;player:SetAttribute("PlayerContextOpen",false) end
 local function blocked()
  if GuiService.MenuIsOpen or Input:GetFocusedTextBox() then return true end
- for _,key in ipairs({"InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","MapOpen","HelpOpen","TradeOpen"}) do if player:GetAttribute(key) then return true end end
+ for _,key in ipairs({"InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","MapOpen","HelpOpen","ExchangeOpen","TradeOpen"}) do if player:GetAttribute(key) then return true end end
  local c=player.Character;local hp=c and c:FindFirstChildOfClass("Humanoid")
  return not hp or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") or c:GetAttribute("HospitalResting") or player:GetAttribute("AttributesConfirmed")~=true
 end
@@ -35,7 +35,10 @@ local function target()
   if object:IsA("Model") then
    if object:GetAttribute("HospitalBed")==true then return "Bed",object end
    local owner=Players:GetPlayerFromCharacter(object)
-   if owner and owner~=player and object:GetAttribute("Knockout") then return "Patient",owner end
+   if owner and owner~=player then
+    if object:GetAttribute("Knockout") then return "Patient",owner end
+    if not object:GetAttribute("IsDead") then return "Player",owner end
+   end
    if object:GetAttribute("IsCorpse") then return "Corpse",object end
   end
   object=object.Parent
@@ -65,6 +68,8 @@ Context:BindActionAtPriority("PlayerContextMenu",function(_,state)
  if c:GetAttribute("CarryingUserId") then
   if kind=="Bed" and not value:GetAttribute("HospitalBedUserId") then table.insert(options,{"Place on bed",function() remote:FireServer("Bed",value) end}) end
   table.insert(options,{"Put body down",function() remote:FireServer("Drop") end})
+ elseif kind=="Player" then
+  options={{"Exchange",function() remote:FireServer("Exchange",value) end}}
  elseif kind=="Patient" then
   options={{"Apply medicine",function() player:SetAttribute("MedicalMode","Bandage");inventory:FireServer("ReadyMedicine",true) end},{"Doctor",function() medical:FireServer("Doctor",value) end},{"Loot player",function() remote:FireServer("Loot",value) end},{"Pick up player",function() remote:FireServer("Carry",value) end}}
  elseif kind=="Corpse" then options={{"Search body",function() inventory:FireServer("OpenChest",value) end}} end

@@ -43,6 +43,21 @@ function Service.Transfer(from,to,amount,transferItems)
  assert(Store.Set(recipient,recipient.Balance+amount))
  return finish(true)
 end
+-- Local barter: both accounts must already be loaded. No yields between the
+-- item callback and the two cash changes; each side must own its full offer.
+function Service.Exchange(a,b,offerA,offerB,transferItems)
+ local x,y=idOf(a),idOf(b)
+ if x==y or not R.Integer(offerA,0,R.Maximum) or not R.Integer(offerB,0,R.Maximum) then return false end
+ local left,right=Store.Peek(x),Store.Peek(y)
+ if not left or not right or left.Balance<offerA or right.Balance<offerB then return false end
+ local balanceA,balanceB=left.Balance-offerA+offerB,right.Balance-offerB+offerA
+ if balanceA>R.Maximum or balanceB>R.Maximum then return false end
+ if transferItems and not transferItems() then return false end
+ if offerA~=offerB then
+  assert(Store.Set(left,balanceA));assert(Store.Set(right,balanceB))
+ end
+ return true
+end
 function Service.Step()
  local now=os.clock()
  for _,player in ipairs(Players:GetPlayers()) do
