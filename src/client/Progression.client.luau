@@ -185,7 +185,7 @@ local function refreshStats()
 end
 redraw=function()
  if not snapshot then return end
- Locale.Set(summary,"Text",snapshot.Level>=Rules.MaxLevel and ("Level "..Rules.MaxLevel.." · MAX") or string.format("Level %d · XP %g / %g",snapshot.Level,snapshot.XP,snapshot.NextXP))
+ Locale.Set(summary,"Text",snapshot.Level>=Rules.MaxLevel and ("Level "..Rules.MaxLevel.." · MAX") or string.format("Level %d · XP %.0f / %.0f",snapshot.Level,snapshot.XP,snapshot.NextXP))
  Locale.Set(points,"Text","Perks: "..Rules.PerkCount(snapshot).." / 10 · Skill points: "..snapshot.SkillPoints.." · Perk points: "..(snapshot.PerkPoints or 0)..(snapshot.Confirmed and "" or "\nAttribute points remaining: "..remaining()))
  for id,card in pairs(cards) do
   Locale.Set(card.Value,"Text",tostring(snapshot.Confirmed and snapshot.Stats[id] or draft[id]))

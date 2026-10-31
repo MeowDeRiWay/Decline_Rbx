@@ -9,8 +9,8 @@ draft.Strength=10;draft.Intelligence=6
 assert(R.Confirm(s,draft) and s.Confirmed)
 draft.Strength=1;assert(s.Stats.Strength==10,"confirmation copies input")
 assert(not R.Confirm(s,draft),"cannot respec")
-assert(R.AddXP(s,500) and s.Level==1 and s.SkillPoints==22 and s.Points==0 and s.PerkPoints==0)
-assert(R.AddXP(s,1000) and s.Level==2 and s.SkillPoints==33 and s.PerkPoints==0)
+assert(R.AddXP(s,250) and s.Level==1 and s.SkillPoints==22 and s.Points==0 and s.PerkPoints==0)
+assert(R.AddXP(s,250) and s.Level==2 and s.SkillPoints==33 and s.PerkPoints==0)
 assert(not R.AddXP(s,math.huge) and not R.AddXP(s,0/0))
 assert(R.SpendSkill(s,"Melee") and s.SkillPoints==32 and R.TotalSkills(s).Melee==31)
 assert(not R.SpendSkill(s,"Lumberjack") and not R.SpendSkill(s,"Fake"))
@@ -60,7 +60,7 @@ assert(R.FirstAid(19,1,7)==7 and R.FirstAid(20,2,7)==16 and R.FirstAid(100,1,7,"
 assert(R.CraftExperience({},5)==250 and R.CraftExperience({OutputCount=3},1)==50 and R.CraftExperience({XP=80},2)==160)
 assert(R.KillExperience(20)==50 and R.KillExperience(60)==150)
 assert(R.AddXP(s,.5) and s.XP==.5,"healing grants exact actual HP including fractions")
-print("PASS: initial INT skill bundle; perk points every3levels; 500*level XP; per-item practice; all nine perk requirements/rank caps/effects; medical and craft/kill XP")
+print("PASS: initial INT skill bundle; perk points every3levels; 250 starter XP then doubling; per-item practice; all nine perk requirements/rank caps/effects; medical and craft/kill XP")
 
 local requirements={Skills={Doctor=100,FirstAid=100}}
 local doctor=R.New();assert(R.Confirm(doctor,{Strength=5,Attention=5,Endurance=5,Intelligence=10,Agility=6,Luck=5}))
@@ -75,7 +75,7 @@ doctor.Skills.FirstAid=65;assert(R.Meets(doctor,either),"FirstAid100 alone satis
 doctor.Skills.FirstAid=64;doctor.Skills.Doctor=70
 assert(R.Meets(doctor,either),"Doctor100 alone satisfies OR")
 
-assert(R.RequiredXP(0)==500 and R.RequiredXP(9)==5000)
+assert(R.RequiredXP(0)==250 and R.RequiredXP(9)==32000)
 
 for _,case in ipairs({{0,0,1},{100,0,1.5},{0,200,2},{200,200,2},{300,100,2},{50,150,1.75}}) do
  assert(R.MovementMultiplier({Unarmed=case[1],Melee=case[2]})==case[3])
@@ -135,8 +135,8 @@ end
 assert(schedule.PerkPoints==10 and schedule.Perks.Observant==1 and R.PerkCount(schedule)==0)
 assert(not R.AddXP(schedule,1e12) and schedule.PerkPoints==10)
 assert(R.ResetProgression(schedule) and schedule.Level==1 and schedule.PerkPoints==0)
-assert(R.AddXP(schedule,1000) and schedule.Level==2 and schedule.PerkPoints==0)
-assert(R.AddXP(schedule,1500) and schedule.Level==3 and schedule.PerkPoints==1)
+assert(R.AddXP(schedule,250) and schedule.Level==2 and schedule.PerkPoints==0)
+assert(R.AddXP(schedule,250) and schedule.Level==3 and schedule.PerkPoints==1)
 local free=R.New();free.Confirmed=true;free.Stats.Attention=8
 assert(R.SpendPerk(free,"Observant") and free.PerkPoints==0 and R.PerkCount(free)==0)
 assert(R.AddXP(free,1e12) and free.Perks.Observant==1 and free.PerkPoints==10,"automatic award never duplicates or charges free perk")

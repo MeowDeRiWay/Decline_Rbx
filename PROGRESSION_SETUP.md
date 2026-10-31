@@ -186,3 +186,21 @@ Damage defense: `max(0, incoming * (1 - clamp(resistance, 0, 1)) - absorption)`.
 
 
 Current menu hotkeys: C character, T talents, Q inventory. The HUD buttons show the same keys. B changes ammunition type; R reloads any available type, preferring the current selection.
+
+
+## Starter XP curve — 31 October 2026
+
+RequiredXP takes the current level, and returns the cost of the next transition:
+250 * 2^max(0, currentLevel - 2). Entering levels 1, 2 and 3 costs 250 each;
+level4 costs500, level5 1000, level6 2000, level7 4000, level8 8000,
+level9 16000 and level10 32000. Later transitions continue doubling through
+level30. These are per-transition costs, not cumulative totals. Excess XP carries
+over and a single award can cross several levels. Perk/skill reward schedules,
+XP multipliers, admin exact-level grants and the level30 cap remain unchanged.
+The character panel formats XP as full integers to avoid scientific notation.
+
+The last transition (29->30) costs33,554,432,000 XP; the cumulative cost from
+level0 to30 is67,108,864,250 XP. Values remain exact in Luau's numeric range.
+Tests: xp_curve.test.luau covers thresholds, carryover, multi-level awards,
+multipliers and the cap; run_progression_service.py covers authoritative rewards,
+level-grant commands and HUD snapshot costs on the same curve.
