@@ -50,6 +50,7 @@ function Visuals.CaptureTemplate(item, id)
  if invalid and not invalid:IsA("Folder") then invalid:Destroy() end
  clone.Name=id
  clone:SetAttribute("Quantity",nil)
+ clone:SetAttribute("Item_ID",id)
  clone.Parent=folder
 end
 function Visuals.Validate(id)

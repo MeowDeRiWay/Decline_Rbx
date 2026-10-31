@@ -23,8 +23,7 @@ local function pose(record)
  if not frame then return end
  root.Anchored=true;root.CanCollide=false;record.Humanoid.AutoRotate=false
  root.AssemblyLinearVelocity=Vector3.zero;root.AssemblyAngularVelocity=Vector3.zero
- local target=frame*CFrame.new(0,root.Size.Z/2+.03,0)*CFrame.Angles(-math.pi/2,0,0)
- character:PivotTo(target*root.CFrame:Inverse()*character:GetPivot())
+ require(script.Parent.BodyFallService).RestOnBed(character,frame,character:GetAttribute("Knockout")==true)
 end
 function Service.CanPlace(player,bed,patient)
  if typeof(bed)~="Instance" or not bed:IsA("Model") or bed:GetAttribute("HospitalBed")~=true or not bed:IsDescendantOf(workspace) or occupied[bed] or not bedFrame(bed) then return false end
@@ -45,6 +44,7 @@ function Service.Leave(player,transition)
  local character,root,hp=record.Character,record.Root,record.Humanoid
  character:SetAttribute("HospitalResting",false)
  if character.Parent and (hp.Health>0 or transition) and not character:GetAttribute("Knockout") and not character:GetAttribute("IsDead") then
+  require(script.Parent.BodyFallService).Restore(character)
   character:PivotTo(record.Pivot);root.Anchored=record.Anchored;root.CanCollide=record.CanCollide
   root.AssemblyLinearVelocity=Vector3.zero;root.AssemblyAngularVelocity=Vector3.zero;hp.AutoRotate=record.AutoRotate
  end
@@ -57,8 +57,12 @@ function Service.PlacePatient(operator,player,bed)
  if not root or not hp or hp.Health<=0 or character:GetAttribute("IsDead") then return false end
  if player~=operator and not character:GetAttribute("Knockout") then return false end
  local ko=character:GetAttribute("Knockout")
+ require(script.Parent.InventoryService).ClearHands(player)
+ local savedPivot=character:GetPivot()
+ local upright=character:GetAttribute("BodyFallUprightRotation")
+ if ko and upright then savedPivot=CFrame.new(root.Position)*upright*root.CFrame:Inverse()*savedPivot end
  if ko then require(script.Parent.BodyFallService).Restore(character) end
- local record={Bed=bed,Character=character,Root=root,Humanoid=hp,Pivot=character:GetPivot(),Anchored=not ko and root.Anchored or false,CanCollide=ko or root.CanCollide,AutoRotate=ko or hp.AutoRotate,LastStep=os.clock(),NextTick=os.clock()+60/multiplier(bed)}
+ local record={Bed=bed,Character=character,Root=root,Humanoid=hp,Pivot=savedPivot,Anchored=not ko and root.Anchored or false,CanCollide=ko or root.CanCollide,AutoRotate=ko or hp.AutoRotate,LastStep=os.clock(),NextTick=os.clock()+60/multiplier(bed)}
  patients[player]=record;occupied[bed]=player;bed:SetAttribute("HospitalBedUserId",player.UserId)
  character:SetAttribute("HospitalResting",true);character:SetAttribute("Running",false)
  pose(record);return true

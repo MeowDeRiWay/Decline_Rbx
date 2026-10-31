@@ -4,10 +4,11 @@ import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/HospitalBedService.luau').read_text()
 source=re.sub(r'local (Items|Interaction|Journal|Debuffs)=require[^\n]+\n','',source)
-source=source.replace('require(script.Parent.BodyFallService)','BodyFall').replace('require(script.Parent.PlayerLifeService)','Life')
+source=source.replace('require(script.Parent.BodyFallService)','BodyFall').replace('require(script.Parent.PlayerLifeService)','Life').replace('require(script.Parent.InventoryService)','Inventory')
 setup='''
 local Debuffs={Treat=function(c,dt) local sick=math.max(0,(c:GetAttribute("Sick") or 0)-2*dt);c:SetAttribute("Sick",sick);if sick==0 then c:SetAttribute("Poisoned",false) end;return sick==0 end}
-local BodyFall={Restore=function() end}
+local BodyFall={Restore=function(c) c:SetAttribute("BodyPoseKind",nil) end,RestOnBed=function(c,_,ko) c:SetAttribute("BodyPoseKind",ko and "Knockout" or "Resting");return true end}
+local Inventory={ClearHands=function(c) c.Character:SetAttribute("HandsItem","") end}
 local Life={Revive=function(p) p.Character:SetAttribute("Knockout",false);return true end}
 local regenMessages={}
 local Journal={Send=function(_,text) table.insert(regenMessages,text) end}
@@ -61,7 +62,7 @@ clock+=20;Beds.Step();assert(#regenMessages==messageCount)
 assert(Beds.Use(a,nil) and a.Character:GetPivot()==start and not a.Character.HumanoidRootPart.Anchored)
 assert(a.Character.HumanoidRootPart.CanCollide and a.Character.Humanoid.AutoRotate and not bed:GetAttribute("HospitalBedUserId"),"get up restores pose, controls and vacancy")
 bed:SetAttribute("HospitalRegenMultiplier",6)
-assert(Beds.Use(a,bed));a.Character.Humanoid.Health=20;clock+=9;Beds.Step();assert(a.Character.Humanoid.Health==20)
+assert(Beds.Use(a,bed));assert(a.Character:GetAttribute("BodyPoseKind")=="Resting" and a.Character:GetAttribute("HandsItem")=="");a.Character.Humanoid.Health=20;clock+=9;Beds.Step();assert(a.Character.Humanoid.Health==20)
 clock+=1;Beds.Step();assert(a.Character.Humanoid.Health==26,"configured6x ticks every10seconds")
 Beds.Leave(a);assert(Beds.Use(b,bed));b.Character:SetAttribute("Sick",2)
 clock+=10;Beds.Step();assert(b.Character:GetAttribute("Sick")==0,"Sick clamps at zero")
@@ -69,9 +70,10 @@ b.Character.Humanoid.Health=0;assert(Beds.Leave(b,true))
 assert(not b.Character.HumanoidRootPart.Anchored,"KO transition restores upright state before knockout captures pose")
 b.Character.Humanoid.Health=20;assert(Beds.Use(b,bed));b.Character:SetAttribute("Knockout",true)
 b.Character.Humanoid.Health=1;b.Character:SetAttribute("Sick",2);b.Character:SetAttribute("Poisoned",true)
+Beds.Reposition(b);assert(b.Character:GetAttribute("BodyPoseKind")=="Knockout")
 clock+=10;Beds.Step();assert(b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==1,"bed clears debuffs before accumulating HP")
 for _,expected in ipairs({7,13,19}) do clock+=10;Beds.Step();assert(b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==expected,"bed does not revive below50%") end
-clock+=10;Beds.Step();assert(bed:GetAttribute("HospitalBedUserId")==b.UserId and not b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==25,"bed revives at exact50% with no debuffs and retains HP")
+clock+=10;Beds.Step();assert(bed:GetAttribute("HospitalBedUserId")==b.UserId and not b.Character:GetAttribute("Knockout") and b.Character:GetAttribute("BodyPoseKind")=="Resting" and b.Character.Humanoid.Health==25,"bed revives at exact50% with no debuffs and retains HP")
 Beds.Leave(b)
 b.Character:SetAttribute("Knockout",false);b.Character.HumanoidRootPart.Anchored=false
 assert(Beds.Use(b,bed));bed:SetAttribute("HospitalBed",false);Beds.Step()

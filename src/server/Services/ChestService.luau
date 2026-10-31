@@ -121,6 +121,7 @@ end
 local function lootStacks(chest)
  local storage=chest and contents[chest]
  if not storage then return {} end
+ Rules.ReconcileEquipment(storage,Items.Items,Items.Slots)
  return chest:GetAttribute("Knockout") and Rules.LootStacks(storage,Items.Items,true) or Rules.Stacks(storage,Items.Items)
 end
 function Service.Snapshot(player)

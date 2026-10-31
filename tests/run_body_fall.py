@@ -178,6 +178,30 @@ near(torso.CFrame:ToObjectSpace(backpack.CFrame).Position,backOffset.Position)
 Service.Restore(armored)
 near(limb.CFrame:ToObjectSpace(sleeve.CFrame).Position,offset.Position)
 near(torso.CFrame:ToObjectSpace(backpack.CFrame).Position,backOffset.Position)
+local resting,rroot,rjoints=build(.2)
+local surface=CFrame.new(20,2,30)*CFrame.Angles(0,.8,0)
+assert(Service.RestOnBed(resting,surface,false) and resting:GetAttribute("BodyPoseKind")=="Resting")
+assert(rroot.CFrame.LookVector:Dot(surface.UpVector)>.99,"resting body faces up")
+assert(rroot.CFrame.UpVector:Dot(surface.LookVector)>.99,"head faces bed head end")
+local bottom=math.huge
+for _,p in ipairs(resting:GetDescendants()) do
+ if p:IsA("Part") then
+  local localFrame=surface:ToObjectSpace(p.CFrame)
+  bottom=math.min(bottom,localFrame.Position.Y-Fall.RadiusY(localFrame,p.Size))
+ end
+end
+assert(math.abs(bottom-.03)<1e-5,"body rests above mattress without sinking or hovering")
+for _,side in ipairs({"Left","Right"}) do
+ local arm=resting:FindFirstChild(side.."LowerArm")
+ assert((arm.Position-resting:FindFirstChild("UpperTorso").Position):Dot(surface.LookVector)<-.1,"resting forearms lie toward feet, not a T or weapon pose")
+end
+for _,j in ipairs(rjoints) do if j.Name:find("Knee") then assert(j.C0.LookVector:Dot(Fall.Rest(j).LookVector)>.99,"resting legs are straight") end end
+assert(Service.RestOnBed(resting,surface,true) and resting:GetAttribute("BodyPoseKind")=="Knockout")
+for _,j in ipairs(rjoints) do if j.Name:find("Knee") then assert(j.C0.LookVector:Dot(Fall.Rest(j).LookVector)<-.6,"KO on bed remains fetal") end end
+assert(math.abs(rroot.CFrame.LookVector:Dot(surface.UpVector))<.01,"unconscious body lies on side")
+Service.Restore(resting);assert(not resting:GetAttribute("BodyPoseKind"))
+for _,j in ipairs(rjoints) do near(j.C0.Position,Fall.Rest(j).Position) end
+print("PASS: bed face-up rest, straight legs, arms beside torso, mattress clearance, fetal unconscious patients and upright joint restoration")
 print("PASS: left shoulder prone carry, hanging arms/legs, relaxed knees, interrupted KO cancellation, ground drop and attached armor/backpack preservation")
 print("PASS: fetal KO, relaxed death, restore/cancellation, directional zombie falls, head/feet arm poses and final ground contact on authored rig, marked plates, Terrain, ignored walls/furniture/home floors and missing-ground guard")
 '''

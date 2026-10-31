@@ -13,19 +13,21 @@ function Fall.Targets(joints,kind,prone)
  end
  local curled=kind=="Knockout"
  local carried=kind=="Carried"
- bend("Waist",carried and -12 or (curled and -28 or -4))
- bend("Neck",carried and -22 or (curled and -32 or 8),0,(curled or carried) and 0 or 7)
+ local resting=kind=="Resting"
+ bend("Waist",resting and 0 or carried and -12 or (curled and -28 or -4))
+ bend("Neck",resting and 0 or carried and -22 or (curled and -32 or 8),0,(resting or curled or carried) and 0 or 7)
  for _,side in ipairs({"Left","Right"}) do
   local sign=side=="Left" and -1 or 1
-  bend(side.."Hip",carried and 78 or (curled and 72 or (side=="Left" and 8 or -4)),0,(curled or carried) and 0 or sign*9)
-  bend(side.."Knee",carried and -20 or (curled and -132 or (side=="Left" and -14 or -8)))
+  bend(side.."Hip",resting and 0 or carried and 78 or (curled and 72 or (side=="Left" and 8 or -4)),0,(resting or curled or carried) and 0 or sign*9)
+  bend(side.."Knee",resting and -3 or carried and -20 or (curled and -132 or (side=="Left" and -14 or -8)))
   local shoulder,elbow
   for _,j in ipairs(joints) do if j.Name==side.."Shoulder" then shoulder=j elseif j.Name==side.."Elbow" then elbow=j end end
   if shoulder and elbow then
    local a,b=shoulder:GetAttribute("UpperVector"),shoulder:GetAttribute("LowerVector")
    if a and b then
     local upper,lower
-    if carried then upper=Vector3.new(sign*.12,-.15,-1);lower=Vector3.new(sign*.1,.1,-1)
+    if resting then upper=Vector3.new(sign*.06,-1,0);lower=Vector3.new(sign*.03,-1,0)
+    elseif carried then upper=Vector3.new(sign*.12,-.15,-1);lower=Vector3.new(sign*.1,.1,-1)
     elseif curled then upper=Vector3.new(sign*.12,-.45,-1);lower=Vector3.new(-sign*.1,.9,-.35)
     elseif kind=="Zombie" then
      -- Facing down: reach towards the head. Facing up: towards the feet.

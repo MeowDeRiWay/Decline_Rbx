@@ -110,7 +110,7 @@ local function refreshItems()
  for _,child in ipairs(itemList:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
  local found={};local query=search.Text:lower()
  for id,item in pairs(Items) do
-  if (item.Name.." "..id):lower():find(query,1,true) then table.insert(found,{ID=id,Item=item}) end
+  if (not item.AdminID or item.AdminID==id) and (item.Name.." "..id):lower():find(query,1,true) then table.insert(found,{ID=id,Item=item}) end
  end
  table.sort(found,function(a,b) return a.Item.Name==b.Item.Name and a.ID<b.ID or a.Item.Name<b.Item.Name end)
  for i,entry in ipairs(found) do

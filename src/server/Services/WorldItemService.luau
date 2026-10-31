@@ -22,9 +22,18 @@ local function queryable(object)
  if object:IsA("BasePart") then object.CanQuery=true end
  for _,part in ipairs(object:GetDescendants()) do if part:IsA("BasePart") then part.CanQuery=true end end
 end
+local function itemID(object)
+ -- Material tool models often retain Item_ID from their original copied model.
+ -- Their explicit registered model name takes precedence over that stale value.
+ local name=object.Name
+ if ItemConfig.RetiredItems and ItemConfig.RetiredItems[name] then return name end
+ local named=ItemConfig.Items[name]
+ if named and (named.HarvestTool or named.CraftTool=="Knife") then return name end
+ return object:GetAttribute("Item_ID") or name
+end
 local function register(item)
  if not item:IsA("Model") and not item:IsA("BasePart") then return end
- local id=item:GetAttribute("Item_ID") or item.Name
+ local id=itemID(item)
  if ItemConfig.RetiredItems and ItemConfig.RetiredItems[id] then item:Destroy();return end
  if not ItemConfig.Items[id] then return end
  if ItemConfig.Items[id].Currency and not require(ReplicatedStorage.Shared.EconomyRules).Banknote(item) then
@@ -44,6 +53,7 @@ local function register(item)
  WorldActivity.Register(item,"Item")
 end
 local function consider(object)
+ if object:IsA("Model") and object:FindFirstChildOfClass("Humanoid") then return end
  if object:IsA("Model") and (object.Name=="Chest" or Stations.Kind(object)) then queryable(object) end
  if object.Parent==folder then register(object); return end
  if not object:IsA("Model") and not object:IsA("BasePart") then return end
@@ -62,7 +72,7 @@ local function consider(object)
   ancestor=ancestor.Parent
  end
  if ancestor~=workspace then return end
- local id=object:GetAttribute("Item_ID") or object.Name
+ local id=itemID(object)
  if ItemConfig.RetiredItems and ItemConfig.RetiredItems[id] then object:Destroy();return end
  if ItemConfig.Items[id] then object.Parent=folder; register(object) end
 end

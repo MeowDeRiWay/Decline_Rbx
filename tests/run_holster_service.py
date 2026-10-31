@@ -271,6 +271,25 @@ assert(Service.GetMagazine(rejoined).Loaded==7 and Service.Snapshot(rejoined).It
 rejoined:LoadCharacterAsync();assert(Service.Snapshot(rejoined).Equipment.Hands==nil,"fresh respawn still resets inventory")
 print("PASS: actual inventory disconnect/reconnect continuity, crafting refund order, magazine preservation and fresh respawn reset")
 '''
+world_cases+='''
+local staleTool=make("Model","ScrapShowel",worldFolder,{Item_ID="Showel",Quantity=1});make("Part","Blade",staleTool)
+worldFolder.ChildAdded:Fire(staleTool)
+assert(staleTool:GetAttribute("Item_ID")=="ScrapShowel" and not staleTool.destroyed,"material model name repairs stale generic Item_ID")
+ground=false;assert(World.Pickup(rejoined,staleTool) and Service.Snapshot(rejoined).Items.ScrapShowel==1)
+assert(equipDraw(rejoined,"ScrapShowel"),"scrap shovel equips under its actual material ID")
+assert(Service.ClearHands(rejoined) and Service.Unequip(rejoined,"PrimaryWeapon"))
+ground=true;assert(World.Drop(rejoined,"ScrapShowel",1),"scrap shovel can be dropped again")
+for _,id in ipairs({"Knife","Axe","Showel"}) do
+ assert(not ItemConfig.Items[id] and not Service.Add(rejoined,id,1))
+ local retired=make("Model",id,worldFolder,{Item_ID=id,Quantity=1});make("Part","Part",retired)
+ worldFolder.ChildAdded:Fire(retired);assert(retired.destroyed,"retired generic world pickups disappear")
+ local state=Service.Export(rejoined);state.Items[id]=1;state.Conditions[id]={500};state.Weapons[id]={{Loaded=0,Type="FMJ"}}
+ Service.Refresh(rejoined);assert(not state.Items[id] and not state.Conditions[id] and not state.Weapons[id])
+end
+local namedActor=make("Model","Axe",workspace);make("Humanoid","Humanoid",namedActor)
+workspace.DescendantAdded:Fire(namedActor);assert(not namedActor.destroyed,"player names are never retired-item pickups")
+print("PASS: generic tool removal, stale ScrapShowel Item_ID repaired, pickup/equip/drop and inventory cleanup")
+'''
 parts += [setup,'local Service=(function()\n'+service+'\nend)()\nHands.Stow=function(p,fn) Service.ClearHands(p);fn();return true end\nlocal function equipDraw(p,id,key) local ok=Service.Equip(p,id,key);if ok and ItemConfig.Items[id].Weapon then return Service.ActivateWeapon(p,ItemConfig.Items[id].Slot) end;return ok end',cases,world_setup,'local World=(function()\n'+world+'\nend)()',world_cases]
 with tempfile.TemporaryDirectory() as folder:
  path=Path(folder)/'holster.luau';path.write_text('\n'.join(parts));subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

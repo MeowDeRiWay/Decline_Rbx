@@ -43,6 +43,24 @@ local function staticPose(model,frame,kind)
 end
 function Service.Restore(model) return staticPose(model,nil,nil) end
 function Service.Carry(model,frame) return staticPose(model,frame,"Carried") end
+function Service.RestOnBed(model,surface,knockedOut)
+ local root=model:FindFirstChild("HumanoidRootPart")
+ if not root then return false end
+ local kind=knockedOut and "Knockout" or "Resting"
+ local rotation=CFrame.Angles(math.pi/2,0,math.pi)
+ if knockedOut then rotation*=CFrame.Angles(0,math.pi/2,0) end
+ local frame=surface*rotation
+ local joints=bodyJoints(model)
+ local targets=Fall.Targets(joints,kind,false)
+ local frames=Fall.Solve(root,frame,joints,targets)
+ local minimum=math.huge
+ for part,bodyFrame in pairs(frames) do
+  local localFrame=surface:ToObjectSpace(bodyFrame)
+  minimum=math.min(minimum,localFrame.Position.Y-Fall.RadiusY(localFrame,part.Size))
+ end
+ if minimum<math.huge then frame+=surface.UpVector*(.03-minimum) end
+ return staticPose(model,frame,kind)
+end
 -- Only explicitly marked ground plates (or Terrain) support bodies. Skip
 -- intervening furniture/walls instead of treating their top faces as ground.
 local function groundBelow(origin,model)

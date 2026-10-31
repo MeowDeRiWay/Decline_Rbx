@@ -172,7 +172,7 @@ print("PASS: delayed single contact, handedness, weapon lowering, anchored crouc
 chest=(root/'src/server/Services/ChestService.luau').read_text()
 chest=re.sub(r'local (Players|ReplicatedStorage|Inventory|Rules|Items|Interaction|Animation)\s*=.*\n','',chest)
 s+=r'''
-local Rules={New=function() return {Items={Stone=1}} end,Stacks=function() return {} end}
+local Rules={New=function() return {Items={Stone=1}} end,Stacks=function() return {} end,ReconcileEquipment=function() end}
 local Items={PickupDistance=1,Items={Stone={}}}
 local transfers=0
 local Inventory={Transfer=function(_,storage,id) transfers+=1;storage.Items[id]=nil;return true end}

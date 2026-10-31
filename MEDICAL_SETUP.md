@@ -162,3 +162,12 @@ that one pickup; it is removed from the owner's equipment before the body pose
 is captured. Finishing death retries only if a held weapon still exists, so it
 cannot duplicate a gun already dropped on KO. The nearby drop tests wall
 clearance and floor placement; if it cannot place a pickup, ownership is retained.
+
+
+Hospital bed visual poses (31 October): awake patients lie face-up, head toward
+BedPoint/BedSurface local -Z, with straight relaxed legs and arms beside the torso.
+Hands are cleared/stowed before placement. Unconscious patients retain a curled
+fetal pose on their side. BodyFallService.RestOnBed uses replicated C0 transforms,
+places the authored body bounds0.03studs above the mattress, and preserves armor,
+backpack and holster attachments. Leaving restores standing joint frames and the
+saved upright entry pivot. Hospital revival reapplies the awake resting pose.
