@@ -154,6 +154,9 @@ assert(equipped==2 and b.Character.Humanoid.Health==20,"wall appearing during an
 use("Bandage",b);a.Character:SetAttribute("Knockout",true);pending();a.Character:SetAttribute("Knockout",false)
 assert(equipped==2 and b.Character.Humanoid.Health==20,"incapacitation before contact spends no item")
 use("Bandage",b);pending();assert(equipped==1 and b.Character.Humanoid.Health>20,"valid medical contact applies the normal effect once")
+equipped=2;b.Character.Humanoid.Health=20;b:SetAttribute("Endurance",5.1)
+a:SetAttribute("SkillFirstAid",0);a:SetAttribute("MedicalHealingBonus",0)
+use("Bandage",b);pending();assert(b.Character.Humanoid.Health==26,"fractional healing rounds up before applying")
 print("PASS: sterile healing, fixed50% sterile and25%+Luck antiseptic cure boundaries, scaled Sick clamp, item consumption, full-HP debuff treatment, KO treatment without waking, retained HP and self-treatment")
 print("PASS: medical authority, self/other actual HP XP, medicine consumption, overheal, wall/range guards; doctor chance, both cooldowns, restoration and stale knockout timer safety")
 '''

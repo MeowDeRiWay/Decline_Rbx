@@ -128,7 +128,7 @@ Keep in mind that passive income is $1 x player level per payout. That very impo
 
 Help the people who know how to make things, and they will help you.]]},
  {Name="Zombies",Title="ZOMBIES",Text=[[THE WORLD GETS HARDER
-Every completed in-game day gives all living and newly spawned zombies one additional level and +1 damage per hit. Extra levels increase their maximum HP. The first day has no daily bonus. Night attribute bonuses still apply.
+Every completed in-game day gives all living and newly spawned zombies one additional level and +1 damage per hit. Extra levels increase their maximum HP. The first day has no daily bonus. Night aggression and attribute bonuses apply from 22:00 until 06:00. The clock above the HUD is visible to everyone.
 
 RESCUE AND SURVIVAL
 A knockout does not automatically kill you. After two minutes you may choose Respawn, or wait for someone to carry you to a hospital bed. Right-click a knocked-out player for Doctor, Loot or Carry. Right-click while carrying to put them down; right-click a free hospital bed to place the patient.

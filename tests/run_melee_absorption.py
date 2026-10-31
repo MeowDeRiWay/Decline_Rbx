@@ -167,6 +167,13 @@ Service.Apply(targetHP,5,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})
 b:SetAttribute("TeamID",10)
 assert(Service.Apply(hp,5,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0)
 assert(#playerDamage==1,"only positive player-versus-player damage reaches ambient observers; no NPCs, misses, absorption or friendlies")
+local rounded=make("Model","Fractional damage target",workspace)
+rounded:SetAttribute("DamageResistance",.25);rounded:SetAttribute("DamageAbsorption",.2)
+local roundedHP=make("Humanoid","Humanoid",rounded);roundedHP.Health=100;roundedHP.MaxHealth=100
+function roundedHP:TakeDamage(value) self.Health=math.max(0,self.Health-value) end
+assert(Service.Apply(roundedHP,4.1,"Bullet",nil,"Ranged")==3 and roundedHP.Health==97,"round up AFTER armor, not before")
+assert(Service.Apply(roundedHP,.1,"Bullet",nil,"Ranged")==0 and roundedHP.Health==97,"absorbed hits stay zero")
+rounded.Name="Mannikin";assert(Service.Apply(roundedHP,4.1,"Bullet",nil,"Ranged")==3 and roundedHP.Health==94,"training target uses same rounding")
 print("PASS: authoritative PvP damage observer reports real damage and excludes NPCs, misses, absorbed and friendly hits")
 
 '''

@@ -31,6 +31,7 @@ for module in ['ItemConfig','CraftConfig','ProgressionRules']:
  end end
 end''')
 parts.append('''
+assert(dictionary.Translate("Consume","uk")=="Спожити" and dictionary.Translate("Consume","ru")=="Употребить")
 assert(Rules.Normalize("uk-UA")=="uk" and Rules.Normalize("ru-ru")=="ru" and Rules.Normalize("fr-fr")=="en")
 assert(dictionary.Translate("Take all","uk")=="Взяти все")
 assert(dictionary.Translate("Requires Strength 4","uk")=="Потрібно: Сила 4")

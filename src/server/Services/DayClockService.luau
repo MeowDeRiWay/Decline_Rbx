@@ -18,7 +18,7 @@ local function publish()
  workspace:SetAttribute("DayClockHour",hour)
  workspace:SetAttribute("DayClockSpeed",speed)
  workspace:SetAttribute("DayClockPaused",paused)
- local night=hour<6 or hour>=18
+ local night=hour<6 or hour>=22
  if workspace:GetAttribute("IsNight")~=night then workspace:SetAttribute("IsNight",night) end
 end
 function Service.SetHour(value) advance();hour=value;publish() end

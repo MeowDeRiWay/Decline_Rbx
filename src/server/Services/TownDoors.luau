@@ -66,6 +66,12 @@ local function setOpen(door, record, open)
  door:SetAttribute("DoorOpen", open)
  for part, original in pairs(record.parts) do
   if part.Parent then
+   if open then
+    part.Anchored=true
+   else
+    part.CFrame=original.CFrame
+    part.Anchored=original.Anchored
+   end
    part.Transparency = open and 1 or original.Transparency
    part.CanCollide = not open and original.CanCollide
    part.CanQuery = not open and original.CanQuery
@@ -104,7 +110,7 @@ local function register(door)
  local record = {parts={}}
  for _, part in ipairs(physical(door)) do
   record.parts[part] = {Transparency=part.Transparency,CanCollide=part.CanCollide,CanQuery=part.CanQuery,
-   CanTouch=part.CanTouch,BlocksVision=part:GetAttribute("BlocksVision")}
+   CanTouch=part.CanTouch,BlocksVision=part:GetAttribute("BlocksVision"),Anchored=part.Anchored,CFrame=part.CFrame}
  end
  doors[door] = record
  door:SetAttribute("DoorOpen",false)

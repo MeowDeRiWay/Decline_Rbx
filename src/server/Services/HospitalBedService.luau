@@ -86,7 +86,7 @@ function Service.Step()
     record.NextTick=now+60/multiplier(record.Bed)
     local amount=character:GetAttribute("Regeneration") or 0
     if typeof(amount)=="number" and amount==amount and amount>0 and amount<math.huge then
-     local before=hp.Health;hp.Health=math.min(hp.MaxHealth,hp.Health+amount)
+     local before=hp.Health;hp.Health=math.min(hp.MaxHealth,hp.Health+math.ceil(amount))
      if hp.Health>before then Journal.Send(player,string.format("Regeneration restored %g HP.",hp.Health-before)) end
      character:SetAttribute("Health",hp.Health)
     end

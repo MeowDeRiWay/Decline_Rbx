@@ -68,6 +68,7 @@ local function added(character)
  humanoid.JumpPower = 0
  humanoid.JumpHeight = 0
  humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+ humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
 end
 player.CharacterAdded:Connect(added)
 if player.Character then task.spawn(added, player.Character) end

@@ -52,7 +52,7 @@ handle=function(player,mode,target,contact)
   if antiseptic and sick<=0 and not poisoned then return end
   if not antiseptic and health.Health>=health.MaxHealth and not (sterile and (sick>0 or poisoned)) then return end
   if not Inventory.UseMedicine(player) then Journal.Send(player,"Equip a medical item in the Medicine slot first.");return end
-  local amount=antiseptic and 0 or math.min(health.MaxHealth-health.Health,Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine,player:GetAttribute("MedicalHealingBonus")))
+  local amount=antiseptic and 0 or math.min(health.MaxHealth-health.Health,math.ceil(Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),target:GetAttribute("Endurance"),medicine,player:GetAttribute("MedicalHealingBonus"))))
   health.Health+=amount;patient:SetAttribute("Health",health.Health)
   if sterile or antiseptic then
    local removed=math.min(sick,reduction)

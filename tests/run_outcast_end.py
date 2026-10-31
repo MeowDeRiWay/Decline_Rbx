@@ -35,6 +35,10 @@ local function prepare(p,town)
 end
 '''
 cases='''
+local probe=prepare(a,nil)
+assert(Service.Damage(a,probe.Humanoid,.01,true,true)==1 and probe.Humanoid.Health==99,"small damage rounds up")
+assert(Service.Damage(a,probe.Humanoid,1.01,true,true)==2 and probe.Humanoid.Health==97)
+assert(Service.Damage(a,probe.Humanoid,0,true,true)==0 and probe.Humanoid.Health==97,"zero is preserved")
 local body=prepare(a,nil)
 Service.Knockout(a,body)
 assert(dropAttempts==1);Service.Knockout(a,body);assert(dropAttempts==1,"KO drops once only")

@@ -44,7 +44,7 @@ local ticker
 task={spawn=function(fn) ticker=coroutine.create(fn);assert(coroutine.resume(ticker)) end,wait=function() coroutine.yield() end,defer=function(fn) fn() end}
 local flag=object("Model","Flag");flag.Parent=workspace;flag:SetAttribute("TownID",1);flag:SetAttribute("LeaderID",10)
 local gate=object("Model","GateDoor");gate.Parent=workspace;gate:SetAttribute("TownID",1);gate:SetAttribute("TownGate",true);gate:SetAttribute("Door",true)
-local part=object("BasePart","Part");part.Parent=gate;part.Transparency=.25;part.CanCollide=true;part.CanQuery=true;part.CanTouch=false;part:SetAttribute("BlocksVision",true);gate.children={part}
+local part=object("BasePart","Part");part.Parent=gate;part.Anchored=false;part.CFrame="closed frame";part.Transparency=.25;part.CanCollide=true;part.CanQuery=true;part.CanTouch=false;part:SetAttribute("BlocksVision",true);gate.children={part}
 workspace.children={flag,gate,part}
 local player=object("Player","Guest");player.UserId=20;player:SetAttribute("AttributesConfirmed",true)
 local position=setmetatable({}, {__sub=function(a,b) return a end})
@@ -60,8 +60,11 @@ fire(player,gate);assert(requests==1 and not gate:GetAttribute("DoorOpen"),"gues
 assert(Service.Admit(player,gate,2)==false,"cannot approve a different town")
 assert(Service.Admit(player,gate,1)==true and gate:GetAttribute("DoorOpen"))
 assert(part.Transparency==1 and not part.CanCollide and not part.CanQuery and not part:GetAttribute("BlocksVision"))
+assert(part.Anchored,"opening prevents gravity from dropping an unanchored door")
+part.CFrame="displaced"
 time=119;assert(coroutine.resume(ticker));assert(gate:GetAttribute("DoorOpen"),"still open before deadline")
 time=120;assert(coroutine.resume(ticker));assert(not gate:GetAttribute("DoorOpen") and part.CanCollide,"auto closes after exactly 20 seconds")
+assert(part.CFrame=="closed frame" and not part.Anchored,"closure restores door frame and original anchor flag")
 assert(Service.Admit(player,gate,1));player:SetAttribute("TownID",1);time+=1
 fire(player,gate)
 assert(gate:GetAttribute("DoorOpen"),"authorized activation opens door")

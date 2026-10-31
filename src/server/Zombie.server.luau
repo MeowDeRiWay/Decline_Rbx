@@ -38,7 +38,7 @@ local function applyDayStats(model,hp,base)
  for id,value in pairs(derived) do model:SetAttribute(id,value) end
  model:SetAttribute("SkillUnarmed",math.min(300,skills.Unarmed+100));model:SetAttribute("Accuracy",math.min(300,skills.Unarmed+100))
  model:SetAttribute("SightRange",derived.ViewRange);model:SetAttribute("MoveSpeed",derived.RunBonus)
- hp.MaxHealth=derived.MaxHealth;hp.Health=hp.MaxHealth*ratio;hp.WalkSpeed=derived.RunBonus
+ hp.MaxHealth=derived.MaxHealth;hp.Health=math.ceil(hp.MaxHealth*ratio);hp.WalkSpeed=derived.RunBonus
 end
 local function refreshStats()
  for model,base in pairs(baseStats) do
@@ -256,7 +256,7 @@ local function prepare(model)
   -- Custom anchored rigs may not enter Humanoid's Dead state. HP is authoritative.
   if humanoid.Health<=0 and not dead then die() end
   if dead then navigation:Cancel(); movement:Disconnect(); return end
-  if os.clock()>=regenAt then regenAt=os.clock()+60;humanoid.Health=math.min(humanoid.MaxHealth,humanoid.Health+(model:GetAttribute("Regeneration") or 0)) end
+  if os.clock()>=regenAt then regenAt=os.clock()+60;humanoid.Health=math.min(humanoid.MaxHealth,humanoid.Health+math.ceil(model:GetAttribute("Regeneration") or 0)) end
   elapsed+=dt
   if elapsed>=.1 then
    elapsed%=.1

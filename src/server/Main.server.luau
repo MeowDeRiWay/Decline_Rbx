@@ -26,6 +26,7 @@ local function prepare(character)
  humanoid.JumpPower = 0
  humanoid.JumpHeight = 0
  humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+ humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
  root.Anchored = false
  root.CanCollide = true
  head.Anchored = false

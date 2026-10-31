@@ -25,6 +25,17 @@ local function button(text,x,y,w,callback)
  b.Font=Theme.Font;b.TextSize=14;b.TextColor3=Theme.Text;b.Text=text;b.Parent=bar;Theme.Bevel(b)
  b.Activated:Connect(callback);return b
 end
+local clock=label(bar,"--:--",450,-30,120,24,18)
+clock.Name="WorldClock"
+clock:SetAttribute("LocalizationIgnore",true)
+local function updateClock()
+ local hour=workspace:GetAttribute("DayClockHour")
+ if typeof(hour)~="number" then clock.Text="--:--";return end
+ local minutes=math.floor(hour*60)%1440
+ clock.Text=string.format("%02d:%02d",math.floor(minutes/60),minutes%60)
+end
+workspace:GetAttributeChangedSignal("DayClockHour"):Connect(updateClock)
+updateClock()
 -- A persistent, bounded event/chat journal. Only filtered TextChatService messages enter it.
 local journal=Instance.new("ScrollingFrame")
 journal.Position=UDim2.fromOffset(12,28);journal.Size=UDim2.fromOffset(330,98)

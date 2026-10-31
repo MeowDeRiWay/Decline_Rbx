@@ -123,12 +123,14 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
   -- Training targets reset on the lethal hit without entering the Dead state.
   if not target:FindFirstChildOfClass("ForceField") then
    amount=(bypass and amount or resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
+   amount=math.ceil(math.max(0,amount))
    local remaining = math.max(0,before-amount)
    humanoid.Health = remaining > 0 and remaining or humanoid.MaxHealth
    amount = math.min(before,amount)
   else amount = 0 end
  else
   amount=(bypass and amount or resolve(amount,(target:GetAttribute("DamageResistance") or 0)+(target:GetAttribute("ArmorResistance") or 0),(target:GetAttribute("DamageAbsorption") or 0)+(target:GetAttribute("ArmorAbsorption") or 0)))+postDefense
+  amount=math.ceil(math.max(0,amount))
   humanoid:TakeDamage(amount)
   amount = math.max(0,before-humanoid.Health)
  end

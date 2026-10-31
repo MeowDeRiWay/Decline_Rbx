@@ -1,11 +1,34 @@
+## 31 October 2026 — world interactions and starter balance
+
+- Open doors are anchored while non-colliding; closing restores the saved CFrame,
+  anchor flag, visibility, collision, query, touch and vision properties.
+- Starter craft skill requirements formerly at 60 are now 50 (backpack, sewing
+  kit, pipe guns, 9 mm FMJ, stone tools, handles and planks). Medical starters
+  already required 50; their thresholds remain 50. Craft durations are unchanged.
+- Night bonuses now run 22:00 inclusive to 06:00 exclusive. HH:MM is visible to
+  all players above the shared scalable HUD; changing time remains admin-only.
+- Client GroundMovement sweeps the collision space down to 0.15 studs above the
+  feet to prevent automatic stepping onto furniture. It preserves shallow floor
+  steps, walkable slopes, horizontal sliding, gravity and KO/bed physics. Native
+  climbing is disabled on both server and local character.
+- Consume/Eat/Drink have Ukrainian and Russian translations. Completed missing
+  catalog entries for the marksman rifles added by the preceding main commit.
+- Player, zombie and training-target damage rounds up after all defenses and
+  ranged bonuses. Bandages, food, hospital/ordinary regeneration and revival
+  round HP gains up before the max-HP cap. Zero damage remains zero.
+- Regression coverage includes unanchored door restoration, exact 22:00/06:00
+  boundaries, 49/50 craft gates, anti-step guards, post-armor damage rounding,
+  fractional bandage healing and Consume localization. Studio multiplayer visual
+  verification remains a live playtest.
+
 ## Weapon recipes and military armor — 29 October 2026 (latest)
 
 User corrections applied directly to main: PipePistol9mm = TreeLog1 + Scrap3;
-PipeRifle9mm = TreeLog1 + Scrap5 (both Repair60). Restored Workstation recipes
+PipeRifle9mm = TreeLog1 + Scrap5 (both Repair50). Restored Workstation recipes
 MakePistol9mm = Plank1 + Scrap3 / Repair100 / 60s / XP200;
 MakeSMG9mm = Plank1 + Scrap5 / Repair120 / 90s / XP200. SMG use requires Strength4.
 All four .223 firearms = Iron5 + Plank2 / Repair150, existing time/XP preserved.
-9mm FMJ Repair60; .223 FMJ Repair150; ingredients and output50 unchanged.
+9mm FMJ Repair50; .223 FMJ Repair150; ingredients and output50 unchanged.
 MiliArmor1 = Kevlar6 + Iron3 / Repair175 / 60s / weight5kg / armor6/.30.
 MiliArmor2 = MiliArmor1 + Kevlar2 + Iron3 / Repair200 / 60s / weight6kg / armor8/.40.
 Both armor recipes temporarily at ArmsBench/WeaponStation, require presence and
@@ -267,7 +290,7 @@ Water thresholds normalized to MaxWatering: >=80%time1,>=60%time1.2,>=40%time1.5
 - Armadillo END6/LCK6 max2 adds2absorption/.10resistance per rank; NotSoEasy END8 adds.10resistance below25%maxHP (combat/direct hazards and stat display); Duelist LCK6/LightWeapons150 +.10pistol critical chance; DroppedIt LCK6/LightWeapons15010% on damaging bolt-action hit drops held weapon, neverZombieHand; WeaponPart STR6 sets equipped weapon base weight0, ammo still weighs. Player disarm preserves exact UID/magazine/type/condition with no pocket swap; preparation failure leaves gear intact. NPC and disconnected-player equipment use authoritative state, not duplicated loot clones.
 - StrongBack nowSTR6 AND END6,max2 (+10kg each). MoreCriticals max2, each rank doubles Luck critical chance (x2/x4). Lifegiver retains END7,max2 but now+4*characterLevel maxHP per rank; updates every level. Ten selected perk RANKS maximum, except Observant; shown in UI and enforced server-side.
 - Target hover now transparent Fallout-style text, no health bar/card. Without Observant only valid hit chance is disclosed; with perk name, current/maxHP and equipped weapon appear. Existing friendly/group rules unchanged.
-- DayNight server cycle3600real seconds, starts08:00, night18:00–06:00; synced DayClockHour/IsNight attrs with client Lighting update. Night adds2 to all six zombie attributes including intelligence/luck; derived sight/hearing/speed/HP/skills update on transition, preserving HP ratio and never reviving dead zombies. Original base stats retained, no cumulative bonuses. Night accuracy multiplies capped weapon skill+sight BEFORE distance/AC subtraction and final5–90 chance cap, server/hover share formula; zombies avoid player accuracy penalty.
+- DayNight server cycle3600real seconds, starts08:00, night22:00–06:00; synced DayClockHour/IsNight attrs with client Lighting update. Night adds2 to all six zombie attributes including intelligence/luck; derived sight/hearing/speed/HP/skills update on transition, preserving HP ratio and never reviving dead zombies. Original base stats retained, no cumulative bonuses. Night accuracy multiplies capped weapon skill+sight BEFORE distance/AC subtraction and final5–90 chance cap, server/hover share formula; zombies avoid player accuracy penalty.
 - Checks: all Luau compile and Rojo build; new_perks and actual day/night/stat transition tests; progression authority, crafting/bandage discount+Doctor gate+batch/time, medical fortune boundary+fullHP/no lock, critical/lowHP defense, equipped-weight accounting, disarm magazine conservation/rollback, shooting/cover, resources, towns, footsteps/hearing, reconnect and character presentation regressions. No live Studio visual/audio/playtest performed.
 
 ## Firearm random damage and player critical rebalance — 23 October

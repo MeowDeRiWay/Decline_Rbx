@@ -81,11 +81,11 @@ world box; AP recipes were not specified and have not been invented.
 
 | Station | Recipe | Inputs | Output | Repair | XP | Seconds |
 | --- | --- | --- | --- | --- | --- | --- |
-| Workstation | 9 mm pipe pistol | 1 TreeLog + 3 Scrap | 1 PipePistol9mm | 60 | 100 | 20 |
-| Workstation | 9 mm pipe rifle | 1 TreeLog + 5 Scrap | 1 PipeRifle9mm | 60 | 100 | 30 |
+| Workstation | 9 mm pipe pistol | 1 TreeLog + 3 Scrap | 1 PipePistol9mm | 50 | 100 | 20 |
+| Workstation | 9 mm pipe rifle | 1 TreeLog + 5 Scrap | 1 PipeRifle9mm | 50 | 100 | 30 |
 | Workstation | 9 mm pistol | 1 Plank + 3 Scrap | 1 Pistol9mm | 100 | 200 | 60 |
 | Workstation | 9 mm submachine gun | 1 Plank + 5 Scrap | 1 SMG9mm | 120 | 200 | 90 |
-| Workstation | 9 mm rounds | 1 Coal + 1 Chemicals + 1 Scrap | 50 Ammo9mmFMJ | 60 | 100 | 30 |
+| Workstation | 9 mm rounds | 1 Coal + 1 Chemicals + 1 Scrap | 50 Ammo9mmFMJ | 50 | 100 | 30 |
 | Workstation | .223 rounds | 1 Iron + 1 Coal + 1 Chemicals | 50 Ammo223FMJ | 150 | 200 | 60 |
 | Workstation | .223 bolt-action rifle | 5 Iron + 2 Plank | 1 Rifle223 | 150 | 500 | 120 |
 | ArmsBench | .223 service rifle | 5 Iron + 2 Plank | 1 ServiceRifle223 | 150 | 500 | 120 |
@@ -213,9 +213,9 @@ remain unchanged. The recipe table above contains the current costs and Repair g
 
 ## Workshop Repair requirements — 27 October 2026
 
-Stone tool/weapon recipes require Repair60; scrap tools/weapons require Repair100;
-iron tools/weapons require Repair150. Empty bucket requires Repair100, handle60,
-and planks60. Requirements are enforced before ingredients are consumed and shown
+Stone tool/weapon recipes require Repair50; scrap tools/weapons require Repair100;
+iron tools/weapons require Repair150. Empty bucket requires Repair100, handle50,
+and planks50. Requirements are enforced before ingredients are consumed and shown
 in recipe descriptions/menu locks. These are crafting requirements, not equipment
 requirements. Iron tool recipes are defined at Workstation with Repair150. Factory .223 firearms
-and ammunition now require Repair150; 9 mm FMJ requires Repair60 (29 October update).
+and ammunition now require Repair150; 9 mm FMJ requires Repair50 (29 October update).

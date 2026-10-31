@@ -1,5 +1,8 @@
 -- Hand-authored Ukrainian and Russian translations. English source is stable.
 return {
+ {"Consume","Спожити","Употребить"},
+ {"Eat","З’їсти","Съесть"},
+ {"Drink","Випити","Выпить"},
  {"Settings","Налаштування","Настройки"},
  {"Language","Мова","Язык"},
  {"Sound and graphics settings will be added here.","Згодом тут з’являться налаштування звуку та графіки.","Позже здесь появятся настройки звука и графики."},

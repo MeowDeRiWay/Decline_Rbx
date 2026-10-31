@@ -111,7 +111,7 @@ function Service.Revive(player,lockSeconds,healingBonus)
  for part,flags in pairs(record.Parts) do
   if part.Parent then part.Anchored=flags.Anchored;part.CanCollide=flags.CanCollide;part.CanQuery=flags.CanQuery end
  end
- hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,math.max(hp.Health,2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0)+(healingBonus or 0)))
+ hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,math.max(hp.Health,math.ceil(2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0)+(healingBonus or 0))))
  hp:ChangeState(Enum.HumanoidStateType.GettingUp)
  character:SetAttribute("Knockout",false);character:SetAttribute("KnockoutEndsAt",nil)
  character:SetAttribute("Health",hp.Health);character:SetAttribute("BlocksVision",record.BlocksVision)
@@ -178,6 +178,7 @@ function Service.Damage(player,humanoid,amount,hitChecked,defenseChecked)
  if not defenseChecked then
   amount=Defense.Resolve(amount,(player:GetAttribute("ArmorResistance") or 0)+(player:GetAttribute("DamageResistance") or 0)+(humanoid.Health<humanoid.MaxHealth*.25 and (player:GetAttribute("LowHealthResistance") or 0) or 0),(player:GetAttribute("ArmorAbsorption") or 0)+(player:GetAttribute("DamageAbsorption") or 0))
  end
+ amount=math.ceil(math.max(0,amount))
  local actual=math.min(humanoid.Health,amount)
  if amount>=humanoid.Health then Service.Knockout(player,character)
  else humanoid.Health-=amount end

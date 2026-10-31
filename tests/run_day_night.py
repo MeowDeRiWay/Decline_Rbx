@@ -29,13 +29,14 @@ end
 local m,hp=model();local base={Strength=4,Attention=4,Endurance=4,Intelligence=1,Agility=2,Luck=5}
 baseStats[m]=base
 applyDayStats(m,hp,base);assert(hp.MaxHealth==24 and m.attrs.Intelligence==1 and m.attrs.SkillUnarmed==112,"zombie has100 extra unarmed")
-clock=1500;beat(1);assert(Lighting.ClockTime==18 and workspace.attrs.IsNight)
+clock=1500;beat(1);assert(Lighting.ClockTime==18 and not workspace.attrs.IsNight)
+clock=2100;beat(1);assert(Lighting.ClockTime==22 and workspace.attrs.IsNight)
 assert(hp.MaxHealth==36 and hp.Health==36 and m.attrs.Intelligence==3 and m.attrs.Luck==7 and m.attrs.Strength==6)
 hp.Health=18
 clock=3300;beat(1);assert(Lighting.ClockTime==6 and not workspace.attrs.IsNight)
 assert(hp.MaxHealth==28 and hp.Health==14 and m.attrs.Intelligence==1,"transition preserves health fraction and base attributes")
 clock=3600;beat(1);assert(Lighting.ClockTime==8 and workspace.attrs.WorldDay==2 and m.attrs.CharacterLevel==1 and m.attrs.DailyDamageBonus==1,"one-hour day adds level/HP and flat damage")
-hp.Health=0;clock=5100;beat(1);assert(hp.Health==0,"night cannot revive a corpse")
+hp.Health=0;clock=5700;beat(1);assert(hp.Health==0,"night cannot revive a corpse")
 print("PASS: one-hour day cycle, dawn/dusk, all zombie attributes +2, health fraction, no corpse revival")
 '''
 accuracy=(root/'src/shared/AccuracyRules.luau').read_text()
@@ -54,6 +55,10 @@ assert(math.abs(Lighting.ClockTime-.5)<1e-9,"accelerated clock wraps midnight")
 DayClock.SetSpeed(1);clock+=150;beat(1);assert(math.abs(Lighting.ClockTime-1.5)<1e-9)
 DayClock.SetHour(6);assert(not workspace.attrs.IsNight,"admin time triggers day transition immediately")
 assert(workspace.attrs.DayClockSpeed==1 and not workspace.attrs.DayClockPaused)
+DayClock.SetHour(21.999);assert(not workspace.attrs.IsNight)
+DayClock.SetHour(22);assert(workspace.attrs.IsNight)
+DayClock.SetHour(5.999);assert(workspace.attrs.IsNight)
+DayClock.SetHour(6);assert(not workspace.attrs.IsNight)
 print("PASS: admin clock pause, speed, resume, midnight wrap and immediate day transition")
 '''
 with tempfile.TemporaryDirectory() as d:

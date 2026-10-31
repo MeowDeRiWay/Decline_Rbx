@@ -23,12 +23,12 @@ Removing/replacing the Back item clears the previous backpack only.
 | Weight | 1 kg |
 | Capacity bonus | +10 kg while equipped |
 | Recipe | 3 Cloth |
-| Repair | 60 |
+| Repair | 50 |
 | Reusable tool | SewingKit |
 | Station | Workstation |
 | Duration | 60 seconds |
 
-MakeSewingKit now also requires Repair60. Its existing 5 Scrap cost and 20-second
+MakeSewingKit now also requires Repair50. Its existing 5 Scrap cost and 20-second
 duration are unchanged. Neither recipe consumes the sewing kit.
 
 InventoryService derives EquipmentCarryBonusKg from equipped Back only.
