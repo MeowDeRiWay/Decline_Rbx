@@ -32,7 +32,7 @@ HarvestTier and MinHarvestTier enforce access independently from damage. Current
 
 All current resource nodes have 100 HP: 20 scrap-tool hits, 10 iron-tool hits, or 7 steel-tool hits. Trees yield 1–4 TreeLog (2 kg each); scrap piles yield independently 1–5 Scrap (0.2 kg each) and 1–5 Rags (0.05 kg each); stone veins yield 1–5 Stone (0.2 kg each).
 
-Workstation tools now use Scrap/Iron/Steel tiers at Repair 50/100/150. An axe or shovel costs 1 Handle + 3 of its metal; a knife costs 3 metal. Axes/shovels deal 5 damage to living targets and multiply resource damage by tier (1/2/3). Knives deal 10/20/30 damage. Stone tools and their recipes are retired. Legacy Axe/Showel IDs use scrap stats; Knife uses scrap knife stats. Steel is refined at a T2 Workshop furnace: one Iron per Steel, 1–5 per batch, one Coal per batch, Repair 150, 60 seconds. Until authored steel models exist, equipment and pickups reuse iron templates.
+Workstation tools now use Scrap/Iron/Steel tiers at Repair 50/100/150. An axe or shovel costs 1 Handle + 3 of its metal; a knife costs 3 metal. Axes/shovels deal 5 damage to living targets and multiply resource damage by tier (1/2/3). Knives deal 10/20/30 damage. Stone tools and their recipes are retired. Legacy Axe/Showel IDs use scrap stats; Knife uses scrap knife stats. Steel is refined at a T2 Workshop furnace: five Iron into five Steel, one Coal per fixed batch, Repair 150, 60 seconds. Until authored steel models exist, equipment and pickups reuse iron templates.
 
 ScrapKnife deals 10 damage, IronKnife 20 and SteelKnife 30. All share CraftTool="Knife", so any works for slicing sausage. Their attack speed, reach and durability remain the existing knife settings.
 

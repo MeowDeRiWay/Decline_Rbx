@@ -254,3 +254,27 @@ MashedPotatoesWithSausage. The requirement is checked on queue creation and ever
 process completion, and shown in all recipe descriptions/locales. Boiling water
 keeps its existing requirements. Empty bodies use “Pockets are empty”; ordinary
 chests and the player's own inventory retain their respective empty messages.
+
+
+## Simplified batches — 31 October 2026 (current)
+
+Stove and Furnace always run a single complete fixed batch and retain the result
+for manual Collect all. Any finished product/byproduct blocks a new process until
+all results are collected. These stations have no repeat or material-count fields.
+They may be left running. Recipe amounts are fixed, including with Economist.
+
+| Process | Fixed inputs | Results | Seconds |
+| --- | --- | --- | --- |
+| Boil potatoes, wood | 5 Potato + 1 CleanWater + 1 TreeLog | 5 BoiledPotato + 1 Coal | 60 |
+| Boil potatoes, coal | 5 Potato + 1 CleanWater + 1 Coal | 5 BoiledPotato | 30 |
+| Boil water, wood/coal | 5 DirtyWater + 1 chosen fuel | 5 CleanWater (+1 Coal for wood) | 60 / 30 |
+| Burn logs | 5 TreeLog | 5 Coal | 60 |
+| Burn logs with coal | 5 TreeLog + 1 Coal | 5 Coal | 30 |
+| Smelt iron | 25 Scrap + 1 Coal | 5 Iron | 120 |
+| Smelt steel | 5 Iron + 1 Coal | 5 Steel | 60 |
+
+Other stations use a single repeat-count field, stay-near queues, and automatic
+pocket delivery. Per-recipe item quantities are fixed; material sourcing from
+pockets and chests within5 remains. Normal item recipe discounts still apply.
+Processing XP per complete batch retains the former full-batch reward; water
+continues awarding no XP. Food quality and Cook50 requirements are unchanged.

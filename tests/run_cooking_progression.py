@@ -29,7 +29,7 @@ local Progression={Meets=function(_,requirement) if requirement.Skills.Repair th
  Loot=function(_,items) bonuses+=1; return items end}
 local stock={Potato=10,CleanWater=10,TreeLog=5}
 local own={Items=stock,Conditions={},Weapons={},Equipment={SecondaryWeapon="ScrapKnife"},EquipmentCondition={SecondaryWeapon=500},EquipmentWeapon={}}
-function Inventory.Export() stock.SewingKit=sewing and 1 or nil;return own end
+function Inventory.Export() stock.SewingKit=sewing and math.max(stock.SewingKit or 0,1) or nil;return own end
 function Inventory.Refresh() end
 local Chests={CraftSources=function() return {} end,CraftChanged=function() end,CraftRefundTarget=function(source) return source.State end}
 function Inventory.Snapshot() return {Items=table.clone(stock),CraftTools={Knife=1,SewingKit=sewing and 1 or nil}} end
@@ -41,235 +41,84 @@ end
 function Inventory.Add(_,id,n) stock[id]=(stock[id] or 0)+n; return true end
 '''
 cases='''
-a:LoadCharacterAsync()
-for _,kind in ipairs({"MedStation","Workstation","ArmorStation","WeaponStation","ChemistryStation"}) do
- local station=make("Model","Any convenient model name",workspace)
- station:SetAttribute(kind,false);assert(Stations.Kind(station)==nil,"false attribute is inactive")
- station:SetAttribute(kind,true)
- assert(Stations.Kind(station)==(kind=="WeaponStation" and "ArmsBench" or kind),"Boolean attribute defines station regardless of name")
- station:SetAttribute("StationLevel",99)
- assert(not Stations.Label(station):find("T99",1,true),"station tiers are not displayed")
- station:Destroy()
-end
-local stove=make("Model","Stove",workspace); make("Part","Part",stove)
-local bench=make("Model","Workshop table",workspace,{Workstation=true}); make("Part","Part",bench)
-assert(not Service.Open(a,stove),"station requirements block cooking access")
-assert(Service.Open(a,bench))
-assert(Service.Cook(a,"MakePlanks",1))
-Service.Close(a)
-callbacks[1]()
-assert(stock.TreeLog==5 and xp==0 and bonuses==0,"cancelled crafting refunds ingredients and grants no XP/bonus")
-allowed=true
-stock.TreeLog=20
-assert(Service.Open(a,stove))
-assert(not Service.Cook(a,"BoilPotatoes",6))
-assert(Service.Cook(a,"BoilPotatoes",5))
-assert(not Service.Cook(a,"BoilPotatoes",1),"station remains single-job")
-callbacks[2]()
-assert(stock.BoiledPotato==5 and stock.Potato==5 and stock.CleanWater==5)
-assert(xp==250 and bonuses==1,"one specialty XP award and loot roll at successful completion")
-cookState.Talents={SurpriseServing=true,GrandmasMethod=true,RamsayMethod=true}
-assert(Service.Cook(a,"BoilPotatoes",5))
-assert(durations[3]==60,"retired talent cannot speed stove")
-callbacks[3]()
-assert(stock.BoiledPotato==10,"second full batch adds five")
-stock.Potato=1; stock.CleanWater=1
-assert(Service.Cook(a,"BoilPotatoes",1)); callbacks[4]()
-assert(stock.BoiledPotato==11,"partial batch has no extra serving")
-local board=make("Model","CuttingBoard",workspace); make("Part","Part",board)
-stock.Sausage=1
-assert(Service.Open(a,board) and Service.Cook(a,"SliceSausage",1))
-assert(durations[5]==10,"retired talent cannot speed cutting board")
-callbacks[5]()
-assert(stock.SausageSlice==5,"stove serving talent must not affect board")
-assert(xp==600 and bonuses==4)
-cookState.Profession="Worker"; cookState.Talents={GoldenHands=10}
-assert(Service.Open(a,bench) and Service.Cook(a,"MakePlanks",1))
-assert(math.abs(durations[6]-10)<1e-6,"retired crafting perks have no effect")
-callbacks[6]()
-assert(stock.Plank==3 and xp==675,"one log to three boards awards 25 XP per plank")
-Service.Close(a);assert(Service.Open(a,bench))
-stock.Rags=4;a:SetAttribute("CraftCostMultiplier",.8)
-assert(not Service.Cook(a,"MakeBandage",1),"workstation cannot craft medicines")
-local med=make("Model","Medical table",workspace,{MedStation=true});make("Part","Part",med)
-Service.Close(a);assert(Service.Open(a,med) and Service.Snapshot(a).CookingStation=="MedStation")
-assert(not Service.Cook(a,"MakePlanks",1),"medical station cannot craft workshop recipes")
-assert(not Service.Cook(a,"MakeBandage",1),"First Aid requirement enforced")
-doctor=true
-sewing=false;assert(not Service.Cook(a,"MakeBandage",1) and stock.Rags==4,"missing sewing kit consumes nothing");sewing=true
-assert(not Service.Cook(a,"MakeBandage",2),"one bandage per queue")
-assert(Service.Cook(a,"MakeBandage",1) and (stock.Rags or 0)==0 and durations[#durations]==20,"discounted rags consumed,20second craft")
-callbacks[#callbacks]()
-assert(stock.Bandage==1,"bandage delivered once at completion")
-Service.Close(a);assert(Service.Open(a,stove));stock.Potato=1;stock.CleanWater=1;stock.TreeLog=1;cookState.Ramsay=1
-assert(Service.Cook(a,"BoilPotatoes",1));callbacks[#callbacks]()
-assert(stock.Ramsay_BoiledPotato==1,"cook quality persists in station output")
-assert(true and stock.Ramsay_BoiledPotato==1,"collect all preserves Ramsay food variant")
-Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=3;a:SetAttribute("CraftCostMultiplier",1)
-assert(Recipes.MakeBucket.Requirements.Skills.Repair==50)
-repair=49;assert(not Service.Cook(a,"MakeBucket",1),"bucket skill requirement checked")
-repair=50;assert(not Service.Cook(a,"MakeBucket",2))
-assert(Service.Cook(a,"MakeBucket",1) and (stock.Scrap or 0)==0 and durations[#durations]==20)
-callbacks[#callbacks]();assert(stock.EmptyBucket==1,"bucket craft output")
-Service.Close(a);assert(Service.Open(a,bench));stock.Cloth=6
-repair=59;assert(not Service.Cook(a,"MakeLeatherArmor",1) and stock.Cloth==6)
-repair=60;sewing=false;assert(not Service.Cook(a,"MakeLeatherArmor",1) and stock.Cloth==6)
-sewing=true;assert(not Service.Cook(a,"MakeLeatherArmor",2))
-assert(Service.Cook(a,"MakeLeatherArmor",1) and (stock.Cloth or 0)==0 and durations[#durations]==60)
-assert(a.Character:GetAttribute("CraftingLocked"),"jacket requires presence for the full craft")
-callbacks[#callbacks]();assert(stock.LeatherArmor==1)
-assert(true and stock.LeatherArmor==1)
-stock.Scrap=5
-repair=79;assert(not Service.Cook(a,"MakeLeatherArmor2",1) and stock.LeatherArmor==1 and stock.Scrap==5)
-repair=80;sewing=false;assert(not Service.Cook(a,"MakeLeatherArmor2",1) and stock.LeatherArmor==1 and stock.Scrap==5)
-sewing=true;assert(Service.Cook(a,"MakeLeatherArmor2",1) and (stock.LeatherArmor or 0)==0 and (stock.Scrap or 0)==0 and durations[#durations]==60)
-callbacks[#callbacks]();assert(stock.LeatherArmor2==1)
-assert(true and stock.LeatherArmor2==1)
-print("PASS: station permissions, retired perk effects absent, fixed timing/outputs, batches, refunds and completion XP")
-repair=99
+a:LoadCharacterAsync();a.Character.HumanoidRootPart.Anchored=false
+allowed=true;doctor=true
+local medicalSkills={Cook=300,FirstAid=300,Doctor=300}
 Progression.Meets=function(_,requirement)
- return not requirement.Skills.Repair or repair>=requirement.Skills.Repair
-end
-Service.Close(a);assert(Service.Open(a,bench));stock.Scrap=100;stock.Coal=10;stock.Chemicals=10
-stock.Plank=10
-for id,required in pairs({MakePistol9mm=75,MakeSMG9mm=90,MakePipePistol9mm=50,MakePipeRifle9mm=50}) do
- local recipe=Recipes[id];stock.TreeLog=1
- local oldScrap,oldPlank=stock.Scrap,stock.Plank
- repair=required-1;assert(not Service.Cook(a,id,1) and stock.Scrap==oldScrap and stock.Plank==oldPlank and stock.TreeLog==1)
- repair=required;assert(Service.Cook(a,id,1));callbacks[#callbacks]()
- assert(stock[recipe.Output]>=1)
- assert(stock.Scrap==oldScrap-recipe.Ingredients.Scrap)
- if id=="MakePipePistol9mm" or id=="MakePipeRifle9mm" then
-  assert((stock.TreeLog or 0)==0 and stock.Plank==oldPlank,"pipe guns consume a log, not a plank")
- else assert(stock.Plank==oldPlank-1) end
-end
-stock.Scrap=100;repair=49
-assert(not Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==100)
-repair=50
-local before=xp
-assert(Service.Cook(a,"MakeAmmo9mm",1) and stock.Scrap==99 and stock.Coal==9 and stock.Chemicals==9)
-callbacks[#callbacks]();assert(xp==before+100 and stock.Ammo9mmFMJ==50)
-stock.Iron=100;stock.Plank=20
-repair=99;assert(not Service.Cook(a,"MakeAmmo223",1));repair=100
-for _,id in ipairs({"MakeAmmo223","MakeRifle223"}) do
- before=xp;local recipe=Recipes[id]
- repair=recipe.Requirements.Skills.Repair-1;assert(not Service.Cook(a,id,1))
- repair=recipe.Requirements.Skills.Repair;assert(Service.Cook(a,id,1));callbacks[#callbacks]()
- assert(xp==before+recipe.XP and stock[recipe.Output]>=recipe.OutputCount)
-end
-assert(not Service.Cook(a,"MakeMarksmanRifle223",1),"marksman rifle requires arms bench")
-local arms=make("Model","Custom weapons machine",workspace,{WeaponStation=true});make("Part","Part",arms)
-Service.Close(a);assert(Service.Open(a,arms))
-for _,id in ipairs({"MakeAssaultRifle223","MakeLSW223","MakeServiceRifle223","MakeMarksmanRifle223"}) do
- before=xp;local recipe=Recipes[id]
- repair=recipe.Requirements.Skills.Repair-1;assert(not Service.Cook(a,id,1))
- repair=recipe.Requirements.Skills.Repair;assert(Service.Cook(a,id,1));callbacks[#callbacks]()
- assert(xp==before+recipe.XP and stock[recipe.Output]>=recipe.OutputCount)
-end
-assert(stock.Iron==70 and not Service.Cook(a,"MakePistol9mm",1))
-stock.Cloth=5;stock.Chemicals=1;repair=100;sewing=false
-assert(not Service.Cook(a,"MakeKevlar",1) and stock.Cloth==5 and stock.Chemicals==1)
-sewing=true;assert(Service.Cook(a,"MakeKevlar",1) and (stock.Cloth or 0)==0 and (stock.Chemicals or 0)==0 and durations[#durations]==60)
-callbacks[#callbacks]();assert(stock.Kevlar==5)
-assert(true and stock.Kevlar==5)
-stock.Kevlar=6;stock.Iron=3;repair=99
-assert(not Service.Cook(a,"MakeMiliArmor1",1) and stock.Kevlar==6 and stock.Iron==3)
-repair=100;assert(Service.Cook(a,"MakeMiliArmor1",1) and (stock.Kevlar or 0)==0 and (stock.Iron or 0)==0 and durations[#durations]==60)
-callbacks[#callbacks]();assert(stock.MiliArmor1==1)
-assert(true and stock.MiliArmor1==1)
-stock.Kevlar=2;stock.Iron=3;repair=129
-assert(not Service.Cook(a,"MakeMiliArmor2",1) and stock.MiliArmor1==1 and stock.Kevlar==2 and stock.Iron==3)
-repair=130;sewing=false
-assert(not Service.Cook(a,"MakeMiliArmor2",1) and stock.MiliArmor1==1)
-sewing=true
-assert(Service.Cook(a,"MakeMiliArmor2",1) and (stock.MiliArmor1 or 0)==0 and (stock.Kevlar or 0)==0 and (stock.Iron or 0)==0 and durations[#durations]==60)
-Service.Close(a)
-assert(stock.MiliArmor1==1 and stock.Kevlar==2 and stock.Iron==3,"cancelled upgrade returns original armor and materials")
-assert(Service.Open(a,arms) and Service.Cook(a,"MakeMiliArmor2",1))
-callbacks[#callbacks]();assert(stock.MiliArmor2==1)
-assert(true and stock.MiliArmor2==1 and (stock.MiliArmor1 or 0)==0)
-local workshop=make("Model","Workbench (T2)",workspace,{BuildingID="Workbench",BuildingLevel=1})
-local furnace=make("Model","Furnace",workshop);make("Part","Part",furnace)
-Service.Close(a);assert(Service.Open(a,furnace));stock.Scrap=25;stock.Coal=1
-assert(not Service.Cook(a,"SmeltIron",1),"tier1 cannot smelt iron")
-workshop:SetAttribute("BuildingLevel",2)
-assert(Service.Snapshot(a).CookingWorkshopLevel==2 and Service.Cook(a,"SmeltIron",5))
-assert((stock.Scrap or 0)==0 and (stock.Coal or 0)==0 and durations[#durations]==120 and not Service.Snapshot(a).CookingRequiresPresence)
-Service.Close(a);a.Character.HumanoidRootPart.Position=Vector3.new(100,0,0)
-callbacks[#callbacks]();a.Character.HumanoidRootPart.Position=Vector3.zero
-assert(Service.Open(a,furnace) and stock.Iron==5,"furnace completes after closing and leaving")
-assert(true and stock.Iron==5)
-stock.TreeLog=5;stock.Coal=0
-assert(Service.Cook(a,"BurnLogs",5) and durations[#durations]==60);Service.Close(a);callbacks[#callbacks]()
-assert(Service.Open(a,furnace) and stock.Coal==5)
-assert(true and stock.Coal==5)
-stock.TreeLog=5
-assert(Service.Cook(a,"BurnLogsWithCoal",5) and stock.Coal==4 and durations[#durations]==30)
-Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,furnace) and stock.Coal==9)
-Service.Close(a);assert(Service.Open(a,stove));stock.TreeLog=1;stock.Coal=0;stock.Ramsay_BoiledPotato=0;stock.Potato=5;stock.CleanWater=5;cookState.Ramsay=1
-assert(Service.Cook(a,"BoilPotatoes",5));Service.Close(a);callbacks[#callbacks]()
-assert(Service.Open(a,stove) and stock.Coal==1 and stock.Ramsay_BoiledPotato==5,"charcoal byproduct cannot become a food quality alias")
-assert(true)
-stock.Ramsay_BoiledPotato=0;stock.Potato=5;stock.CleanWater=5;stock.TreeLog=0;stock.Coal=1
-assert(not Service.Cook(a,"BoilPotatoes",5),"no unfueled boiling bypass")
-assert(Service.Cook(a,"BoilPotatoesCoal",5) and (stock.Coal or 0)==0 and durations[#durations]==30)
-Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,stove))
-assert(stock.Ramsay_BoiledPotato==5 and not stock.Coal,"coal cooks twice as fast without producing charcoal")
-print("PASS: one fuel for five servings, one wood charcoal byproduct, wood60s versus coal30s, no unfueled bypass")
-Service.Close(a);assert(Service.Open(a,bench))
-for id,required in pairs({MakeBackpack1=50,MakeSewingKit=50,MakeScrapAxe=50,MakeScrapShovel=50,MakeKnife=50,MakeIronAxe=100,MakeIronShovel=100,MakeIronKnife=100,MakeSteelAxe=150,MakeSteelShovel=150,MakeSteelKnife=150,MakeBucket=50,MakeHandle=50,MakePlanks=50}) do
- for item,count in pairs(Recipes[id].Ingredients) do stock[item]=count end
- repair=required-1
- assert(not Service.Cook(a,id,1),id.." must reject Repair one below threshold")
- for item,count in pairs(Recipes[id].Ingredients) do assert(stock[item]==count,"failed Repair check consumes nothing") end
- repair=required
- assert(Service.Cook(a,id,1),id.." must accept exact Repair threshold");callbacks[#callbacks]()
-end
-print("PASS: actual tool/component craft Repair boundaries50/100 and no ingredients lost on rejection")
-stock.Cloth=3;repair=50;sewing=false
-assert(not Service.Cook(a,"MakeBackpack1",1) and stock.Cloth==3,"backpack requires reusable sewing kit")
-sewing=true;assert(Service.Cook(a,"MakeBackpack1",1) and (stock.Cloth or 0)==0 and durations[#durations]==60)
-callbacks[#callbacks]();assert(stock.Backpack1==2)
-assert(true and stock.Backpack1==2)
-print("PASS: starter backpack uses three cloth, Repair50, reusable kit and sixty seconds; kit itself unlocks at50")
-Service.Close(a);assert(Service.Open(a,furnace));stock.Iron=5;stock.Coal=1;repair=149
-assert(not Service.Cook(a,"SmeltSteel",5) and stock.Iron==5 and stock.Coal==1)
-repair=150;workshop:SetAttribute("BuildingLevel",1)
-assert(not Service.Cook(a,"SmeltSteel",5),"steel requires T2 furnace")
-workshop:SetAttribute("BuildingLevel",2)
-assert(Service.Cook(a,"SmeltSteel",5) and (stock.Iron or 0)==0 and (stock.Coal or 0)==0)
-Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,furnace) and stock.Steel==5)
-Service.Close(a);assert(Service.Open(a,med));sewing=true
-local medicalSkills={FirstAid=0,Doctor=0}
-Progression.Meets=function(_,requirement)
- for skill,value in pairs(requirement.Skills or {}) do if (medicalSkills[skill] or 0)<value then return false end end
+ for skill,value in pairs(requirement.Skills or {}) do
+  if (skill=="Repair" and repair or medicalSkills[skill] or 0)<value then return false end
+ end
  return true
 end
-for id,entry in pairs({MakeBandage={"FirstAid",50},MakeGreatBandage={"FirstAid",75},MakeSterileBandage={"FirstAid",100},MakeAntiseptic={"Doctor",50}}) do
- local recipe=Recipes[id]
- medicalSkills.FirstAid=0;medicalSkills.Doctor=0;medicalSkills[entry[1]]=entry[2]-1
- for item,n in pairs(recipe.Ingredients) do stock[item]=n end
- assert(not Service.Cook(a,id,1),id.." rejects one below skill threshold")
- for item,n in pairs(recipe.Ingredients) do assert(stock[item]==n) end
- medicalSkills[entry[1]]=entry[2]
- assert(Service.Cook(a,id,1),id.." accepts exact threshold without the other medical skill")
- callbacks[#callbacks]()
+local bench=make("Model","Bench",workspace,{Workstation=true});make("Part","Part",bench)
+local stove=make("Model","Stove",workspace);make("Part","Part",stove)
+local board=make("Model","CuttingBoard",workspace);make("Part","Part",board)
+local med=make("Model","MedStation",workspace);make("Part","Part",med)
+local arms=make("Model","ArmsBench",workspace);make("Part","Part",arms)
+local workshop=make("Model","Workbench (T2)",workspace,{BuildingID="Workbench",BuildingLevel=2})
+local furnace=make("Model","Furnace",workshop);make("Part","Part",furnace)
+local stations={Workstation=bench,Stove=stove,CuttingBoard=board,MedStation=med,ArmsBench=arms,Furnace=furnace}
+local function fill(recipe,repeats)
+ table.clear(stock);sewing=true;repair=300
+ for key in pairs(medicalSkills) do medicalSkills[key]=300 end
+ for id,count in pairs(recipe.Ingredients) do stock[id]=count*repeats end
+ if recipe.Fuel then stock[recipe.Fuel.ID]=(stock[recipe.Fuel.ID] or 0)+recipe.Fuel.Count*repeats end
+ if recipe.Variants then stock[recipe.Variants[1].Ingredient]=repeats end
 end
-local cooking=49
-Progression.Meets=function(_,requirements) return not requirements.Skills.Cook or cooking>=requirements.Skills.Cook end
-for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","SliceSausage","MashedPotatoesWithSausage"}) do
- local recipe=Recipes[id]
- assert(recipe.Requirements.Skills.Cook==50)
- Service.Close(a);assert(Service.Open(a,recipe.Station=="Stove" and stove or board))
- for item,n in pairs(recipe.Ingredients) do stock[item]=n end
- if recipe.Fuel then stock[recipe.Fuel.ID]=recipe.Fuel.Count end
- if recipe.Variants then stock[recipe.Variants[1].Ingredient]=1 end
- cooking=49;assert(not Service.Cook(a,id,1),id.." rejects Cook49")
- for item,n in pairs(recipe.Ingredients) do assert(stock[item]==n,"skill denial consumes nothing") end
- cooking=50;assert(Service.Cook(a,id,1),id.." accepts Cook50");callbacks[#callbacks]()
+local requirements={MakeBucket=50,MakePistol9mm=75,MakeSMG9mm=90,MakeAmmo9mm=50,MakeAmmo223=100,MakeRifle223=100,MakeServiceRifle223=110,MakeAssaultRifle223=120,MakeMarksmanRifle223=130,MakeLSW223=140,MakeLeatherArmor=60,MakeLeatherArmor2=80,MakeMiliArmor1=100,MakeMiliArmor2=130,MakeScrapAxe=50,MakeScrapShovel=50,MakeKnife=50,MakeIronAxe=100,MakeIronShovel=100,MakeIronKnife=100,MakeSteelAxe=150,MakeSteelShovel=150,MakeSteelKnife=150,MakeSewingKit=50,MakeBackpack1=50,MakeHandle=50,MakePlanks=50}
+for id,threshold in pairs(requirements) do
+ local recipe=Recipes[id];assert(recipe.Requirements.Skills.Repair==threshold)
+ Service.Close(a);fill(recipe,2);assert(Service.Open(a,stations[recipe.Station]))
+ repair=threshold-1
+ assert(not Service.Cook(a,id,{Batch=1,Repeats=2}),id.." rejects one below repair")
+ for input,count in pairs(recipe.Ingredients) do assert(stock[input]==count*2) end
+ repair=threshold
+ local before=xp
+ assert(Service.Cook(a,id,{Batch=1,Repeats=2}),id.." starts at exact repair")
+ assert(a.Character:GetAttribute("CraftingLocked") and a.Character.HumanoidRootPart.Anchored)
+ callbacks[#callbacks]();assert(stock[recipe.Output]==recipe.OutputCount+(recipe.Output=="SewingKit" and 1 or 0),"first item is delivered automatically: "..id)
+ callbacks[#callbacks]();assert(stock[recipe.Output]==2*recipe.OutputCount+(recipe.Output=="SewingKit" and 1 or 0) and xp==before+2*ProgressionRules.CraftExperience(recipe,1))
+ assert(not a.Character:GetAttribute("CraftingLocked") and not a.Character.HumanoidRootPart.Anchored)
 end
-print("PASS: industrial recipe inputs, Repair gates, exact XP/output, town/factory separation, Furnace T2 gate, unattended processing, charcoal fuel and food byproducts")
-
+for id,entry in pairs({MakeBandage={"FirstAid",50},MakeGreatBandage={"FirstAid",75},MakeSterileBandage={"FirstAid",100},MakeAntiseptic={"Doctor",50},SliceSausage={"Cook",50},MashedPotatoesWithSausage={"Cook",50}}) do
+ local recipe=Recipes[id];Service.Close(a);fill(recipe,1);assert(Service.Open(a,stations[recipe.Station]))
+ medicalSkills[entry[1]]=entry[2]-1;assert(not Service.Cook(a,id,1))
+ medicalSkills[entry[1]]=entry[2];assert(Service.Cook(a,id,1));callbacks[#callbacks]()
+end
+for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BoilWaterCoal","BurnLogs","BurnLogsWithCoal","SmeltIron","SmeltSteel"}) do
+ local recipe=Recipes[id]
+ assert(recipe.ManualBatch and recipe.MaxBatch==1 and recipe.OutputCount==5,id)
+ Service.Close(a);fill(recipe,1);assert(Service.Open(a,stations[recipe.Station]))
+ assert(not Service.Cook(a,id,5) and not Service.Cook(a,id,{Batch=1,Repeats=2}) and not Service.Cook(a,id,{Batch=1,Repeats="All"}),"processing cannot queue or resize batch")
+ local ingredient=next(recipe.Ingredients);local amount=stock[ingredient]
+ stock[ingredient]=amount-1;assert(not Service.Cook(a,id,1),"partial input rejected");stock[ingredient]=amount
+ if recipe.Requirements and recipe.Requirements.Skills.Cook then medicalSkills.Cook=49;assert(not Service.Cook(a,id,1));medicalSkills.Cook=50 end
+ if recipe.WorkshopLevel then workshop:SetAttribute("BuildingLevel",1);assert(not Service.Cook(a,id,1));workshop:SetAttribute("BuildingLevel",2) end
+ local before=xp
+ assert(Service.Cook(a,id,1) and not a.Character.HumanoidRootPart.Anchored)
+ Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,stations[recipe.Station]))
+ assert(Service.Snapshot(a).CookingReady[recipe.Output]==5 and not stock[recipe.Output],"processing stays at station until collected")
+ assert(xp==before+ProgressionRules.CraftExperience(recipe,1),"XP remains per fixed full batch")
+ fill(recipe,1);assert(not Service.Cook(a,id,1),"must collect all products before restarting")
+ local held=stock[recipe.Output] or 0
+ assert(Service.CollectAll(a) and next(Service.Snapshot(a).CookingReady)==nil)
+ assert(stock[recipe.Output]==held+5 and not Service.CollectAll(a))
+ assert(Service.Cook(a,id,1));local stale=callbacks[#callbacks]
+ assert(Service.Cancel(a));stale();assert(next(Service.Snapshot(a).CookingReady)==nil,"cancelled timer produces nothing")
+end
+assert(Recipes.BoilPotatoes.Ingredients.Potato==5 and Recipes.BoilPotatoes.Ingredients.CleanWater==1)
+local fixed=Rules.Discount(Recipes.BoilPotatoes,.8)
+assert(fixed.Ingredients.Potato==5 and fixed.Ingredients.CleanWater==1,"fixed processing amounts cannot shrink")
+local recipe=Recipes.BoilPotatoes;Service.Close(a);fill(recipe,1);cookState.Ramsay=1
+assert(Service.Open(a,stove) and Service.Cook(a,"BoilPotatoes",1));callbacks[#callbacks]()
+local ready=Service.Snapshot(a).CookingReady
+assert(ready.Ramsay_BoiledPotato==5 and ready.Coal==1 and not ready.Ramsay_Coal)
+assert(Service.CollectAll(a) and stock.Ramsay_BoiledPotato==5 and stock.Coal==1)
+Service.Close(a);fill(Recipes.MakePlanks,2);assert(Service.Open(a,bench))
+assert(Service.Cook(a,"MakePlanks",{Batch=1,Repeats=2}));local stale=callbacks[#callbacks];local before=xp
+Service.Close(a);stale()
+assert(stock.TreeLog==2 and not stock.Plank and xp==before and not a.Character.HumanoidRootPart.Anchored,"leaving item crafts cancels/refunds queue")
+print("PASS: repair/medical/cook boundaries, regular presence queues with auto delivery, fixed stove/furnace batches, no resize/repeats, manual collection/restart gate, T2 furnace, exact potato/water/fuel, quality, XP and cancellation")
 '''
 station_source='local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()'
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),station_source,'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]

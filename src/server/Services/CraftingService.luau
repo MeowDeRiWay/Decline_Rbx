@@ -122,6 +122,7 @@ function Service.Cook(player,id,requested)
  local state=states[stove]
  if recipe and (not Stations.Allowed(stove,recipe) or (recipe.Requirements and not Progression.Meets(player,recipe.Requirements))) then return false end
  if not recipe or not Stations.Matches(recipe,Stations.Kind(stove)) or state.Job or not Progression.CanStation(player,Stations.Kind(stove)) then return false end
+ if recipe.ManualBatch and next(state.Ready)~=nil then return false end
  recipe=Rules.Discount(recipe,player:GetAttribute("CraftCostMultiplier"))
  local items,tools,sources,own=supplies(player,stove)
  if not own then return false end
@@ -138,7 +139,7 @@ function Service.Cook(player,id,requested)
  local character=player.Character
  local root=character:FindFirstChild("HumanoidRootPart")
  local job={Recipe=id,Definition=recipe,Cycles=cycles,Index=1,Sources=sources,Inventory=own,
-  EndsAt=workspace:GetServerTimeNow()+duration,Player=player,Character=character,Root=root,WasAnchored=root.Anchored,RequiresPresence=recipe.RequiresPresence==true}
+  EndsAt=workspace:GetServerTimeNow()+duration,Player=player,Character=character,Root=root,WasAnchored=root.Anchored,RequiresPresence=not recipe.ManualBatch}
  state.Job=job
  if not Supply.Reserve(cycles,sources,Items.Items) then state.Job=nil;return false end
  if job.RequiresPresence then character:SetAttribute("CraftingLocked",true);root.Anchored=true end
@@ -155,7 +156,8 @@ function Service.Cook(player,id,requested)
    cycle.Receipts=nil
    local completed={}
    for output,amount in pairs(outputs) do
-    if not Inventory.Add(player,output,amount) then
+    if recipe.ManualBatch then state.Ready[output]=(state.Ready[output] or 0)+amount
+    elseif not Inventory.Add(player,output,amount) then
      assert(Amounts.Add(job.Inventory,Items.Items,output,amount))
     end
     table.insert(completed,string.format("%d × %s",amount,Items.Items[output].Name or output))
@@ -193,6 +195,14 @@ function Service.Collect(player,id,requested)
  if state.Ready[id]==0 then state.Ready[id]=nil end
  if not Inventory.Add(player,id,count) then state.Ready[id]=(state.Ready[id] or 0)+count; return false end
  notify(stove)
+ return true
+end
+function Service.CollectAll(player)
+ local stove=sessions[player]
+ if not reachable(player,stove) then Service.Close(player);return false end
+ local ready=states[stove].Ready
+ if next(ready)==nil then return false end
+ for id in pairs(table.clone(ready)) do if not Service.Collect(player,id,"All") then return false end end
  return true
 end
 function Service.CollectRecipe(player,id,requested)

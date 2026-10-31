@@ -2,7 +2,7 @@ local Rules = {}
 Rules.MaxQueue=1000
 function Rules.Discount(recipe,multiplier)
  local result=table.clone(recipe);result.Ingredients={}
- for id,amount in pairs(recipe.Ingredients) do result.Ingredients[id]=math.max(1,math.ceil(amount*(multiplier or 1))) end
+ for id,amount in pairs(recipe.Ingredients) do result.Ingredients[id]=math.max(1,math.ceil(amount*(recipe.ManualBatch and 1 or (multiplier or 1)))) end
  return result
 end
 function Rules.Batch(available,requested,maximum)
@@ -54,6 +54,7 @@ end
 function Rules.QueuePlan(items,recipe,requested)
  local batch,repeats= requested,1
  if typeof(requested)=="table" then batch=requested.Batch;repeats=requested.Repeats end
+ if recipe.ManualBatch and repeats~=1 then return nil end
  local all=repeats=="All"
  if not all and (typeof(repeats)~="number" or repeats~=repeats or repeats%1~=0 or repeats<1 or repeats>Rules.MaxQueue) then return nil end
  local stock=table.clone(items)

@@ -129,6 +129,24 @@ recipes.BurnLogs.Description="Burn one to five logs into the same amount of char
 recipes.BurnLogsWithCoal.Description="Use one charcoal per batch to burn one to five logs faster. You may leave."
 recipes.SmeltIron.Description="Smelt five scrap per iron, up to five iron per batch, using one charcoal. Requires a Workshop T2 furnace; you may leave."
 
+-- Stove/furnace processes always use one complete, manually collected batch.
+for _,recipe in pairs(recipes) do
+ if recipe.Station=="Stove" or recipe.Station=="Furnace" then
+  local batch=recipe.MaxBatch or 1
+  for id,count in pairs(recipe.Ingredients) do recipe.Ingredients[id]=count*batch end
+  recipe.OutputCount=(recipe.OutputCount or 1)*batch
+  recipe.XP=(recipe.XP or 50)*batch
+  recipe.MaxBatch=1;recipe.ManualBatch=true
+ end
+end
+recipes.BoilPotatoes.Ingredients={Potato=5,CleanWater=1}
+recipes.BoilPotatoes.Description="Boil five potatoes with one bottle of clean water. One fuel per process; collect the finished batch before starting again. Requires Cook 50."
+recipes.BoilWater.Description="Boil five bottles of dirty water into five clean water. One fuel per process; no experience. Collect the finished batch before starting again."
+recipes.BurnLogs.Description="Burn five logs into five charcoal. Collect the finished batch before starting again."
+recipes.BurnLogsWithCoal.Description="Use one charcoal to burn five logs into five charcoal faster. Collect the finished batch before starting again."
+recipes.SmeltIron.Description="Smelt 25 scrap into five iron using one charcoal. Requires a Workshop T2 furnace. Collect the finished batch before starting again."
+recipes.SmeltSteel.Description="Refine five iron into five steel using one charcoal. Requires Repair 150 and a Workshop T2 furnace. Collect the finished batch before starting again."
+
 -- Stove food is exclusively boiled; frying/baking belongs at another station.
 -- Fuel is per queued batch, not per serving.
 local charcoalVariants={}

@@ -66,6 +66,7 @@ action.OnServerEvent:Connect(function(player, command, value, amount)
  elseif command == "OpenStove" then Chests.Close(player); Crafting.Open(player,value)
  elseif command == "CancelCraft" then Crafting.Cancel(player)
  elseif command == "Cook" then Crafting.Cook(player,value,amount)
+ elseif command == "CollectCrafted" then Crafting.CollectAll(player)
  elseif command == "CollectRecipe" then Crafting.CollectRecipe(player,value,amount)
  elseif command == "CollectCooked" then Crafting.Collect(player,value,amount)
  elseif command == "OpenChest" then

@@ -31,9 +31,9 @@ for _,recipe in pairs(Recipes) do
 end
 local smelt=Recipes.SmeltSteel
 assert(smelt.WorkshopLevel==2 and smelt.Requirements.Skills.Repair==150)
-local plan=assert(Craft.Plan({Iron=5,Coal=1},smelt,5))
+local plan=assert(Craft.Plan({Iron=5,Coal=1},smelt,1))
 assert(plan.Ingredients.Iron==5 and plan.Ingredients.Coal==1 and plan.Outputs.Steel==5)
-assert(not Craft.Plan({Iron=5,Coal=1},smelt,6))
+assert(not Craft.Plan({Iron=5,Coal=1},smelt,2))
 local tabs=Categories.Available(Recipes,Items,Stations,"Workstation","Wood")
 for _,kind in ipairs({"All","Armor","Weapons","Ammunition","Tools","Materials","Equipment"}) do assert(table.find(tabs,kind),kind) end
 assert(not table.find(tabs,"Medicine") and not table.find(tabs,"Food"))

@@ -1,51 +1,65 @@
-# Craft queues and nearby storage — 31 October 2026
+# Crafting: item queues and manual processing — 31 October 2026
 
-The recipe panel now has a per-process batch size plus a Processes field (1–1000).
-Start queue runs that many processes sequentially; Queue all reserves as many full
-processes of the chosen batch size as current supplies permit, up to 1000. A batch
-still respects the recipe's existing MaxBatch (e.g. 1 tool or up to 5 boiled water).
-Duration is the sum of the unchanged per-process times; fuel is paid per process.
-The panel shows the total estimate and current process / total with remaining time.
+The interface has two modes, with no material-quantity/batch-size input.
 
-Each completed process immediately grants its products and byproducts to the
-creator's pockets, with the existing quality/loot effects and XP applied once per
-process. No Collect click is required, even for unattended furnace/stove jobs.
-Other visitors can see the busy station but cannot cancel or receive its results.
+## Item stations
 
-Materials come from pockets first, then nearest ordinary Chest models within 5
-studs of the station pivot (distance to chest physical bounds). Corpses, knocked-out
-players, trade posts and wall-blocked chests are excluded. Current ordinary-chest
-access rules are unchanged. Tools can stay equipped, in pockets, or in those
-chests. Knives must have remaining condition. Reusable tools are not consumed and
-must remain available during the queue. No attributes or extra wiring are needed.
+Workstation, MedStation, ArmsBench and CuttingBoard expose only Processes (1–1000),
+Start queue and Queue all. Every process uses the recipe's fixed input/output
+amounts. The creator stays at the station for the whole queue; closing/leaving
+cancels unfinished work. Every completed process immediately delivers its products
+and byproducts to pockets and grants its existing XP once. Other visitors cannot
+cancel the creator's queue or receive its automatic outputs.
 
-The server reserves all material inputs for the whole queue before it starts,
-including each process's fuel. This prevents two crafters spending the same shared
-stock and rejects an unaffordable request without consuming anything. Products
-from earlier processes are not counted as inputs when initially reserving a queue.
-The merged stock/tools refresh on changes, rather than rebuilding input fields on
-every polling tick. Shared chest viewers are notified when reservation/refund
-changes their stock.
+## Stove and Furnace
 
-Cancel queue returns only unfinished inputs to the exact source inventory/chest,
-preserving item condition and weapon metadata. If a source chest was destroyed,
-its refund goes to the creator's inventory. Completed results and XP stay granted.
-Presence-required jobs still cancel on closing/leaving the station. Unattended
-jobs continue after closing. Disconnect, knockout, death, character/inventory
-replacement or station destruction cancels unfinished work. KO cancellation runs
-before the body captures its anchored state, so revival does not leave a former
-crafter anchored. Timers validate their queue identity and process index, preventing
-replayed/stale callbacks from granting duplicates.
+These run a single fixed batch, with no repeat field or queue-all action. Products
+remain in the station until manually collected with one Collect all button above
+the recipe list. Any remaining main product or byproduct blocks all new processes
+on that station, even if another recipe is selected. Closing the interface does
+not cancel processing; the player can return to collect it later.
 
-Old single-batch numeric Cook requests remain supported. New clients send
-`Cook(recipeID, {Batch = count, Repeats = integer_or_All})`; CancelCraft is checked
-against the authoritative station job owner. Legacy Collect endpoints remain for
-compatibility; newly completed outputs bypass the old station result buffer.
+Fixed batches:
+- Potatoes: 5 Potato + 1 CleanWater + 1 TreeLog or Coal -> 5 BoiledPotato.
+  Wood takes60seconds and returns1Coal; coal takes30seconds.
+- Water: 5 DirtyWater + 1 chosen fuel -> 5 CleanWater,60/30seconds; no XP.
+- Charcoal: 5 TreeLog -> 5 Coal,60seconds; or add1Coal for30seconds.
+- Iron: 25 Scrap + 1 Coal -> 5 Iron,120seconds, Workshop T2 furnace.
+- Steel: 5 Iron + 1 Coal -> 5 Steel,60seconds, Repair150 + Workshop T2 furnace.
 
-Validation: run_craft_queue.py exercises the actual crafting and chest services,
-pooled reservation, radius/wall/body filters, two-player contention, per-process
-output/XP/fuel, reusable tools, refunds, missing sources/stations, disconnect and
-stale callbacks. run_craft_queue_ui.py executes the shipped recipe UI callbacks,
-merged materials/tools, total time, insufficient-stock disablement, structured
-requests and owner-only cancellation. Existing cooking/lifecycle tests are updated
-for automatic pocket delivery. Roblox Studio rendering still needs a live playtest.
+ManualBatch=true recipes are represented as MaxBatch=1 full-process recipes;
+input and output quantities already contain the full batch. Their fixed inputs do
+not receive Economist discounts. XP is normalized to preserve the previous full
+batch reward, and Ramsay quality still applies only to food (not fuel byproducts).
+Manual queue requests with more than one repeat or Repeats="All" are rejected by
+the server. Ordinary numeric1 requests remain a single process.
+
+## Shared materials, tools and cancellation
+
+Pockets supply materials first, then ordinary Chest models within5studs of the
+station pivot (distance to chest bounds). Bodies, trade posts and wall-blocked
+chests are excluded. Current ordinary-chest access rules remain unchanged. Reusable
+tools may remain equipped, in pockets or in those chests; usable knives need
+remaining condition. No extra attributes or wiring are needed.
+
+The server atomically reserves all inputs before starting, including per-process
+fuel, so two crafters cannot spend the same shared stock. Reusable tools are not
+consumed and must remain available. Cancellation refunds only unfinished inputs
+to their original sources with condition/weapon metadata preserved. A destroyed
+source chest redirects the refund to the creator. Completed results/XP stay.
+Disconnect, knockout, death, character/inventory replacement or station destruction
+cancels unfinished work. KO cancellation runs before body anchor-state capture.
+Stale/replayed callbacks cannot grant products twice. Source availability updates
+only when it changes, preserving text entry between polling ticks.
+
+New clients send Cook(recipeID,{Batch=1,Repeats=count_or_All}) for item queues and
+Cook(recipeID,{Batch=1,Repeats=1}) for manual processes. CancelCraft is owner-checked.
+CollectCrafted collects all ready station products/byproducts. Legacy collection
+endpoints remain supported.
+
+Validation: run_cooking_progression.py checks exact skill gates, regular queues,
+fixed batches, manual results/restart gate, furnace tier, recipe cost/quality/XP
+and cancellation. run_craft_queue.py exercises actual shared chest reservation,
+contention, delivery/refunds and lifecycle; run_craft_queue_ui.py executes actual
+UI callbacks and verifies no quantity/repeat controls on processing stations.
+Studio rendering still needs a live playtest.
