@@ -1,7 +1,7 @@
 local C=require("../src/shared/CraftConfig")
 local R=require("../src/shared/CraftRules")
 local P=require("../src/shared/ProgressionRules")
-for id,xp in pairs({MakePlanks=75,MakeHandle=25,MakeAxe=50,MakeShovel=50,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeIronAxe=200,MakeIronShovel=200,MakeIronKnife=200,MakeBucket=100,MakeCloth=25,MakeBandage=50,MakeGreatBandage=100}) do
+for id,xp in pairs({MakePlanks=75,MakeHandle=25,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeIronAxe=200,MakeIronShovel=200,MakeIronKnife=200,MakeBucket=100,MakeCloth=25,MakeBandage=50,MakeGreatBandage=100}) do
  assert(P.CraftExperience(C[id],1)==xp,id)
 end
 for _,id in ipairs({"MakeRifle223","MakeAssaultRifle223","MakeLSW223","MakeServiceRifle223","MakeMarksmanRifle223"}) do

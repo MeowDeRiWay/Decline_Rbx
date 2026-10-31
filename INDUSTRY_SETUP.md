@@ -213,9 +213,23 @@ remain unchanged. The recipe table above contains the current costs and Repair g
 
 ## Workshop Repair requirements — 27 October 2026
 
-Stone tool/weapon recipes require Repair50; scrap tools/weapons require Repair100;
-iron tools/weapons require Repair150. Empty bucket requires Repair100, handle50,
+Stone tools are retired. Scrap tools/weapons require Repair50; iron tools/weapons
+require Repair100; steel tools/weapons require Repair150. Empty bucket requires Repair100, handle50,
 and planks50. Requirements are enforced before ingredients are consumed and shown
 in recipe descriptions/menu locks. These are crafting requirements, not equipment
-requirements. Iron tool recipes are defined at Workstation with Repair150. Factory .223 firearms
+requirements. Iron tool recipes are defined at Workstation with Repair100. Factory .223 firearms
 and ammunition now require Repair150; 9 mm FMJ requires Repair50 (29 October update).
+
+
+## Craft categories — 31 October 2026
+
+Every station shows All plus its relevant Armor, Weapons, Ammunition, Tools,
+Materials, Medicine, Equipment and Food categories. Category filtering also
+respects stove Wood/Charcoal tabs. Changing category clears the expanded recipe;
+station changes reset to All. Categories do not change authoritative recipe gates.
+
+Steel tools mirror the iron recipe costs: 3 Steel, plus 1 Handle for axes/shovels.
+A T2 Workshop furnace refines 1–5 Iron into the same amount of Steel using one Coal
+per batch (Repair150, 60 seconds). Steel templates are optional for now: the
+corresponding iron models are reused until SteelAxe/SteelShovel/SteelKnife/Steel
+models are added. Authored steel templates take precedence over fallbacks.

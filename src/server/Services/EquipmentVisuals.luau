@@ -18,12 +18,21 @@ local function findTemplate(folder,id)
  end
 end
 local function templateFor(id)
+ local canonical=id:gsub("Showel","Shovel")
+ if canonical~=id then
+  local template=findTemplate(ServerStorage:FindFirstChild("Items"),canonical)
+  if template then return template end
+ end
  if id:find("Shovel",1,true) then
   local folder=ServerStorage:FindFirstChild("Items")
   local template=findTemplate(folder,id) or findTemplate(folder,(id:gsub("Shovel","Showel")))
   if template then return template end
  end
- return findTemplate(ServerStorage:FindFirstChild("Items"),id) or (Items.Items[id] and Items.Items[id].TemplateID and findTemplate(ServerStorage:FindFirstChild("Items"),Items.Items[id].TemplateID))
+ local template=findTemplate(ServerStorage:FindFirstChild("Items"),id)
+ if template then return template end
+ local fallback=Items.Items[id] and Items.Items[id].TemplateID
+ if fallback and fallback~=id then return templateFor(fallback) end
+ return nil
 end
 Visuals.Template=templateFor
 -- Hand-authored world tools can supply their own reusable equipment template.

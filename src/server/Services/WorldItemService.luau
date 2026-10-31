@@ -25,6 +25,7 @@ end
 local function register(item)
  if not item:IsA("Model") and not item:IsA("BasePart") then return end
  local id=item:GetAttribute("Item_ID") or item.Name
+ if ItemConfig.RetiredItems and ItemConfig.RetiredItems[id] then item:Destroy();return end
  if not ItemConfig.Items[id] then return end
  if ItemConfig.Items[id].Currency and not require(ReplicatedStorage.Shared.EconomyRules).Banknote(item) then
   if not warned[item] then warn("[Decline] Money model needs a positive integer BanknoteValue attribute: "..item:GetFullName());warned[item]=true end
@@ -62,6 +63,7 @@ local function consider(object)
  end
  if ancestor~=workspace then return end
  local id=object:GetAttribute("Item_ID") or object.Name
+ if ItemConfig.RetiredItems and ItemConfig.RetiredItems[id] then object:Destroy();return end
  if ItemConfig.Items[id] then object.Parent=folder; register(object) end
 end
 for _,item in ipairs(folder:GetChildren()) do register(item) end

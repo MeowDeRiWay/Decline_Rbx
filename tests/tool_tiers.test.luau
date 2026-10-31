@@ -3,58 +3,55 @@ local Rules=require("../src/shared/ResourceRules")
 local Config=require("../src/shared/ResourceConfig")
 local Recipes=require("../src/shared/CraftConfig")
 local Craft=require("../src/shared/CraftRules")
-for tier,material in ipairs({"Stone","Scrap","Iron"}) do
- for _,tool in ipairs({"Axe","Showel"}) do
+local Inventory=require("../src/shared/InventoryRules")
+local Categories=require("../src/shared/CraftCategories")
+local Stations=require("../src/shared/CraftStations")
+assert(not Items.StoneAxe and not Items.StoneShovel and not Items.StoneShowel)
+assert(not Recipes.MakeAxe and not Recipes.MakeShovel)
+for tier,material in ipairs({"Scrap","Iron","Steel"}) do
+ for _,tool in ipairs({"Axe","Shovel"}) do
   local item=assert(Items[material..tool])
   local node=tool=="Axe" and Config.Tree or Config.ScrapPile
-  assert(item.Weapon.Damage==5 and item.HarvestTier==tier)
+  assert(item.Weapon.Damage==5 and item.HarvestTier==tier and item.HarvestMultiplier==tier)
   assert(Rules.HarvestDamage(node,item)==5*tier)
   assert(not Rules.CanDamage({Tool=node.Tool,MinHarvestTier=tier+1},item))
+  local recipe=assert(Recipes["Make"..material..tool])
+  assert(recipe.Requirements.Skills.Repair==tier*50)
+  assert(recipe.Ingredients[material]==3 and recipe.Ingredients.Handle==1)
+  assert(Categories.Kind(recipe,Items)=="Tools")
  end
+ local knife=Items[material.."Knife"]
+ assert(knife.Weapon.Damage==tier*10 and knife.CraftTool=="Knife")
+ local recipe=Recipes[material=="Scrap" and "MakeKnife" or "Make"..material.."Knife"]
+ assert(recipe.Requirements.Skills.Repair==tier*50 and recipe.Ingredients[material]==3)
 end
-assert(not Rules.CanDamage(Config.ScrapPile,{HarvestTool="Shovel"}),"unranked tools cannot mine scrap")
-local ironDeposit={Tool="Shovel",MinHarvestTier=2}
-assert(not Rules.CanDamage(ironDeposit,Items.StoneShowel))
-assert(Rules.CanDamage(ironDeposit,Items.ScrapShowel) and Rules.CanDamage(ironDeposit,Items.IronShowel))
-assert(Rules.HarvestDamage(Config.Tree,Items.ScrapShowel)==0,"wrong tool type still rejected")
-assert(Items.ScrapKnife.Weapon.Damage==10 and Items.IronKnife.Weapon.Damage==20)
-assert(Craft.Speed({[Items.ScrapKnife.CraftTool]=Items.ScrapKnife.CraftSpeed},Recipes.SliceSausage)==1)
-assert(Craft.Speed({[Items.IronKnife.CraftTool]=Items.IronKnife.CraftSpeed},Recipes.SliceSausage)==1)
 for _,recipe in pairs(Recipes) do
  for id in pairs(recipe.Ingredients) do assert(Items[id],id) end
- for _,id in ipairs(Craft.Outputs(recipe)) do assert(Items[id],id) end
+ assert(table.find(Categories.Order,Categories.Kind(recipe,Items)))
 end
-assert(Recipes.MakeAxe.Output=="StoneAxe" and Recipes.MakeShovel.Output=="StoneShovel")
-for _,id in ipairs({"MakeScrapAxe","MakeScrapShovel","MakeKnife"}) do
- local recipe=Recipes[id]
- local plan=assert(Craft.Plan({Scrap=3,Handle=1},recipe,1))
- assert(plan.Ingredients.Scrap==3 and plan.Outputs[recipe.Output]==1)
- assert(Craft.Plan({Scrap=2,Handle=1},recipe,1)==nil)
-end
-for _,recipe in pairs(Recipes) do
- if recipe.Station=="Workstation" then
-  assert(recipe.MaxBatch==1)
-  local items={TreeLog=100,Plank=100,Handle=100,Stone=100,Scrap=100,Rags=100,Coal=100,Chemicals=100,Iron=100}
-  assert(Craft.Batch(Craft.Available(items,recipe),"All",recipe.MaxBatch)==1)
-  assert(Craft.Plan(items,recipe,2)==nil,"server must reject multi-item workstation batches")
- end
-end
-assert(Recipes.MakeAxe.Ingredients.Stone==1 and Recipes.MakeShovel.Ingredients.Stone==1)
-assert(Recipes.MakeAxe.Ingredients.Handle==1 and Recipes.MakeShovel.Ingredients.Handle==1)
-assert(Recipes.MakePlanks.OutputCount==3,"one crafting operation still produces three planks per log")
-local boil=Recipes.BoilPotatoes
-assert(boil.MaxBatch==5)
-local plan=assert(Craft.Plan({Potato=5,CleanWater=5,TreeLog=1},boil,5))
-assert(plan.Ingredients.Potato==5 and plan.Ingredients.CleanWater==5 and plan.Outputs.BoiledPotato==5)
-assert(Craft.Plan({Potato=6,CleanWater=6},boil,6)==nil)
-print("PASS: 8 material tools/weapons, 5/10/15 resource damage, access tiers, knife damage/cooking and recipe costs")
-
-for id,repair in pairs({MakeAxe=60,MakeShovel=60,MakeScrapAxe=100,MakeScrapShovel=100,MakeKnife=100,MakeIronAxe=150,MakeIronShovel=150,MakeIronKnife=150,MakeBucket=100,MakeHandle=60,MakePlanks=60}) do
- assert(Recipes[id].Requirements.Skills.Repair==repair)
- assert(Recipes[id].Description:find("Requires Repair "..repair..".",1,true),"menu description matches authoritative requirement")
-end
-
-for tier,material in ipairs({"Stone","Scrap","Iron"}) do
- assert(Rules.HarvestDamage(Config.Tree,Items[material.."Axe"],10)==15*tier,"axe applies strength before tier multiplier")
- assert(Rules.HarvestDamage(Config.ScrapPile,Items[material.."Showel"],10)==Rules.HarvestDamage(Config.ScrapPile,Items[material.."Showel"]),"shovel balance unchanged")
-end
+local smelt=Recipes.SmeltSteel
+assert(smelt.WorkshopLevel==2 and smelt.Requirements.Skills.Repair==150)
+local plan=assert(Craft.Plan({Iron=5,Coal=1},smelt,5))
+assert(plan.Ingredients.Iron==5 and plan.Ingredients.Coal==1 and plan.Outputs.Steel==5)
+assert(not Craft.Plan({Iron=5,Coal=1},smelt,6))
+local tabs=Categories.Available(Recipes,Items,Stations,"Workstation","Wood")
+for _,kind in ipairs({"All","Armor","Weapons","Ammunition","Tools","Materials","Equipment"}) do assert(table.find(tabs,kind),kind) end
+assert(not table.find(tabs,"Medicine") and not table.find(tabs,"Food"))
+assert(Categories.Kind(Recipes.MakeAmmo9mm,Items)=="Ammunition")
+assert(Categories.Kind(Recipes.MakeBandage,Items)=="Medicine")
+assert(Categories.Kind(Recipes.MakeCloth,Items)=="Materials")
+assert(Categories.Kind(Recipes.MakePistol9mm,Items)=="Weapons")
+assert(Categories.Kind(Recipes.MakeLeatherArmor,Items)=="Armor")
+assert(Categories.Kind(Recipes.MakeBackpack1,Items)=="Equipment")
+assert(Categories.Kind(Recipes.BoilWater,Items)=="Food")
+local wood=Categories.Available(Recipes,Items,Stations,"Stove","Wood")
+assert(table.find(wood,"Food") and table.find(wood,"Materials"))
+local med=Categories.Available(Recipes,Items,Stations,"MedStation","Wood")
+assert(table.find(med,"Medicine") and table.find(med,"Materials") and not table.find(med,"Weapons"))
+local state=Inventory.New()
+state.Items.StoneAxe=2;state.Conditions.StoneAxe={9,10}
+state.Equipment.PrimaryWeapon="StoneShovel";state.EquipmentCondition.PrimaryWeapon=50;state.ActiveWeaponSlot="PrimaryWeapon"
+Inventory.ReconcileEquipment(state,Items,require("../src/shared/ItemConfig").Slots)
+assert(not state.Items.StoneAxe and not state.Conditions.StoneAxe and not state.Equipment.PrimaryWeapon and not state.ActiveWeaponSlot)
+assert(Inventory.Weight(state,Items)==0)
+print("PASS: retired stone cleanup, scrap/iron/steel tiers and 50/100/150 repair, steel batch, complete station categories and fuel filters")

@@ -1,12 +1,12 @@
 # Resource models and spawn areas
 
-Names are case-sensitive. Shovel model IDs intentionally use `Showel`: StoneShowel, ScrapShowel and IronShowel.
+Names are case-sensitive. Use `ScrapShovel`, `IronShovel` and `SteelShovel` for new models. Legacy `Showel` spelling remains supported.
 
 ## Models in Studio
 
 | Location | Model names |
 | --- | --- |
-| `ServerStorage/Items` | `StoneAxe`, `StoneShowel`, `ScrapAxe`, `ScrapShowel`, `IronAxe`, `IronShowel`, `ScrapKnife`, `IronKnife` |
+| `ServerStorage/Items` | `ScrapAxe`, `ScrapShovel`, `IronAxe`, `IronShovel`, `SteelAxe`, `SteelShovel`, `ScrapKnife`, `IronKnife`, `SteelKnife` |
 | `ServerStorage/Resources/Trees` | `Tree_1`, `Tree_2`, `Tree_3` |
 | `ServerStorage/Resources/ScrapPiles` | `PileScrap` |
 | `ServerStorage/Resources/StoneVeins` | `StoneVein` |
@@ -26,15 +26,15 @@ After the last resource is removed, the usual random 30–300 second respawn tim
 
 ## Harvesting
 
-Axes and shovels deal **5 damage to living targets**, attack 25 times/minute and use SwingLeft. Against matching resources, stone tools multiply this by 1 (5), scrap by 2 (10), and iron by 3 (15). Tool category still matters: axes cut trees, shovels mine stone and scrap. Every actual impact costs one durability use, even with an unsuitable or insufficient-tier tool. Empty swings cost none.
+Axes and shovels deal **5 damage to living targets**, attack 25 times/minute and use SwingLeft. Against matching resources, scrap tools multiply this by 1 (5), iron by 2 (10), and steel by 3 (15). Tool category still matters: axes cut trees, shovels mine stone and scrap. Every actual impact costs one durability use, even with an unsuitable or insufficient-tier tool. Empty swings cost none.
 
-HarvestTier and MinHarvestTier enforce access independently from damage. Current trees, stone veins and scrap piles require tier 1 (stone) or better; an unranked shovel cannot harvest scrap. Future iron deposits should require MinHarvestTier=2 (scrap or iron); no iron deposit or Iron ingredient is added yet.
+HarvestTier and MinHarvestTier enforce access independently from damage. Current trees, stone veins and scrap piles require tier 1 (scrap) or better; an unranked shovel cannot harvest scrap. Future iron deposits should require MinHarvestTier=2 (iron or steel); iron is obtained through furnace smelting, without a dedicated ore deposit.
 
-All current resource nodes have 100 HP: 20 stone-tool hits, 10 scrap-tool hits, or 7 iron-tool hits. Trees yield 1–4 TreeLog (2 kg each); scrap piles yield independently 1–5 Scrap (0.2 kg each) and 1–5 Rags (0.05 kg each); stone veins yield 1–5 Stone (0.2 kg each).
+All current resource nodes have 100 HP: 20 scrap-tool hits, 10 iron-tool hits, or 7 steel-tool hits. Trees yield 1–4 TreeLog (2 kg each); scrap piles yield independently 1–5 Scrap (0.2 kg each) and 1–5 Rags (0.05 kg each); stone veins yield 1–5 Stone (0.2 kg each).
 
-Workstation: 1 Handle + 1 Stone makes StoneAxe or StoneShowel; 1 Handle + 3 Scrap makes ScrapAxe or ScrapShowel; 3 Scrap makes ScrapKnife. Iron tools are registered and usable but have no crafting recipe until the iron resource is supplied. No stone knife recipe remains. Log/plank/handle recipes are unchanged. Legacy Axe/Showel IDs map to stone stats; Knife maps to scrap knife stats for older placed models.
+Workstation tools now use Scrap/Iron/Steel tiers at Repair 50/100/150. An axe or shovel costs 1 Handle + 3 of its metal; a knife costs 3 metal. Axes/shovels deal 5 damage to living targets and multiply resource damage by tier (1/2/3). Knives deal 10/20/30 damage. Stone tools and their recipes are retired. Legacy Axe/Showel IDs use scrap stats; Knife uses scrap knife stats. Steel is refined at a T2 Workshop furnace: one Iron per Steel, 1–5 per batch, one Coal per batch, Repair 150, 60 seconds. Until authored steel models exist, equipment and pickups reuse iron templates.
 
-ScrapKnife deals 10 damage and IronKnife 20. Both share CraftTool="Knife", so either works for slicing sausage. Their attack speed, reach and durability remain the existing knife settings.
+ScrapKnife deals 10 damage, IronKnife 20 and SteelKnife 30. All share CraftTool="Knife", so any works for slicing sausage. Their attack speed, reach and durability remain the existing knife settings.
 
 Loot is spawned once on the ground at the destroyed node. Each loot type is a separate world pickup with its rolled Quantity, not an automatic inventory grant. Add TreeLog, Scrap and Rags models to ServerStorage/Items for custom visuals. Missing resource art uses temporary blocks which can still be picked up and dropped.
 

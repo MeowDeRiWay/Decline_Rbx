@@ -130,6 +130,17 @@ function Rules.Unequip(state, definitions, slots, slot)
 end
 -- Return items from retired slots to inventory without losing their metadata.
 function Rules.ReconcileEquipment(state,definitions,slots)
+ for _,id in ipairs({"StoneAxe","StoneShovel","StoneShowel"}) do
+  state.Items[id]=nil
+  if state.Conditions then state.Conditions[id]=nil end
+  if state.Weapons then state.Weapons[id]=nil end
+  for slot,equipped in pairs(state.Equipment) do
+   if equipped==id then
+    state.Equipment[slot]=nil;state.EquipmentCondition[slot]=nil
+    if state.EquipmentWeapon then state.EquipmentWeapon[slot]=nil end
+   end
+  end
+ end
  -- Migrate an older session's held weapon without copying its unique magazine.
  local held=state.Equipment.Hands
  local target=held and definitions[held] and definitions[held].Slot

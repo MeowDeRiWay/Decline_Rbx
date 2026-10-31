@@ -69,9 +69,9 @@ assert(target:GetAttribute("Health")==100 and target:GetAttribute("ResourceMater
 assert(target.Part.Anchored and target.Part.CanQuery)
 local player={Character=make("Model","Character")}
 function player:GetAttribute() return 0 end
-player.Character:SetAttribute("HandsItem","StoneAxe")
+player.Character:SetAttribute("HandsItem","ScrapAxe")
 assert(Service.Hit(player,target,weapon) and target:GetAttribute("Health")==100 and used==1,"wrong tool wears but cannot mine")
-player.Character:SetAttribute("HandsItem","StoneShowel")
+player.Character:SetAttribute("HandsItem","ScrapShowel")
 assert(#messages==0,"unsuitable tool does not claim progress")
 assert(Service.Hit(player,target,weapon) and messages[#messages]=="Stone vein: 19 hits remaining.")
 for _=2,20 do assert(Service.Hit(player,target,weapon)) end
@@ -80,11 +80,11 @@ assert(target.destroyed and lootCalls==1 and used==21,"twenty stone shovel hits 
 assert(not Service.Hit(player,target,weapon) and lootCalls==1,"no duplicate loot")
 assert(#workspace.Resources:GetChildren()==99)
 local scrapTarget=generated[2]
-player.Character:SetAttribute("HandsItem","ScrapShowel")
+player.Character:SetAttribute("HandsItem","IronShowel")
 for _=1,10 do assert(Service.Hit(player,scrapTarget,weapon)) end
 assert(scrapTarget.destroyed and lootCalls==2,"scrap multiplier mines in ten hits")
 local ironTarget=generated[3]
-player.Character:SetAttribute("HandsItem","IronShowel")
+player.Character:SetAttribute("HandsItem","SteelShowel")
 for _=1,7 do assert(Service.Hit(player,ironTarget,weapon)) end
 assert(xp==3,"one XP per actual resource, no XP per hit")
 assert(ironTarget.destroyed and lootCalls==3,"iron multiplier mines in seven hits")

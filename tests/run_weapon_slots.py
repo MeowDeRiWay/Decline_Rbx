@@ -45,7 +45,7 @@ s+='\nHandActions=(function()\n'+source+'\nend)()'
 s+='''
 a:LoadCharacterAsync();b:LoadCharacterAsync();a.Character.HumanoidRootPart.Anchored=false
 Service.Reset(a)
-for _,entry in ipairs({{"StoneAxe","PrimaryWeapon"},{"StoneShovel","PrimaryWeapon"},{"SMG9mm","PrimaryWeapon"},{"Rifle223","PrimaryWeapon"},{"LSW223","PrimaryWeapon"},{"PipeRifle9mm","PrimaryWeapon"},{"Pistol9mm","SecondaryWeapon"},{"PipePistol9mm","SecondaryWeapon"},{"IronKnife","SecondaryWeapon"}}) do
+for _,entry in ipairs({{"ScrapAxe","PrimaryWeapon"},{"ScrapShovel","PrimaryWeapon"},{"SMG9mm","PrimaryWeapon"},{"Rifle223","PrimaryWeapon"},{"LSW223","PrimaryWeapon"},{"PipeRifle9mm","PrimaryWeapon"},{"Pistol9mm","SecondaryWeapon"},{"PipePistol9mm","SecondaryWeapon"},{"IronKnife","SecondaryWeapon"}}) do
  assert(ItemConfig.Items[entry[1]].Slot==entry[2],entry[1])
 end
 assert(Service.Add(a,"AssaultRifle223",1,{1234},{{Loaded=17,Type="AP",Mode="Single"}}))

@@ -7,7 +7,11 @@ root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/EquipmentVisuals.luau').read_text().replace('local Items = require(ReplicatedStorage.Shared.ItemConfig)','')
 cases='''
 local world=make("Folder","WorldItems",workspace)
-for _,id in ipairs({"StoneAxe","StoneShowel","ScrapAxe","ScrapShowel","IronAxe","IronShowel","ScrapKnife","IronKnife"}) do
+make("Folder","Items",ServerStorage)
+local fallback=make("Model","IronShowel",ServerStorage.Items);make("Part","Part",fallback)
+assert(Visuals.Template("SteelShovel")==fallback,"steel can reuse legacy iron shovel template")
+fallback:Destroy()
+for _,id in ipairs({"SteelAxe","SteelShowel","SteelKnife","ScrapAxe","ScrapShowel","IronAxe","IronShowel","ScrapKnife","IronKnife"}) do
  local item=make("Model",id,world,{Quantity=1})
  make("Part","Part",item)
  Visuals.CaptureTemplate(item,id)
@@ -20,7 +24,7 @@ for _,id in ipairs({"StoneAxe","StoneShowel","ScrapAxe","ScrapShowel","IronAxe",
  Visuals.CaptureTemplate(another,id)
  assert(ServerStorage.Items:FindFirstChild(id)==captured,"authored/existing template wins")
 end
-for _,material in ipairs({"Stone","Scrap","Iron"}) do
+for _,material in ipairs({"Scrap","Iron","Steel"}) do
  assert(Visuals.Validate(material.."Shovel"),"correct ID accepts old template")
  local old=ServerStorage.Items:FindFirstChild(material.."Showel");old:Destroy()
  local new=make("Model",material.."Shovel",ServerStorage.Items);make("Part","Part",new)

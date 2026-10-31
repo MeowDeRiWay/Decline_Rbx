@@ -26,15 +26,15 @@ end
 local total=0
 for _=1,1000 do Rules.RollCells(10,10,.1,rng,function() total+=1 end) end
 assert(total>9500 and total<10500,"density approximately .1 per square stud")
-for _,id in ipairs({"MakeAxe","MakeShovel"}) do
+for _,id in ipairs({"MakeScrapAxe","MakeScrapShovel"}) do
  local recipe=Recipes[id]
- assert(recipe.Station=="Workstation" and recipe.Ingredients.Stone==1 and recipe.Ingredients.Scrap==nil)
- local plan=assert(Craft.Plan({Stone=1,Handle=1},recipe,1))
+ assert(recipe.Station=="Workstation" and recipe.Ingredients.Scrap==3 and recipe.Ingredients.Stone==nil)
+ local plan=assert(Craft.Plan({Scrap=3,Handle=1},recipe,1))
  assert(plan.Outputs[recipe.Output]==1 and Items[recipe.Output])
- assert(Craft.Plan({Stone=0,Handle=1},recipe,1)==nil)
+ assert(Craft.Plan({Scrap=2,Handle=1},recipe,1)==nil)
 end
 assert(Items.Stone.Weight==.2)
-print("PASS: area trials, 0–100 range, fractional cells, ten-percent density and stone tool recipe costs")
+print("PASS: area trials, 0–100 range, fractional cells, ten-percent density and scrap tool recipe costs")
 
 local Config=require("../src/shared/ResourceConfig")
 local candidates=0

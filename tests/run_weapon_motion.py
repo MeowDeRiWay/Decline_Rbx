@@ -19,7 +19,7 @@ source+='\nlocal Motion=(function()\n'+(root/'src/shared/WeaponMotion.luau').rea
 source+='\nlocal Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items'
 source+='''
 local motor={Parent=true,GetAttribute=function() return CFrame.new(.2,.1,-.3) end}
-for _,material in ipairs({"Stone","Scrap","Iron"}) do
+for _,material in ipairs({"Scrap","Iron","Steel"}) do
  local axe=Items[material.."Axe"].Weapon
  local shovel=Items[material.."Shovel"].Weapon
  assert(axe.Animation=="Chop" and shovel.Animation=="Thrust")

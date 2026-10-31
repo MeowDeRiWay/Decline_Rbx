@@ -40,18 +40,6 @@ local recipes = {
   Ingredients = {Plank = 1}, Output = "Handle", OutputCount = 1,
   MaxBatch = 1, Duration = 10, RequiresPresence = true,
  },
- MakeAxe = {
-  Name = "Make stone axe", Station = "Workstation",
-  Description = "Assemble an axe using a handle and one stone.",
-  Ingredients = {Handle = 1, Stone = 1}, Output = "StoneAxe", OutputCount = 1,
-  MaxBatch = 1, Duration = 20, RequiresPresence = true,
- },
- MakeShovel = {
-  Name = "Make stone shovel", Station = "Workstation",
-  Description = "Assemble a shovel using a handle and one stone.",
-  Ingredients = {Handle = 1, Stone = 1}, Output = "StoneShovel", OutputCount = 1,
-  MaxBatch = 1, Duration = 20, RequiresPresence = true,
- },
  MakeScrapAxe = {
   Name = "Make scrap axe", Station = "Workstation",
   Description = "Assemble a scrap axe using a handle and three pieces of scrap.",
@@ -88,6 +76,10 @@ local recipes = {
   Ingredients = {Iron = 3}, Output = "IronKnife", OutputCount = 1,
   MaxBatch = 1, Duration = 15, RequiresPresence = true,
  },
+ MakeSteelAxe={Name="Make steel axe",Station="Workstation",Description="Assemble a steel axe using a handle and three steel.",Ingredients={Handle=1,Steel=3},Output="SteelAxe",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=200},
+ MakeSteelShovel={Name="Make steel shovel",Station="Workstation",Description="Assemble a steel shovel using a handle and three steel.",Ingredients={Handle=1,Steel=3},Output="SteelShovel",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=200},
+ MakeSteelKnife={Name="Make steel knife",Station="Workstation",Description="Shape three steel into a knife.",Ingredients={Steel=3},Output="SteelKnife",OutputCount=1,MaxBatch=1,Duration=15,RequiresPresence=true,XP=200},
+ SmeltSteel={Name="Smelt steel",Station="Furnace",WorkshopLevel=2,Description="Refine one iron per steel, up to five steel per batch, using one charcoal. Requires Repair 150 and a Workshop T2 furnace; you may leave.",Ingredients={Iron=1},Fuel={ID="Coal",Count=1},Output="Steel",OutputCount=1,MaxBatch=5,Duration=60,XP=100,Requirements={Skills={Repair=150}}},
  BoilPotatoes = {
   Name = "Boil potatoes", Food=true, Station = "Stove",
   Description = "Boil potatoes using one bottle of clean water per potato.",
@@ -112,8 +104,8 @@ local recipes = {
 }
 
 -- Repair gates for tool tiers and workshop components, including iron recipes.
-local repairByOutput={StoneAxe=50,StoneShovel=50,ScrapAxe=100,ScrapShovel=100,ScrapKnife=100,
- IronAxe=150,IronShovel=150,IronKnife=150,EmptyBucket=100,Handle=50,Plank=50}
+local repairByOutput={ScrapAxe=50,ScrapShovel=50,ScrapKnife=50,
+ IronAxe=100,IronShovel=100,IronKnife=100,SteelAxe=150,SteelShovel=150,SteelKnife=150,EmptyBucket=100,Handle=50,Plank=50}
 for _,recipe in pairs(recipes) do
  local repair=repairByOutput[recipe.Output]
  if repair then
@@ -125,7 +117,7 @@ for _,recipe in pairs(recipes) do
 end
 
 -- Character XP per finished result; sewing tools are reusable inventory requirements.
-local outputXP={Plank=75,Handle=25,StoneAxe=50,StoneShovel=50,ScrapAxe=100,ScrapShovel=100,ScrapKnife=100,IronAxe=200,IronShovel=200,IronKnife=200,EmptyBucket=100}
+local outputXP={Plank=75,Handle=25,ScrapAxe=100,ScrapShovel=100,ScrapKnife=100,IronAxe=200,IronShovel=200,IronKnife=200,EmptyBucket=100}
 for _,recipe in pairs(recipes) do
  if outputXP[recipe.Output] then recipe.XP=outputXP[recipe.Output] end
  if recipe.Ingredients.Cloth or recipe.Ingredients.Rags then recipe.Tool="SewingKit" end

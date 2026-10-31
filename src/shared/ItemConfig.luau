@@ -2,6 +2,7 @@
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
 ItemConfig.PickupDistance = 2
+ItemConfig.RetiredItems={StoneAxe=true,StoneShovel=true,StoneShowel=true}
 ItemConfig.Slots = {"Body", "PrimaryWeapon", "SecondaryWeapon", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
  Money = {Name="Banknote",Weight=0,Currency=true,Description="Money is credited directly to your protected account when picked up."},
@@ -25,7 +26,7 @@ ItemConfig.Items = {
  },
  Stone = {
   Name = "Stone", Weight = 0.2, ResourceMaterial = "Stone",
-  Description = "Stone dug from a stone vein. Used for crafting stone tools.",
+  Description = "Stone dug from a stone vein. Used for construction.",
  },
  Scrap = {
   Name = "Scrap", Weight = 0.2,
@@ -113,7 +114,7 @@ ItemConfig.Items = {
  -- Metal = {Name = "Metal", Weight = 0.2},
 }
 -- Tier is progression/access; HarvestMultiplier scales damage only to resource nodes.
-for tier,material in ipairs({"Stone","Scrap","Iron"}) do
+for tier,material in ipairs({"Scrap","Iron","Steel"}) do
  for _,tool in ipairs({"Axe","Showel"}) do
   local axe=tool=="Axe"
   ItemConfig.Items[material..tool]={
@@ -125,23 +126,28 @@ for tier,material in ipairs({"Stone","Scrap","Iron"}) do
   }
  end
 end
-for _,material in ipairs({"Scrap","Iron"}) do
+for tier,material in ipairs({"Scrap","Iron","Steel"}) do
  ItemConfig.Items[material.."Knife"]={
   Name=material.." knife", Weight=.3, Slot="Hands", CraftTool="Knife", CraftSpeed=1,
   Description="A sharp knife for combat and slicing food.",
-  Weapon={Damage=material=="Iron" and 20 or 10, AttacksPerMinute=40, DamageType="Piercing", MaxUses=500,
+  Weapon={Damage=tier*10, AttacksPerMinute=40, DamageType="Piercing", MaxUses=500,
    CanDamageStructures=false, Range=1.2, Width=.7, Thrust=.5},
  }
 end
 -- Correct shovel spelling while retaining old inventory IDs and authored templates.
-for _,material in ipairs({"Stone","Scrap","Iron"}) do
+for _,material in ipairs({"Scrap","Iron","Steel"}) do
  local shovel=ItemConfig.Items[material.."Showel"]
  shovel.TemplateID=material.."Shovel"
  ItemConfig.Items[material.."Shovel"]=shovel
 end
+-- Authored steel templates override these temporary iron-model fallbacks.
+ItemConfig.Items.Steel={Name="Steel",Weight=1,ResourceMaterial="ArmorSteel",TemplateID="Iron",Description="Refined steel used to craft third-tier tools."}
+for _,tool in ipairs({"Axe","Shovel","Showel","Knife"}) do
+ ItemConfig.Items["Steel"..tool].TemplateID="Iron"..(tool=="Showel" and "Shovel" or tool)
+end
 -- Compatibility for already placed legacy models; new recipes use explicit material IDs.
-ItemConfig.Items.Axe=ItemConfig.Items.StoneAxe
-ItemConfig.Items.Showel=ItemConfig.Items.StoneShowel
+ItemConfig.Items.Axe=ItemConfig.Items.ScrapAxe
+ItemConfig.Items.Showel=ItemConfig.Items.ScrapShowel
 ItemConfig.Items.Knife=ItemConfig.Items.ScrapKnife
 ItemConfig.Items.AssaultRifle223={Name=".223 assault rifle",Weight=3.2,Slot="Hands",Description="A military weapon of the kind most countries used to fight each other before the epidemic. Why? What for? It no longer matters.",
  Firearm={Category="Automatic",Skill="LightWeapons",HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=24,ReloadTime=2.5,Speed=750,Range=350,Damage=23,DamageMin=19,DamageMax=23,RPM=600},

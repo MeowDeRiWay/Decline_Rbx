@@ -20,6 +20,8 @@ local cookingOpen=false
 local Recipes=require(ReplicatedStorage.Shared.CraftConfig)
 local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local CraftRules=require(ReplicatedStorage.Shared.CraftRules)
+local Categories=require(ReplicatedStorage.Shared.CraftCategories)
+local craftCategory="All"
 local selectedRecipe=nil
 local craftAmounts={}
 local craftStatuses={}
@@ -290,8 +292,21 @@ local function renderRecipes()
    tab.Activated:Connect(function() stoveFuelTab=entry.ID;selectedRecipe=nil;redraw() end)
   end
  end
+ local availableCategories=Categories.Available(Recipes,ItemConfig.Items,Stations,snapshot.CookingStation,stoveFuelTab)
+ if not table.find(availableCategories,craftCategory) then craftCategory="All";selectedRecipe=nil end
+ local categoryTabs=Instance.new("Frame")
+ categoryTabs.Name="CraftCategories";categoryTabs.Size=UDim2.new(1,-8,0,math.ceil(#availableCategories/3)*34)
+ categoryTabs.BackgroundTransparency=1;categoryTabs.LayoutOrder=1;categoryTabs.Parent=equipment
+ for index,category in ipairs(availableCategories) do
+  local tab=button(categoryTabs,Categories.Labels[category] or category,UDim2.new(((index-1)%3)/3,2,0,math.floor((index-1)/3)*34),UDim2.new(1/3,-4,0,30))
+  tab.TextSize=13;tab.TextColor3=craftCategory==category and Theme.Accent or Theme.Muted
+  tab.Activated:Connect(function() craftCategory=category;selectedRecipe=nil;redraw() end)
+ end
  local ids={}
- for id,recipe in pairs(Recipes) do if Stations.Matches(recipe,snapshot.CookingStation) and (snapshot.CookingStation~="Stove" or not recipe.FuelTab or recipe.FuelTab==stoveFuelTab) then table.insert(ids,id) end end
+ for id,recipe in pairs(Recipes) do
+  if Stations.Matches(recipe,snapshot.CookingStation) and Categories.Matches(recipe,ItemConfig.Items,craftCategory)
+   and (snapshot.CookingStation~="Stove" or not recipe.FuelTab or recipe.FuelTab==stoveFuelTab) then table.insert(ids,id) end
+ end
  table.sort(ids)
  if #ids==0 then text(equipment,"No recipes available yet.",UDim2.fromOffset(8,8),UDim2.new(1,-16,0,50)) end
  for order,id in ipairs(ids) do
@@ -303,7 +318,7 @@ local function renderRecipes()
   card.Size=UDim2.new(1,-8,0,expanded and 370 or 56)
   card.BackgroundColor3=Theme.Card
   card.BorderSizePixel=0
-  card.LayoutOrder=order
+  card.LayoutOrder=order+1
   card.Parent=equipment
   local title=button(card,recipe.Name,UDim2.fromOffset(6,6),UDim2.new(1,-12,0,44))
   title.TextSize=16
@@ -486,7 +501,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
 end)
 player.CharacterAdded:Connect(function() setOpen(false) end)
 stateRemote.OnClientEvent:Connect(function(value)
- if value.CookingOpen~=true or snapshot.CookingOpen~=true or value.CookingStation~=snapshot.CookingStation then selectedRecipe=nil end
+ if value.CookingOpen~=true or snapshot.CookingOpen~=true or value.CookingStation~=snapshot.CookingStation then selectedRecipe=nil;craftCategory="All" end
  snapshot = value
  local wasChestOpen = chestOpen
  cookingOpen=value.CookingOpen==true
