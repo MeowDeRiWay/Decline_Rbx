@@ -87,9 +87,9 @@ effects.OnClientEvent:Connect(function(events)
    local record=traces[event.ID];if record then record.Expires=os.clock()+.035 end
   elseif event.Kind=="Impact" then impact(event)
   elseif event.Kind=="Muzzle" then
-   local part=effectPart();part.Position=event.Point;part.Shape=Enum.PartType.Ball
-   part.Size=Vector3.new(.12,.12,.12);part.Material=Enum.Material.Neon;part.Color=Color3.fromRGB(255,205,90);part.Transparency=.15
-   local light=Instance.new("PointLight");light.Color=part.Color;light.Range=4;light.Brightness=2;light.Parent=part
+   -- Invisible anchor preserves flash lighting without a delayed visible orb.
+   local part=effectPart();part.Position=event.Point
+   local light=Instance.new("PointLight");light.Color=Color3.fromRGB(255,205,90);light.Range=4;light.Brightness=2;light.Parent=part
    Debris:AddItem(part,.045)
   end
  end
