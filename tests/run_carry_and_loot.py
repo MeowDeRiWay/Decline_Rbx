@@ -27,8 +27,8 @@ local Config={InteractionDistance=3}
 local moves=0
 local Life={MoveKnockout=function(p,frame) moves+=1;p.Character:PivotTo(frame);return true end}
 local Fall={Carry=function(c,frame) c:SetAttribute("BodyPoseKind","Carried");c:PivotTo(frame);return true end}
-local allowed=true;local placed
-local Beds={CanPlace=function() return allowed end,PlacePatient=function(_,patient,bed) placed={patient,bed};return true end}
+local allowed=true;local placeAllowed=true;local placed
+local Beds={CanPlace=function() return allowed end,PlacePatient=function(_,patient,bed) if not placeAllowed then return false end;placed={patient,bed};return true end}
 local Inventory={ClearHands=function() return true end}
 local Chests={Close=function() end}
 local Crafting={Close=function() end}
@@ -52,12 +52,13 @@ a.Character:SetAttribute("InteractionLocked",true);a.Character:SetAttribute("Int
 beat();assert(Carry.Patient(a)==b,"door reach preserves carried patient")
 a.Character:SetAttribute("InteractionLocked",nil);a.Character:SetAttribute("InteractionMode",nil);a.Character:SetAttribute("InteractionCarryAllowed",nil)
 beat();assert(b.Character:GetAttribute("Knockout") and b.Character:GetAttribute("KnockoutEndsAt")==clock-100,"carrying an overdue patient never kills or resets their timer")
-allowed=false;assert(not Carry.PlaceOnBed(a,wall) and Carry.Patient(a)==b,"occupied/invalid bed does not drop patient")
+placeAllowed=false;assert(not Carry.PlaceOnBed(a,{}) and Carry.Patient(a)==b,"failed bed placement preserves carry")
+placeAllowed=true;allowed=false;assert(not Carry.PlaceOnBed(a,wall) and Carry.Patient(a)==b,"occupied/invalid bed does not drop patient")
 allowed=true;assert(Carry.PlaceOnBed(a,wall) and placed[1]==b and Carry.Patient(a)==nil and not b.Character:GetAttribute("CarriedByUserId"))
 assert(Carry.Pickup(a,b));a.Character:SetAttribute("Knockout",true);beat()
 assert(Carry.Patient(a)==nil and not b.Character:GetAttribute("CarriedByUserId"),"carrier incapacitation releases victim")
 a.Character:SetAttribute("Knockout",false);assert(Carry.Pickup(a,b));Carry.ReleasePlayer(b)
-assert(Carry.Patient(a)==nil and moves>=3,"release is safe for either participant")
+assert(Carry.Patient(a)==nil and moves>=2,"release is safe for either participant")
 print("PASS: carry authority, wall/range/self/living target denial, exclusive ownership, overdue patient survival, invalid-bed atomicity, placement, KO and release cleanup")
 '''
 for variable,path in [('Rules','src/shared/InventoryRules.luau'),('Items','src/shared/ItemConfig.luau')]:s+='\nlocal '+variable+'=(function()\n'+(root/path).read_text()+'\nend)()'

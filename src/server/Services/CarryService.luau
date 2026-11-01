@@ -56,8 +56,14 @@ end
 function Service.PlaceOnBed(player,bed)
  local patient=Service.Patient(player)
  if not patient or not active(player) or not Beds.CanPlace(player,bed,patient) then return false end
- Service.Drop(player)
- return Beds.PlacePatient(player,patient,bed)
+ if not Beds.PlacePatient(player,patient,bed) then return false end
+ local record=carrying[player]
+ carrying[player]=nil;carriedBy[patient]=nil
+ if record then
+  record.CarrierCharacter:SetAttribute("CarryingUserId",nil)
+  record.Character:SetAttribute("CarriedByUserId",nil)
+ end
+ return true
 end
 Run.Heartbeat:Connect(function()
  for player,record in pairs(carrying) do

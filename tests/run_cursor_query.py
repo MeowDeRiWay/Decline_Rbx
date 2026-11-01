@@ -9,7 +9,10 @@ local render
 local mouse={X=50,Y=50}
 local inputCalls=0
 local camera={ViewportSize={X=100,Y=100},ViewportPointToRay=function() return {Origin=Vector3.zero,Direction=Vector3.new(0,0,-1)} end}
-local player={Character={}}
+local carryID
+local function character() return {GetAttribute=function(_,key) if key=="CarryingUserId" then return carryID end end} end
+local player={Character=character()}
+local patient={Character={}}
 local visible={Parent=true,GetAttribute=function() return true end}
 local hidden={Parent=true,GetAttribute=function() return false end}
 local View={Targets={[visible]=true,[hidden]=true,[player.Character]=true}}
@@ -29,7 +32,7 @@ RaycastParams={new=function() return {} end}
 local warnings=0;local function warn() warnings+=1 end
 local debug={profilebegin=function() end,profileend=function() end,traceback=function(message) return message end}
 game={GetService=function(_,name)
- return ({Players={LocalPlayer=player},RunService={BindToRenderStep=function(_,_,priority,fn) assert(priority==13);render=fn end},UserInputService={GetMouseLocation=function() inputCalls+=1;return mouse end}})[name]
+ return ({Players={LocalPlayer=player,GetPlayerByUserId=function(_,id) if id==42 then return patient end end},RunService={BindToRenderStep=function(_,_,priority,fn) assert(priority==13);render=fn end},UserInputService={GetMouseLocation=function() inputCalls+=1;return mouse end}})[name]
 end}
 '''
 cases='''
@@ -42,7 +45,9 @@ for _=1,60 do render(1/60) end
 assert(worldCalls==30 and creatureCalls==30 and inputCalls==30,"three world consumers share one ray; creature query cached")
 for i,v in ipairs(order) do assert(v==(i-1)%4+1,"stable consumer ordering") end
 assert(excluded[1]==player.Character)
-player.Character={};render(1/30);assert(excluded[1]==player.Character,"respawn updates excluded character")
+player.Character=character();render(1/30);assert(excluded[1]==player.Character,"respawn updates excluded character")
+carryID=42;render(1/30);assert(excluded[2]==patient.Character,"carried patient cannot block door/world cursor")
+carryID=nil;render(1/30);assert(#excluded==1,"drop restores normal targeting")
 mouse={X=-1,Y=50};local before=worldCalls;render(1/30);assert(worldCalls==before,"outside viewport casts nothing")
 mouse={X=50,Y=50};workspace.CurrentCamera=nil;render(1/30);assert(worldCalls==before)
 workspace.CurrentCamera=camera;remove()

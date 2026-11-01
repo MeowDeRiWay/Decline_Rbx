@@ -71,6 +71,16 @@ assert(gate:GetAttribute("DoorOpen"),"authorized activation opens door")
 time+=4;assert(coroutine.resume(ticker));assert(gate:GetAttribute("DoorOpen"))
 time+=1;assert(coroutine.resume(ticker))
 assert(not gate:GetAttribute("DoorOpen") and part.Transparency==.25 and part.CanCollide and part.CanQuery and not part.CanTouch and part:GetAttribute("BlocksVision"),"authorized opening auto closes and restores authored properties")
+local carried=object("Model","CarriedPatient");carried.Parent=workspace
+players.GetPlayerByUserId=function(_,id) if id==99 then return {Character=carried} end end
+player.Character:SetAttribute("CarryingUserId",99)
+function workspace:Raycast(_,_,params)
+ if not table.find(params.FilterDescendantsInstances,carried) then return {Instance=carried} end
+ return nil
+end
+time+=1;fire(player,gate);assert(gate:GetAttribute("DoorOpen"),"carried body cannot block gate LOS")
+function workspace:Raycast() return nil end
+player.Character:SetAttribute("CarryingUserId",nil)
 gate:SetAttribute("TownGate",false);gate:SetAttribute("OwnerID",30)
 assert(not Service.Allowed(player,gate),"town membership alone cannot open private buildings")
 gate:SetAttribute("Co-OwnerID","20");assert(Service.Allowed(player,gate))

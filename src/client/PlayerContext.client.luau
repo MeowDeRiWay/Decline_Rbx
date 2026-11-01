@@ -25,10 +25,11 @@ end
 local function target()
  local camera=workspace.CurrentCamera;if not camera then return end
  local mouse=Input:GetMouseLocation();local ray=camera:ViewportPointToRay(mouse.X,mouse.Y)
- local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={player.Character}
+ local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;local excluded={player.Character}
  local carried=player.Character and player.Character:GetAttribute("CarryingUserId")
  local patient=carried and Players:GetPlayerByUserId(carried)
- if patient and patient.Character then table.insert(params.FilterDescendantsInstances,patient.Character) end
+ if patient and patient.Character then table.insert(excluded,patient.Character) end
+ params.FilterDescendantsInstances=excluded
  local hit=workspace:Raycast(ray.Origin,ray.Direction*1000,params)
  local object=hit and hit.Instance
  while object and object~=workspace do

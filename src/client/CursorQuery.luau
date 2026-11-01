@@ -28,7 +28,12 @@ function Query.Get()
  if mouse.X<0 or mouse.Y<0 or mouse.X>camera.ViewportSize.X or mouse.Y>camera.ViewportSize.Y then return nil end
  local ray=camera:ViewportPointToRay(mouse.X,mouse.Y)
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
- params.FilterDescendantsInstances=player.Character and {player.Character} or {}
+ local character=player.Character
+ local excluded=character and {character} or {}
+ local id=character and character:GetAttribute("CarryingUserId")
+ local patient=id and Players:GetPlayerByUserId(id)
+ if patient and patient.Character then table.insert(excluded,patient.Character) end
+ params.FilterDescendantsInstances=excluded
  cached={Mouse=mouse,Ray=ray,Hit=workspace:Raycast(ray.Origin,ray.Direction*1000,params)}
  return cached
 end

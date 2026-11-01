@@ -87,7 +87,11 @@ local function near(player, door)
  if not root or not hp or hp.Health <= 0 or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") then return false end
  if Interaction.Distance(door,root.Position) > Config.InteractionDistance then return false end
  local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude
- params.FilterDescendantsInstances = {character}
+ local excluded={character}
+ local id=character:GetAttribute("CarryingUserId")
+ local patient=id and Players:GetPlayerByUserId(id)
+ if patient and patient.Character then table.insert(excluded,patient.Character) end
+ params.FilterDescendantsInstances=excluded
  local point = Interaction.NearestPoint(door,root.Position)
  local hit = workspace:Raycast(root.Position,point-root.Position,params)
  return not hit or hit.Instance == door or hit.Instance:IsDescendantOf(door)

@@ -34,6 +34,11 @@ local blocked=false
 function workspace:Raycast() return blocked and {Instance=wall} or nil end
 '''
 cases='''
+RaycastParams.new=function()
+ local values={}
+ return setmetatable({},{__index=function(_,k) local v=values[k];return k=="FilterDescendantsInstances" and v and table.clone(v) or v end,__newindex=function(_,k,v) values[k]=k=="FilterDescendantsInstances" and table.clone(v) or v end})
+end
+
 local originalRay=workspace.Raycast
 function workspace:Raycast(_,_,params)
  if not table.find(params.FilterDescendantsInstances,b.Character) then return {Instance=b.Character.HumanoidRootPart} end
