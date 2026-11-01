@@ -171,4 +171,12 @@ local woodWater=table.clone(recipes.BoilWater)
 woodWater.Ingredients={DirtyWater=5,TreeLog=1};woodWater.FuelTab="Wood"
 woodWater.Description="Boil five bottles of dirty water with one log into five bottles of clean water. Requires Cook 50. Collect the finished batch before starting again."
 recipes.BoilWaterWood=woodWater
+-- Heat-processing stations run unattended queues with automatic delivery.
+for _,recipe in pairs(recipes) do
+ if recipe.Station=="Stove" or recipe.Station=="Furnace" then
+  recipe.ManualBatch=nil;recipe.FixedBatch=true;recipe.Automated=true
+  recipe.Description=recipe.Description:gsub("Collect the finished batch before starting again%.","Results are delivered automatically.")
+  recipe.Description=recipe.Description:gsub("collect the finished batch before starting again%.","results are delivered automatically.")
+ end
+end
 return recipes

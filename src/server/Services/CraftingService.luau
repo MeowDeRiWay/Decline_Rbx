@@ -99,7 +99,7 @@ function Service.Snapshot(player)
   CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,
   CookingRequiresPresence=job and job.RequiresPresence or false,CookingCount=job and job.Cycles[job.Index].Count or 0,
   CookingQueueTotal=job and #job.Cycles or 0,CookingCompleted=job and job.Index-1 or 0,CookingOwner=job and job.Player.UserId or nil,
-  CookingItems=items,CookingTools=tools,CookingNearbyChests=math.max(0,#sources-1),CookingMaxQueue=Rules.MaxQueue}
+  CookingItems=items,CookingTools=tools,CookingNearbyChests=math.max(0,#sources-1),CookingMaxQueue=stove and Stations.Kind(stove)=="Stove" and 2 or Rules.MaxQueue}
 end
 local function valid(player,stove,job)
  local character=player.Character
@@ -128,7 +128,7 @@ function Service.Cook(player,id,requested)
  if not own then return false end
  local speed=Rules.Speed(tools,recipe)
  if not speed or speed<=0 then return false end
- local cycles=Rules.QueuePlan(items,recipe,requested)
+ local cycles=Rules.QueuePlan(items,recipe,requested,Stations.Kind(stove)=="Stove" and 2 or Rules.MaxQueue)
  if not cycles then return false end
  local duration=0
  for _,cycle in ipairs(cycles) do
@@ -139,7 +139,7 @@ function Service.Cook(player,id,requested)
  local character=player.Character
  local root=character:FindFirstChild("HumanoidRootPart")
  local job={Recipe=id,Definition=recipe,Cycles=cycles,Index=1,Sources=sources,Inventory=own,
-  EndsAt=workspace:GetServerTimeNow()+duration,Player=player,Character=character,Root=root,WasAnchored=root.Anchored,RequiresPresence=not recipe.ManualBatch}
+  EndsAt=workspace:GetServerTimeNow()+duration,Player=player,Character=character,Root=root,WasAnchored=root.Anchored,RequiresPresence=not recipe.ManualBatch and not recipe.Automated}
  state.Job=job
  if not Supply.Reserve(cycles,sources,Items.Items) then state.Job=nil;return false end
  if job.RequiresPresence then character:SetAttribute("CraftingLocked",true);root.Anchored=true end

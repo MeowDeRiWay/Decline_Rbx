@@ -47,14 +47,14 @@ print("PASS: per-result XP, weapon costs, reusable sewing tool, first aid thresh
 do
  local recipe=C.BoilWater
  assert(recipe.Name=="Boil water" and recipe.Requirements.Skills.Cook==50)
- assert(recipe.XP==0 and not recipe.Food and not recipe.RequiresPresence and recipe.ManualBatch)
+ assert(recipe.XP==0 and not recipe.Food and not recipe.RequiresPresence and recipe.Automated and recipe.FixedBatch)
  assert(not C.BoilWaterCoal and not recipe.Fuel and recipe.FuelTab=="Coal","coal recipe has no extra fuel charge")
  local plan=assert(R.Plan({DirtyWater=5,Coal=1},recipe,1))
  assert(plan.Ingredients.DirtyWater==5 and plan.Ingredients.Coal==1 and plan.Outputs.CleanWater==5 and not plan.Outputs.Coal)
  assert(P.CraftExperience(recipe,1)==0 and P.CraftOutputs(plan.Outputs,recipe,{Ramsay=true}).CleanWater==5)
  assert(not R.Plan({DirtyWater=5,TreeLog=1},recipe,1),"logs cannot replace charcoal")
  assert(not R.Plan({DirtyWater=4,Coal=1},recipe,1),"the full batch is mandatory")
- assert(not R.QueuePlan({DirtyWater=10,Coal=2},recipe,{Batch=1,Repeats=2}),"manual collection remains mandatory")
+ assert(#R.QueuePlan({DirtyWater=10,Coal=2},recipe,{Batch=1,Repeats=2},2)==2,"two stove processes allowed")
  assert(recipe.Duration==60)
 end
 assert(C.MakeBandage.Ingredients.Rags==2 and C.MakeGreatBandage.Ingredients.Cloth==2)

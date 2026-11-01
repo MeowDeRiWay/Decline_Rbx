@@ -60,20 +60,18 @@ snapshot.CookingOwner=100;render();assert(not find("Cancel queue"),"only queue o
 snapshot.CookingEndsAt=0;snapshot.CookingStation="MedStation";snapshot.CookingItems={Rags=10};snapshot.CookingTools={SewingKit=1}
 selectedRecipe="MakeBandage";render();assert(find("Start queue").Active,"chest sewing kit enables recipe without carrying it")
 snapshot.CookingTools={};render();assert(not find("Start queue").Active,"missing tool disables queue")
-snapshot.CookingStation="Stove";snapshot.CookingItems={Potato=5,CleanWater=1,TreeLog=1};snapshot.CookingTools={};snapshot.CookingReady={}
-selectedRecipe="BoilPotatoes";render()
-assert(not find("Start queue") and not find("Queue all") and not input(254),"no quantity or repeat fields on stove")
-assert(find("Craft batch").Active);find("Craft batch").Activated:Fire()
+snapshot.CookingStation="Stove";snapshot.CookingMaxQueue=2;snapshot.CookingItems={Potato=5,CleanWater=1,TreeLog=1};snapshot.CookingTools={};snapshot.CookingReady={}
+selectedRecipe="BoilPotatoes";render();assert(find("Start queue") and find("Queue all") and input(254),"stove exposes bounded process queue")
+input(254).Text="99";input(254).FocusLost:Fire();assert(input(254).Text=="2","two-burner limit clamps input")
+input(254).Text="1";input(254).FocusLost:Fire()
+assert(find("Start queue").Active);find("Start queue").Activated:Fire()
 assert(sent[#sent][3].Batch==1 and sent[#sent][3].Repeats==1)
-snapshot.CookingReady={BoiledPotato=5,Coal=1};render()
-assert(not find("Craft batch").Active and find("Collect all"),"finished products block restart and expose one collection action")
-find("Collect all").Activated:Fire();assert(sent[#sent][1]=="CollectCrafted")
 snapshot.CookingReady={};snapshot.CookingItems={Plank=2,Handle=1};selectedRecipe="BurnWoodParts";render()
-assert(find("Craft batch").Active and not input(254),"mixed wooden parts allow one fixed batch")
+assert(find("Start queue").Active and input(254),"mixed wooden parts allow one fixed batch")
 local grouped=false
 for _,o in ipairs(objects) do if o.Text and o.Text:find("3 total: Plank or Handle (3 owned)",1,true) then grouped=true end end
 assert(grouped,"UI displays the grouped input instead of an empty material list")
-snapshot.CookingItems={Plank=1,Handle=1};render();assert(not find("Craft batch").Active,"incomplete mixed batch is disabled")
+snapshot.CookingItems={Plank=1,Handle=1};render();assert(not find("Start queue").Active,"incomplete mixed batch is disabled")
 print("PASS: actual queue UI uses chest materials/tools, repeat count and total time, bounded affordability, structured repeat/all requests, automatic results and owner-only cancellation")
 '''
 with tempfile.TemporaryDirectory() as d:

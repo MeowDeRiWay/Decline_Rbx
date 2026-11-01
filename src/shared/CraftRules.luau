@@ -2,7 +2,7 @@ local Rules = {}
 Rules.MaxQueue=1000
 function Rules.Discount(recipe,multiplier)
  local result=table.clone(recipe);result.Ingredients={}
- for id,amount in pairs(recipe.Ingredients) do result.Ingredients[id]=math.max(1,math.ceil(amount*(recipe.ManualBatch and 1 or (multiplier or 1)))) end
+ for id,amount in pairs(recipe.Ingredients) do result.Ingredients[id]=math.max(1,math.ceil(amount*((recipe.ManualBatch or recipe.FixedBatch) and 1 or (multiplier or 1)))) end
  return result
 end
 function Rules.Batch(available,requested,maximum)
@@ -64,15 +64,16 @@ function Rules.Plan(items,recipe,count)
  return {Ingredients=inputs,Outputs=outputs}
 end
 -- Existing numeric requests remain a single batch; structured requests repeat it.
-function Rules.QueuePlan(items,recipe,requested)
+function Rules.QueuePlan(items,recipe,requested,limit)
+ limit=limit or Rules.MaxQueue
  local batch,repeats= requested,1
  if typeof(requested)=="table" then batch=requested.Batch;repeats=requested.Repeats end
  if recipe.ManualBatch and repeats~=1 then return nil end
  local all=repeats=="All"
- if not all and (typeof(repeats)~="number" or repeats~=repeats or repeats%1~=0 or repeats<1 or repeats>Rules.MaxQueue) then return nil end
+ if not all and (typeof(repeats)~="number" or repeats~=repeats or repeats%1~=0 or repeats<1 or repeats>limit) then return nil end
  local stock=table.clone(items)
  local cycles={}
- for _=1,all and Rules.MaxQueue or repeats do
+ for _=1,all and limit or repeats do
   local count=Rules.Batch(Rules.Available(stock,recipe),batch,recipe.MaxBatch)
   if not count then if all then break else return nil end end
   local plan=Rules.Plan(stock,recipe,count)

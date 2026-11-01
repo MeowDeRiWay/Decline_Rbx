@@ -88,9 +88,9 @@ for id,entry in pairs({MakeBandage={"FirstAid",50},MakeGreatBandage={"FirstAid",
 end
 for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BurnLogs","BurnWoodParts","SmeltIron","SmeltSteel"}) do
  local recipe=Recipes[id]
- assert(recipe.ManualBatch and recipe.MaxBatch==1 and recipe.OutputCount==((id=="BurnLogs" or id=="BurnWoodParts") and 1 or 5),id)
+ assert(recipe.Automated and recipe.FixedBatch and not recipe.ManualBatch and recipe.MaxBatch==1 and recipe.OutputCount==((id=="BurnLogs" or id=="BurnWoodParts") and 1 or 5),id)
  Service.Close(a);fill(recipe,1);assert(Service.Open(a,stations[recipe.Station]))
- assert(not Service.Cook(a,id,5) and not Service.Cook(a,id,{Batch=1,Repeats=2}) and not Service.Cook(a,id,{Batch=1,Repeats="All"}),"processing cannot queue or resize batch")
+ assert(not Service.Cook(a,id,5) and not Service.Cook(a,id,{Batch=1,Repeats=2}),"processing cannot queue or resize batch")
  local ingredient=next(recipe.Ingredients) or recipe.IngredientGroups[1].IDs[1];local amount=stock[ingredient]
  stock[ingredient]=amount-1;assert(not Service.Cook(a,id,1),"partial input rejected");stock[ingredient]=amount
  if recipe.Requirements and recipe.Requirements.Skills.Cook then medicalSkills.Cook=49;assert(not Service.Cook(a,id,1));medicalSkills.Cook=50 end
@@ -99,14 +99,23 @@ for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BurnLogs","Bu
  local before=xp
  assert(Service.Cook(a,id,1) and not a.Character.HumanoidRootPart.Anchored)
  Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,stations[recipe.Station]))
- assert(Service.Snapshot(a).CookingReady[recipe.Output]==recipe.OutputCount and not stock[recipe.Output],"processing stays at station until collected")
- assert(xp==before+ProgressionRules.CraftExperience(recipe,1),"XP remains per fixed full batch")
- fill(recipe,1);assert(not Service.Cook(a,id,1),"must collect all products before restarting")
- local held=stock[recipe.Output] or 0
- assert(Service.CollectAll(a) and next(Service.Snapshot(a).CookingReady)==nil)
- assert(stock[recipe.Output]==held+recipe.OutputCount and not Service.CollectAll(a))
+ assert(stock[recipe.Output]==recipe.OutputCount and next(Service.Snapshot(a).CookingReady)==nil,"automatic delivery while away")
+ assert(xp==before+ProgressionRules.CraftExperience(recipe,1))
+ fill(recipe,1)
  assert(Service.Cook(a,id,1));local stale=callbacks[#callbacks]
  assert(Service.Cancel(a));stale();assert(next(Service.Snapshot(a).CookingReady)==nil,"cancelled timer produces nothing")
+end
+-- Two stove processes maximum; furnaces retain the workbench queue limit.
+for _,id in ipairs({"BoilPotatoes","SmeltIron"}) do
+ local recipe=Recipes[id];Service.Close(a);fill(recipe,3);assert(Service.Open(a,stations[recipe.Station]))
+ local limit=recipe.Station=="Stove" and 2 or Rules.MaxQueue
+ assert(Service.Snapshot(a).CookingMaxQueue==limit)
+ if limit==2 then assert(not Service.Cook(a,id,{Batch=1,Repeats=3})) end
+ assert(Service.Cook(a,id,{Batch=1,Repeats="All"}))
+ assert(Service.Snapshot(a).CookingQueueTotal==(limit==2 and 2 or 3))
+ Service.Close(a)
+ for i=1,(limit==2 and 2 or 3) do callbacks[#callbacks]() end
+ assert(stock[recipe.Output]==recipe.OutputCount*(limit==2 and 2 or 3))
 end
 assert(Recipes.BoilPotatoes.Ingredients.Potato==5 and Recipes.BoilPotatoes.Ingredients.CleanWater==1)
 local fixed=Rules.Discount(Recipes.BoilPotatoes,.8)
@@ -114,13 +123,13 @@ assert(fixed.Ingredients.Potato==5 and fixed.Ingredients.CleanWater==1,"fixed pr
 local recipe=Recipes.BoilPotatoes;Service.Close(a);fill(recipe,1);cookState.Ramsay=1
 assert(Service.Open(a,stove) and Service.Cook(a,"BoilPotatoes",1));callbacks[#callbacks]()
 local ready=Service.Snapshot(a).CookingReady
-assert(ready.Ramsay_BoiledPotato==5 and ready.Coal==1 and not ready.Ramsay_Coal)
-assert(Service.CollectAll(a) and stock.Ramsay_BoiledPotato==5 and stock.Coal==1)
+assert(stock.Ramsay_BoiledPotato==5 and stock.Coal==1 and not stock.Ramsay_Coal)
+assert(not Service.CollectAll(a))
 Service.Close(a);fill(Recipes.MakePlanks,2);assert(Service.Open(a,bench))
 assert(Service.Cook(a,"MakePlanks",{Batch=1,Repeats=2}));local stale=callbacks[#callbacks];local before=xp
 Service.Close(a);stale()
 assert(stock.TreeLog==2 and not stock.Plank and xp==before and not a.Character.HumanoidRootPart.Anchored,"leaving item crafts cancels/refunds queue")
-print("PASS: repair/medical/cook boundaries, regular presence queues with auto delivery, fixed stove/furnace batches, no resize/repeats, manual collection/restart gate, T2 furnace, exact potato/water/fuel, quality, XP and cancellation")
+print("PASS: repair/medical/cook boundaries, regular presence queues with auto delivery, fixed stove/furnace batches, bounded unattended queues and automatic delivery, T2 furnace, exact potato/water/fuel, quality, XP and cancellation")
 '''
 station_source='local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()'
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),station_source,'local ProgressionRules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup]

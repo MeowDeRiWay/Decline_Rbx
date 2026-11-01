@@ -370,7 +370,7 @@ local function renderRecipes()
   ingredientsText.TextSize=14; ingredientsText.TextWrapped=true
   local toolName=recipe.Tool=="SewingKit" and "Sewing kit" or "Knife"
   local tool=recipe.Tool and (speed and string.format("%s required · Speed ×%g",toolName,speed) or toolName.." required · Missing usable tool") or "No tool required"
-  text(card,string.format("Time: %g seconds\n%s",recipe.Duration/(speed or 1),tool .. (not recipe.ManualBatch and " · Stay here" or "")),UDim2.fromOffset(10,181),UDim2.new(1,-20,0,44)).TextSize=14
+  text(card,string.format("Time: %g seconds\n%s",recipe.Duration/(speed or 1),tool .. (not recipe.ManualBatch and not recipe.Automated and " · Stay here" or "")),UDim2.fromOffset(10,181),UDim2.new(1,-20,0,44)).TextSize=14
   local busy=(snapshot.CookingEndsAt or 0)>0
   local eligible=not recipe.WorkshopLevel or (snapshot.CookingWorkshopLevel or 0)>=recipe.WorkshopLevel
   for skill,value in pairs(recipe.Requirements and recipe.Requirements.Skills or {}) do if (player:GetAttribute("Skill"..skill) or 0)<value then eligible=false end end
@@ -406,7 +406,7 @@ local function renderRecipes()
   local allEnabled=eligible and not busy and available>0 and speed~=nil
   local function controls()
    local rounds=processes()
-   local plan=CraftRules.QueuePlan(craftItems,recipe,{Batch=1,Repeats=rounds})
+   local plan=CraftRules.QueuePlan(craftItems,recipe,{Batch=1,Repeats=rounds},snapshot.CookingMaxQueue)
    enabled=allEnabled and plan~=nil
    queueSummary.Text=string.format("%d processes · %g seconds total",rounds,rounds*recipe.Duration/(speed or 1))
     .."\n"..string.format("Nearby chests: %d · Results go to pockets",snapshot.CookingNearbyChests or 0)
