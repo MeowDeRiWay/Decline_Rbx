@@ -39,5 +39,5 @@ local full=R.Weight(ordinary,I.Items)
 for _,id in ipairs({"MiliArmor2","Pistol9mm","SurgicalKit"}) do assert(R.Equip(ordinary,I.Items,I.Slots,id)) end
 close(R.Weight(ordinary,I.Items),full*.3)
 assert(R.Unequip(ordinary,I.Items,I.Slots,"Body"))
-close(R.Weight(ordinary,I.Items),6+(full-6)*.3)
+close(R.Weight(ordinary,I.Items),12+(full-12)*.3)
 print("PASS: ordinary armor, held/holstered weapons and Additional use global worn discount; unequipped items regain full weight")
