@@ -10,6 +10,7 @@ local player = Players.LocalPlayer
 local Theme=require(ReplicatedStorage.Shared.UITheme)
 local remotes = ReplicatedStorage:WaitForChild("TownRemotes")
 local action, state, notice = remotes:WaitForChild("Action"), remotes:WaitForChild("State"), remotes:WaitForChild("Notice")
+local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Config = require(ReplicatedStorage.Shared.TownConfig)
 local ProgressionConfig = require(ReplicatedStorage.Shared.ProgressionConfig)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
@@ -234,7 +235,7 @@ render = function()
     elseif not plot.BuildingID or owner then
      local function materials(cost)
       local parts={}
-      for id,amount in pairs(cost or {}) do table.insert(parts,tostring(amount).." "..id) end
+      for id,amount in pairs(cost or {}) do table.insert(parts,tostring(amount).." "..(Items[id] and Items[id].Name or id)) end
       table.sort(parts);return #parts==0 and "Free" or table.concat(parts,", ")
      end
      for _, option in ipairs(plot.Options) do

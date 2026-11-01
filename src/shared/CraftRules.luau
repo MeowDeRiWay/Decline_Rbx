@@ -18,6 +18,11 @@ function Rules.Available(items,recipe)
   local reserve=recipe.Fuel and recipe.Fuel.ID==id and recipe.Fuel.Count or 0
   available=math.min(available,math.floor((Rules.Count(items,id)-reserve)/count))
  end
+ for _,group in ipairs(recipe.IngredientGroups or {}) do
+  local total=0
+  for _,id in ipairs(group.IDs) do total+=items[id] or 0 end
+  available=math.min(available,math.floor(total/group.Count))
+ end
  if recipe.Fuel and (items[recipe.Fuel.ID] or 0)<recipe.Fuel.Count then return 0 end
  if recipe.Variants then
   local total=0
@@ -33,6 +38,14 @@ function Rules.Plan(items,recipe,count)
   local needed=amount*count;local ordinary=math.min(needed,items[id] or 0)
   if ordinary>0 then inputs[id]=ordinary end
   if needed>ordinary then inputs["Ramsay_"..id]=needed-ordinary end
+ end
+ for _,group in ipairs(recipe.IngredientGroups or {}) do
+  local remaining=group.Count*count
+  for _,id in ipairs(group.IDs) do
+   local used=math.min(remaining,math.max(0,(items[id] or 0)-(inputs[id] or 0)))
+   if used>0 then inputs[id]=(inputs[id] or 0)+used;remaining-=used end
+  end
+  if remaining>0 then return nil end
  end
  if recipe.Fuel then inputs[recipe.Fuel.ID]=(inputs[recipe.Fuel.ID] or 0)+recipe.Fuel.Count end
  if recipe.Variants then

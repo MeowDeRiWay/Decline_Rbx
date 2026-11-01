@@ -62,10 +62,11 @@ local function fill(recipe,repeats)
  table.clear(stock);sewing=true;repair=300
  for key in pairs(medicalSkills) do medicalSkills[key]=300 end
  for id,count in pairs(recipe.Ingredients) do stock[id]=count*repeats end
+ for _,group in ipairs(recipe.IngredientGroups or {}) do stock[group.IDs[1]]=group.Count*repeats end
  if recipe.Fuel then stock[recipe.Fuel.ID]=(stock[recipe.Fuel.ID] or 0)+recipe.Fuel.Count*repeats end
  if recipe.Variants then stock[recipe.Variants[1].Ingredient]=repeats end
 end
-local requirements={MakeBucket=50,MakePistol9mm=75,MakeSMG9mm=90,MakeAmmo9mm=50,MakeAmmo223=100,MakeRifle223=100,MakeServiceRifle223=110,MakeAssaultRifle223=120,MakeMarksmanRifle223=130,MakeLSW223=140,MakeLeatherArmor=60,MakeLeatherArmor2=80,MakeMiliArmor1=100,MakeMiliArmor2=130,MakeScrapAxe=50,MakeScrapShovel=50,MakeKnife=50,MakeIronAxe=100,MakeIronShovel=100,MakeIronKnife=100,MakeSteelAxe=150,MakeSteelShovel=150,MakeSteelKnife=150,MakeSewingKit=50,MakeBackpack1=50,MakeHandle=50,MakePlanks=50}
+local requirements={MakeSurgicalKit=100,MakePlate=25,MakeBucket=50,MakePistol9mm=75,MakeSMG9mm=90,MakeAmmo9mm=50,MakeAmmo223=100,MakeRifle223=100,MakeServiceRifle223=110,MakeAssaultRifle223=120,MakeMarksmanRifle223=130,MakeLSW223=140,MakeLeatherArmor=60,MakeLeatherArmor2=80,MakeMiliArmor1=100,MakeMiliArmor2=130,MakeScrapAxe=50,MakeScrapShovel=50,MakeKnife=50,MakeIronAxe=100,MakeIronShovel=100,MakeIronKnife=100,MakeSteelAxe=150,MakeSteelShovel=150,MakeSteelKnife=150,MakeSewingKit=50,MakeBackpack1=50,MakeHandle=50,MakePlanks=50}
 for id,threshold in pairs(requirements) do
  local recipe=Recipes[id];assert(recipe.Requirements.Skills.Repair==threshold)
  Service.Close(a);fill(recipe,2);assert(Service.Open(a,stations[recipe.Station]))
@@ -85,12 +86,12 @@ for id,entry in pairs({MakeBandage={"FirstAid",50},MakeGreatBandage={"FirstAid",
  medicalSkills[entry[1]]=entry[2]-1;assert(not Service.Cook(a,id,1))
  medicalSkills[entry[1]]=entry[2];assert(Service.Cook(a,id,1));callbacks[#callbacks]()
 end
-for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BurnLogs","BurnLogsWithCoal","SmeltIron","SmeltSteel"}) do
+for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BurnLogs","BurnWoodParts","SmeltIron","SmeltSteel"}) do
  local recipe=Recipes[id]
- assert(recipe.ManualBatch and recipe.MaxBatch==1 and recipe.OutputCount==5,id)
+ assert(recipe.ManualBatch and recipe.MaxBatch==1 and recipe.OutputCount==((id=="BurnLogs" or id=="BurnWoodParts") and 1 or 5),id)
  Service.Close(a);fill(recipe,1);assert(Service.Open(a,stations[recipe.Station]))
  assert(not Service.Cook(a,id,5) and not Service.Cook(a,id,{Batch=1,Repeats=2}) and not Service.Cook(a,id,{Batch=1,Repeats="All"}),"processing cannot queue or resize batch")
- local ingredient=next(recipe.Ingredients);local amount=stock[ingredient]
+ local ingredient=next(recipe.Ingredients) or recipe.IngredientGroups[1].IDs[1];local amount=stock[ingredient]
  stock[ingredient]=amount-1;assert(not Service.Cook(a,id,1),"partial input rejected");stock[ingredient]=amount
  if recipe.Requirements and recipe.Requirements.Skills.Cook then medicalSkills.Cook=49;assert(not Service.Cook(a,id,1));medicalSkills.Cook=50 end
  if recipe.Requirements and recipe.Requirements.Skills.Doctor then medicalSkills.Doctor=49;assert(not Service.Cook(a,id,1));medicalSkills.Doctor=50 end
@@ -98,12 +99,12 @@ for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BurnLogs","Bu
  local before=xp
  assert(Service.Cook(a,id,1) and not a.Character.HumanoidRootPart.Anchored)
  Service.Close(a);callbacks[#callbacks]();assert(Service.Open(a,stations[recipe.Station]))
- assert(Service.Snapshot(a).CookingReady[recipe.Output]==5 and not stock[recipe.Output],"processing stays at station until collected")
+ assert(Service.Snapshot(a).CookingReady[recipe.Output]==recipe.OutputCount and not stock[recipe.Output],"processing stays at station until collected")
  assert(xp==before+ProgressionRules.CraftExperience(recipe,1),"XP remains per fixed full batch")
  fill(recipe,1);assert(not Service.Cook(a,id,1),"must collect all products before restarting")
  local held=stock[recipe.Output] or 0
  assert(Service.CollectAll(a) and next(Service.Snapshot(a).CookingReady)==nil)
- assert(stock[recipe.Output]==held+5 and not Service.CollectAll(a))
+ assert(stock[recipe.Output]==held+recipe.OutputCount and not Service.CollectAll(a))
  assert(Service.Cook(a,id,1));local stale=callbacks[#callbacks]
  assert(Service.Cancel(a));stale();assert(next(Service.Snapshot(a).CookingReady)==nil,"cancelled timer produces nothing")
 end

@@ -126,6 +126,23 @@ offline();assert(own[a].Items.BoiledPotato==5,"offline stale callback cannot gra
 local far=model("Chest",5);assert(#Chests.CraftSources(b,stove)==1,"exact radius5 included")
 blocked=true;assert(#Chests.CraftSources(b,stove)==0,"wall blocks material access")
 blocked=false;far:PivotTo(CFrame.new(Vector3.new(5.001,0,0)));assert(#Chests.CraftSources(b,stove)==0)
+-- Wood-part choices can be pooled across pockets and a nearby chest.
+local fuelChest=model("Chest",1)
+local fuelSource
+for _,source in ipairs(Chests.CraftSources(b,stove)) do if source.Chest==fuelChest then fuelSource=source.State end end
+assert(fuelSource)
+own[b].Items.Plank=nil;own[b].Items.Handle=nil
+Amounts.Add(own[b],Items.Items,"Plank",2);Amounts.Add(fuelSource,Items.Items,"Handle",1)
+assert(Service.Open(b,stove));local beforeXP=xp[b]
+assert(Service.Cook(b,"BurnWoodParts",1) and durations[#durations]==10)
+assert(not own[b].Items.Plank and not fuelSource.Items.Handle)
+callbacks[#callbacks]()
+assert(Service.Snapshot(b).CookingReady.Coal==1 and xp[b]==beforeXP+15)
+assert(Service.CollectAll(b) and own[b].Items.Coal==1)
+Amounts.Add(own[b],Items.Items,"Plank",2);Amounts.Add(fuelSource,Items.Items,"Handle",1)
+assert(Service.Cook(b,"BurnWoodParts",1));local abandoned=callbacks[#callbacks]
+assert(Service.Cancel(b));abandoned()
+assert(own[b].Items.Plank==2 and fuelSource.Items.Handle==1 and xp[b]==beforeXP+15,"cancel refunds exact mixed sources without XP or output")
 -- Rejected transactions restore unique metadata, not just weapon counts.
 local original=Amounts.New();Amounts.Add(original,Items.Items,"IronKnife",1,{321},{{UID=909,Loaded=0,Type="FMJ"}})
 local cycles={{Ingredients={IronKnife=1}},{Ingredients={TreeLog=1}}}

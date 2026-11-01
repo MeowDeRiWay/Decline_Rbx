@@ -1,3 +1,4 @@
+local Items=require("../src/shared/ItemConfig")
 local C=require("../src/shared/CraftConfig")
 local R=require("../src/shared/CraftRules")
 local P=require("../src/shared/ProgressionRules")
@@ -15,10 +16,19 @@ for _,recipe in pairs(C) do
   assert(recipe.Tool=="SewingKit" and R.Speed({},recipe)==nil and R.Speed({SewingKit=1},recipe)==1)
  end
 end
-local burn=assert(R.Plan({TreeLog=5},C.BurnLogs,1))
-assert(burn.Ingredients.TreeLog==5 and burn.Outputs.Coal==5)
-local fast=assert(R.Plan({TreeLog=5,Coal=1},C.BurnLogsWithCoal,1))
-assert(fast.Ingredients.TreeLog==5 and fast.Ingredients.Coal==1 and fast.Outputs.Coal==5)
+local burn=assert(R.Plan({TreeLog=1},C.BurnLogs,1))
+assert(burn.Ingredients.TreeLog==1 and burn.Outputs.Coal==1 and C.BurnLogs.Duration==10 and C.BurnLogs.XP==15)
+assert(not C.BurnLogsWithCoal)
+for _,stock in ipairs({{Plank=3},{Handle=3},{Plank=2,Handle=1},{Plank=1,Handle=2}}) do
+ local plan=assert(R.Plan(stock,C.BurnWoodParts,1))
+ assert((plan.Ingredients.Plank or 0)+(plan.Ingredients.Handle or 0)==3 and plan.Outputs.Coal==1)
+end
+assert(not R.Plan({Plank=1,Handle=1},C.BurnWoodParts,1))
+assert(C.BurnWoodParts.Duration==10 and C.BurnWoodParts.XP==15)
+assert(C.MakeSurgicalKit.Ingredients.Iron==1 and C.MakeSurgicalKit.Requirements.Skills.Repair==100)
+assert(C.MakePlate.Ingredients.Plank==1 and C.MakePlate.Requirements.Skills.Repair==25)
+local mash=C.MashedPotatoesWithSausage
+assert(not mash.Variants and mash.Ingredients.Plate==1 and mash.Output=="MashedPotatoesWithSausage_2")
 local iron=assert(R.Plan({Scrap=25,Coal=1},C.SmeltIron,1))
 assert(iron.Ingredients.Scrap==25 and iron.Ingredients.Coal==1 and iron.Outputs.Iron==5)
 assert(not R.Plan({Scrap=100,Coal=1},C.SmeltIron,2))
@@ -59,3 +69,12 @@ end
 print("PASS: charcoal-only water purification, Doctor 50, fixed manual batch; two-material bandages; 30 ammunition per 30-second process")
 
 assert(C.MakeAmmo223.Station=="Workstation" and C.MakeRifle223.Station=="Workstation")
+
+assert(not Items.Items.WoodenPlate and Items.RetiredItems.WoodenPlate)
+for _,recipe in pairs(C) do
+ assert(not recipe.Ingredients.WoodenPlate)
+ for _,variant in ipairs(recipe.Variants or {}) do assert(variant.Ingredient~="WoodenPlate") end
+end
+for _,id in ipairs({"MashedPotatoesWithSausage_1","MashedPotatoesWithSausage_2","Ramsay_MashedPotatoesWithSausage_1","Ramsay_MashedPotatoesWithSausage_2"}) do
+ assert(Items.Items[id].ReturnItems.Plate==1 and not Items.Items[id].ReturnItems.WoodenPlate,"legacy meals also return ordinary plates")
+end

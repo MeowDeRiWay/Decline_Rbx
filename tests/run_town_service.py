@@ -9,6 +9,7 @@ import tempfile
 root = Path(__file__).resolve().parents[1]
 service = (root / 'src/server/Services/TownService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Ensure=function(position) table.insert(restoredSurfaces,position) end}')
 service = service.replace('local Localization=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', '')
+service = service.replace('local Items = require(ReplicatedStorage.Shared.ItemConfig).Items', '')
 service = service.replace('local TextService=game:GetService("TextService")', '')
 service = service.replace('local Journal=require(script.Parent.JournalService)', '')
 service = service.replace('local Doors = require(script.Parent.TownDoors)', '')
@@ -20,6 +21,7 @@ for variable, module in [('Config', 'TownConfig'), ('Rules', 'TownRules'), ('Int
 parts = [(root / 'tests/fixtures/town_mock.luau').read_text(), 'local blockedBuilding=nil; local Progression={CanBuild=function(_,id) return id~=blockedBuilding end}', 'local Doors={MaximumWallLevel=function() return 2 end} function Doors.Start(request) Doors.request=request end function Doors.Admit(player,door,town) Doors.admitted={player,door,town};return true end']
 for variable, module in [('Config', 'TownConfig'), ('Rules', 'TownRules')]:
     parts.append(f'local {variable} = (function()\n' + (root / f'src/shared/{module}.luau').read_text() + '\nend)()')
+parts.append('local Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items')
 parts.append('''
 for id in pairs(logs) do logs[id]=30 end
 local scrap={};for id in pairs(logs) do scrap[id]=100 end

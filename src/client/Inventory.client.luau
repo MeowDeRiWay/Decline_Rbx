@@ -156,6 +156,7 @@ local MedicalConfig=require(ReplicatedStorage.Shared.MedicalConfig)
 local function effectText(definition)
  local effects = definition.Consume
  if definition==ItemConfig.Items.Antiseptic then return string.format("Poison cure chance %g%%",MedicalRules.CureChance(player:GetAttribute("Luck"),MedicalConfig)*100) end
+ if definition.DoctorSkillBonus then return string.format("Doctor +%g on revival rolls\nPatient HP +%g per attempt",definition.DoctorSkillBonus,definition.ReviveHealing) end
  if definition.CarryBonusKg then return string.format("Carrying capacity +%g kg",definition.CarryBonusKg) end
  if definition.Armor then
   return string.format("Armor %g / %g%%\nAbsorption / resistance",definition.Armor.Absorption or 0,(definition.Armor.Resistance or 0)*100)
@@ -347,6 +348,11 @@ local function renderRecipes()
   local ingredients={}
   for item,count in pairs(recipe.Ingredients) do table.insert(ingredients,string.format("%d %s (%d owned)",count,ItemConfig.Items[item].Name,CraftRules.Count(craftItems,item))) end
   if recipe.Fuel then table.insert(ingredients,string.format("%d %s per batch (%d owned)",recipe.Fuel.Count,ItemConfig.Items[recipe.Fuel.ID].Name,craftItems[recipe.Fuel.ID] or 0)) end
+  for _,group in ipairs(recipe.IngredientGroups or {}) do
+   local names,total={},0
+   for _,id in ipairs(group.IDs) do table.insert(names,ItemConfig.Items[id].Name);total+=craftItems[id] or 0 end
+   table.insert(ingredients,string.format("%d total: %s (%d owned)",group.Count,table.concat(names," or "),total))
+  end
   if recipe.Variants then
    local names,total={},0
    for _,variant in ipairs(recipe.Variants) do

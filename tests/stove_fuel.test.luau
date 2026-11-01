@@ -22,6 +22,11 @@ for id,recipe in pairs(Recipes) do
   end
  end
 end
-assert(Recipes.BurnLogs.Ingredients.TreeLog==5 and Recipes.BurnLogs.OutputCount==5 and Recipes.BurnLogs.Duration==60)
-assert(Recipes.BurnLogsWithCoal.Ingredients.TreeLog==5 and Recipes.BurnLogsWithCoal.Ingredients.Coal==1 and Recipes.BurnLogsWithCoal.Duration==30)
-print("PASS: automatic stove fuel variants, one fuel per batch1..5, same food yield, charcoal2x speed, no fuel bypass, independent five-log processing")
+assert(Recipes.BurnLogs.Ingredients.TreeLog==1 and Recipes.BurnLogs.OutputCount==1 and Recipes.BurnLogs.Duration==10 and Recipes.BurnLogs.XP==15)
+assert(not Recipes.BurnLogsWithCoal)
+for _,stock in ipairs({{Plank=3},{Handle=3},{Plank=2,Handle=1}}) do
+ local plan=assert(Rules.Plan(stock,Recipes.BurnWoodParts,1))
+ assert(plan.Outputs.Coal==1 and (plan.Ingredients.Plank or 0)+(plan.Ingredients.Handle or 0)==3)
+end
+assert(Recipes.BurnWoodParts.Duration==10 and Recipes.BurnWoodParts.XP==15)
+print("PASS: automatic stove food fuel variants, one fuel, same food yield; new ten-second15XP wood-to-charcoal recipes")

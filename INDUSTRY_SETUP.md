@@ -92,8 +92,8 @@ world box; AP recipes were not specified and have not been invented.
 | ArmsBench | .223 assault rifle | 5 Iron + 2 Plank | 1 AssaultRifle223 | 120 | 500 | 120 |
 | ArmsBench | .223 light support weapon | 7 Iron + 2 Plank | 1 LSW223 | 140 | 500 | 120 |
 | ArmsBench | Enfild X7 | 7 Iron + 2 Plank | 1 MarksmanRifle223 | 150 | 500 | 120 |
-| Stove / Furnace | Burn logs | 5 TreeLog | 5 Coal | — | default 50 | 60 |
-| Stove / Furnace | Burn logs with charcoal | 5 TreeLog + 1 Coal | 5 Coal | — | default 50 | 30 |
+| Stove / Furnace | Burn logs | 1 TreeLog | 1 Coal | — | 15 | 10 |
+| Stove / Furnace | Burn wooden parts | 3 total Plank/Handle, any mix | 1 Coal | — | 15 | 10 |
 | Furnace in Workshop T2 | Smelt iron | 25 Scrap + 1 Coal | 5 Iron | — | default 50 | 120 |
 | Stove / Wood | Boil potatoes (1–5 servings) | 1 Potato + 1 CleanWater per serving; **1 TreeLog per batch** | 1 BoiledPotato per serving + **1 Coal per batch** | — | 50 per serving | 60 |
 | Stove / Charcoal | Boil potatoes (1–5 servings) | 1 Potato + 1 CleanWater per serving; **1 Coal per batch** | 1 BoiledPotato per serving | — | 50 per serving | 30 |
@@ -109,8 +109,8 @@ is consumed without returning itself. Ramsay quality applies only to cooked food
 
 Authoring rule: Stove food is exclusively boiled. If a future request puts a fried,
 baked or otherwise non-boiled meal in the Stove, point out the mismatch before
-adding it; use an appropriate different station. Separate five-log charcoal
-processing recipes remain unchanged in their matching fuel tab.
+adding it; use an appropriate different station. Charcoal processing uses the Wood tab: one log or three wooden parts per batch,
+10 seconds and 15 XP. The old charcoal-fueled log conversion is removed.
 
 Burning, cooking and smelting do **not** anchor the player or require an open menu.
 Ingredients are consumed when starting; close the menu and return later to
@@ -269,8 +269,8 @@ They may be left running. Recipe amounts are fixed, including with Economist.
 | Boil potatoes, wood | 5 Potato + 1 CleanWater + 1 TreeLog | 5 BoiledPotato + 1 Coal | 60 |
 | Boil potatoes, coal | 5 Potato + 1 CleanWater + 1 Coal | 5 BoiledPotato | 30 |
 | Water purification (Doctor 50), coal tab | 5 DirtyWater + 1 Coal | 5 CleanWater | 60 |
-| Burn logs | 5 TreeLog | 5 Coal | 60 |
-| Burn logs with coal | 5 TreeLog + 1 Coal | 5 Coal | 30 |
+| Burn logs | 1 TreeLog | 1 Coal | 10 |
+| Burn wooden parts | 3 total Plank/Handle, any mix | 1 Coal | 10 |
 | Smelt iron | 25 Scrap + 1 Coal | 5 Iron | 120 |
 | Smelt steel | 5 Iron + 1 Coal | 5 Steel | 60 |
 
@@ -285,3 +285,18 @@ As of 1 November 2026, both 9 mm FMJ and .223 FMJ ammunition recipes produce
 **30 rounds in 30 seconds** per process. Existing ingredients, skill requirements,
 XP and repeat queues remain unchanged. Water purification has only the charcoal
 recipe above, retaining manual batch collection and zero XP.
+
+
+## Surgical kits and ordinary plates (1 November 2026)
+
+`MakeSurgicalKit` uses 1 Iron at Workstation, Repair 100, producing one reusable
+`SurgicalKit`. It remains in pockets; see MEDICAL_SETUP.md for revival effects.
+`MakePlate` uses 1 Plank at Workstation, Repair 25, producing an ordinary Plate.
+Both use the ordinary presence queue and 20 seconds per result. WoodenPlate is
+retired from the registry, inventories and world registration. All meal recipes
+use Plate; legacy prepared meals also return Plate when consumed.
+
+`BurnWoodParts` accepts exactly three total Plank/Handle in any combination,
+including materials pooled from nearby chests. Both charcoal conversions use one
+fixed manually collected batch, 10 seconds and 15 XP; they cannot queue. Starting
+and cancellation use the existing exact source reservations/refunds.

@@ -171,3 +171,21 @@ fetal pose on their side. BodyFallService.RestOnBed uses replicated C0 transform
 places the authored body bounds0.03studs above the mattress, and preserves armor,
 backpack and holster attachments. Leaving restores standing joint frames and the
 saved upright entry pivot. Hospital revival reapplies the awake resting pose.
+
+
+## Surgical kit
+
+Model/item ID: **`SurgicalKit`**; display name **Surgical kit** / **Хірургічний набір**.
+Place its model under `ServerStorage/Items` or an Items category folder, e.g.
+`ServerStorage/Items/CraftMedicine/SurgicalKit`. Weight is 0.5 kg. Craft it at a
+Workstation from **1 Iron**, requiring **Repair 100** (20 seconds, 100 crafting XP).
+It is reusable, stays in pockets and is not equipped or consumed.
+
+With at least one kit in pockets, Doctor revival rolls use **SkillDoctor + 50**
+(the ordinary chance cap still applies), and each otherwise eligible attempt
+restores **10 HP** to the patient, capped at maximum HP, whether the roll succeeds
+or fails. Multiple kits do not stack. Successful revival keeps accumulated HP,
+then receives the 10 HP; existing doctor/Paramedic/fortune effects still apply.
+Blocked, out-of-range, cooldown/lock-denied or non-KO targets grant no kit healing.
+A failed attempt remains a knockout. The Doctor targeting hint includes the kit's
+chance bonus, and removing/transferring the last kit removes it immediately.

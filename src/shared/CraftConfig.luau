@@ -14,8 +14,10 @@ local recipes = {
  MakePistol9mm={Name="Make 9 mm pistol",Station="Workstation",Description="Assemble a 9 mm pistol. Requires Repair 75.",Ingredients={Plank=1,Scrap=3},Output="Pistol9mm",OutputCount=1,MaxBatch=1,Duration=60,RequiresPresence=true,XP=200,Requirements={Skills={Repair=75}}},
  MakeSMG9mm={Name="Make 9 mm submachine gun",Station="Workstation",Description="Assemble a 9 mm submachine gun. Requires Repair 90.",Ingredients={Plank=1,Scrap=5},Output="SMG9mm",OutputCount=1,MaxBatch=1,Duration=90,RequiresPresence=true,XP=200,Requirements={Skills={Repair=90}}},
  MakeAmmo9mm={Name="Make 9 mm FMJ ammunition",Station="Workstation",Description="Produce 30 standard 9 mm rounds in 30 seconds. Requires Repair 50.",Ingredients={Coal=1,Chemicals=1,Scrap=1},Output="Ammo9mmFMJ",OutputCount=30,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=50}}},
- BurnLogs={FuelTab="Wood",Name="Burn logs into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn five logs into five charcoal. No matches needed yet; you may leave.",Ingredients={TreeLog=1},Output="Coal",OutputCount=1,MaxBatch=5,Duration=60},
- BurnLogsWithCoal={FuelTab="Coal",Name="Burn logs with charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Use one charcoal to burn five logs faster. You may leave.",Ingredients={TreeLog=1},Fuel={ID="Coal",Count=1},Output="Coal",OutputCount=1,MaxBatch=5,Duration=30},
+ BurnLogs={FuelTab="Wood",Name="Burn logs into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn one log into one charcoal in 10 seconds. Collect the finished batch before starting again.",Ingredients={TreeLog=1},Output="Coal",OutputCount=1,MaxBatch=1,Duration=10,XP=15},
+ BurnWoodParts={FuelTab="Wood",Name="Burn planks or handles into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn any combination of three planks or handles into one charcoal in 10 seconds. Collect the finished batch before starting again.",Ingredients={},IngredientGroups={{IDs={"Plank","Handle"},Count=3}},Output="Coal",OutputCount=1,MaxBatch=1,Duration=10,XP=15},
+ MakeSurgicalKit={Name="Make surgical kit",Station="Workstation",Category="Tools",Description="Make a reusable surgical kit from one iron. Requires Repair 100.",Ingredients={Iron=1},Output="SurgicalKit",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={Repair=100}}},
+ MakePlate={Name="Make plate",Station="Workstation",Description="Make an ordinary plate from one plank. Requires Repair 25.",Ingredients={Plank=1},Output="Plate",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=25,Requirements={Skills={Repair=25}}},
  SmeltIron={Name="Smelt iron",Station="Furnace",WorkshopLevel=2,Description="Smelt 25 scrap with one charcoal into five iron. Requires a Workshop T2 furnace; you may leave.",Ingredients={Scrap=5},Fuel={ID="Coal",Count=1},Output="Iron",OutputCount=1,MaxBatch=5,Duration=120},
  MakeAmmo223={Name="Make .223 FMJ ammunition",Station="Workstation",Description="Produce 30 standard .223 rounds in 30 seconds. Requires Repair 100.",Ingredients={Iron=1,Coal=1,Chemicals=1},Output="Ammo223FMJ",OutputCount=30,MaxBatch=1,Duration=30,RequiresPresence=true,XP=200,Requirements={Skills={Repair=100}}},
  MakeRifle223={Name="Make .223 bolt-action rifle",Station="Workstation",Description="Assemble a .223 bolt-action rifle. Requires Repair 100.",Ingredients={Iron=5,Plank=2},Output="Rifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=100}}},
@@ -95,12 +97,9 @@ local recipes = {
  },
  MashedPotatoesWithSausage = {
   Name = "Mashed potatoes with sausage", Food=true, Station = "CuttingBoard",
-  Description = "Prepare mashed potatoes with sausage using either type of plate. Requires Cook 50.",
-  Ingredients = {BoiledPotato = 1, SausageSlice = 1},
-  Variants = {
-   {Ingredient = "WoodenPlate", Output = "MashedPotatoesWithSausage_1"},
-   {Ingredient = "Plate", Output = "MashedPotatoesWithSausage_2"},
-  },
+  Description = "Prepare mashed potatoes with sausage on an ordinary plate. Requires Cook 50.",
+  Ingredients = {BoiledPotato = 1, SausageSlice = 1, Plate = 1},
+  Output = "MashedPotatoesWithSausage_2",
   OutputCount = 1, MaxBatch = 1, Duration = 20, RequiresPresence = true,
   Requirements = {Skills = {Cook = 50}},
  },
@@ -125,8 +124,6 @@ for _,recipe in pairs(recipes) do
  if outputXP[recipe.Output] then recipe.XP=outputXP[recipe.Output] end
  if recipe.Ingredients.Cloth or recipe.Ingredients.Rags then recipe.Tool="SewingKit" end
 end
-recipes.BurnLogs.Description="Burn one to five logs into the same amount of charcoal. You may leave."
-recipes.BurnLogsWithCoal.Description="Use one charcoal per batch to burn one to five logs faster. You may leave."
 recipes.SmeltIron.Description="Smelt five scrap per iron, up to five iron per batch, using one charcoal. Requires a Workshop T2 furnace; you may leave."
 
 -- Stove/furnace processes always use one complete, manually collected batch.
@@ -146,8 +143,6 @@ recipes.BoilWater.Ingredients={DirtyWater=5,Coal=1}
 recipes.BoilWater.FuelTab="Coal"
 recipes.BoilWater.Requirements={Skills={Doctor=50}}
 recipes.BoilWater.Description="Purify five bottles of dirty water with one charcoal into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
-recipes.BurnLogs.Description="Burn five logs into five charcoal. Collect the finished batch before starting again."
-recipes.BurnLogsWithCoal.Description="Use one charcoal to burn five logs into five charcoal faster. Collect the finished batch before starting again."
 recipes.SmeltIron.Description="Smelt 25 scrap into five iron using one charcoal. Requires a Workshop T2 furnace. Collect the finished batch before starting again."
 recipes.SmeltSteel.Description="Refine five iron into five steel using one charcoal. Requires Repair 150 and a Workshop T2 furnace. Collect the finished batch before starting again."
 

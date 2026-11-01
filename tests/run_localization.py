@@ -57,6 +57,21 @@ for i=1,900 do dictionary.Translate("Unknown "..i,"uk") end
 assert(dictionary.CacheCount.uk<=512,"bounded cache")
 print("PASS: complete item/recipe/perk catalog, locales, variables, numbers, protected names, English fallback and bounded cache")
 ''')
+# Execute the actual cost formatter used by the construction/upgrade menu.
+town=(root/'src/client/Towns.client.luau').read_text()
+start=town.index('     local function materials(cost)')
+end=town.index('     for _, option',start)
+formatter=town[start:end]
+parts.append('local Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items')
+parts.append('local TownConfig=(function()\n'+(root/'src/shared/TownConfig.luau').read_text()+'\nend)()')
+parts.append(formatter+'''
+local caption="Upgrade: Hospital · level 2 · Cost: "..materials(TownConfig.Buildings.Hospital.Costs[2]).."\\nRequires: First aid 50 or Doctor 50"
+for _,locale in ipairs({"uk","ru"}) do
+ local translated=dictionary.Translate(caption,locale)
+ assert(translated~=caption and not translated:find("TreeLog",1,true) and not translated:find("Plank",1,true) and not translated:find("Upgrade:",1,true) and not translated:find("Requires:",1,true),"hospital upgrade must fully translate material names and requirements: "..translated)
+end
+assert(dictionary.Translate("3 total: Plank or Handle (3 owned)","uk")=="Разом 3: Дошка або Руків’я (наявно 3)")
+''')
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'locale.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)
 print(f'PASS: {len(entries)} hand-authored source entries preserve all format arguments in both languages')

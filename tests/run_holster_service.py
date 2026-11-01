@@ -279,13 +279,16 @@ ground=false;assert(World.Pickup(rejoined,staleTool) and Service.Snapshot(rejoin
 assert(equipDraw(rejoined,"ScrapShowel"),"scrap shovel equips under its actual material ID")
 assert(Service.ClearHands(rejoined) and Service.Unequip(rejoined,"PrimaryWeapon"))
 ground=true;assert(World.Drop(rejoined,"ScrapShowel",1),"scrap shovel can be dropped again")
-for _,id in ipairs({"Knife","Axe","Showel"}) do
+for _,id in ipairs({"Knife","Axe","Showel","WoodenPlate"}) do
  assert(not ItemConfig.Items[id] and not Service.Add(rejoined,id,1))
  local retired=make("Model",id,worldFolder,{Item_ID=id,Quantity=1});make("Part","Part",retired)
  worldFolder.ChildAdded:Fire(retired);assert(retired.destroyed,"retired generic world pickups disappear")
  local state=Service.Export(rejoined);state.Items[id]=1;state.Conditions[id]={500};state.Weapons[id]={{Loaded=0,Type="FMJ"}}
  Service.Refresh(rejoined);assert(not state.Items[id] and not state.Conditions[id] and not state.Weapons[id])
 end
+assert(Service.Add(rejoined,"SurgicalKit",2) and rejoined:GetAttribute("DoctorKitBonus")==50,"pocket kit bonus is published without stacking")
+assert(Service.Remove(rejoined,"SurgicalKit",1) and rejoined:GetAttribute("DoctorKitBonus")==50)
+assert(Service.Remove(rejoined,"SurgicalKit",1) and rejoined:GetAttribute("DoctorKitBonus")==0,"removing the last kit clears the displayed bonus")
 local namedActor=make("Model","Axe",workspace);make("Humanoid","Humanoid",namedActor)
 workspace.DescendantAdded:Fire(namedActor);assert(not namedActor.destroyed,"player names are never retired-item pickups")
 print("PASS: generic tool removal, stale ScrapShowel Item_ID repaired, pickup/equip/drop and inventory cleanup")

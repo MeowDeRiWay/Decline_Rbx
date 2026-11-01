@@ -68,6 +68,12 @@ assert(sent[#sent][3].Batch==1 and sent[#sent][3].Repeats==1)
 snapshot.CookingReady={BoiledPotato=5,Coal=1};render()
 assert(not find("Craft batch").Active and find("Collect all"),"finished products block restart and expose one collection action")
 find("Collect all").Activated:Fire();assert(sent[#sent][1]=="CollectCrafted")
+snapshot.CookingReady={};snapshot.CookingItems={Plank=2,Handle=1};selectedRecipe="BurnWoodParts";render()
+assert(find("Craft batch").Active and not input(254),"mixed wooden parts allow one fixed batch")
+local grouped=false
+for _,o in ipairs(objects) do if o.Text and o.Text:find("3 total: Plank or Handle (3 owned)",1,true) then grouped=true end end
+assert(grouped,"UI displays the grouped input instead of an empty material list")
+snapshot.CookingItems={Plank=1,Handle=1};render();assert(not find("Craft batch").Active,"incomplete mixed batch is disabled")
 print("PASS: actual queue UI uses chest materials/tools, repeat count and total time, bounded affordability, structured repeat/all requests, automatic results and owner-only cancellation")
 '''
 with tempfile.TemporaryDirectory() as d:

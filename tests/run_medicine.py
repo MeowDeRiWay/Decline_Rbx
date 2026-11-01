@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 medicine=(root/'src/server/Medicine.server.luau').read_text().replace('local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', 'local Literal={Protect=function(v) return v end}')
-medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight|Medical|Config|Hands)=require[^\n]+\n','',medicine)
+medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight|Medical|Config|Hands|Items)=require[^\n]+\n','',medicine)
 life=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','').replace('require(script.Parent.WorldItemService).DropKnockoutWeapon(player,character)','').replace('require(script.Parent.CraftingService).CancelPlayer(player)','')
 life=life[life.index('function Service.Knockout'):life.index('function Service.Damage')]
 setup='''
@@ -28,8 +28,9 @@ local finishedCount=0
 local Service={Finish=function() finishedCount+=1 end}
 LIFE
 local Life=Service
+local kitCount=0
 local equipped=3
-local Inventory={UseMedicine=function() if equipped==0 then return false end;equipped-=1;return true end}
+local Inventory={Snapshot=function() return {Items={SurgicalKit=kitCount}} end,UseMedicine=function() if equipped==0 then return false end;equipped-=1;return true end}
 local xp,notices=0,{}
 local Progression={Award=function(_,amount) xp+=amount end}
 local Journal={Send=function(_,text) table.insert(notices,text) end}
@@ -157,9 +158,27 @@ use("Bandage",b);pending();assert(equipped==1 and b.Character.Humanoid.Health>20
 equipped=2;b.Character.Humanoid.Health=20;b:SetAttribute("Endurance",5.1)
 a:SetAttribute("SkillFirstAid",0);a:SetAttribute("MedicalHealingBonus",0)
 use("Bandage",b);pending();assert(b.Character.Humanoid.Health==26,"fractional healing rounds up before applying")
+-- Surgical kits are reusable pocket tools; validate both roll and healing.
+a:SetAttribute("SkillDoctor",20);a:SetAttribute("MedicalHealingBonus",0);a:SetAttribute("DoctorFortuneChance",0)
+b:SetAttribute("ReviveHealthBonus",0);b:SetAttribute("ReviveLockReduction",0);b:SetAttribute("ReviveLockedUntil",0)
+kitCount=1;Life.Knockout(b,b.Character);clock+=11;roll=.35
+use("Doctor",b)
+assert(b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==11,"70 effective Doctor fails at35percent but heals10")
+local healed=b.Character.Humanoid.Health
+use("Doctor",b);assert(b.Character.Humanoid.Health==healed,"cooldown-denied clicks give no kit healing")
+clock+=11;roll=.349;use("Doctor",b)
+assert(not b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==21 and kitCount==1,"kit bonus makes otherwise failing roll succeed, preserving accumulated HP plus10")
+kitCount=2;b:SetAttribute("ReviveLockedUntil",0);Life.Knockout(b,b.Character);clock+=11;roll=.35;use("Doctor",b)
+assert(b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==11 and kitCount==2,"multiple kits do not stack chance or healing")
+clock+=11;b.Character.Humanoid.Health=96;use("Doctor",b);assert(b.Character.Humanoid.Health==100,"kit healing clamps at max HP while patient stays KO")
+clock+=11;b.Character.Humanoid.Health=50;b:SetAttribute("ReviveLockedUntil",clock+100);use("Doctor",b);assert(b.Character.Humanoid.Health==50,"revival lock gives no free kit healing")
+b:SetAttribute("ReviveLockedUntil",0);clock+=11;kitCount=0;use("Doctor",b);assert(b.Character.Humanoid.Health==50,"no pocket kit gives no healing bonus")
+kitCount=1;clock+=11;b.Character.HumanoidRootPart.Position=Vector3.new(4,0,0);use("Doctor",b);assert(b.Character.Humanoid.Health==50,"out of reach attempt gives no kit healing")
+b.Character.HumanoidRootPart.Position=Vector3.zero;clock+=11;wall=true;use("Doctor",b);assert(b.Character.Humanoid.Health==50,"blocked attempt gives no kit healing");wall=false
+print("PASS: reusable surgical kit +50 effective Doctor, +10HP success/failure, consent/cooldown/range/lock guards, healing cap and no stacking")
 print("PASS: sterile healing, fixed50% sterile and25%+Luck antiseptic cure boundaries, scaled Sick clamp, item consumption, full-HP debuff treatment, KO treatment without waking, retained HP and self-treatment")
 print("PASS: medical authority, self/other actual HP XP, medicine consumption, overheal, wall/range guards; doctor chance, both cooldowns, restoration and stale knockout timer safety")
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Medical=(function()\n'+(root/'src/shared/MedicalRules.luau').read_text()+'\nend)()\nlocal Config=(function()\n'+(root/'src/shared/MedicalConfig.luau').read_text()+'\nend)()\nlocal Rules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup.replace('LIFE',life),medicine,cases]
+parts=[(root/'tests/fixtures/town_mock.luau').read_text(),'local Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items\nlocal Medical=(function()\n'+(root/'src/shared/MedicalRules.luau').read_text()+'\nend)()\nlocal Config=(function()\n'+(root/'src/shared/MedicalConfig.luau').read_text()+'\nend)()\nlocal Rules=(function()\n'+(root/'src/shared/ProgressionRules.luau').read_text()+'\nend)()',setup.replace('LIFE',life),medicine,cases]
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'test.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)

@@ -7,6 +7,7 @@ local Life=require(script.Parent.Services.PlayerLifeService)
 local Journal=require(script.Parent.Services.JournalService)
 local Rules=require(ReplicatedStorage.Shared.ProgressionRules)
 local Medical=require(ReplicatedStorage.Shared.MedicalRules)
+local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Config=require(ReplicatedStorage.Shared.MedicalConfig)
 local Sight=require(ReplicatedStorage.Shared.Sight)
 local remote=Instance.new("RemoteEvent");remote.Name="MedicalAction";remote.Parent=ReplicatedStorage
@@ -78,9 +79,22 @@ handle=function(player,mode,target,contact)
   if now<math.max(doctorReady[player] or 0,player:GetAttribute("DoctorReadyAt") or 0) then Journal.Send(player,"Doctor is on cooldown.");return end
   if now<(target:GetAttribute("ReviveLockedUntil") or 0) then Journal.Send(player,"This patient cannot be revived yet.");return end
   doctorReady[player]=now+10;player:SetAttribute("DoctorReadyAt",now+10)
-  if random:NextNumber()>=Rules.ReviveChance(player:GetAttribute("SkillDoctor")) then Journal.Send(player,"Your revival attempt failed.");return end
+  local kit=((Inventory.Snapshot(player).Items or {}).SurgicalKit or 0)>0 and Items.SurgicalKit
+  local function kitHealing()
+   if not kit then return end
+   local amount=math.min(health.MaxHealth-health.Health,kit.ReviveHealing)
+   health.Health+=amount;patient:SetAttribute("Health",health.Health)
+   if amount>0 then
+    Journal.Send(player,string.format("You restored %g HP to %s.",amount,Literal.Protect(target.Name)))
+    Journal.Send(target,string.format("%s restored %g HP to you.",Literal.Protect(player.Name),amount))
+   end
+  end
+  local skill=(player:GetAttribute("SkillDoctor") or 0)+(kit and kit.DoctorSkillBonus or 0)
+  if random:NextNumber()>=Rules.ReviveChance(skill) then kitHealing();Journal.Send(player,"Your revival attempt failed.");return end
   local fortunate=random:NextNumber()<(player:GetAttribute("DoctorFortuneChance") or 0)
-  if Life.Revive(target,fortunate and 0 or (player:GetAttribute("ReviveLockSeconds") or 600),player:GetAttribute("MedicalHealingBonus")) then
+  local revived=Life.Revive(target,fortunate and 0 or (player:GetAttribute("ReviveLockSeconds") or 600),player:GetAttribute("MedicalHealingBonus"))
+  kitHealing()
+  if revived then
    if fortunate then health.Health=health.MaxHealth;patient:SetAttribute("Health",health.Health);target:SetAttribute("ReviveLockedUntil",0) end
    Progression.Award(player,100)
    Journal.Send(player,"You revived "..Literal.Protect(target.Name)..".")

@@ -2,7 +2,7 @@
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
 ItemConfig.PickupDistance = 2
-ItemConfig.RetiredItems={Money=true,Bill=true,bill=true,StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Axe=true,Showel=true}
+ItemConfig.RetiredItems={WoodenPlate=true,Money=true,Bill=true,bill=true,StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Axe=true,Showel=true}
 ItemConfig.Slots = {"Body", "PrimaryWeapon", "SecondaryWeapon", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
  ZombieHand = {
@@ -72,10 +72,8 @@ ItemConfig.Items = {
   Name = "Plate", Weight = 0.2,
   Description = "An ordinary plate for serving meals.",
  },
- WoodenPlate = {
-  Name = "Wooden plate", Weight = 0.1,
-  Description = "A wooden plate for serving meals.",
- },
+ SurgicalKit = {Name="Surgical kit",Weight=.5,DoctorSkillBonus=50,ReviveHealing=10,
+  Description="A reusable surgical kit. Keep it in your pockets for +50 Doctor on revival rolls and +10 patient HP per valid revival attempt, successful or failed. Multiple kits do not stack."},
  Sausage = {
   Name = "Sausage", Weight = 0.5,
   Description = "A whole sausage. It can be sliced on a cutting board.",
@@ -87,10 +85,10 @@ ItemConfig.Items = {
   Consume = {Food = 1, Water = -1, Sick = 0},
  },
  MashedPotatoesWithSausage_1 = {
-  Name = "Mashed potatoes with sausage (wooden plate)", Weight = 0.4,
-  Description = "Mashed potatoes with sausage, served on a wooden plate.",
+  Name = "Mashed potatoes with sausage (plate)", Weight = 0.5,
+  Description = "Mashed potatoes with sausage, served on an ordinary plate.",
   Consume = {Food = 6, Water = -1, Sick = 0},
-  ReturnItems = {WoodenPlate = 1},
+  ReturnItems = {Plate = 1},
  },
  MashedPotatoesWithSausage_2 = {
   Name = "Mashed potatoes with sausage (plate)", Weight = 0.5,

@@ -17,6 +17,7 @@ local function update(player)
  local state = states[player]
  if not state then return end
  Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots)
+ player:SetAttribute("DoctorKitBonus",(state.Items.SurgicalKit or 0)>0 and ItemConfig.Items.SurgicalKit.DoctorSkillBonus or 0)
  if not state.Equipment.Medicine then state.MedicalHeld=nil end
  local absorption,resistance=0,0
  local body=state.Equipment.Body and ItemConfig.Items[state.Equipment.Body]

@@ -73,7 +73,7 @@ Run.RenderStepped:Connect(function()
  local text
  if mode=="Doctor" then
   local cooldown=math.max(0,math.ceil((player:GetAttribute("DoctorReadyAt") or 0)-workspace:GetServerTimeNow()))
-  text=cooldown>0 and ("Doctor · ready in "..cooldown.."s") or string.format("Doctor · %g%% chance · 4 to cancel\nClick a nearby knocked-out player",Rules.ReviveChance(player:GetAttribute("SkillDoctor"))*100)
+  text=cooldown>0 and ("Doctor · ready in "..cooldown.."s") or string.format("Doctor · %g%% chance · 4 to cancel\nClick a nearby knocked-out player",Rules.ReviveChance((player:GetAttribute("SkillDoctor") or 0)+(player:GetAttribute("DoctorKitBonus") or 0))*100)
  elseif character:GetAttribute("MedicineItem")=="Antiseptic" then
   text=string.format("Antiseptic · Sick -%g · cure %g%% · H to cancel",Medical.SickReduction("Antiseptic",player:GetAttribute("SkillFirstAid")),Medical.CureChance(player:GetAttribute("Luck"),MedicalConfig)*100)
  else text=string.format("First aid · %g HP · H to cancel\nClick yourself or a nearby player",Rules.FirstAid(player:GetAttribute("SkillFirstAid"),player:GetAttribute("FirstAidMultiplier"),(selected or player):GetAttribute("Endurance"),character:GetAttribute("MedicineItem"),player:GetAttribute("MedicalHealingBonus"))) end

@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
+local Items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local Config = require(ReplicatedStorage.Shared.TownConfig)
 local Rules = require(ReplicatedStorage.Shared.TownRules)
 local Interaction = require(ReplicatedStorage.Shared.Interaction)
@@ -553,7 +554,7 @@ local function handle(player, command, value, extra)
    if not templateFor(value, level) then tell(player, "Add the model ServerStorage/Buildings/" .. definition.Levels[level]); return end
    if not hasMaterials(player,value,level) then tell(player,"You need the required building materials in your inventory."); return end
    local materials={}
-   for id,amount in pairs(costFor(value,level)) do table.insert(materials,tostring(amount).." "..id) end
+   for id,amount in pairs(costFor(value,level)) do table.insert(materials,tostring(amount).." "..(Items[id] and Items[id].Name or id)) end
    table.sort(materials)
    local costText=#materials==0 and "Free." or (table.concat(materials,", ").." from the builder's inventory.")
    requestApproval(player, town, {kind = "Build", plot = plot, building = value, level = level,
