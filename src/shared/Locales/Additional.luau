@@ -1,5 +1,18 @@
 -- Manual UI terminology.
 return {
+ {"Vacant","Посада вільна","Должность свободна"},
+ {"Kick","Виключити","Исключить"},
+ {"Poisoned","Отруєний","Отравлен"},
+ {"Say hi to everyone playing now!","Привітайтеся з усіма, хто зараз грає!","Поздоровайтесь со всеми, кто сейчас играет!"},
+ {"👋 Say hi to everyone playing now!","👋 Привітайтеся з усіма, хто зараз грає!","👋 Поздоровайтесь со всеми, кто сейчас играет!"},
+ {"You harvested %d potatoes and cleared finished plants.","Ви зібрали {1} картоплин і прибрали рослини, що завершили ріст.","Вы собрали {1} картофелин и убрали завершившие рост растения."},
+ {"You planted %d potato plants. Each needs 20 units of water to grow.","Ви посадили {1} кущів картоплі. Кожному потрібно 20 одиниць води для росту.","Вы посадили {1} кустов картофеля. Каждому нужно 20 единиц воды для роста."},
+ {"Building template not found in ServerStorage/Buildings.","Шаблон будівлі не знайдено в ServerStorage/Buildings.","Шаблон здания не найден в ServerStorage/Buildings."},
+ {"Add the model ServerStorage/Buildings/%s","Додайте модель ServerStorage/Buildings/{1}","Добавьте модель ServerStorage/Buildings/{1}",{[1]=true}},
+ {"Upgrade cancelled: duplicate %s %s.","Покращення скасовано: дублюється {1} {2}.","Улучшение отменено: дублируется {1} {2}.",{[2]=true}},
+ {"Upgrade cancelled: the new building needs a matching %s (%s for multiple containers).","Покращення скасовано: нова будівля потребує відповідного контейнера {1} (для кількох контейнерів задайте {2}).","Улучшение отменено: новому зданию нужен соответствующий контейнер {1} (для нескольких контейнеров укажите {2}).",{[2]=true}},
+ {"%s applied to %s.","Дію «{1}» застосовано до {2}.","Действие «{1}» применено к {2}.",{[2]=true}},
+ {"Remove UserID %s","Прибрати користувача з ID {1}","Убрать пользователя с ID {1}"},
  {"Exoskeleton","Екзоскелет","Экзоскелет"},
  {"Make exoskeleton","Виготовити екзоскелет","Изготовить экзоскелет"},
  {"Blocked by equipped armor","Заблоковано вдягненою бронею","Заблокировано надетой бронёй"},

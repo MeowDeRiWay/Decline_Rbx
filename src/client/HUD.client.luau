@@ -78,7 +78,7 @@ Chat.MessageReceived:Connect(function(message)
  task.delay(120,function() received[id]=nil end)
  local source=message.TextSource
  local sender=source and Players:GetPlayerByUserId(source.UserId)
- log((sender and (sender.DisplayName..": ") or "")..message.Text,true)
+ log((sender and (sender.DisplayName..": ") or "")..message.Text,source~=nil)
 end)
 entry.FocusLost:Connect(function(enter)
  if not enter or entry.Text:match("^%s*$") then return end

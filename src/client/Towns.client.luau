@@ -76,7 +76,7 @@ local function confirm(caption, command, value, extra)
 end
 local function detail(town)
  text(Locale.Raw(town.Name), 24)
- text("Team members: " .. town.Count .. "\nMayor: " .. Locale.Raw(town.LeaderName))
+ text("Team members: " .. town.Count .. "\nMayor: " .. (town.LeaderID and town.LeaderID>0 and Locale.Raw(town.LeaderName) or "Vacant"))
  for _, relation in ipairs(town.Relations) do text(Locale.Raw(relation.Name) .. " — " .. relationNames[relation.Relation]) end
 end
 render = function()
@@ -203,7 +203,7 @@ render = function()
    if section == "Owner" then
     title.Text = "Owner"
     button("← Back to building",back)
-    text("Current owner: " .. Locale.Raw(plot.OwnerName),20)
+    text("Current owner: " .. (plot.OwnerID and plot.OwnerID>0 and Locale.Raw(plot.OwnerName) or "Vacant"),20)
     text("Select a town member to assign ownership of this building.")
     button("Remove owner",function() send("Owner",0) end)
     for _, member in ipairs(town.Members) do
@@ -230,7 +230,7 @@ render = function()
    else
     local count = 0
     for _ in pairs(owners) do count += 1 end
-    text(plot.BuildingID and ((Config.Buildings[plot.BuildingID] and Config.Buildings[plot.BuildingID].Name or plot.BuildingID) .. " · level " .. plot.Level .. "\nOwner: " .. Locale.Raw(plot.OwnerName) .. "\nCo-owners: " .. count) or "Empty plot")
+    text(plot.BuildingID and ((Config.Buildings[plot.BuildingID] and Config.Buildings[plot.BuildingID].Name or plot.BuildingID) .. " · level " .. plot.Level .. "\nOwner: " .. (plot.OwnerID and plot.OwnerID>0 and Locale.Raw(plot.OwnerName) or "Vacant") .. "\nCo-owners: " .. count) or "Empty plot")
     if plot.Pending then text("Waiting for the mayor.")
     elseif not plot.BuildingID or owner then
      local function materials(cost)

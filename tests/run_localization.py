@@ -57,6 +57,29 @@ for i=1,900 do dictionary.Translate("Unknown "..i,"uk") end
 assert(dictionary.CacheCount.uk<=512,"bounded cache")
 print("PASS: complete item/recipe/perk catalog, locales, variables, numbers, protected names, English fallback and bounded cache")
 ''')
+parts.append(r'''
+for _,locale in ipairs({"uk","ru"}) do
+ local function translated(text)
+  local result=dictionary.Translate(text,locale)
+  assert(result~=text,"untranslated player-facing text: "..text)
+  return result
+ end
+ translated("Vacant");translated("Kick")
+ translated("👋 Say hi to everyone playing now!")
+ translated("You harvested 12 potatoes and cleared finished plants.")
+ translated("You planted 4 potato plants. Each needs 20 units of water to grow.")
+ translated("Upgrade cancelled: duplicate Chest StorageID.")
+ translated("Upgrade cancelled: the new building needs a matching TradePost (TradePostID for multiple containers).")
+ translated("Building template not found in ServerStorage/Buildings.")
+ translated("Add the model ServerStorage/Buildings/WorkshopT2")
+ local text=translated("Antiseptic · Sick -20 · cure 75% · H to cancel")
+ assert(not text:find("Sick",1,true))
+ local actualName=dictionary.Translate("Mayor: "..Rules.Protect("Vacant"),locale)
+ assert(actualName:find("Vacant",1,true),"real player named Vacant stays unchanged")
+ local noMayor=dictionary.Translate("Mayor: Vacant",locale)
+ assert(not noMayor:find("Vacant",1,true),"empty mayor status must translate")
+end
+''')
 # Execute the actual cost formatter used by the construction/upgrade menu.
 town=(root/'src/client/Towns.client.luau').read_text()
 start=town.index('     local function materials(cost)')
