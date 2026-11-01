@@ -78,7 +78,10 @@ local function bind(player,character)
  table.insert(links,character:GetAttributeChangedSignal("HandAction"):Connect(function()
   invalidate(player,character)
   local held=character:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
-  if motor then motor.Transform=CFrame.identity end
+  if motor then
+   if character:GetAttribute("HandAction") then Motion.Cancel(motor) end
+   motor.Transform=CFrame.identity
+  end
  end))
  table.insert(links,character:GetAttributeChangedSignal("BodyPoseKind"):Connect(function()
   invalidate(player,character)
@@ -113,8 +116,15 @@ RunService.PreSimulation:Connect(function(dt)
   if not serverPreview and (not viewer or (root.Position-viewer.Position).Magnitude>180) then r.Last=root.Position;r.Feet=nil;r.Transforms=nil;r.Elapsed=0;continue end
   -- Frozen bodies keep the existing knockout/death pose.
   if (root.Anchored and not c:GetAttribute("InteractionLocked")) or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then r.Last=root.Position;r.Feet=nil;r.Transforms=nil;r.Elapsed=0;continue end
+  local held=c:FindFirstChild("HeldItem")
+  local definition=Items[c:GetAttribute("HandsItem")]
+  local motor=held and held:FindFirstChild("WeaponGrip")
+  local chopFrame,chopping
+  if definition and definition.HarvestTool=="Axe" then chopFrame,chopping=Motion.StepChop(motor,workspace:GetServerTimeNow()) end
+  local animateChop=chopping or r.Chopping
+  r.Chopping=chopping
   r.Elapsed+=dt
-  if player~=localPlayer and r.Elapsed<1/30 and r.Transforms then
+  if player~=localPlayer and not animateChop and r.Elapsed<1/30 and r.Transforms then
    -- Animator/native updates can overwrite Transform each simulation step.
    -- Throttle the IK work, never the presentation of the last valid pose.
    replay(r);continue
@@ -165,12 +175,11 @@ RunService.PreSimulation:Connect(function(dt)
   else
   m.LeftHip.Transform=lh;m.RightHip.Transform=rh;m.LeftKnee.Transform=lk;m.RightKnee.Transform=rk
   end
-  local held=c:FindFirstChild("HeldItem")
-  local definition=Items[c:GetAttribute("HandsItem")]
   local equipped=held and definition and (definition.Firearm or definition.Weapon or definition.Slot=="Medicine")
   local twoHands=definition and (definition.Firearm or definition.HarvestTool=="Axe" or definition.HarvestTool=="Shovel")
   local grip=held and (held:FindFirstChild("RightHandGrip",true) or held:FindFirstChild("_HandGrip",true))
   local targetFrame=equipped and (grip and grip:IsA("Attachment") and grip.WorldCFrame or held:GetPivot())
+  if chopFrame then targetFrame=Motion.GripFrame(motor,grip,chopFrame) end
   local punchTime=c:GetAttribute("PunchStartedAt")
   local punchElapsed=typeof(punchTime)=="number" and workspace:GetServerTimeNow()-punchTime or -1
   local punchSequence=c:GetAttribute("PunchSequence") or 0
@@ -197,7 +206,8 @@ RunService.PreSimulation:Connect(function(dt)
     local pistol=definition.Firearm and definition.Firearm.Category=="Pistol"
     local target=targetFrame.Position
     if side=="Left" then
-     target=support and support:IsA("Attachment") and support.WorldPosition or target+(pistol and -root.CFrame.RightVector*.04 or targetFrame.LookVector*.25)
+     local supportFrame=chopFrame and support and support:IsA("Attachment") and Motion.GripFrame(motor,support,chopFrame)
+     target=supportFrame and supportFrame.Position or support and support:IsA("Attachment") and support.WorldPosition or target+(pistol and -root.CFrame.RightVector*.04 or targetFrame.LookVector*.25)
     end
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)

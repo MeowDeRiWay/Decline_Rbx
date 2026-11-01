@@ -48,7 +48,7 @@ local function advance(dt)
  RunService.PreSimulation:Fire(1/30)
 end
 local Hands={}
-local Motion={Cancel=function() end}
+local Motion={Cancel=function() end,StepChop=function() end}
 local Interaction={NearestPoint=function(target) return target.CFrame.Position end}
 local function reset()
  c:SetAttribute("Knockout",nil);c:SetAttribute("IsDead",nil);root.Anchored=false;hp.Health=100;hp.PlatformStand=false;hp.AutoRotate=true;hp.WalkSpeed=3

@@ -101,7 +101,7 @@ controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
 import re
 controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose)\s*=.*\n','',controller)
 controller=controller.replace('return Driver','Driver.Start(Players.LocalPlayer,false)')
-source+='\nlocal CarryPose='+module('src/shared/CarryPose.luau')+'\nlocal HandPose={Apply=function() end}\nlocal Motion={Cancel=function() end}\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
+source+='\nlocal CarryPose='+module('src/shared/CarryPose.luau')+'\nlocal HandPose={Apply=function() end}\nlocal Motion='+module('src/shared/WeaponMotion.luau')+'\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
 source+='\n'+(root/'tests/equipment_pose_cases.fixture.luau').read_text()
 service=(root/'src/server/Services/EquipmentVisuals.luau').read_text()
 service=re.sub(r'local (ServerStorage|ReplicatedStorage|Items) = [^\n]+\n','',service)

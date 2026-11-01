@@ -120,7 +120,7 @@ for tier,material in ipairs({"Scrap","Iron","Steel"}) do
    Name=material..(axe and " axe" or " shovel"), Weight=axe and 1.5 or 2,
    Slot="Hands", HarvestTool=axe and "Axe" or "Shovel", HarvestTier=tier, HarvestMultiplier=tier,
    Description=axe and "An axe for chopping trees into logs." or "A shovel for digging resource deposits.",
-   Weapon={Damage=5, AttacksPerMinute=25, DamageType=axe and "Slashing" or "Blunt", MaxUses=1000,
+   Weapon={Damage=5, AttacksPerMinute=axe and 40 or 25, DamageType=axe and "Slashing" or "Blunt", MaxUses=1000,
     CanDamageStructures=false, Range=1, Width=1, Animation=axe and "Chop" or "Thrust"},
   }
  end

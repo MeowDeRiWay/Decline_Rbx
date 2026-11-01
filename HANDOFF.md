@@ -977,3 +977,10 @@ pivots for models lacking PrimaryParts. This avoids dependence on hierarchical
 PivotTo movement; an engine-level cause has not been established in Studio.
 Added placement diagnostics and a numerical regression fixture from all 603 parts,
 including 183 shared PrimaryPart references. See INDUSTRY_SETUP.md.
+
+## Axe animation and work speed (2026-11-01)
+
+- Scrap/Iron/Steel axes now use 40 attacks/min (1.5s per chop, previously 25/min and 2.4s). Shovels remain 25/min; damage, harvest multipliers and costs are unchanged. The same cycle defines client/server cooldown, windup/descent and resource-hit contact.
+- Axe motion no longer runs competing client/server WeaponGrip.C0 tweens. The server announces an accepted swing through ChopStartedAt/ChopDuration/ChopSequence. Each viewer samples a local Motor6D.Transform from server time. The attacker predicts with a request sequence; a matching delayed acknowledgement preserves the predicted phase instead of restarting it.
+- CharacterAnimationDriver computes both hand grips from the current sampled axe frame before physics updates. Active remote chops bypass the normal 30Hz IK calculation budget, including the finishing frame; idle/other-player replay throttling is retained. Interaction/hand actions cancel the swing and restore the grip.
+- Validation: 85 Python/Luau runners pass; all source Luau files compile. Actual rig replay includes 120Hz remote axe motion under per-frame Transform resets, with held-part geometry intentionally left stale. Motion tests cover 40/min tiers, 90-degree lift around rotated authored grips, acknowledgement phase continuity, same-step grip IK, cancellation and unchanged shovel/knife timing. Multiplayer Studio visual testing remains necessary.

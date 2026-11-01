@@ -14,7 +14,7 @@ attack.Name = "WeaponAttack"
 attack.Parent = ReplicatedStorage
 local random = Random.new()
 local ready = {}
-attack.OnServerEvent:Connect(function(player)
+attack.OnServerEvent:Connect(function(player,sequence)
  if player:GetAttribute("TradeOpen") then return end
  if player:GetAttribute("AttributesConfirmed")~=true then return end
  local character = player.Character
@@ -36,7 +36,8 @@ attack.OnServerEvent:Connect(function(player)
  local cooldown = 60 / motionWeapon.AttacksPerMinute
  ready[player] = now + cooldown
  if not definition then Punch.Begin(character,workspace:GetServerTimeNow()) end
- Motion.Play(motor,motionWeapon)
+ local swingSequence=typeof(sequence)=="number" and sequence==math.floor(sequence) and sequence>=1 and sequence<=2147483646 and sequence or 0
+ Motion.Play(motor,motionWeapon,workspace:GetServerTimeNow(),swingSequence)
  local interactionSequence=character:GetAttribute("InteractionSequence") or 0
  task.delay(not definition and Punch.Contact or Motion.HitDelay(motionWeapon),function()
  if (character:GetAttribute("InteractionSequence") or 0)~=interactionSequence or player.Character ~= character or humanoid.Health <= 0 or character:GetAttribute("Knockout") or (character:GetAttribute("HospitalResting") or character:GetAttribute("InteractionLocked")) or (motor and (motor.Parent ~= held or held.Parent ~= character)) or Inventory.GetWeapon(player) ~= weapon then return end

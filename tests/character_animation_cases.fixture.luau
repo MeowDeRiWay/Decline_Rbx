@@ -51,6 +51,27 @@ assert(remoteRootJoint.Transform==frozen,"a cached living pose must never overwr
 oc:SetAttribute("Knockout",false);RunService.PreSimulation:Fire(1/120)
 assert(remoteRootJoint.Transform~=frozen and remoteRootJoint.Transform.Position.Y<0,"revival recomputes fresh feet immediately")
 print("PASS: remote poses reapplied at60/120/144Hz despite per-frame engine resets, throttled IK retained and cosmetic descendants preserve planted feet")
+-- A moving axe must sample its clock and both-hand IK on every viewer frame,
+-- despite native Transform resets and the normal 30Hz idle-player IK budget.
+local axeGrip=Instance.new("Motor6D",remoteHeld);axeGrip.Name="WeaponGrip"
+axeGrip.Part0=otherRoot;axeGrip.Part1=remoteHeld;axeGrip.C0=CFrame.new(.3,.2,-.3);axeGrip.C1=CFrame.identity
+axeGrip:SetAttribute("RestC0",axeGrip.C0)
+oc:SetAttribute("HandsItem","Axe");oc.DescendantAdded:Fire(axeGrip);flush()
+Motion.Play(axeGrip,{Animation="Chop",AttacksPerMinute=40},serverTime,1)
+local previousSupport
+for frame=1,60 do
+ serverTime+=1/120
+ for _,joint in ipairs(oc:GetDescendants()) do if joint:IsA("Motor6D") then joint.Transform=CFrame.identity end end
+ RunService.PreSimulation:Fire(1/120)
+ local support=oc:FindFirstChild("LeftShoulder",true).Transform
+ if previousSupport then assert((support.LookVector-previousSupport.LookVector).Magnitude>1e-7,"axe hand IK advances every frame, not cached previous-frame weapon geometry") end
+ previousSupport=support
+ assert((axeGrip.C0.Position-Vector3.new(.3,.2,-.3)).Magnitude<1e-7,"cosmetic swing never animates replicated C0")
+end
+serverTime+=1.1;RunService.PreSimulation:Fire(1/120)
+assert((axeGrip.Transform.LookVector-CFrame.identity.LookVector).Magnitude<1e-7,"finish presents rest pose immediately")
+Motion.Cancel(axeGrip);axeGrip.Parent=nil;oc:SetAttribute("HandsItem","Gun")
+print("PASS: real axe motion and remote two-hand IK advance at120Hz without C0 replication or stale held-part feedback")
 otherRoot.CFrame=CFrame.new(300,0,0)*otherRoot.CFrame
 local previous=remoteHip.Transform
 RunService.PreSimulation:Fire(1/30);assert(remoteHip.Transform==previous,"distant rigs do no pose work")

@@ -8,6 +8,7 @@ local player = Players.LocalPlayer
 local items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local remote = ReplicatedStorage:WaitForChild("WeaponAttack")
 local ready = 0
+local sequence=0
 Input.InputBegan:Connect(function(input,processed)
  if (player.Character and (player.Character:GetAttribute("HandsBusy") or player.Character:GetAttribute("MedicalHeld"))) or (player:GetAttribute("PlayerContextOpen") or player:GetAttribute("ExchangeOpen")) or processed or input.UserInputType ~= Enum.UserInputType.MouseButton1 or Input:GetFocusedTextBox() or GuiService.MenuIsOpen or (player:GetAttribute("MedicalMode") or (((player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then return end
  local character = player.Character
@@ -23,6 +24,8 @@ Input.InputBegan:Connect(function(input,processed)
  end
  local cooldown = 60/weapon.AttacksPerMinute
  ready = os.clock()+cooldown
- remote:FireServer()
- Motion.Play(motor,weapon)
+ sequence=(sequence%2147483646)+1
+ remote:FireServer(sequence)
+ if weapon.Animation=="Chop" then Motion.PredictChop(motor,weapon,workspace:GetServerTimeNow(),sequence)
+ else Motion.Play(motor,weapon) end
 end)
