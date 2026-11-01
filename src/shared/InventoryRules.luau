@@ -103,9 +103,16 @@ function Rules.Remove(state,id,amount,key,uid)
  state.Items[id]=remaining>0 and remaining or nil
  return true,removed,data
 end
+function Rules.SlotBlocked(state,definitions,slot)
+ for _,id in pairs(state.Equipment) do
+  local item=definitions[id]
+  if item and item.BlocksSlots and item.BlocksSlots[slot] then return true end
+ end
+ return false
+end
 function Rules.Equip(state, definitions, slots, id, key,uid)
  local item = typeof(id) == "string" and definitions[id]
- if not item or not table.find(slots, item.Slot) or Rules.Available(state,id,key) < 1 then return false end
+ if not item or not table.find(slots, item.Slot) or Rules.Available(state,id,key) < 1 or Rules.SlotBlocked(state,definitions,item.Slot) then return false end
  local previous = state.Equipment[item.Slot]
  local previousCondition = state.EquipmentCondition[item.Slot]
  local previousData=state.EquipmentWeapon and state.EquipmentWeapon[item.Slot]
@@ -116,6 +123,7 @@ function Rules.Equip(state, definitions, slots, id, key,uid)
  state.EquipmentWeapon[item.Slot]=data and data[1] or nil
  state.EquipmentCondition[item.Slot] = removed and removed[1] or nil
  state.Equipment[item.Slot] = id
+ for blocked in pairs(item.BlocksSlots or {}) do Rules.Unequip(state,definitions,slots,blocked) end
  return true
 end
 function Rules.Unequip(state, definitions, slots, slot)
@@ -162,18 +170,29 @@ function Rules.ReconcileEquipment(state,definitions,slots)
    end
   end
  end
+ for slot in pairs(state.Equipment) do
+  if Rules.SlotBlocked(state,definitions,slot) then Rules.Unequip(state,definitions,slots,slot) end
+ end
+end
+function Rules.EquippedWeightMultiplier(state,definitions)
+ local multiplier=1
+ for _,id in pairs(state.Equipment) do
+  multiplier=math.min(multiplier,definitions[id] and definitions[id].EquippedWeightMultiplier or 1)
+ end
+ return multiplier
 end
 function Rules.Weight(state, definitions, ammoMultiplier,equippedMultiplier)
  local total = 0
+ local wornMultiplier=Rules.EquippedWeightMultiplier(state,definitions)
  for id, count in pairs(state.Items) do total += (definitions[id].Weight or 0) * count * (definitions[id].Ammo and (ammoMultiplier or 1) or 1) end
- for slot, id in pairs(state.Equipment) do total += (definitions[id].Weight or 0)*(definitions[id].Weapon and slot==Rules.HandSlot(state) and (equippedMultiplier or 1) or 1) end
- local function magazine(id,data)
+ for slot, id in pairs(state.Equipment) do total += wornMultiplier*(definitions[id].Weight or 0)*(definitions[id].Weapon and slot==Rules.HandSlot(state) and (equippedMultiplier or 1) or 1) end
+ local function magazine(id,data,weightMultiplier)
   local gun=definitions[id].Firearm
   local ammo=gun and definitions["Ammo"..gun.Caliber..(data.Type or "FMJ")]
-  if ammo then total+=(data.Loaded or 0)*ammo.Weight*(ammoMultiplier or 1) end
+  if ammo then total+=(data.Loaded or 0)*ammo.Weight*(ammoMultiplier or 1)*(weightMultiplier or 1) end
  end
  for id,list in pairs(state.Weapons or {}) do for _,data in ipairs(list) do magazine(id,data) end end
- for slot,data in pairs(state.EquipmentWeapon or {}) do magazine(state.Equipment[slot],data) end
+ for slot,data in pairs(state.EquipmentWeapon or {}) do magazine(state.Equipment[slot],data,wornMultiplier) end
  return total
 end
 local function equippedStack(state,definitions,slot,id)

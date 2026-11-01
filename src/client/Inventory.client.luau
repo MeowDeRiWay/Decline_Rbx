@@ -11,6 +11,7 @@ local ItemConfig = require(ReplicatedStorage.Shared:WaitForChild("ItemConfig"))
 local remotes = ReplicatedStorage:WaitForChild("InventoryRemotes")
 local action = remotes:WaitForChild("Action")
 local stateRemote = remotes:WaitForChild("State")
+local EquipmentRules=require(game:GetService("ReplicatedStorage").Shared.InventoryRules)
 local snapshot = {Items = {}, Equipment = {}, Weight = 0}
 local dropAmounts = {}
 local selectedItem = nil
@@ -487,6 +488,7 @@ redraw = function()
   local definition = id and ItemConfig.Items[id]
   local slotName=({PrimaryWeapon="Two-handed weapon [1]",SecondaryWeapon="One-handed weapon [2]",Hands="Utility hands"})[slot] or slot
   local caption = slotName .. "\n" .. (definition and (definition.Name or id) .. "  •  Click to unequip" or "Empty")
+  if EquipmentRules.SlotBlocked(snapshot,ItemConfig.Items,slot) then caption=slotName.."\nBlocked by equipped armor" end
   local row = button(equipment, caption, UDim2.new(), UDim2.new(1, -8, 0, 66))
   row.LayoutOrder = order
   row.AutoButtonColor = id ~= nil
