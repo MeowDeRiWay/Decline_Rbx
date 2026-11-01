@@ -15,7 +15,8 @@ local Motion={Cancel=function() end}
 local Journal={Send=function() end}
 local Visuals={Template=function() return {} end,Validate=function() return true end,Apply=function(c,id) c:SetAttribute("HandsItem",id or "") end}
 local HolsterVisuals={Apply=function(c,slot,id) c:SetAttribute("Stored"..slot,id or "") end}
-local ArmorVisuals={Apply=function() end};local BackVisuals={Apply=function() end}
+local ArmorVisuals={Apply=function() end};local AdditionalVisuals={Apply=function() end}
+local BackVisuals={Apply=function() end}
 local baseNew=Instance.new
 function Instance.new(kind)
  local o=baseNew(kind)
@@ -36,7 +37,7 @@ local function advance(dt)
 end
 '''
 source=(root/'src/server/Services/InventoryService.luau').read_text()
-source=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|BackVisuals|HolsterVisuals|Journal)\s*=\s*require[^\n]+\n','',source)
+source=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|BackVisuals|AdditionalVisuals|HolsterVisuals|Journal)\s*=\s*require[^\n]+\n','',source)
 source=source.replace('require(script.Parent.ProgressionService)','Progression').replace('require(script.Parent.CraftingService)','Crafting').replace('require(script.Parent.HandActionService)','HandActions')
 s+='\nlocal Service=(function()\n'+source+'\nend)()\nlocal Inventory=Service'
 source=(root/'src/server/Services/HandActionService.luau').read_text()

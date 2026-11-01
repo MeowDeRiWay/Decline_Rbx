@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/InventoryService.luau').read_text()
-service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|BackVisuals|HolsterVisuals|Journal)\s*=\s*require[^\n]+\n','',service)
+service=re.sub(r'local (ItemConfig|Rules|CombatRules|Visuals|ArmorVisuals|BackVisuals|AdditionalVisuals|HolsterVisuals|Journal)\s*=\s*require[^\n]+\n','',service)
 service=service.replace('require(script.Parent.HandActionService)','Hands')
 service=service.replace('require(script.Parent.CraftingService).CancelPlayer(player)','Crafting.CancelPlayer(player)').replace('require(script.Parent.ProgressionService).Meets','Progression.Meets')
 setup='''
@@ -14,6 +14,7 @@ local Journal=journalPlaceholder
 local notices=ReplicatedStorage:FindFirstChild("PersonalNotice").sent
 local HolsterVisuals={Apply=function() end}
 local Hands={}
+local AdditionalVisuals={Apply=function() end}
 local BackVisuals={Apply=function(c,id) c:SetAttribute("WornBack",id) end}
 local ArmorVisuals={Apply=function(c,id) c:SetAttribute("WornArmor",id) end}
 local Visuals={Apply=function() end,Validate=function() return true end,Template=function() return {} end}
@@ -286,9 +287,11 @@ for _,id in ipairs({"Knife","Axe","Showel","WoodenPlate"}) do
  local state=Service.Export(rejoined);state.Items[id]=1;state.Conditions[id]={500};state.Weapons[id]={{Loaded=0,Type="FMJ"}}
  Service.Refresh(rejoined);assert(not state.Items[id] and not state.Conditions[id] and not state.Weapons[id])
 end
-assert(Service.Add(rejoined,"SurgicalKit",2) and rejoined:GetAttribute("DoctorKitBonus")==50,"pocket kit bonus is published without stacking")
-assert(Service.Remove(rejoined,"SurgicalKit",1) and rejoined:GetAttribute("DoctorKitBonus")==50)
-assert(Service.Remove(rejoined,"SurgicalKit",1) and rejoined:GetAttribute("DoctorKitBonus")==0,"removing the last kit clears the displayed bonus")
+assert(Service.Add(rejoined,"SurgicalKit",2) and rejoined:GetAttribute("DoctorKitBonus")==0,"pocket kits have no bonus")
+assert(Service.Equip(rejoined,"SurgicalKit") and rejoined:GetAttribute("DoctorKitBonus")==50)
+assert(Service.Remove(rejoined,"SurgicalKit",1) and rejoined:GetAttribute("DoctorKitBonus")==50,"pocket copies do not affect equipped bonus")
+assert(Service.Unequip(rejoined,"Additional") and rejoined:GetAttribute("DoctorKitBonus")==0)
+
 local namedActor=make("Model","Axe",workspace);make("Humanoid","Humanoid",namedActor)
 workspace.DescendantAdded:Fire(namedActor);assert(not namedActor.destroyed,"player names are never retired-item pickups")
 print("PASS: generic tool removal, stale ScrapShowel Item_ID repaired, pickup/equip/drop and inventory cleanup")

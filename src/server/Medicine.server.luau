@@ -79,7 +79,7 @@ handle=function(player,mode,target,contact)
   if now<math.max(doctorReady[player] or 0,player:GetAttribute("DoctorReadyAt") or 0) then Journal.Send(player,"Doctor is on cooldown.");return end
   if now<(target:GetAttribute("ReviveLockedUntil") or 0) then Journal.Send(player,"This patient cannot be revived yet.");return end
   doctorReady[player]=now+10;player:SetAttribute("DoctorReadyAt",now+10)
-  local kit=((Inventory.Snapshot(player).Items or {}).SurgicalKit or 0)>0 and Items.SurgicalKit
+  local kit=(Inventory.Snapshot(player).Equipment or {}).Additional=="SurgicalKit" and Items.SurgicalKit
   local function kitHealing()
    if not kit then return end
    local amount=math.min(health.MaxHealth-health.Health,kit.ReviveHealing)

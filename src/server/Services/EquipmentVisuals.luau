@@ -39,7 +39,7 @@ Visuals.Template=templateFor
 -- Called by server registration before a world pickup is consumed.
 function Visuals.CaptureTemplate(item, id)
  local definition=Items.Items[id]
- if not definition or (definition.Slot~="Hands" and definition.Slot~="PrimaryWeapon" and definition.Slot~="SecondaryWeapon") or templateFor(id) then return end
+ if not definition or (definition.Slot~="Hands" and definition.Slot~="PrimaryWeapon" and definition.Slot~="SecondaryWeapon" and id~="SurgicalKit") or templateFor(id) then return end
  if not item:IsA("Model") and not item:IsA("BasePart") then return end
  if item:IsA("Model") and not item:FindFirstChildWhichIsA("BasePart",true) then return end
  local clone=item:Clone()
@@ -55,7 +55,7 @@ function Visuals.CaptureTemplate(item, id)
 end
 function Visuals.Validate(id)
  local definition = Items.Items[id]
- if not definition or (definition.Slot ~= "Hands" and definition.Slot~="Body" and definition.Slot~="Back" and definition.Slot~="PrimaryWeapon" and definition.Slot~="SecondaryWeapon") then return true end
+ if not definition or (definition.Slot ~= "Hands" and definition.Slot~="Body" and definition.Slot~="Back" and definition.Slot~="PrimaryWeapon" and definition.Slot~="SecondaryWeapon" and id~="SurgicalKit") then return true end
  if not templateFor(id) then
   warn("[Decline] Missing equipment template: ServerStorage/Items/" .. id)
   return false

@@ -29,8 +29,9 @@ local Service={Finish=function() finishedCount+=1 end}
 LIFE
 local Life=Service
 local kitCount=0
+local kitEquipped=false
 local equipped=3
-local Inventory={Snapshot=function() return {Items={SurgicalKit=kitCount}} end,UseMedicine=function() if equipped==0 then return false end;equipped-=1;return true end}
+local Inventory={Snapshot=function() return {Items={SurgicalKit=kitCount},Equipment={Additional=kitEquipped and "SurgicalKit" or nil}} end,UseMedicine=function() if equipped==0 then return false end;equipped-=1;return true end}
 local xp,notices=0,{}
 local Progression={Award=function(_,amount) xp+=amount end}
 local Journal={Send=function(_,text) table.insert(notices,text) end}
@@ -161,7 +162,7 @@ use("Bandage",b);pending();assert(b.Character.Humanoid.Health==26,"fractional he
 -- Surgical kits are reusable pocket tools; validate both roll and healing.
 a:SetAttribute("SkillDoctor",20);a:SetAttribute("MedicalHealingBonus",0);a:SetAttribute("DoctorFortuneChance",0)
 b:SetAttribute("ReviveHealthBonus",0);b:SetAttribute("ReviveLockReduction",0);b:SetAttribute("ReviveLockedUntil",0)
-kitCount=1;Life.Knockout(b,b.Character);clock+=11;roll=.35
+kitCount=1;kitEquipped=true;Life.Knockout(b,b.Character);clock+=11;roll=.35
 use("Doctor",b)
 assert(b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==11,"70 effective Doctor fails at35percent but heals10")
 local healed=b.Character.Humanoid.Health
@@ -172,8 +173,8 @@ kitCount=2;b:SetAttribute("ReviveLockedUntil",0);Life.Knockout(b,b.Character);cl
 assert(b.Character:GetAttribute("Knockout") and b.Character.Humanoid.Health==11 and kitCount==2,"multiple kits do not stack chance or healing")
 clock+=11;b.Character.Humanoid.Health=96;use("Doctor",b);assert(b.Character.Humanoid.Health==100,"kit healing clamps at max HP while patient stays KO")
 clock+=11;b.Character.Humanoid.Health=50;b:SetAttribute("ReviveLockedUntil",clock+100);use("Doctor",b);assert(b.Character.Humanoid.Health==50,"revival lock gives no free kit healing")
-b:SetAttribute("ReviveLockedUntil",0);clock+=11;kitCount=0;use("Doctor",b);assert(b.Character.Humanoid.Health==50,"no pocket kit gives no healing bonus")
-kitCount=1;clock+=11;b.Character.HumanoidRootPart.Position=Vector3.new(4,0,0);use("Doctor",b);assert(b.Character.Humanoid.Health==50,"out of reach attempt gives no kit healing")
+b:SetAttribute("ReviveLockedUntil",0);clock+=11;kitCount=1;kitEquipped=false;use("Doctor",b);assert(b.Character.Humanoid.Health==50,"unequipped pocket kit gives no healing bonus")
+kitCount=1;kitEquipped=true;clock+=11;b.Character.HumanoidRootPart.Position=Vector3.new(4,0,0);use("Doctor",b);assert(b.Character.Humanoid.Health==50,"out of reach attempt gives no kit healing")
 b.Character.HumanoidRootPart.Position=Vector3.zero;clock+=11;wall=true;use("Doctor",b);assert(b.Character.Humanoid.Health==50,"blocked attempt gives no kit healing");wall=false
 print("PASS: reusable surgical kit +50 effective Doctor, +10HP success/failure, consent/cooldown/range/lock guards, healing cap and no stacking")
 print("PASS: sterile healing, fixed50% sterile and25%+Luck antiseptic cure boundaries, scaled Sick clamp, item consumption, full-HP debuff treatment, KO treatment without waking, retained HP and self-treatment")

@@ -6,6 +6,7 @@ local CombatRules = require(ReplicatedStorage.Shared.CombatRules)
 local Visuals = require(script.Parent.EquipmentVisuals)
 local ArmorVisuals=require(script.Parent.ArmorVisuals)
 local BackVisuals=require(script.Parent.BackVisuals)
+local AdditionalVisuals=require(script.Parent.AdditionalVisuals)
 local HolsterVisuals=require(script.Parent.HolsterVisuals)
 local Service = {}
 local states = {}
@@ -17,7 +18,7 @@ local function update(player)
  local state = states[player]
  if not state then return end
  Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots)
- player:SetAttribute("DoctorKitBonus",(state.Items.SurgicalKit or 0)>0 and ItemConfig.Items.SurgicalKit.DoctorSkillBonus or 0)
+ player:SetAttribute("DoctorKitBonus",state.Equipment.Additional=="SurgicalKit" and ItemConfig.Items.SurgicalKit.DoctorSkillBonus or 0)
  if not state.Equipment.Medicine then state.MedicalHeld=nil end
  local absorption,resistance=0,0
  local body=state.Equipment.Body and ItemConfig.Items[state.Equipment.Body]
@@ -34,6 +35,7 @@ local function update(player)
  player:SetAttribute("CarryLimitKg",baseCarry+carryBonus)
  if player.Character then
   player.Character:SetAttribute("CarryLimitKg",baseCarry+carryBonus)
+  AdditionalVisuals.Apply(player.Character,state.Equipment.Additional,state.Equipment.Additional and Visuals.Template(state.Equipment.Additional))
   BackVisuals.Apply(player.Character,state.Equipment.Back,state.Equipment.Back and Visuals.Template(state.Equipment.Back),back)
   player.Character:SetAttribute("LoadKg", Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")))
   player.Character:SetAttribute("ActiveWeaponSlot",state.ActiveWeaponSlot)

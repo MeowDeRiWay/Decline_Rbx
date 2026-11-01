@@ -72,8 +72,8 @@ ItemConfig.Items = {
   Name = "Plate", Weight = 0.2,
   Description = "An ordinary plate for serving meals.",
  },
- SurgicalKit = {Name="Surgical kit",Weight=.5,DoctorSkillBonus=50,ReviveHealing=10,
-  Description="A reusable surgical kit. Keep it in your pockets for +50 Doctor on revival rolls and +10 patient HP per valid revival attempt, successful or failed. Multiple kits do not stack."},
+ SurgicalKit = {Name="Surgical kit",Weight=.5,Slot="Additional",DoctorSkillBonus=50,ReviveHealing=10,
+  Description="A reusable surgical kit. Equip in Additional to wear on the left belt for +50 Doctor on revival rolls and +10 patient HP per valid revival attempt, successful or failed. Multiple kits do not stack."},
  Sausage = {
   Name = "Sausage", Weight = 0.5,
   Description = "A whole sausage. It can be sliced on a cutting board.",
