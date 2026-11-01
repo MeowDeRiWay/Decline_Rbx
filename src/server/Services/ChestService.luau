@@ -173,16 +173,14 @@ function Service.CraftSources(player,station)
  local result={}
  if not station or not station:IsDescendantOf(workspace) then return result end
  local character=player.Character
- local center=station:GetPivot().Position
  for chest in pairs(craftChests) do
   if chest.Name~="Chest" or not chest:IsDescendantOf(workspace) or chest:GetAttribute("IsCorpse") or chest:GetAttribute("Knockout")
    or knockoutOwners[chest] or chest:GetAttribute("TradePost") or not chest:FindFirstChildWhichIsA("BasePart",true) then continue end
-  local nearest=Interaction.NearestPoint(chest,center)
-  local distance=(nearest-center).Magnitude
+  local origin,nearest,distance=Interaction.ClosestPoints(station,chest)
   if distance>5 then continue end
   local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
   params.FilterDescendantsInstances=character and {character,station} or {station}
-  local hit=workspace:Raycast(center,nearest-center,params)
+  local hit=workspace:Raycast(origin,nearest-origin,params)
   if hit and not hit.Instance:IsDescendantOf(chest) then continue end
   contents[chest]=contents[chest] or Rules.New()
   Rules.ReconcileEquipment(contents[chest],Items.Items,Items.Slots)

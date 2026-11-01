@@ -18,6 +18,7 @@ Rules.Perks={
  {ID="HardCriticals",Name="Brutal criticals",Max=1,Attributes={Luck=7},Skills={Doctor=150},Description="Sets critical damage to a fixed 2.5 multiplier."},
  {ID="DoctorFortune",Name="Fortune favors doctors",Max=1,Attributes={Luck=7},Skills={Doctor=200},Description="Luck + 10% chance on a successful revival to restore full health and remove the patient's revival lock."},
  {ID="SilentRun",Name="Silent running",Max=1,Attributes={Agility=7},Skills={Sneak=150},Description="Sneak also reduces running noise."},
+ {ID="PracticedHands",Name="Practiced hands",Max=1,Skills={Repair=200},Description="Crafts that require Repair take half as long."},
  {ID="Economist",Name="Economist",Max=1,Skills={Repair=150},Description="Crafting uses 20% fewer ingredients, rounded up per ingredient."},
  {ID="GoodStudent",Name="Good student",Max=1,Attributes={Intelligence=7},Description="Doubles all experience gained."},
  {ID="CatEyes",Name="Cat eyes",Max=1,Attributes={Attention=7},Description="Night reduces accuracy by only 10% instead of 50%."},
@@ -197,7 +198,9 @@ end
 function Rules.ReviveChance(skill) return math.clamp((skill or 0)/200,0,1) end
 function Rules.CraftExperience(recipe,count) return (recipe.XP or 50)*count end
 function Rules.KillExperience(health) return math.max(0,math.floor((health or 0)*2.5+.5)) end
-function Rules.CraftEffects(perks) return {DurationMultiplier=1,BonusServing=0,Ramsay=perks and (perks.Ramsay or 0)>0 or false} end
+function Rules.CraftEffects(perks,recipe)
+ local repair=recipe and recipe.Requirements and recipe.Requirements.Skills and recipe.Requirements.Skills.Repair
+ return {DurationMultiplier=perks and (perks.PracticedHands or 0)>0 and repair and repair>0 and .5 or 1,BonusServing=0,Ramsay=perks and (perks.Ramsay or 0)>0 or false} end
 function Rules.CraftOutputs(outputs,recipe,effects)
  local result={}
  for id,count in pairs(outputs) do result[effects and effects.Ramsay and recipe and recipe.Food and not (recipe.Byproducts and recipe.Byproducts[id]) and not (recipe.FuelByproducts and recipe.FuelByproducts[id]) and ("Ramsay_"..id) or id]=count end

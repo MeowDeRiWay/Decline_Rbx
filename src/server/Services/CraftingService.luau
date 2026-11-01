@@ -132,7 +132,7 @@ function Service.Cook(player,id,requested)
  if not cycles then return false end
  local duration=0
  for _,cycle in ipairs(cycles) do
-  cycle.Effects=Progression.CraftEffects(player,stove.Name,cycle.Count)
+  cycle.Effects=Progression.CraftEffects(player,recipe)
   cycle.Duration=recipe.Duration/speed*cycle.Effects.DurationMultiplier
   duration+=cycle.Duration
  end

@@ -25,6 +25,7 @@ function Service.Cancel(c)
  if r.Root.Parent and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") then
   r.Root.Anchored=r.Anchored;r.HP.AutoRotate=r.AutoRotate;r.HP.WalkSpeed=r.Speed
  end
+ c:SetAttribute("InteractionCarryAllowed",nil)
  c:SetAttribute("InteractionMode",nil)
  c:SetAttribute("InteractionLocked",nil)
  c:SetAttribute("InteractionPoint",nil)
@@ -66,6 +67,7 @@ end
 function Service.Reach(player,target,range,activate)
  local r=begin(player,target,range)
  if not r then return false end
+ r.Character:SetAttribute("InteractionCarryAllowed",target:GetAttribute("Door")==true)
  phase(r,"Reach")
  task.delay(Pose.ReachContact,function()
   if active[r.Character]~=r or not alive(r) or not target:IsDescendantOf(workspace) then return end

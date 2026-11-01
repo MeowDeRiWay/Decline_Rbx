@@ -10,9 +10,9 @@ local Inventory=require(script.Parent.InventoryService)
 local Chests=require(script.Parent.ChestService)
 local Service={}
 local carrying,carriedBy={},{}
-local function active(player)
+local function active(player,allowDoorReach)
  local c=player.Character;local hp=c and c:FindFirstChildOfClass("Humanoid")
- return player.Parent==Players and not player:GetAttribute("TradeOpen") and c and hp and hp.Health>0 and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") and not c:GetAttribute("CraftingLocked") and not (c:GetAttribute("InteractionLocked") or c:GetAttribute("HandsBusy")) and not c:GetAttribute("HospitalResting") and player:GetAttribute("AttributesConfirmed")==true and c:FindFirstChild("HumanoidRootPart")
+ return player.Parent==Players and not player:GetAttribute("TradeOpen") and c and hp and hp.Health>0 and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") and not c:GetAttribute("CraftingLocked") and not ((c:GetAttribute("InteractionLocked") and not (allowDoorReach and c:GetAttribute("InteractionMode")=="Reach" and c:GetAttribute("InteractionCarryAllowed"))) or c:GetAttribute("HandsBusy")) and not c:GetAttribute("HospitalResting") and player:GetAttribute("AttributesConfirmed")==true and c:FindFirstChild("HumanoidRootPart")
 end
 function Service.Patient(player) local r=carrying[player];return r and r.Patient end
 function Service.Drop(player)
@@ -61,7 +61,7 @@ function Service.PlaceOnBed(player,bed)
 end
 Run.Heartbeat:Connect(function()
  for player,record in pairs(carrying) do
-  local root=active(player)
+  local root=active(player,true)
   if not root or player.Character~=record.CarrierCharacter or record.Patient.Parent~=Players or record.Patient.Character~=record.Character or not record.Character.Parent or not record.Character:GetAttribute("Knockout") then Service.Drop(player)
   else
    record.Upright=root.CFrame

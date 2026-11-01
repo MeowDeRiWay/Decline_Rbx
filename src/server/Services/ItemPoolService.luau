@@ -69,11 +69,13 @@ function Service.Update()
    frame,size=marker:GetBoundingBox()
   else frame,size=marker.CFrame,marker.Size end
   if not ActivityRules.Near(frame,size,positions,ActivityConfig.ActiveRadius) then continue end
-  if state.Item then
-   if state.Item.Parent then continue end
-   state.Item=nil;state.Due=now+Rules.Delay(marker:GetAttribute("RespawnSeconds"))
-  end
+  -- A point rerolls on its own schedule, whether its previous loot was taken
+  -- or left behind. Destroy only this point's tracked world item.
   if now<state.Due then continue end
+  if state.Item then
+   if state.Item.Parent then state.Item:Destroy() end
+   state.Item=nil
+  end
   local source=pool(path)
   local choices=source and entries(source) or {}
   if #choices==0 then

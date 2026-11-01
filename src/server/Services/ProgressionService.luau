@@ -101,7 +101,7 @@ function Service.ResetProgression(player)
 end
 function Service.CanStation(player,name) return Service.Meets(player,Config.StationRequirements[name]) end
 function Service.CanBuild(player,kind) return Service.Meets(player,Config.BuildingRequirements[kind]) end
-function Service.CraftEffects(player) return Rules.CraftEffects(stateFor(player).Perks) end
+function Service.CraftEffects(player,recipe) return Rules.CraftEffects(stateFor(player).Perks,recipe) end
 function Service.CraftXP(player,recipe,count) Service.Award(player,Rules.CraftExperience(recipe,count)) end
 function Service.Loot(_,items) return items end
 function Service.FarmXP(player,count,bushes)

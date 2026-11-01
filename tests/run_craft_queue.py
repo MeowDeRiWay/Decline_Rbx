@@ -29,7 +29,7 @@ local xp={[a]=0,[b]=0}
 local Progression={CanStation=function() return true end,Meets=function() return true end,
  CraftEffects=function() return {DurationMultiplier=1} end,Loot=function(_,out) return out end,
  CraftXP=function(p,recipe,count) xp[p]+=ProgressionRules.CraftExperience(recipe,count) end}
-local Interaction={NearestPoint=function(object) return object:GetPivot().Position end}
+local Interaction={NearestPoint=function(object) return object:GetPivot().Position end,ClosestPoints=function(a,b) local p,q=a:GetPivot().Position,b:GetPivot().Position;return p,q,(p-q).Magnitude end}
 local Animation={EndLoot=function() end}
 local Journal={Send=function() end}
 local WorldActivity={IsDormant=function() return false end}

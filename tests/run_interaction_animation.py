@@ -6,7 +6,7 @@ def module(path): return '(function()\n'+(root/path).read_text()+'\nend)()'
 helpers=(root/'tests/run_character_rig.py').read_text().split("source+=r'''")[1].split('local function test(frame)')[0]
 s=(root/'tests/rig_math.fixture.luau').read_text()+helpers
 for alias,path in [('Pose','src/shared/CharacterPose.luau'),('Rig','src/shared/CharacterRig.luau'),('Foot','src/shared/FootPlant.luau'),('Punch','src/shared/UnarmedPose.luau'),('geometry','tests/character_geometry.fixture.luau')]: s+='\nlocal '+alias+'='+module(path)
-s+='\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')
+s+='\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose').replace('local Carry=require(script.Parent.CarryPose)', 'local Carry='+module('src/shared/CarryPose.luau'))
 s+='\nlocal HandPose='+module('src/shared/HandActionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')
 s+='\nlocal CarryPose='+module('src/shared/CarryPose.luau')
 s+='\n'+(root/'tests/character_animation.fixture.luau').read_text()

@@ -1,4 +1,5 @@
 local IK=require(script.Parent.CharacterPose)
+local Carry=require(script.Parent.CarryPose)
 local Pose={ReachContact=.3,ReachDuration=.65,DownDuration=.9,UpDuration=1.15}
 local function smooth(t) t=math.clamp(t,0,1);return t*t*(3-2*t) end
 function Pose.State(mode,t,riseFrom,layFrom)
@@ -77,7 +78,9 @@ function Pose.Apply(c,root,m,now)
   local aim=hanging
   local search=Pose.SearchPoint(root,target,side,t,legLength,c:GetAttribute("RigHipHeight"))
   if mode=="Reach" then
-   if side==(c:GetAttribute("InteractionHand") or "Right") then
+   if side=="Left" and c:GetAttribute("CarryingUserId") then
+    aim=Carry.SupportPoint(c,root)
+   elseif side==(c:GetAttribute("InteractionHand") or "Right") then
     local base=gripWorld and (gripWorld.Position+gripWorld.LookVector*.2) or hanging
     aim=base+(target-base)*reach
    elseif side=="Right" and gripWorld then aim=gripWorld.Position end

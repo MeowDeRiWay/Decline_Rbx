@@ -1,5 +1,7 @@
 -- Hand-authored Ukrainian and Russian translations. English source is stable.
 return {
+ {"Practiced hands","Набиті руки","Набитые руки"},
+ {"Crafts that require Repair take half as long.","Крафти, що потребують ремонту, виконуються вдвічі швидше.","Крафты, требующие ремонта, выполняются вдвое быстрее."},
  {"Botanist","Ботанік","Ботаник"},
  {"Tunnel vision","Тунельний зір","Туннельное зрение"},
  {"Bonus ranged damage","Посилений постріл","Усиленный выстрел"},
