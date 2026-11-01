@@ -158,9 +158,15 @@ for id,recipe in pairs(recipes) do
  end
 end
 for id,recipe in pairs(charcoalVariants) do recipes[id]=recipe end
--- Alternative fuel for the same five-bottle purification batch.
+-- Separate medical filtration from stove boiling; coal is charged once.
+local filtered=table.clone(recipes.BoilWater)
+filtered.Name="Filter water";filtered.Station="MedStation";filtered.FuelTab=nil
+filtered.Description="Filter five bottles of dirty water with one charcoal into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
+recipes.FilterWater=filtered
+recipes.BoilWater.Name="Boil water"
+recipes.BoilWater.Description="Boil five bottles of dirty water with one charcoal into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
 local woodWater=table.clone(recipes.BoilWater)
 woodWater.Ingredients={DirtyWater=5,TreeLog=1};woodWater.FuelTab="Wood"
-woodWater.Description="Purify five bottles of dirty water with one log into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
+woodWater.Description="Boil five bottles of dirty water with one log into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
 recipes.BoilWaterWood=woodWater
 return recipes

@@ -46,7 +46,7 @@ print("PASS: per-result XP, weapon costs, reusable sewing tool, first aid thresh
 
 do
  local recipe=C.BoilWater
- assert(recipe.Name=="Water purification" and recipe.Requirements.Skills.Doctor==50)
+ assert(recipe.Name=="Boil water" and recipe.Requirements.Skills.Doctor==50)
  assert(recipe.XP==0 and not recipe.Food and not recipe.RequiresPresence and recipe.ManualBatch)
  assert(not C.BoilWaterCoal and not recipe.Fuel and recipe.FuelTab=="Coal","coal recipe has no extra fuel charge")
  local plan=assert(R.Plan({DirtyWater=5,Coal=1},recipe,1))
@@ -84,3 +84,12 @@ assert(wood.Outputs.CleanWater==5 and not wood.Outputs.Coal and C.BoilWaterWood.
 assert(C.MakeAntiseptic.Ingredients.CleanWater==1 and C.MakeAntiseptic.Ingredients.MedicalAlcohol==1 and C.MakeAntiseptic.OutputCount==5)
 assert(C.BoilPotatoes.Requirements.Skills.Cook==50 and C.MashedPotatoesWithSausage.Requirements.Skills.Cook==60)
 for _,perk in ipairs(P.Perks) do if perk.ID=="Ramsay" then assert(not perk.Attributes and perk.Skills.Cook==200) end end
+
+local stations=require("../src/shared/CraftStations")
+assert(stations.Matches(C.FilterWater,"MedStation") and not stations.Matches(C.FilterWater,"Stove"))
+for _,id in ipairs({"BoilWater","BoilWaterWood"}) do
+ assert(stations.Matches(C[id],"Stove") and not stations.Matches(C[id],"MedStation"))
+end
+local filtered=assert(R.Plan({DirtyWater=5,Coal=1},C.FilterWater,1))
+assert(filtered.Outputs.CleanWater==5 and filtered.Ingredients.Coal==1 and not C.FilterWater.Fuel)
+assert(not R.Plan({DirtyWater=5,TreeLog=1},C.FilterWater,1))
