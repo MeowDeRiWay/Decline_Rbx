@@ -10,10 +10,11 @@ function Visuals.Apply(character,id,template)
  local source=template:GetPivot()
  local bounds,size
  if template:IsA("Model") then bounds,size=template:GetBoundingBox() else bounds,size=template.CFrame,template.Size end
- -- Zero-rotation template faces forward (-Z). Turn its face out to the left
- -- and hang its upper edge at the bottom of LowerTorso, beside the thigh.
+ -- Uploaded SurgicalKit is flat in XZ: the cross faces +Y and its long
+ -- axis is Z. Map +Y to the character's left and +Z down the thigh.
  local mount=torso:FindFirstChild("SurgicalKitBelt")
- local target=mount and mount:IsA("Attachment") and mount.WorldCFrame or torso.CFrame*CFrame.new(-torso.Size.X/2-size.Z/2-.02,-torso.Size.Y/2-size.Y/2,0)*CFrame.Angles(0,math.pi/2,0)
+ local rotation=CFrame.Angles(0,-math.pi/2,0)*CFrame.Angles(math.pi/2,0,0)
+ local target=mount and mount:IsA("Attachment") and mount.WorldCFrame or torso.CFrame*CFrame.new(-torso.Size.X/2-size.Y/2-.01,-torso.Size.Y/2-size.Z/2,0)*rotation
  target=target*(source:ToObjectSpace(bounds)):Inverse()
  local parts={}
  if template:IsA("BasePart") then table.insert(parts,template) end
