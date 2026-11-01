@@ -85,7 +85,7 @@ for id,entry in pairs({MakeBandage={"FirstAid",50},MakeGreatBandage={"FirstAid",
  medicalSkills[entry[1]]=entry[2]-1;assert(not Service.Cook(a,id,1))
  medicalSkills[entry[1]]=entry[2];assert(Service.Cook(a,id,1));callbacks[#callbacks]()
 end
-for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BoilWaterCoal","BurnLogs","BurnLogsWithCoal","SmeltIron","SmeltSteel"}) do
+for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BurnLogs","BurnLogsWithCoal","SmeltIron","SmeltSteel"}) do
  local recipe=Recipes[id]
  assert(recipe.ManualBatch and recipe.MaxBatch==1 and recipe.OutputCount==5,id)
  Service.Close(a);fill(recipe,1);assert(Service.Open(a,stations[recipe.Station]))
@@ -93,6 +93,7 @@ for _,id in ipairs({"BoilPotatoes","BoilPotatoesCoal","BoilWater","BoilWaterCoal
  local ingredient=next(recipe.Ingredients);local amount=stock[ingredient]
  stock[ingredient]=amount-1;assert(not Service.Cook(a,id,1),"partial input rejected");stock[ingredient]=amount
  if recipe.Requirements and recipe.Requirements.Skills.Cook then medicalSkills.Cook=49;assert(not Service.Cook(a,id,1));medicalSkills.Cook=50 end
+ if recipe.Requirements and recipe.Requirements.Skills.Doctor then medicalSkills.Doctor=49;assert(not Service.Cook(a,id,1));medicalSkills.Doctor=50 end
  if recipe.WorkshopLevel then workshop:SetAttribute("BuildingLevel",1);assert(not Service.Cook(a,id,1));workshop:SetAttribute("BuildingLevel",2) end
  local before=xp
  assert(Service.Cook(a,id,1) and not a.Character.HumanoidRootPart.Anchored)

@@ -34,18 +34,28 @@ assert(P.FirstAid(100,medic.FirstAidMultiplier,7,"Bandage",medic.MedicalHealingB
 assert(P.FirstAid(100,medic.FirstAidMultiplier,7,"GreatBandage",medic.MedicalHealingBonus)==34)
 print("PASS: per-result XP, weapon costs, reusable sewing tool, first aid thresholds/formulas and fixed smelting/burning batches")
 
-for _,id in ipairs({"BoilWater","BoilWaterCoal"}) do
- local recipe=C[id]
- assert(recipe.XP==0 and not recipe.Food and not recipe.RequiresPresence)
- local items={DirtyWater=5};items[recipe.Fuel.ID]=1
- local plan=assert(R.Plan(items,recipe,1))
- assert(plan.Ingredients.DirtyWater==5 and plan.Ingredients[recipe.Fuel.ID]==1 and plan.Outputs.CleanWater==5)
- assert(P.CraftExperience(recipe,1)==0)
- assert(P.CraftOutputs(plan.Outputs,recipe,{Ramsay=true}).CleanWater==5,"water keeps ordinary ID even for master cooks")
- assert(not R.Plan(items,recipe,2))
- assert(not R.Plan({DirtyWater=5},recipe,1),"fuel is required")
+do
+ local recipe=C.BoilWater
+ assert(recipe.Name=="Water purification" and recipe.Requirements.Skills.Doctor==50)
+ assert(recipe.XP==0 and not recipe.Food and not recipe.RequiresPresence and recipe.ManualBatch)
+ assert(not C.BoilWaterCoal and not recipe.Fuel and recipe.FuelTab=="Coal","one charcoal-only recipe, no extra fuel or log variant")
+ local plan=assert(R.Plan({DirtyWater=5,Coal=1},recipe,1))
+ assert(plan.Ingredients.DirtyWater==5 and plan.Ingredients.Coal==1 and plan.Outputs.CleanWater==5 and not plan.Outputs.Coal)
+ assert(P.CraftExperience(recipe,1)==0 and P.CraftOutputs(plan.Outputs,recipe,{Ramsay=true}).CleanWater==5)
+ assert(not R.Plan({DirtyWater=5,TreeLog=1},recipe,1),"logs cannot replace charcoal")
+ assert(not R.Plan({DirtyWater=4,Coal=1},recipe,1),"the full batch is mandatory")
+ assert(not R.QueuePlan({DirtyWater=10,Coal=2},recipe,{Batch=1,Repeats=2}),"manual collection remains mandatory")
+ assert(recipe.Duration==60)
 end
-assert(C.BoilWater.Duration==60 and C.BoilWaterCoal.Duration==30)
-print("PASS: boil five water bottles, one fuel, no XP or Ramsay water alias, coal twice as fast")
+assert(C.MakeBandage.Ingredients.Rags==2 and C.MakeGreatBandage.Ingredients.Cloth==2)
+assert(C.MakeBandage.Tool=="SewingKit" and C.MakeGreatBandage.Tool=="SewingKit")
+for _,id in ipairs({"MakeAmmo9mm","MakeAmmo223"}) do
+ local recipe=C[id]
+ assert(recipe.OutputCount==30 and recipe.Duration==30 and recipe.MaxBatch==1)
+ local stock={};for item,n in pairs(recipe.Ingredients) do stock[item]=n*2 end
+ local plans=assert(R.QueuePlan(stock,recipe,{Batch=1,Repeats=2}))
+ assert(#plans==2 and plans[1].Outputs[recipe.Output]==30 and plans[2].Outputs[recipe.Output]==30)
+end
+print("PASS: charcoal-only water purification, Doctor 50, fixed manual batch; two-material bandages; 30 ammunition per 30-second process")
 
 assert(C.MakeAmmo223.Station=="Workstation" and C.MakeRifle223.Station=="Workstation")

@@ -200,8 +200,9 @@ Station tiers are not used: StationLevel has no effect. The Workshop building
 level requirement for iron smelting remains a separate existing building rule.
 
 Each station must be a Model with at least one BasePart. Put MedStation=true on
-the hospital's medical table. Bandages belong exclusively here: five rags,
-First Aid 100, 20 seconds, one per queue; existing perk discounts still apply.
+the hospital's medical table. Bandages belong exclusively here: 2 rags,
+First Aid 50, 20 seconds per result. Great bandages use 2 cloth and First Aid 75.
+Both require a reusable sewing kit; existing perk discounts still apply.
 Future medicines and medical materials belong here too. Advanced medical recipes
 may consume needles/syringes produced at a specialized workshop station; no such
 items or recipes are added until their definitions are supplied.
@@ -267,7 +268,7 @@ They may be left running. Recipe amounts are fixed, including with Economist.
 | --- | --- | --- | --- |
 | Boil potatoes, wood | 5 Potato + 1 CleanWater + 1 TreeLog | 5 BoiledPotato + 1 Coal | 60 |
 | Boil potatoes, coal | 5 Potato + 1 CleanWater + 1 Coal | 5 BoiledPotato | 30 |
-| Boil water, wood/coal | 5 DirtyWater + 1 chosen fuel | 5 CleanWater (+1 Coal for wood) | 60 / 30 |
+| Water purification (Doctor 50), coal tab | 5 DirtyWater + 1 Coal | 5 CleanWater | 60 |
 | Burn logs | 5 TreeLog | 5 Coal | 60 |
 | Burn logs with coal | 5 TreeLog + 1 Coal | 5 Coal | 30 |
 | Smelt iron | 25 Scrap + 1 Coal | 5 Iron | 120 |
@@ -278,3 +279,9 @@ pocket delivery. Per-recipe item quantities are fixed; material sourcing from
 pockets and chests within5 remains. Normal item recipe discounts still apply.
 Processing XP per complete batch retains the former full-batch reward; water
 continues awarding no XP. Food quality and Cook50 requirements are unchanged.
+
+
+As of 1 November 2026, both 9 mm FMJ and .223 FMJ ammunition recipes produce
+**30 rounds in 30 seconds** per process. Existing ingredients, skill requirements,
+XP and repeat queues remain unchanged. Water purification has only the charcoal
+recipe above, retaining manual batch collection and zero XP.
