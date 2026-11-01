@@ -21,8 +21,9 @@ for _,pose in ipairs({CFrame.identity,CFrame.Angles(.5,.8,-.2),CFrame.Angles(0,1
  local part=Instance.new("Part",template);part.Name="Kit";part.Size=Vector3.new(.5,.6,.3);part.CFrame=template.CFrame*CFrame.new(2,0,0);template.PrimaryPart=part
  assert(Back.Apply(character,"SurgicalKit",template))
  local worn=character:FindFirstChild("EquippedAdditional");local fitted=worn:FindFirstChild("Kit")
- near(torso.CFrame:ToObjectSpace(fitted.CFrame).Position,Vector3.new(-1.3,.2,0))
- near(fitted.CFrame.RightVector,torso.CFrame.RightVector)
+ near(torso.CFrame:ToObjectSpace(fitted.CFrame).Position,Vector3.new(-1.17,-.8,0))
+ near(fitted.CFrame.LookVector,-torso.CFrame.RightVector)
+ near(fitted.CFrame.UpVector,torso.CFrame.UpVector)
  local weld=fitted:FindFirstChild("BeltWeld");assert(weld.Part0==torso and weld.Part1==fitted)
  assert(fitted.Massless and not fitted.Anchored and not fitted.CanCollide and not fitted.CanQuery)
  assert(Back.Apply(character,"SurgicalKit",template) and character:FindFirstChild("EquippedAdditional")==worn)
