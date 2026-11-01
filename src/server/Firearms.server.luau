@@ -49,7 +49,15 @@ end
 -- Loaded rounds belong to this weapon record, separate from loose pocket ammunition.
 Inventory.Changed:Connect(function(player)
  local character,_,id,gun=context(player)
- if not character then local old=states[player];if old then Audio.Stop(old.ReloadSound) end;states[player]=nil;return end
+ if not character then
+  local old=states[player]
+  if old then
+   old.Token+=1;old.Reloading=false;Audio.Stop(old.ReloadSound);old.ReloadSound=nil
+   old.Character:SetAttribute("Reloading",false)
+  end
+  if player.Character then player.Character:SetAttribute("Reloading",false) end
+  states[player]=nil;return
+ end
  local state=stateFor(player,character,id);sync(player,state,gun)
 end)
 action.OnServerEvent:Connect(function(player,command,direction)

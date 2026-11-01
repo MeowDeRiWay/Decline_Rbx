@@ -123,6 +123,18 @@ fire(player,"Reload");advance(2.5)
 assert(magazine.Type=="FMJ" and magazine.Loaded==24 and rounds.Ammo223AP==4,"partial magazine switches safely, returns old cartridges")
 Inventory.UnloadMagazine(player,"AP");rounds.Ammo223FMJ=0;rounds.Ammo223AP=0
 fire(player,"Reload");fire(player,"Reload");assert(#notices==1,"empty notification only when no type is available, throttled")
+-- KO invalidates the active gun while reloading; stale timer must not retain
+-- a character-level draw lock or reload a weapon after revival.
+character:SetAttribute("HandsItem","AssaultRifle223");character:SetAttribute("Knockout",false)
+magazine.Loaded=0;magazine.Type="FMJ";rounds.Ammo223FMJ=30
+changed.callback(player);fire(player,"Reload");assert(character:GetAttribute("Reloading"))
+character:SetAttribute("Knockout",true);changed.callback(player)
+assert(not character:GetAttribute("Reloading"),"KO clears draw-blocking reload flag immediately")
+character:SetAttribute("Knockout",false);character:SetAttribute("HandsItem","");changed.callback(player)
+advance(10);assert(magazine.Loaded==0 and rounds.Ammo223FMJ==30,"cancelled timer cannot reload after revival")
+character:SetAttribute("Reloading",true);changed.callback(player)
+assert(not character:GetAttribute("Reloading"),"refresh repairs a stale flag even with no server reload state")
+character:SetAttribute("HandsItem","AssaultRifle223");changed.callback(player)
 assert(table.find(played,"ShotSound") and table.find(played,"ReloadSound") and stopped>=3)
 character:SetAttribute("HandsItem","Rifle223");magazine={UID=99,Type="FMJ",Loaded=5,Mode="Auto"}
 changed.callback(player);assert(character:GetAttribute("FireMode")=="Single","bolt action normalizes old auto state")
