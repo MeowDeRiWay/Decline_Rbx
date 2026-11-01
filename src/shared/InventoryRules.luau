@@ -8,6 +8,25 @@ end
 local function quantity(value)
  return typeof(value) == "number" and value == value and value > 0 and value < math.huge and value == math.floor(value)
 end
+-- No yielding: remove and add one fixed package in a single inventory operation.
+function Rules.PackageAmmo(state,definitions,id,unpack)
+ local item=typeof(id)=="string" and definitions[id]
+ if not item then return false end
+ local target,needed,produced
+ if unpack then
+  local pack=item.PackedAmmo
+  if not pack then return false end
+  target,needed,produced=pack.ID,1,pack.Count
+ else
+  local ammo=item.Ammo
+  if not ammo then return false end
+  target,needed,produced="AmmoPack"..ammo.Caliber..ammo.Type,30,1
+ end
+ if not definitions[target] or (state.Items[id] or 0)<needed then return false end
+ if not Rules.Remove(state,id,needed) then return false end
+ assert(Rules.Add(state,definitions,target,produced))
+ return true
+end
 function Rules.DropAmount(available, requested)
  if not quantity(available) then return nil end
  if requested == "All" then return available end

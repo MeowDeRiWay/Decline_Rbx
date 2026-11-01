@@ -218,7 +218,7 @@ local function renderItems(frame, items, side)
   end)
   row.MouseLeave:Connect(function() tooltip.Visible = false end)
   if stack.LootLocked or (chestOpen and chestReadOnly and side == "Player") then continue end
-  local actionCount=not chestOpen and ((definition.Slot and 1 or 0)+(definition.Consume and 1 or 0)+(definition.EmptyContainer and 1 or 0)) or 0
+  local actionCount=not chestOpen and ((definition.Slot and 1 or 0)+(definition.Consume and 1 or 0)+(definition.EmptyContainer and 1 or 0)+((definition.Ammo or definition.PackedAmmo) and 1 or 0)) or 0
   local extraHeight=actionCount*38
   local actions = Instance.new("Frame")
   actions.Name = "ItemActions"
@@ -278,6 +278,8 @@ local function renderItems(frame, items, side)
   if not chestOpen then
    if definition.Slot then itemAction("Equip","Equip",selection) end
    if definition.Consume then itemAction(definition.ConsumeAction or "Consume","Consume",id) end
+   if definition.Ammo then itemAction("Pack 30 rounds","PackAmmo",id) end
+   if definition.PackedAmmo then itemAction("Unpack 30 rounds","UnpackAmmo",id) end
    if definition.EmptyContainer then itemAction("Pour out","PourOut",id) end
   end
  end

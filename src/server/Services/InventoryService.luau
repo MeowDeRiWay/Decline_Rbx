@@ -202,6 +202,11 @@ function Service.TakeEquippedLoot(player,source,id,requested,key)
  if not own or not source or not Rules.TransferEquipment(source,own,ItemConfig.Items,id,requested,key,true) then return false end
  update(player);return true
 end
+function Service.PackageAmmo(player,id,unpack)
+ local state=states[player]
+ if not state or not Rules.PackageAmmo(state,ItemConfig.Items,id,unpack) then return false end
+ update(player);return true
+end
 function Service.ConsumeIngredients(player,recipe,count)
  local state=states[player]
  if not state then return false end
