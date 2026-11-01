@@ -75,16 +75,16 @@ assert(Service.Command(b,"Buy",gun.Key,1) and not Service.Command(b,"Buy",gun.Ke
 local purchased
 for _,stack in ipairs(Inventory.Snapshot(b).Stacks) do if stack.ID=="AssaultRifle223" then purchased=stack end end
 assert(purchased.Condition==17 and purchased.Loaded==7 and purchased.AmmoType=="AP","condition and magazine data survive sale")
-assert(Service.Open(a,second) and Service.Command(a,"Claim"))
+assert(Service.Open(a,second) and not Service.Snapshot(a).CanClaim and not Service.Command(a,"Claim"),"second shop is blocked in UI and server")
 buyer=Wallet.Balance(a);seller=Wallet.Balance(c)
 clock+=300;Service.Step()
-assert(Wallet.Balance(a)==buyer-2 and Wallet.Balance(c)==seller+2,"two shops owned by one seller pay exactly one tax")
+assert(Wallet.Balance(a)==buyer-2 and Wallet.Balance(c)==seller+2,"single seller pays one tax")
 Players.PlayerRemoving:Fire(a);a.Parent=nil
 clock+=299;Service.Step();assert(first:GetAttribute("TradeOwnerID")==a.UserId,"short disconnect retains shop")
 local returned=player(a.UserId);returned:LoadCharacterAsync();returned:SetAttribute("TownID",1);Players.PlayerAdded:Fire(returned)
 assert(first:GetAttribute("TradeOwnerID")==returned.UserId,"rejoin before deadline retains ownership")
 Players.PlayerRemoving:Fire(returned);returned.Parent=nil;clock+=301;Service.Step()
-assert(first:GetAttribute("TradeOwnerID")==c.UserId and second:GetAttribute("TradeOwnerID")==c.UserId,"disconnect timeout transfers all shops to mayor")
+assert(first:GetAttribute("TradeOwnerID")==c.UserId and second:GetAttribute("TradeOwnerID")==0,"disconnect timeout transfers all shops to mayor")
 assert(Service.Open(c,first))
 local inherited=Service.Snapshot(c)
 assert(inherited.Inherited and #inherited.Stock==1 and inherited.Stock[1].Count==8 and inherited.Stock[1].Price==1000000000,"inheritance preserves stock and unit price")
@@ -103,6 +103,8 @@ local remaining=Wallet.Balance(b);assert(Wallet.Transfer(b,d,remaining));assert(
 local mayorMoney=Wallet.Balance(d);clock+=300;Service.Step()
 assert(Wallet.Balance(b)==0 and Wallet.Balance(d)==mayorMoney+1,"insolvent seller pays available dollar without debt")
 assert(Service.Command(b,"Release") and fourth:GetAttribute("TradeOwnerID")==0 and fourth.Inactive.Part.Transparency==0,"empty post can be released and keeps authored appearance")
+assert(Service.Open(b,second) and Service.Snapshot(b).CanClaim and Service.Command(b,"Claim"),"releasing first post permits claiming another")
+assert(Service.Open(b,fourth) and not Service.Command(b,"Claim"),"claiming different post restores ownership limit")
 print("PASS: actual wallet income, foreign buyers/member claims, quantity/price/funds guards, atomic sales, weapon metadata, one tax per seller, grace/rejoin/timeout, mayor inheritance and leadership changes")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]

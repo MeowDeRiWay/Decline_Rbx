@@ -42,13 +42,19 @@ local function near(player,post)
  local hit=workspace:Raycast(root.Position,point-root.Position,params)
  return not hit or hit.Instance:IsDescendantOf(post)
 end
+local function ownsPost(player)
+ for model,record in pairs(posts) do
+  if record.Owner==player.UserId and (model:IsDescendantOf(workspace) or WorldActivity.IsDormant(model)) then return true end
+ end
+ return false
+end
 function Service.Snapshot(player)
  local record=sessions[player]
  if not record or not near(player,record.Model) then sessions[player]=nil;player:SetAttribute("TradeOpen",false);return {Open=false} end
  local stock=Rules.Stacks(record.Storage,Items.Items)
  for _,stack in ipairs(stock) do stack.Price=record.Prices[stack.Key] or 0 end
  local town=Towns.TradeTown(townID(record.Model))
- return {Open=true,Post=record.Model,OwnerID=record.Owner,OwnerName=ownerNames[record.Owner] or ("Seller #"..record.Owner),Inherited=record.Inherited,CanClaim=record.Owner==0 and not record.Inherited and town~=nil and player:GetAttribute("TownID")==town.ID,
+ return {Open=true,Post=record.Model,OwnerID=record.Owner,OwnerName=ownerNames[record.Owner] or ("Seller #"..record.Owner),Inherited=record.Inherited,CanClaim=not ownsPost(player) and record.Owner==0 and not record.Inherited and town~=nil and player:GetAttribute("TownID")==town.ID,
   Stock=stock,Inventory=record.Owner==player.UserId and Inventory.Snapshot(player).Stacks or {},Money=Wallet.Balance(player),Tax=town and town.Tax or 0}
 end
 function Service.Publish(record,message,recipient)
@@ -86,7 +92,7 @@ function Service.Command(player,command,key,amount)
  if not town then return false end
  if record.Owner==player.UserId and player:GetAttribute("TownID")~=town.ID then inherit(record);return false end
  if command=="Claim" then
-  if record.Owner~=0 or record.Inherited or player:GetAttribute("TownID")~=town.ID then return false end
+  if record.Owner~=0 or record.Inherited or player:GetAttribute("TownID")~=town.ID or ownsPost(player) then return false end
   record.Owner=player.UserId;visual(record);Service.Publish(record);return true
  end
  if command=="Release" then
