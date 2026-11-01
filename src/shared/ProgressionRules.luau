@@ -116,9 +116,13 @@ function Rules.SpendSkill(state,id)
  if not gain or state.SkillPoints<cost then return false end
  state.Skills[id]+=gain;state.SkillPoints-=cost;return true
 end
--- level is the current level: entering 1/2/3 costs 250 each;
--- entering 4 costs 500 and every later transition doubles the cost.
-function Rules.RequiredXP(level) return 250*2^math.max(0,level-2) end
+-- Current level -> next: first four transitions cost 250 each, then
+-- 500, 1000, 2000, 3000... with linear +1000 growth thereafter.
+function Rules.RequiredXP(level)
+ if level<=3 then return 250 end
+ if level==4 then return 500 end
+ return (level-4)*1000
+end
 function Rules.AddXP(state,amount)
  if not state.Confirmed or typeof(amount)~="number" or amount~=amount or amount<=0 or amount==math.huge then return false end
  if state.Level>=Rules.MaxLevel then state.Level=Rules.MaxLevel;state.XP=0;state.Perks.Observant=1;return false end
