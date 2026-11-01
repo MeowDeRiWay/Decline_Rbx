@@ -46,7 +46,7 @@ print("PASS: per-result XP, weapon costs, reusable sewing tool, first aid thresh
 
 do
  local recipe=C.BoilWater
- assert(recipe.Name=="Boil water" and recipe.Requirements.Skills.Doctor==50)
+ assert(recipe.Name=="Boil water" and recipe.Requirements.Skills.Cook==50)
  assert(recipe.XP==0 and not recipe.Food and not recipe.RequiresPresence and recipe.ManualBatch)
  assert(not C.BoilWaterCoal and not recipe.Fuel and recipe.FuelTab=="Coal","coal recipe has no extra fuel charge")
  local plan=assert(R.Plan({DirtyWater=5,Coal=1},recipe,1))
@@ -93,3 +93,6 @@ end
 local filtered=assert(R.Plan({DirtyWater=5,Coal=1},C.FilterWater,1))
 assert(filtered.Outputs.CleanWater==5 and filtered.Ingredients.Coal==1 and not C.FilterWater.Fuel)
 assert(not R.Plan({DirtyWater=5,TreeLog=1},C.FilterWater,1))
+
+assert(C.FilterWater.Requirements.Skills.Doctor==50 and not C.FilterWater.Requirements.Skills.Cook)
+for _,id in ipairs({"BoilWater","BoilWaterWood"}) do assert(C[id].Requirements.Skills.Cook==50 and not C[id].Requirements.Skills.Doctor) end

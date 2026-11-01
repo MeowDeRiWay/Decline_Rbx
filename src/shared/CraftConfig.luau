@@ -163,10 +163,11 @@ local filtered=table.clone(recipes.BoilWater)
 filtered.Name="Filter water";filtered.Station="MedStation";filtered.FuelTab=nil
 filtered.Description="Filter five bottles of dirty water with one charcoal into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
 recipes.FilterWater=filtered
+recipes.BoilWater.Requirements={Skills={Cook=50}}
 recipes.BoilWater.Name="Boil water"
-recipes.BoilWater.Description="Boil five bottles of dirty water with one charcoal into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
+recipes.BoilWater.Description="Boil five bottles of dirty water with one charcoal into five bottles of clean water. Requires Cook 50. Collect the finished batch before starting again."
 local woodWater=table.clone(recipes.BoilWater)
 woodWater.Ingredients={DirtyWater=5,TreeLog=1};woodWater.FuelTab="Wood"
-woodWater.Description="Boil five bottles of dirty water with one log into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
+woodWater.Description="Boil five bottles of dirty water with one log into five bottles of clean water. Requires Cook 50. Collect the finished batch before starting again."
 recipes.BoilWaterWood=woodWater
 return recipes
