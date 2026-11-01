@@ -37,7 +37,7 @@ ItemConfig.Items = {
  Chemicals = {Name="Chemicals",Weight=.2,Description="Scavenged chemical compounds used to produce ammunition."},
  Iron = {Name="Iron",Weight=1,ResourceMaterial="Iron",Description="Smelted iron used for industrial firearms and ammunition."},
  MiliArmor1={Name="Military armor",Weight=5,Slot="Body",Armor={Absorption=6,Resistance=.3},Description="The most talented craftsmen among the remnants of this world began using Kevlar to protect against bites from the infected, adding iron plates to stop bullets."},
- Exosuit={Name="Exoskeleton",Weight=20,Slot="Body",BlocksSlots={Back=true},EquippedWeightMultiplier=.3,Armor={Absorption=12,Resistance=.5},Description="Powered armor. Blocks the backpack slot and reduces the weight of all equipped items by 70% while worn."},
+ Exosuit={Name="Exoskeleton",Weight=20,Slot="Body",BlocksSlots={Back=true},Armor={Absorption=12,Resistance=.5},Description="Powered armor. Blocks the backpack slot."},
  MiliArmor2={Name="Reinforced military armor",Weight=6,Slot="Body",Armor={Absorption=8,Resistance=.4},Description="As it turned out, the protection was not quite enough, so more Kevlar and plates were added wherever they were needed."},
  Kevlar={Name="Kevlar",Weight=.2,Description="Protective fabric used to craft military armor."},
  LeatherArmor2={Name="Reinforced leather jacket",Weight=3,Slot="Body",Armor={Absorption=4,Resistance=.15},Description="Given the circumstances, a few plates were sewn into the jacket to protect the body and arms. Better than it used to be."},

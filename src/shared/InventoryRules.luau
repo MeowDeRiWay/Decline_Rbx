@@ -174,13 +174,8 @@ function Rules.ReconcileEquipment(state,definitions,slots)
   if Rules.SlotBlocked(state,definitions,slot) then Rules.Unequip(state,definitions,slots,slot) end
  end
 end
-function Rules.EquippedWeightMultiplier(state,definitions)
- local multiplier=1
- for _,id in pairs(state.Equipment) do
-  multiplier=math.min(multiplier,definitions[id] and definitions[id].EquippedWeightMultiplier or 1)
- end
- return multiplier
-end
+-- All worn equipment weighs 30% of its inventory weight, with or without armor.
+function Rules.EquippedWeightMultiplier() return .3 end
 function Rules.Weight(state, definitions, ammoMultiplier,equippedMultiplier)
  local total = 0
  local wornMultiplier=Rules.EquippedWeightMultiplier(state,definitions)

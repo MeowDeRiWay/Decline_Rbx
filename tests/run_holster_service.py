@@ -38,7 +38,7 @@ a:LoadCharacterAsync();Service.Reset(a)
 a:SetAttribute("BaseCarryLimitKg",25);a:SetAttribute("CarryLimitKg",25)
 assert(Service.Add(a,"Backpack1",1) and a:GetAttribute("CarryLimitKg")==25,"unequipped backpacks give no bonus")
 assert(equipDraw(a,"Backpack1") and a:GetAttribute("CarryLimitKg")==35 and a.Character:GetAttribute("WornBack")=="Backpack1")
-assert(a.Character:GetAttribute("LoadKg")==1,"equipped backpack contributes its own weight")
+assert(a.Character:GetAttribute("LoadKg")==.3,"equipped backpack contributes its own weight")
 for _=1,5 do Service.Refresh(a);assert(a:GetAttribute("CarryLimitKg")==35,"refresh never stacks the same bonus") end
 assert(Service.Unequip(a,"Back") and a:GetAttribute("CarryLimitKg")==25 and a.Character:GetAttribute("WornBack")==nil)
 assert(equipDraw(a,"Backpack1"))

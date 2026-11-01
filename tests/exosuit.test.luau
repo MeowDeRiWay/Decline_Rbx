@@ -23,10 +23,21 @@ s.ActiveWeaponSlot="SecondaryWeapon"
 close(R.Weight(s,I.Items,1,0),9.15+.3*5*ammo.Weight)
 assert(R.Unequip(s,I.Items,I.Slots,"Body"));assert(not R.SlotBlocked(s,I.Items,"Back"))
 assert(R.Equip(s,I.Items,I.Slots,"Backpack1"))
-close(R.EquippedWeightMultiplier(s,I.Items),1)
+close(R.EquippedWeightMultiplier(s,I.Items),.3)
 -- Restored incompatible combinations return the backpack exactly once.
 s.Equipment.Body="Exosuit";s.Items.Exosuit=nil
 R.ReconcileEquipment(s,I.Items,I.Slots)
 assert(not s.Equipment.Back and s.Items.Backpack1==1)
 R.ReconcileEquipment(s,I.Items,I.Slots);assert(s.Items.Backpack1==1)
 print("PASS: exosuit stats/craft, atomic backpack removal/blocking, full pocket weight, worn gear/ammo discount, perk compatibility and restoration")
+
+local ordinary=R.New()
+assert(R.Add(ordinary,I.Items,"MiliArmor2",1))
+assert(R.Add(ordinary,I.Items,"Pistol9mm",1))
+assert(R.Add(ordinary,I.Items,"SurgicalKit",1))
+local full=R.Weight(ordinary,I.Items)
+for _,id in ipairs({"MiliArmor2","Pistol9mm","SurgicalKit"}) do assert(R.Equip(ordinary,I.Items,I.Slots,id)) end
+close(R.Weight(ordinary,I.Items),full*.3)
+assert(R.Unequip(ordinary,I.Items,I.Slots,"Body"))
+close(R.Weight(ordinary,I.Items),6+(full-6)*.3)
+print("PASS: ordinary armor, held/holstered weapons and Additional use global worn discount; unequipped items regain full weight")

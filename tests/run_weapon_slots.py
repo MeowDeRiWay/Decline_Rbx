@@ -90,7 +90,7 @@ assert(math.abs(Service.Snapshot(a).Weight-(originalWeight-.1))<.000001,"no dupl
 -- Weapon-free weight perk applies to the drawn weapon only.
 assert(HandActions.Switch(a,"SecondaryWeapon"));advance(Pose.DrawDuration)
 a:SetAttribute("EquippedWeaponWeightMultiplier",0)
-assert(math.abs(Service.Snapshot(a).Weight-(originalWeight-.1-ItemConfig.Items.Pistol9mm.Weight))<.000001)
+assert(math.abs(Service.Snapshot(a).Weight-(originalWeight-.1-.3*ItemConfig.Items.Pistol9mm.Weight))<.000001)
 a:SetAttribute("EquippedWeaponWeightMultiplier",1)
 assert(HandActions.Switch(a,"SecondaryWeapon"));advance(Pose.StowDuration)
 assert(Service.Unequip(a,"PrimaryWeapon") and Service.Unequip(a,"SecondaryWeapon"))
