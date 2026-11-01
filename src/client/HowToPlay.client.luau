@@ -93,7 +93,14 @@ Your role will usually be a specialized one. You cannot be everyone at once. The
 Of course, you can mix in a few skills for convenience and greater independence. Just remember: every point spent on a side job is a point you are not putting into your main specialty.
 
 If you plan to build a workshop, a hospital or another specialist building, check its requirements BEFORE spending your skill points.]]},
- {Name="Society",Title="SOCIETY",Text=[[THE MAYOR
+ {Name="Society",Title="SOCIETY",Text=[[GROUPS [G]
+Press G to open the group window. To start a group, approach a player from your faction within 40 studs and keep them in sight, then click Invite beside their name. The invited player presses G and accepts within 30 seconds. The group forms when they accept; the inviter becomes its leader.
+
+A group holds up to 8 players. Only the leader can invite or remove members. Anyone can press G and choose Leave group. Leaving the server or changing your town or faction also removes you from the group.
+
+Press M to find your groupmates: they appear as circles with names, including in unexplored areas. Their markers do not reveal the surrounding terrain. A group is separate from town membership.
+
+THE MAYOR
 The first player in a town becomes its mayor. Residents can elect a replacement: approach the town flag and choose the relevant voting option.
 
 YOUR STORY

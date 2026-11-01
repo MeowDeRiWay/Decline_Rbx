@@ -69,6 +69,11 @@ for index=1,5 do
  scroll.CanvasPosition={0,999}
  tabs[index].Activated:Fire()
  assert(heading.Text==expected[index] and tabs[index].Attributes.Selected)
+ if index==3 then
+  for _,tip in ipairs({"GROUPS [G]","40 studs","30 seconds","8 players","Only the leader","Leave group","Press M","circles with names"}) do
+   assert(string.find(body.Text,tip,1,true),"group help missing: "..tip)
+  end
+ end
  for other=1,5 do assert(tabs[other].Attributes.Selected==(other==index)) end
  assert(scroll.CanvasPosition==Vector2.zero,"switching tabs resets scroll")
  assert(body.Size[1]==616 and scroll.CanvasSize[2]==measures[#measures].Height+24,"canvas covers the full wrapped page")
