@@ -112,8 +112,9 @@ local function setOpen(open)
  local character=player.Character
  if open and (busy() or not character or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or player:GetAttribute("AttributesConfirmed")~=true) then return end
  gui.Enabled=open;player:SetAttribute("MapOpen",open);dragging=nil
+ request:FireServer(open)
  if open then
-  player:SetAttribute("MedicalMode",nil);recenter();request:FireServer()
+  player:SetAttribute("MedicalMode",nil);recenter()
   Context:BindActionAtPriority("MapBlockInput",function() return Enum.ContextActionResult.Sink end,false,Enum.ContextActionPriority.High.Value+12,
    Enum.PlayerActions.CharacterForward,Enum.PlayerActions.CharacterBackward,Enum.PlayerActions.CharacterLeft,Enum.PlayerActions.CharacterRight,Enum.PlayerActions.CharacterJump,
    Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.KeypadOne,Enum.KeyCode.KeypadTwo,Enum.KeyCode.Q,Enum.KeyCode.E,Enum.KeyCode.C,Enum.KeyCode.T,Enum.KeyCode.G,Enum.KeyCode.H,Enum.KeyCode.R,Enum.KeyCode.V,Enum.KeyCode.B,Enum.KeyCode.Four,Enum.KeyCode.KeypadFour,Enum.KeyCode.F6)

@@ -65,16 +65,23 @@ clock+=2;request.OnServerEvent:Fire(again)
 for _,cell in ipairs(state.sent[#state.sent].data.Cells) do
  if cell.X==0 and cell.Z==0 then assert(cell.RoadMask==0,"destroying a sleeping road removes its remembered map geometry") end
 end
-again:LoadCharacterAsync();again:SetAttribute("MapOpen",true);again:SetAttribute("GroupID",7)
+local function lastParty() for i=#state.sent,1,-1 do if state.sent[i].data.GroupMembers then return state.sent[i].data.GroupMembers end end end
+again:LoadCharacterAsync();again:SetAttribute("GroupID",7)
 b:SetAttribute("GroupID",7);c:SetAttribute("GroupID",8)
+clock+=2;request.OnServerEvent:Fire(again,true)
 Service.Step(again)
-local party=state.sent[#state.sent].data.GroupMembers
+local party=lastParty()
 assert(party and #party==1 and party[1].ID==b.UserId and party[1].Name==b.Name and party[1].X==-390,"only own group members, including distant positions")
 local before=#state.sent;Service.Step(again);assert(#state.sent==before,"unchanged positions are not resent")
 b.Character.HumanoidRootPart.Position=Vector3.new(-400,0,10);Service.Step(again)
-assert(state.sent[#state.sent].data.GroupMembers[1].X==-400,"party updates even while viewer stands still")
+assert(lastParty()[1].X==-400,"party updates even while viewer stands still")
 b:SetAttribute("GroupID",0);Service.Step(again)
-assert(#state.sent[#state.sent].data.GroupMembers==0,"leaving group removes marker")
+assert(#lastParty()==0,"leaving group removes marker")
+request.OnServerEvent:Fire(again,false)
+b:SetAttribute("GroupID",7);local closedCount=#state.sent;Service.Step(again)
+assert(#state.sent==closedCount,"closed map stops party traffic without relying on client attributes")
+request.OnServerEvent:Fire(again,true);Service.Step(again)
+assert(#lastParty()==1,"reopening inside terrain throttle still resubscribes")
 print("PASS: sleeping folder roads remain on explored map; actual destruction removes geometry")
 print("PASS: real world footprints, road/house/infra, private fog, movement deltas, KO guards, request limits, fresh-life reset and reconnect")
 '''

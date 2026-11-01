@@ -23,7 +23,8 @@ function player:GetAttribute(k) return self.attrs[k] end
 function player:SetAttribute(k,v) self.attrs[k]=v end
 function player:WaitForChild() return {} end
 local packets={OnClientEvent=signal()};local requests=0
-local request={FireServer=function() requests+=1 end}
+local subscriptions={}
+local request={FireServer=function(_,open) requests+=1;table.insert(subscriptions,{Open=open}) end}
 local Input={InputBegan=signal(),InputChanged=signal(),InputEnded=signal(),WindowFocusReleased=signal(),GetFocusedTextBox=function() return nil end,GetMouseLocation=function() return vec(100,100) end}
 local Context={Bindings={},BindActionAtPriority=function(self,k,f) self.Bindings[k]=f end,UnbindAction=function(self,k) self.Bindings[k]=nil end}
 local Run={RenderStepped=signal()}
@@ -54,11 +55,13 @@ assert(focusX<before and not explored["4:4"],"drag pans without creating markers
 Input.InputEnded:Fire(down);assert(dragging==nil)
 center.Activated:Fire();assert(focusX==10 and focusZ==10)
 press();assert(not gui.Enabled and not player.attrs.MapOpen and not Context.Bindings.MapBlockInput)
+assert(subscriptions[#subscriptions].Open==false,"closing explicitly unsubscribes server")
 player.attrs.InventoryOpen=true;press();assert(not gui.Enabled)
 player.attrs.InventoryOpen=false;press();character.attrs.Knockout=true;Run.RenderStepped:Fire();assert(not gui.Enabled)
 character.attrs.Knockout=false
 packets.OnClientEvent:Fire({Reset=true,OriginX=0,OriginZ=0,Cells={}})
 press();Run.RenderStepped:Fire();for _,t in ipairs(pool) do assert(not t.Frame.Visible) end
+assert(subscriptions[#subscriptions].Open==true,"open explicitly subscribes server")
 packets.OnClientEvent:Fire({GroupMembers={{ID=42,Name="Doctor Repair",X=50,Z=30}}})
 Run.RenderStepped:Fire()
 assert(groupMarkers[1].Dot.Visible and groupMarkers[1].Name.Text=="Doctor Repair" and groupMarkers[1].Name.LocalizationIgnore,"literal member nick and dot render over unexplored map")

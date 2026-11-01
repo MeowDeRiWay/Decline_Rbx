@@ -97,7 +97,7 @@ local function send(player,r,reset)
  flush(false)
 end
 local function sendGroup(player,r)
- if player:GetAttribute("MapOpen")~=true then r.GroupSignature=nil;return end
+ if not r.MapOpen then r.GroupSignature=nil;return end
  local members,signature={},{}
  local group=player:GetAttribute("GroupID")
  if typeof(group)=="number" and group>0 then
@@ -163,14 +163,21 @@ function Service.Start()
  end
  Players.PlayerAdded:Connect(added)
  for _,player in ipairs(Players:GetPlayers()) do added(player) end
- request.OnServerEvent:Connect(function(player)
+ request.OnServerEvent:Connect(function(player,open)
   local r=recordFor(player)
+  -- Client attributes do not replicate to the server; track UI subscriptions
+  -- through the existing remote, independently of throttled terrain requests.
+  if typeof(open)=="boolean" then
+   if r.MapOpen~=open then r.GroupSignature=nil end
+   r.MapOpen=open
+   if not open then return end
+  end
   if r.RequestAt and os.clock()-r.RequestAt<1 then return end
   r.RequestAt=os.clock()
   if dirty then build() end
   Service.Step(player);send(player,r,true)
  end)
- Players.PlayerRemoving:Connect(function(player) local r=records[player.UserId];if r then r.RequestAt=nil end end)
+ Players.PlayerRemoving:Connect(function(player) local r=records[player.UserId];if r then r.RequestAt=nil;r.MapOpen=false;r.GroupSignature=nil end end)
  local elapsed=0
  Run.Heartbeat:Connect(function(dt)
   elapsed+=dt;if elapsed<.5 then return end;elapsed=0
