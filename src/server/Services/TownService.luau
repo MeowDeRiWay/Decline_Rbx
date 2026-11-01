@@ -553,6 +553,11 @@ local function handle(player, command, value, extra)
    if not definition or not definition.Levels[level] or (plot.kind and (plot.kind ~= value or not owns(player, plot))) or plot.pending then return end
    if not templateFor(value, level) then tell(player, "Add the model ServerStorage/Buildings/" .. definition.Levels[level]); return end
    if not hasMaterials(player,value,level) then tell(player,"You need the required building materials in your inventory."); return end
+   if plot.kind then
+    local built,reason=build(plot,value,level,player)
+    tell(player,built and "Upgrade complete." or (reason or "Building template not found in ServerStorage/Buildings."))
+    Service.Publish();return
+   end
    local materials={}
    for id,amount in pairs(costFor(value,level)) do table.insert(materials,tostring(amount).." "..(Items[id] and Items[id].Name or id)) end
    table.sort(materials)

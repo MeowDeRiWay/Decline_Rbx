@@ -71,6 +71,20 @@ assert(marketApproval and not marketPlot:GetAttribute("BuildingID"),"free market
 call(mayor,"Reply",marketApproval,true)
 assert(marketPlot:GetAttribute("BuildingID")=="Market" and marketPlot:FindFirstChild("Market (T1)"),"actual free market construction succeeds")
 assert(logs[mayor.UserId]==beforeWood and scrap[mayor.UserId]==beforeScrap,"market consumes no resources")
+-- Existing property upgrades immediately, even without a mayor response.
+local upgradeTemplate=marketTemplate:Clone();upgradeTemplate.Name="Market (T2)";upgradeTemplate.Parent=ServerStorage.Buildings
+Config.Buildings.Market.Levels[2]="Market (T2)";Config.Buildings.Market.Costs[2]={TreeLog=2}
+local beforeUpgrade=logs[mayor.UserId]
+local approvalCount=0
+for _,entry in ipairs(ReplicatedStorage.TownRemotes.Notice.sent) do if entry.data.Kind=="Approval" then approvalCount+=1 end end
+call(mayor,"Open",marketPlot);call(mayor,"Build","Market")
+assert(marketPlot:GetAttribute("BuildingLevel")==2 and logs[mayor.UserId]==beforeUpgrade-2,"owned upgrade completes and charges once without Reply")
+local afterCount=0
+for _,entry in ipairs(ReplicatedStorage.TownRemotes.Notice.sent) do if entry.data.Kind=="Approval" then afterCount+=1 end end
+assert(afterCount==approvalCount,"upgrade creates no mayor approval")
+Config.Buildings.Market.Levels[2]=nil;Config.Buildings.Market.Costs[2]=nil
+
+
 local newborn=player(909)
 newborn:SetAttribute("OutcastEnd",true)
 assert(Service.LoadCharacter(newborn)==false and newborn.Character==nil)
