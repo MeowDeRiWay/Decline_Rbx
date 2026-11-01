@@ -26,6 +26,6 @@ Input.InputBegan:Connect(function(input,processed)
  ready = os.clock()+cooldown
  sequence=(sequence%2147483646)+1
  remote:FireServer(sequence)
- if weapon.Animation=="Chop" then Motion.PredictChop(motor,weapon,workspace:GetServerTimeNow(),sequence)
+ if weapon.Animation=="Chop" or weapon.Animation=="Thrust" then Motion.PredictChop(motor,weapon,workspace:GetServerTimeNow(),sequence)
  else Motion.Play(motor,weapon) end
 end)

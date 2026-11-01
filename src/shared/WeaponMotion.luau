@@ -24,7 +24,7 @@ function Motion.HitDelay(weapon)
   local windup,strike=Motion.ChopTiming(weapon)
   return windup+strike
  end
- if weapon.Animation=="Thrust" then return .15 end
+ if weapon.Animation=="Thrust" then return .12 end
  return (weapon.Animation == "SwingLeft" or weapon.DamageType == "Blunt") and .25 or 0
 end
 -- Axes use a clocked local Transform, never competing client/server C0 tweens.
@@ -32,7 +32,7 @@ end
 -- the original phase, while other viewers sample the server timestamp directly.
 function Motion.PredictChop(motor,weapon,now,sequence)
  if not motor or not motor.Parent then return end
- active[motor]={Chop=true,StartedAt=now,Duration=60/weapon.AttacksPerMinute,Sequence=sequence}
+ active[motor]={Chop=true,StartedAt=now,Duration=60/weapon.AttacksPerMinute,Sequence=sequence,Mode=weapon.Animation,Distance=weapon.Thrust or .4}
 end
 function Motion.StepChop(motor,now)
  if not motor or not motor.Parent then return nil,false end
@@ -44,6 +44,23 @@ function Motion.StepChop(motor,now)
   start,duration=prediction.StartedAt,prediction.Duration
  end
  if typeof(start)~="number" or typeof(duration)~="number" or duration<=0 then return nil,false end
+ local mode=prediction and prediction.Chop and prediction.Mode or motor:GetAttribute("ChopMode")
+ if mode=="Thrust" then
+  local elapsed=now-start
+  local distance=prediction and prediction.Chop and prediction.Distance or motor:GetAttribute("ChopDistance") or .4
+  local contact=math.min(.12,duration*.3)
+  local finish=math.min(.4,duration)
+  local weight=0
+  if elapsed>=0 and elapsed<contact then
+   local t=elapsed/contact;weight=t*t*(3-2*t)
+  elseif elapsed>=contact and elapsed<finish then
+   local t=(elapsed-contact)/(finish-contact);weight=1-t*t*(3-2*t)
+  end
+  local target=CFrame.new(0,0,-distance*weight)*base
+  motor.Transform=base:Inverse()*target
+  local frame=motor.Part0 and motor.Part0.CFrame*target*(motor.C1 or CFrame.identity):Inverse()
+  return frame,elapsed>=0 and elapsed<finish
+ end
  local elapsed=now-start
  local windup=duration*.6
  local angle=0
@@ -68,11 +85,13 @@ function Motion.Play(motor,weapon,startedAt,sequence)
  if not motor or not motor.Parent then return end
  local base=motor:GetAttribute("RestC0")
  if not base then return end
- if weapon.Animation=="Chop" then
+ if weapon.Animation=="Chop" or weapon.Animation=="Thrust" then
   -- Only the server calls Play for axes. Attributes announce one accepted swing
   -- to every viewer; rendering never streams C0 changes over replication.
   Motion.Cancel(motor)
   motor.C0=base
+  motor:SetAttribute("ChopMode",weapon.Animation)
+  motor:SetAttribute("ChopDistance",weapon.Thrust or .4)
   motor:SetAttribute("ChopDuration",60/weapon.AttacksPerMinute)
   motor:SetAttribute("ChopSequence",sequence or 0)
   motor:SetAttribute("ChopStartedAt",startedAt or workspace:GetServerTimeNow())
@@ -85,11 +104,7 @@ function Motion.Play(motor,weapon,startedAt,sequence)
   state.tween = TweenService:Create(motor,TweenInfo.new(duration,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{C0=target})
   state.tween:Play()
  end
- if weapon.Animation=="Thrust" then
-  motor.C0=CFrame.new(0,0,.08)*base
-  tween(CFrame.new(0,0,-(weapon.Thrust or .4))*base,.15)
-  task.delay(.15,function() if not state.cancelled and motor.Parent then tween(base,.3) end end)
- elseif (weapon.Animation == "SwingLeft" or weapon.DamageType == "Blunt") then
+ if (weapon.Animation == "SwingLeft" or weapon.DamageType == "Blunt") then
   motor.C0 = CFrame.Angles(0,math.rad(-25),0)*base
   tween(CFrame.Angles(0,math.rad(110),0)*base,.25)
   task.delay(.25,function()

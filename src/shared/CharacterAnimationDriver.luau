@@ -120,7 +120,7 @@ RunService.PreSimulation:Connect(function(dt)
   local definition=Items[c:GetAttribute("HandsItem")]
   local motor=held and held:FindFirstChild("WeaponGrip")
   local chopFrame,chopping
-  if definition and definition.HarvestTool=="Axe" then chopFrame,chopping=Motion.StepChop(motor,workspace:GetServerTimeNow()) end
+  if definition and (definition.HarvestTool=="Axe" or definition.HarvestTool=="Shovel") then chopFrame,chopping=Motion.StepChop(motor,workspace:GetServerTimeNow()) end
   local animateChop=chopping or r.Chopping
   r.Chopping=chopping
   r.Elapsed+=dt

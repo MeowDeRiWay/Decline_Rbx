@@ -29,7 +29,7 @@ local blade=Vector3.new(.0250244,-.1999874,-1.1337914)
 for _,material in ipairs({"Scrap","Iron","Steel"}) do
  local axe=Items[material.."Axe"].Weapon
  local shovel=Items[material.."Shovel"].Weapon
- assert(axe.Animation=="Chop" and shovel.Animation=="Thrust" and axe.AttacksPerMinute==40 and shovel.AttacksPerMinute==25)
+ assert(axe.Animation=="Chop" and shovel.Animation=="Thrust" and axe.AttacksPerMinute==40 and shovel.AttacksPerMinute==40)
  local cycle=60/axe.AttacksPerMinute
  local windup,strike=Motion.ChopTiming(axe)
  assert(math.abs(cycle-1.5)<.00001 and windup>.89 and strike>.59)
@@ -66,9 +66,19 @@ for _,material in ipairs({"Scrap","Iron","Steel"}) do
  end
  Motion.Cancel(attacker)
  assert(Motion.StepChop(attacker,200.7)==nil and (attacker.Transform.LookVector-CFrame.identity.LookVector).Magnitude<.0001,"cancel removes predicted and replicated swing")
- Motion.Play(m,shovel)
- assert(latest.Duration==.15 and Motion.HitDelay(shovel)==.15 and m.C0.Position.Z<-.65,"shovel retains its thrust and speed")
- local old=latest;Motion.Play(m,axe,300,9);assert(old.Cancelled,"new chop cancels an older tween")
+ local before=tweens
+ Motion.Play(m,shovel,250,10)
+ local thrust=Motion.StepChop(m,250.12)
+ assert(tweens==before and Motion.HitDelay(shovel)==.12 and m.C0==m:GetAttribute("RestC0"),"shovel never tweens C0")
+ assert((thrust.Position-(m.Part0.CFrame*CFrame.new(0,0,-.4)*m.C0).Position).Magnitude<1e-6)
+ local rest,moving=Motion.StepChop(m,250.4)
+ assert(not moving and (rest.Position-(m.Part0.CFrame*m.C0).Position).Magnitude<1e-6,"thrust returns cleanly to rest")
+ Motion.PredictChop(m,shovel,260,11)
+ local predicted=Motion.StepChop(m,260.1)
+ m:SetAttribute("ChopSequence",11);m:SetAttribute("ChopStartedAt",260.08)
+ assert((Motion.StepChop(m,260.1).Position-predicted.Position).Magnitude<1e-6,"delayed acknowledgement keeps predicted thrust phase")
+ Motion.Cancel(m)
+
 end
 local m=motor();Motion.Play(m,Items.IronKnife.Weapon)
 assert(m.C0.Position.Z==-.3 and Motion.HitDelay(Items.IronKnife.Weapon)==0)
