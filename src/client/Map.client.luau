@@ -39,6 +39,8 @@ for i,entry in ipairs(legend) do
  local t=label(panel,entry[1],UDim2.new(0,35+(i-1)*173,1,-48),UDim2.fromOffset(145,24),12);t.TextXAlignment=Enum.TextXAlignment.Left
 end
 local explored={}
+local groupMembers={}
+local groupMarkers={}
 local originX,originZ=0,0
 local zoom=1
 local focusX,focusZ=0,0 -- world studs relative to grid origin; one stud is one base pixel.
@@ -141,9 +143,10 @@ Input.InputEnded:Connect(function(input)
 end)
 Input.WindowFocusReleased:Connect(function() dragging=nil end)
 state.OnClientEvent:Connect(function(packet)
+ if packet.GroupMembers then groupMembers=packet.GroupMembers end
  if packet.Reset then explored={} end
- originX,originZ=packet.OriginX,packet.OriginZ
- for _,cell in ipairs(packet.Cells) do explored[Rules.Key(cell.X,cell.Z)]=cell end
+ originX,originZ=packet.OriginX or originX,packet.OriginZ or originZ
+ for _,cell in ipairs(packet.Cells or {}) do explored[Rules.Key(cell.X,cell.Z)]=cell end
  dirty=true
 end)
 player.CharacterRemoving:Connect(function() setOpen(false) end)
@@ -158,6 +161,23 @@ Run.RenderStepped:Connect(function()
  end
  local hp=character:FindFirstChildOfClass("Humanoid");if hp then hp:Move(Vector3.zero,false) end
  if dirty then draw() end
+ local w,h=view.AbsoluteSize.X/scale.Scale,view.AbsoluteSize.Y/scale.Scale
+ for index,member in ipairs(groupMembers) do
+  local marker=groupMarkers[index]
+  if not marker then
+   local dot=make("Frame",view,{Name="GroupMapDot",AnchorPoint=Vector2.new(.5,.5),Size=UDim2.fromOffset(9,9),BackgroundColor3=Theme.Accent,BorderSizePixel=0,ZIndex=6})
+   make("UICorner",dot,{CornerRadius=UDim.new(1,0)})
+   local name=label(view,"",UDim2.new(),UDim2.fromOffset(160,22),13)
+   name.Name="GroupMapName";name.ZIndex=7;name.TextXAlignment=Enum.TextXAlignment.Left;name.TextStrokeTransparency=.3
+   name:SetAttribute("LocalizationIgnore",true)
+   marker={Dot=dot,Name=name};groupMarkers[index]=marker
+  end
+  local x=w/2+(member.X-originX-focusX)*zoom
+  local z=h/2+(member.Z-originZ-focusZ)*zoom
+  marker.Dot.Position=UDim2.fromOffset(x,z);marker.Name.Position=UDim2.fromOffset(x+8,z-11)
+  marker.Name.Text=member.Name;marker.Dot.Visible=true;marker.Name.Visible=true
+ end
+ for index=#groupMembers+1,#groupMarkers do groupMarkers[index].Dot.Visible=false;groupMarkers[index].Name.Visible=false end
  local root=character:FindFirstChild("HumanoidRootPart")
  if root then
   local w,h=view.AbsoluteSize.X/scale.Scale,view.AbsoluteSize.Y/scale.Scale

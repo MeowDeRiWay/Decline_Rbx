@@ -10,11 +10,11 @@ end
 local function vec(x,y,z) return setmetatable({X=x,Y=y,Z=z},{__sub=function(a,b) return vec(a.X-b.X,a.Y-b.Y,(a.Z or 0)-(b.Z or 0)) end}) end
 Vector2={new=vec};Vector3={zero={}}
 local function val(...) return {...} end
-UDim2={new=val,fromScale=val,fromOffset=val};Color3={new=val,fromRGB=val}
+UDim={new=val};UDim2={new=val,fromScale=val,fromOffset=val};Color3={new=val,fromRGB=val}
 local function enum() return setmetatable({Value=100},{__index=function(t,k) local v=enum();rawset(t,k,v);return v end}) end
 Enum=enum()
 local objects={}
-Instance={new=function(kind) local o={ClassName=kind,Activated=signal(),InputBegan=signal(),AbsoluteSize=vec(868,464),AbsolutePosition=vec(16,56)};table.insert(objects,o);return o end}
+Instance={new=function(kind) local o={SetAttribute=function(self,k,v) self[k]=v end,ClassName=kind,Activated=signal(),InputBegan=signal(),AbsoluteSize=vec(868,464),AbsolutePosition=vec(16,56)};table.insert(objects,o);return o end}
 local root={Position={X=10,Y=0,Z=10},CFrame={LookVector={X=0,Z=-1}}}
 local hp={Move=function(self) self.Stopped=true end}
 local character={attrs={},GetAttribute=function(self,k) return self.attrs[k] end,FindFirstChild=function() return root end,FindFirstChildOfClass=function() return hp end}
@@ -59,6 +59,12 @@ player.attrs.InventoryOpen=false;press();character.attrs.Knockout=true;Run.Rende
 character.attrs.Knockout=false
 packets.OnClientEvent:Fire({Reset=true,OriginX=0,OriginZ=0,Cells={}})
 press();Run.RenderStepped:Fire();for _,t in ipairs(pool) do assert(not t.Frame.Visible) end
+packets.OnClientEvent:Fire({GroupMembers={{ID=42,Name="Doctor Repair",X=50,Z=30}}})
+Run.RenderStepped:Fire()
+assert(groupMarkers[1].Dot.Visible and groupMarkers[1].Name.Text=="Doctor Repair" and groupMarkers[1].Name.LocalizationIgnore,"literal member nick and dot render over unexplored map")
+assert(groupMarkers[1].Dot.Position[1]>arrow.Position[1],"member position follows map projection")
+packets.OnClientEvent:Fire({GroupMembers={}});Run.RenderStepped:Fire()
+assert(not groupMarkers[1].Dot.Visible and not groupMarkers[1].Name.Visible,"removed members leave no stale markers")
 player.CharacterRemoving:Fire();assert(not gui.Enabled)
 print("PASS: M open/close, exact tile size, fog-only rendering, zoom/pan without markers, center, modal cleanup, KO and character reset")
 '''

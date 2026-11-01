@@ -96,6 +96,27 @@ local function send(player,r,reset)
  end
  flush(false)
 end
+local function sendGroup(player,r)
+ if player:GetAttribute("MapOpen")~=true then r.GroupSignature=nil;return end
+ local members,signature={},{}
+ local group=player:GetAttribute("GroupID")
+ if typeof(group)=="number" and group>0 then
+  for _,member in ipairs(Players:GetPlayers()) do
+   local c=member.Character
+   local root=c and c:FindFirstChild("HumanoidRootPart")
+   local hp=c and c:FindFirstChildOfClass("Humanoid")
+   if member~=player and member:GetAttribute("GroupID")==group and root and hp and hp.Health>0 and not c:GetAttribute("IsDead") and not member:GetAttribute("OutcastEnd") then
+    table.insert(members,{ID=member.UserId,Name=member.Name,X=root.Position.X,Z=root.Position.Z})
+   end
+  end
+ end
+ table.sort(members,function(a,b) return a.ID<b.ID end)
+ for _,member in ipairs(members) do table.insert(signature,string.format("%d:%s:%.2f:%.2f",member.ID,member.Name,member.X,member.Z)) end
+ local key=table.concat(signature,"|")
+ if key~=r.GroupSignature then
+  r.GroupSignature=key;remote:FireClient(player,{GroupMembers=members})
+ end
+end
 function Service.Step(player)
  if dirty and os.clock()-lastBuild>=2 then build() end
  local r=recordFor(player)
@@ -103,6 +124,7 @@ function Service.Step(player)
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")
  if not root or not hp or hp.Health<=0 or player:GetAttribute("CharacterLoading") or player:GetAttribute("Reconnecting") or player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or player:GetAttribute("OutcastEnd") then return end
+ sendGroup(player,r)
  local x,z=Rules.Cell(root.Position.X,root.Position.Z,originX,originZ)
  if r.X==x and r.Z==z and r.Revision==revision then return end
  r.X,r.Z,r.Revision=x,z,revision
