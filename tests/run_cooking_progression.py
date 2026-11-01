@@ -81,7 +81,7 @@ for id,threshold in pairs(requirements) do
  callbacks[#callbacks]();assert(stock[recipe.Output]==2*recipe.OutputCount+(recipe.Output=="SewingKit" and 1 or 0) and xp==before+2*ProgressionRules.CraftExperience(recipe,1))
  assert(not a.Character:GetAttribute("CraftingLocked") and not a.Character.HumanoidRootPart.Anchored)
 end
-for id,entry in pairs({MakeBandage={"FirstAid",50},MakeGreatBandage={"FirstAid",75},MakeSterileBandage={"FirstAid",100},MakeAntiseptic={"Doctor",50},SliceSausage={"Cook",50},MashedPotatoesWithSausage={"Cook",50}}) do
+for id,entry in pairs({MakeBandage={"FirstAid",50},MakeGreatBandage={"FirstAid",75},MakeSterileBandage={"FirstAid",100},MakeAntiseptic={"Doctor",50},SliceSausage={"Cook",50},MashedPotatoesWithSausage={"Cook",60}}) do
  local recipe=Recipes[id];Service.Close(a);fill(recipe,1);assert(Service.Open(a,stations[recipe.Station]))
  medicalSkills[entry[1]]=entry[2]-1;assert(not Service.Cook(a,id,1))
  medicalSkills[entry[1]]=entry[2];assert(Service.Cook(a,id,1));callbacks[#callbacks]()

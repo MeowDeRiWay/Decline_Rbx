@@ -87,19 +87,19 @@ ItemConfig.Items = {
  MashedPotatoesWithSausage_1 = {
   Name = "Mashed potatoes with sausage (plate)", Weight = 0.5,
   Description = "Mashed potatoes with sausage, served on an ordinary plate.",
-  Consume = {Food = 6, Water = -1, Sick = 0},
+  Consume = {Food = 10, Water = -1, Sick = 0},
   ReturnItems = {Plate = 1},
  },
  MashedPotatoesWithSausage_2 = {
   Name = "Mashed potatoes with sausage (plate)", Weight = 0.5,
   Description = "Mashed potatoes with sausage, served on an ordinary plate.",
-  Consume = {Food = 6, Water = -1, Sick = 0},
+  Consume = {Food = 10, Water = -1, Sick = 0},
   ReturnItems = {Plate = 1},
  },
  BoiledPotato = {
   Name = "Boiled potato", Weight = 0.2,
   Description = "A tasty boiled potato. Maybe I could make something else with it?",
-  Consume = {Food = 5, Sick = 0},
+  Consume = {Food = 3, Sick = 0},
  },
  Potato = {
   Name = "Potato", Weight = 0.2,
@@ -205,7 +205,7 @@ for _,id in ipairs({"BoiledPotato","SausageSlice","MashedPotatoesWithSausage_1",
  local base=ItemConfig.Items[id];local food=table.clone(base);food.Consume=table.clone(base.Consume)
  food.Name=base.Name.." (Ramsay)";food.TemplateID=id
  for _,stat in ipairs({"Food","Water"}) do if (food.Consume[stat] or 0)>0 then food.Consume[stat]*=1.5 end end
- food.Consume.Health=5;food.Description=base.Description.." Prepared by a master cook: 50% more positive nutrition and restores 5 HP."
+ food.Description=base.Description.." Prepared by a master cook: 50% more positive nutrition."
  ItemConfig.Items["Ramsay_"..id]=food
 end
 ItemConfig.Items.EmptyBucket={Name="Empty bucket",Weight=1,Slot="Hands",Description="Fill at a well, then water a garden bed."}

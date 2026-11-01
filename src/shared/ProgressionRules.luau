@@ -38,7 +38,7 @@ Rules.Perks={
  {ID="PiercingStrike",Name="Piercing strike",Max=1,Attributes={Strength=7},Skills={Melee=150},Description="Melee and unarmed attacks ignore 2 absorption and 10% resistance."},
  {ID="Sniper",Name="Sniper",Max=1,Attributes={Attention=8},Skills={LightWeapons=200},Description="+10% critical chance with bolt-action rifles after standing still for 2 seconds."},
  {ID="Cowboy",Name="Cowboy",Max=1,Attributes={Agility=6},Skills={LightWeapons=100,Melee=100},Description="+15% damage with pistols and knives."},
- {ID="Ramsay",Name="Ramsay",Max=1,Attributes={Intelligence=6},Skills={Cook=150},Description="Food you prepare restores 5 HP and provides 50% more positive nutrition. The food retains this quality when shared."},
+ {ID="Ramsay",Name="Ramsay",Max=1,Skills={Cook=200},Description="Food you prepare provides 50% more positive nutrition. The food retains this quality when shared."},
  {ID="Scrounger",Name="Scrounger",Max=1,Attributes={Luck=7,Attention=6},Description="25% more ammunition in loot from zombies you kill, when ammunition drops."},
  {ID="KhersonMelons",Name="Kherson watermelons",Max=1,Description="Garden beds in your greenhouse yield 50% more crops."},
 }

@@ -20,11 +20,11 @@ end
 a.Character:SetAttribute("Food",10);a.Character:SetAttribute("Water",50);a.Character:SetAttribute("Sick",2)
 '''
 cases='''
-assert(Service.Eat(a,"Ramsay_BoiledPotato") and a.Character:GetAttribute("Food")==17.5 and hp.Health==95)
+assert(Service.Eat(a,"Ramsay_BoiledPotato") and a.Character:GetAttribute("Food")==14.5 and hp.Health==90)
 assert(a.Character:GetAttribute("Sick")==2 and a.Character:GetAttribute("Water")==50)
 hp.Health=98
-assert(Service.Eat(a,"Ramsay_MashedPotatoesWithSausage_2") and hp.Health==100 and stock.Plate==1)
-assert(a.Character:GetAttribute("Food")==26.5 and a.Character:GetAttribute("Water")==49,"negative nutrition not amplified")
+assert(Service.Eat(a,"Ramsay_MashedPotatoesWithSausage_2") and hp.Health==98 and stock.Plate==1)
+assert(a.Character:GetAttribute("Food")==29.5 and a.Character:GetAttribute("Water")==49,"negative nutrition not amplified")
 assert(not Service.Eat(a,"Ramsay_Potato"),"uncooked food never inherits cook quality")
 assert(Items.Items.Ramsay_BoiledPotato.TemplateID=="BoiledPotato")
 a.Character:SetAttribute("Water",0);a.Character:SetAttribute("Sick",0)
@@ -45,7 +45,7 @@ a.Character:SetAttribute("CraftingLocked",true);assert(not Service.PourOut(a,"Cl
 hp.Health=0;assert(not Service.PourOut(a,"CleanWater"));hp.Health=health
 assert(a.Character:GetAttribute("Water")==water and a.Character:GetAttribute("Sick")==sick and a.Character:GetAttribute("Food")==food and hp.Health==health,"pouring never applies consumption effects")
 print("PASS: liquid pouring, pocket/held returns, invalid items, no duplication or consumption effects, authority guards")
-print("PASS: persistent quality food heals5, positive nutrition x1.5, negatives unchanged, HP cap and plate return")
+print("PASS: persistent quality food does not heal, positive nutrition x1.5, negatives unchanged, HP cap and plate return")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text()]
 for var,module in [('Items','ItemConfig'),('Rules','ConsumableRules')]:parts.append('local '+var+'=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')

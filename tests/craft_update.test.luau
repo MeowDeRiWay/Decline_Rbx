@@ -30,7 +30,7 @@ assert(C.MakePlate.Ingredients.Plank==1 and C.MakePlate.Requirements.Skills.Repa
 local mash=C.MashedPotatoesWithSausage
 assert(not mash.Variants and mash.Ingredients.Plate==1 and mash.Output=="MashedPotatoesWithSausage_2")
 local iron=assert(R.Plan({Scrap=25,Coal=1},C.SmeltIron,1))
-assert(iron.Ingredients.Scrap==25 and iron.Ingredients.Coal==1 and iron.Outputs.Iron==5)
+assert(iron.Ingredients.Scrap==10 and iron.Ingredients.Coal==1 and iron.Outputs.Iron==5)
 assert(not R.Plan({Scrap=100,Coal=1},C.SmeltIron,2))
 assert(not R.Plan({Scrap=25},C.SmeltIron,1))
 assert(C.BoilPotatoesCoal.Duration==C.BoilPotatoes.Duration/2 and C.BoilPotatoesCoal.OutputCount==C.BoilPotatoes.OutputCount)
@@ -48,7 +48,7 @@ do
  local recipe=C.BoilWater
  assert(recipe.Name=="Water purification" and recipe.Requirements.Skills.Doctor==50)
  assert(recipe.XP==0 and not recipe.Food and not recipe.RequiresPresence and recipe.ManualBatch)
- assert(not C.BoilWaterCoal and not recipe.Fuel and recipe.FuelTab=="Coal","one charcoal-only recipe, no extra fuel or log variant")
+ assert(not C.BoilWaterCoal and not recipe.Fuel and recipe.FuelTab=="Coal","coal recipe has no extra fuel charge")
  local plan=assert(R.Plan({DirtyWater=5,Coal=1},recipe,1))
  assert(plan.Ingredients.DirtyWater==5 and plan.Ingredients.Coal==1 and plan.Outputs.CleanWater==5 and not plan.Outputs.Coal)
  assert(P.CraftExperience(recipe,1)==0 and P.CraftOutputs(plan.Outputs,recipe,{Ramsay=true}).CleanWater==5)
@@ -78,3 +78,9 @@ end
 for _,id in ipairs({"MashedPotatoesWithSausage_1","MashedPotatoesWithSausage_2","Ramsay_MashedPotatoesWithSausage_1","Ramsay_MashedPotatoesWithSausage_2"}) do
  assert(Items.Items[id].ReturnItems.Plate==1 and not Items.Items[id].ReturnItems.WoodenPlate,"legacy meals also return ordinary plates")
 end
+
+local wood=assert(R.Plan({DirtyWater=5,TreeLog=1},C.BoilWaterWood,1))
+assert(wood.Outputs.CleanWater==5 and not wood.Outputs.Coal and C.BoilWaterWood.Duration==60)
+assert(C.MakeAntiseptic.Ingredients.CleanWater==1 and C.MakeAntiseptic.Ingredients.MedicalAlcohol==1 and C.MakeAntiseptic.OutputCount==5)
+assert(C.BoilPotatoes.Requirements.Skills.Cook==50 and C.MashedPotatoesWithSausage.Requirements.Skills.Cook==60)
+for _,perk in ipairs(P.Perks) do if perk.ID=="Ramsay" then assert(not perk.Attributes and perk.Skills.Cook==200) end end

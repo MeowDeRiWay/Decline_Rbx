@@ -55,7 +55,7 @@ assert(latest.ReviveLockReduction==180 and latest.ReviveHealthBonus==.2)
 assert(latest.MeleeIgnoreAbsorption==2 and latest.MeleeIgnoreResistance==.1 and latest.SniperCriticalBonus==.1)
 assert(latest.CowboyMultiplier==1.15 and latest.ScroungerMultiplier==1.25 and latest.GreenhouseYieldMultiplier==1.5)
 local food=Items.Items.Ramsay_BoiledPotato
-assert(food.Consume.Food==7.5 and food.Consume.Health==5 and Items.Items.BoiledPotato.Consume.Food==5)
+assert(food.Consume.Food==4.5 and not food.Consume.Health and Items.Items.BoiledPotato.Consume.Food==3)
 local mixed=C.Plan({BoiledPotato=0,Ramsay_BoiledPotato=1,SausageSlice=1,Plate=1},recipes.MashedPotatoesWithSausage,1)
 assert(mixed and mixed.Ingredients.Ramsay_BoiledPotato==1 and not mixed.Ingredients.BoiledPotato,"quality food usable in later recipes")
 local farmer=R.New();farmer.Confirmed=true;assert(farmer.Practice.Farmer==nil and R.TotalSkills(farmer).Farmer==15 and not R.Practice(farmer,"Farmer",10))

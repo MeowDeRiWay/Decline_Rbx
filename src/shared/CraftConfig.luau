@@ -1,7 +1,7 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 local recipes = {
  MakeSterileBandage={Name="Make sterile bandage",Station="MedStation",Description="Sterilize one great bandage with one antiseptic. Requires First Aid 100.",Ingredients={GreatBandage=1,Antiseptic=1},Output="SterileBandage",OutputCount=1,Byproducts={EmptyBottle=1},MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={FirstAid=100}}},
- MakeAntiseptic={Name="Make antiseptic",Station="MedStation",Description="Prepare five antiseptic bottles from five clean water and one medical alcohol. Requires Doctor 50.",Ingredients={CleanWater=5,MedicalAlcohol=1},Output="Antiseptic",OutputCount=5,Byproducts={EmptyBottle=1},MaxBatch=1,Duration=60,RequiresPresence=true,XP=100,Requirements={Skills={Doctor=50}}},
+ MakeAntiseptic={Name="Make antiseptic",Station="MedStation",Description="Prepare five antiseptic bottles from one clean water and one medical alcohol. Requires Doctor 50.",Ingredients={CleanWater=1,MedicalAlcohol=1},Output="Antiseptic",OutputCount=5,Byproducts={EmptyBottle=1},MaxBatch=1,Duration=60,RequiresPresence=true,XP=100,Requirements={Skills={Doctor=50}}},
  MakeBackpack1={Name="Make simple backpack",Station="Workstation",Description="Sew a simple backpack from three cloth. Requires Repair 50 and a reusable sewing kit in your inventory.",Ingredients={Cloth=3},Output="Backpack1",OutputCount=1,MaxBatch=1,Duration=60,RequiresPresence=true,Tool="SewingKit",Requirements={Skills={Repair=50}}},
  MakeLeatherArmor2={Name="Reinforce leather jacket",Station="Workstation",Description="Sew scrap plates into a leather jacket. Requires one leather jacket, five scrap, Repair 80 and a reusable sewing kit in your inventory.",Ingredients={LeatherArmor=1,Scrap=5},Output="LeatherArmor2",OutputCount=1,MaxBatch=1,Duration=60,RequiresPresence=true,Tool="SewingKit",Requirements={Skills={Repair=80}}},
  MakeLeatherArmor={Name="Make leather jacket",Station="Workstation",Description="Sew a leather jacket from six cloth. Requires Repair 60 and a reusable sewing kit in your inventory.",Ingredients={Cloth=6},Output="LeatherArmor",OutputCount=1,MaxBatch=1,Duration=60,RequiresPresence=true,Tool="SewingKit",Requirements={Skills={Repair=60}}},
@@ -18,7 +18,7 @@ local recipes = {
  BurnWoodParts={FuelTab="Wood",Name="Burn planks or handles into charcoal",Station="Stove",Stations={"Stove","Furnace"},Description="Burn any combination of three planks or handles into one charcoal in 10 seconds. Collect the finished batch before starting again.",Ingredients={},IngredientGroups={{IDs={"Plank","Handle"},Count=3}},Output="Coal",OutputCount=1,MaxBatch=1,Duration=10,XP=15},
  MakeSurgicalKit={Name="Make surgical kit",Station="Workstation",Category="Tools",Description="Make a reusable surgical kit from one iron. Requires Repair 100.",Ingredients={Iron=1},Output="SurgicalKit",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={Repair=100}}},
  MakePlate={Name="Make plate",Station="Workstation",Description="Make an ordinary plate from one plank. Requires Repair 25.",Ingredients={Plank=1},Output="Plate",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=25,Requirements={Skills={Repair=25}}},
- SmeltIron={Name="Smelt iron",Station="Furnace",WorkshopLevel=2,Description="Smelt 25 scrap with one charcoal into five iron. Requires a Workshop T2 furnace; you may leave.",Ingredients={Scrap=5},Fuel={ID="Coal",Count=1},Output="Iron",OutputCount=1,MaxBatch=5,Duration=120},
+ SmeltIron={Name="Smelt iron",Station="Furnace",WorkshopLevel=2,Description="Smelt 25 scrap with one charcoal into five iron. Requires a Workshop T2 furnace; you may leave.",Ingredients={Scrap=2},Fuel={ID="Coal",Count=1},Output="Iron",OutputCount=1,MaxBatch=5,Duration=120},
  MakeAmmo223={Name="Make .223 FMJ ammunition",Station="Workstation",Description="Produce 30 standard .223 rounds in 30 seconds. Requires Repair 100.",Ingredients={Iron=1,Coal=1,Chemicals=1},Output="Ammo223FMJ",OutputCount=30,MaxBatch=1,Duration=30,RequiresPresence=true,XP=200,Requirements={Skills={Repair=100}}},
  MakeRifle223={Name="Make .223 bolt-action rifle",Station="Workstation",Description="Assemble a .223 bolt-action rifle. Requires Repair 100.",Ingredients={Iron=5,Plank=2},Output="Rifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=100}}},
  MakeAssaultRifle223={Name="Make .223 assault rifle",Station="ArmsBench",Description="Assemble a .223 assault rifle. Requires Repair 120.",Ingredients={Iron=5,Plank=2},Output="AssaultRifle223",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=120}}},
@@ -97,11 +97,11 @@ local recipes = {
  },
  MashedPotatoesWithSausage = {
   Name = "Mashed potatoes with sausage", Food=true, Station = "CuttingBoard",
-  Description = "Prepare mashed potatoes with sausage on an ordinary plate. Requires Cook 50.",
+  Description = "Prepare mashed potatoes with sausage on an ordinary plate. Requires Cook 60.",
   Ingredients = {BoiledPotato = 1, SausageSlice = 1, Plate = 1},
   Output = "MashedPotatoesWithSausage_2",
   OutputCount = 1, MaxBatch = 1, Duration = 20, RequiresPresence = true,
-  Requirements = {Skills = {Cook = 50}},
+  Requirements = {Skills = {Cook = 60}},
  },
 }
 
@@ -143,7 +143,7 @@ recipes.BoilWater.Ingredients={DirtyWater=5,Coal=1}
 recipes.BoilWater.FuelTab="Coal"
 recipes.BoilWater.Requirements={Skills={Doctor=50}}
 recipes.BoilWater.Description="Purify five bottles of dirty water with one charcoal into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
-recipes.SmeltIron.Description="Smelt 25 scrap into five iron using one charcoal. Requires a Workshop T2 furnace. Collect the finished batch before starting again."
+recipes.SmeltIron.Description="Smelt 10 scrap into five iron using one charcoal. Requires a Workshop T2 furnace. Collect the finished batch before starting again."
 recipes.SmeltSteel.Description="Refine five iron into five steel using one charcoal. Requires Repair 150 and a Workshop T2 furnace. Collect the finished batch before starting again."
 
 -- Stove food is exclusively boiled; frying/baking belongs at another station.
@@ -158,4 +158,9 @@ for id,recipe in pairs(recipes) do
  end
 end
 for id,recipe in pairs(charcoalVariants) do recipes[id]=recipe end
+-- Alternative fuel for the same five-bottle purification batch.
+local woodWater=table.clone(recipes.BoilWater)
+woodWater.Ingredients={DirtyWater=5,TreeLog=1};woodWater.FuelTab="Wood"
+woodWater.Description="Purify five bottles of dirty water with one log into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
+recipes.BoilWaterWood=woodWater
 return recipes
