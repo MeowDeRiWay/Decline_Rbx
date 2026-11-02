@@ -29,7 +29,11 @@ local baseStats=setmetatable({},{__mode="k"})
 local function applyDayStats(model,hp,base)
  local stats=table.clone(base)
  if workspace:GetAttribute("IsNight") then for id,value in pairs(stats) do stats[id]=value+2 end end
- local level=math.max(0,(workspace:GetAttribute("WorldDay") or 1)-1)
+ local now=workspace:GetAttribute("ElapsedGameHours") or 0
+ local born=model:GetAttribute("ZombieBornGameHours")
+ if born==nil then born=now;model:SetAttribute("ZombieBornGameHours",born) end
+ local level=math.max(0,math.floor((now-born)/24))
+ model:SetAttribute("SurvivedDays",level)
  local derived=Progression.Bonuses(stats,nil,level)
  model:SetAttribute("CharacterLevel",level);model:SetAttribute("DailyDamageBonus",level)
  local skills=Progression.SkillValues(stats)
@@ -47,7 +51,15 @@ local function refreshStats()
  end
 end
 workspace:GetAttributeChangedSignal("IsNight"):Connect(refreshStats)
-workspace:GetAttributeChangedSignal("WorldDay"):Connect(refreshStats)
+workspace:GetAttributeChangedSignal("WorldAgeHour"):Connect(function()
+ local now=workspace:GetAttribute("ElapsedGameHours") or 0
+ for model,base in pairs(baseStats) do
+  local hp=model:FindFirstChildOfClass("Humanoid")
+  local born=model:GetAttribute("ZombieBornGameHours") or now
+  local level=math.max(0,math.floor((now-born)/24))
+  if model.Parent and hp and hp.Health>0 and not model:GetAttribute("IsDead") and level~=(model:GetAttribute("SurvivedDays") or 0) then applyDayStats(model,hp,base) end
+ end
+end)
 local function positive(value)
  return typeof(value)=="number" and value==value and value>0 and value<math.huge
 end
@@ -69,6 +81,7 @@ local function prepare(model)
  humanoid.JumpHeight=0
  humanoid.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None
  local stats=ZombieStats.Roll(statRandom)
+ model:SetAttribute("ZombieBornGameHours",nil)
  baseStats[model]=stats
  applyDayStats(model,humanoid,stats)
  humanoid.Health=humanoid.MaxHealth
