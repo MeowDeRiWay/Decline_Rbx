@@ -18,9 +18,9 @@ function Rules.Cost(material,thickness,caliber)
  return thickness*(1+resistance)
 end
 function Rules.ArmorIgnore(caliber,kind)
- if caliber=="223" then return kind=="AP" and 3 or 2,kind=="AP" and .15 or .1 end
- if caliber=="308" then return 5,kind=="AP" and .4 or .2 end
- -- No 9 mm armor-ignore values have been specified yet.
+ if caliber=="9mm" then return kind=="AP" and 2 or 0,kind=="AP" and .1 or .05 end
+ if caliber=="223" then return kind=="AP" and 3 or 0,.2 end
+ if caliber=="308" then return kind=="AP" and 6 or 0,.4 end
  return 0,0
 end
 -- Slab intersection in Part local coordinates; returns path distances, not bbox size.

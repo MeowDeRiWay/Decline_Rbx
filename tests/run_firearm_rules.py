@@ -23,7 +23,7 @@ assert(Rules.Cost("Brick",.1,"9mm")==math.huge and Rules.Cost("Concrete",.1,"223
 assert(Rules.Cost("Concrete",.1,"308")<450)
 assert(Rules.Cost("Wood",.1,"AP")==Rules.Cost("Wood",.1,"FMJ"))
 assert(Rules.Cost("Unknown",.1,"AP")==math.huge)
-for _,case in ipairs({{"223","FMJ",2,.1},{"223","AP",3,.15},{"308","FMJ",5,.2},{"308","AP",5,.4},{"9mm","FMJ",0,0},{"9mm","AP",0,0}}) do
+for _,case in ipairs({{"223","FMJ",0,.2},{"223","AP",3,.2},{"308","FMJ",0,.4},{"308","AP",6,.4},{"9mm","FMJ",0,.05},{"9mm","AP",2,.1}}) do
  local absorption,resistance=Rules.ArmorIgnore(case[1],case[2]);assert(absorption==case[3] and resistance==case[4])
 end
 print("PASS: full ammo boxes, invalid caliber/type, thin/angled wall intervals, layer union/no double counting, caliber material gates and armor ignore, unknown stops")
