@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/FirearmProjectiles.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 service=re.sub(r'local (Rules|Damage|Accuracy|BulletCast)=require[^\n]+\n','',service)
 mock='''
-local Accuracy={SightBonus=function() return 0 end,ForWeapon=function() return 25 end}
+local Accuracy={Chance=function() return 90 end,NightMultiplier=function() return 1 end,SightBonus=function() return 0 end,ForWeapon=function() return 25 end}
 function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
 local function signal() return {Connect=function(self,fn) self.fire=fn end} end
 local heartbeat=signal()
@@ -111,13 +111,13 @@ local brick=0
 for _,packet in ipairs(packets) do for _,e in ipairs(packet) do if e.Kind=="Impact" and e.Material=="Brick" then brick+=1 end end end
 assert(brick==2,"two visual layers produce ONE entrance and ONE exit")
 local ap=run("Brick","AP");assert(math.abs(ap-fmj)<1e-8,"AP and FMJ lose identical range/damage through walls")
-assert(lastOptions.ArmorIgnoreAbsorption==3 and lastOptions.ArmorIgnoreResistance==.15)
+assert(lastOptions.ArmorIgnoreAbsorption==3 and lastOptions.ArmorIgnoreResistance==.2)
 assert(run("Concrete","FMJ")==0 and run("Concrete","AP")==0,"223 cannot penetrate concrete")
 definition.Caliber="9mm";definition.Range=200
 assert(run("Brick","FMJ")==0 and run("Brick","AP")==0,"9mm cannot penetrate brick even with SMG range")
 definition.Caliber="308";definition.Range=450
 assert(run("Concrete","FMJ")>0 and run("Concrete","AP")>0,"308 crosses a10cm concrete wall")
-assert(lastOptions.ArmorIgnoreAbsorption==5 and lastOptions.ArmorIgnoreResistance==.4)
+assert(lastOptions.ArmorIgnoreAbsorption==6 and lastOptions.ArmorIgnoreResistance==.4)
 definition.Caliber="223";definition.Range=350
 assert(run("Metal","FMJ")==0,"insufficient budget stops projectile before target")
 assert(run("Unknown","AP")==0,"unknown material stops safely")
@@ -156,7 +156,11 @@ for _,entry in ipairs({{"LSW223",18,22},{"ServiceRifle223",21,25},{"MarksmanRifl
  highRoll=false;assert(math.abs(run(nil,"FMJ")-entry[2]*clear/25)<1e-6,entry[1].." minimum damage")
  highRoll=true;assert(math.abs(run(nil,"AP")-entry[3]*clear/25)<1e-6,entry[1].." maximum damage")
 end
--- Rockets stop at the first wall and apply one area hit per humanoid.
+-- Rockets stop at the first wall and never roll a second hit chance.
+Damage.RollHit=function() error("rockets must use physical collisions, not impact hit rolls") end
+for _,entry in ipairs({{"ScrapKnife",10,15},{"IronKnife",20,25},{"SteelKnife",30,40}}) do
+ local w=Items[entry[1]].Weapon;assert(w.DamageMin==entry[2] and w.DamageMax==entry[3])
+end
 task={spawn=function(fn) fn() end}
 local rootPart={Position=Vector3.new(0,0,5)}
 function target:FindFirstChild(name) return name=="HumanoidRootPart" and rootPart or nil end

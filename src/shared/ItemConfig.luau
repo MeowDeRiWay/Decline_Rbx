@@ -128,7 +128,7 @@ for tier,material in ipairs({"Scrap","Iron","Steel"}) do
  ItemConfig.Items[material.."Knife"]={
   Name=material.." knife", Weight=.3, Slot="Hands", CraftTool="Knife", CraftSpeed=1,
   Description="A sharp knife for combat and slicing food.",
-  Weapon={Damage=tier*10, AttacksPerMinute=40, DamageType="Piercing", MaxUses=500,
+  Weapon={Damage=tier*10,DamageMin=tier*10,DamageMax=({15,25,40})[tier], AttacksPerMinute=40, DamageType="Piercing", MaxUses=500,
    CanDamageStructures=false, Range=1.2, Width=.7, Thrust=.5},
  }
 end

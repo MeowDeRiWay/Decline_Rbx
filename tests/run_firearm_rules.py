@@ -4,6 +4,9 @@ root=Path(__file__).resolve().parents[1]
 mock=(root/'tests/city_geometry.fixture.luau').read_text()
 rules=(root/'src/shared/FirearmRules.luau').read_text()
 cases='''
+assert(Rules.RocketYaw(.9,.1,1)==0,"successful aim keeps the initial direction")
+assert(Rules.RocketYaw(.1,.5,1)>Rules.RocketYaw(.8,.9,1),"poor chance widens deviation")
+assert(math.abs(Rules.RocketYaw(0,1,-1)+math.rad(5))<1e-9,"deviation is bounded to5 degrees")
 assert(Rules.BoxCount(50,0)==50 and Rules.BoxCount(50,.99999)==50)
 assert(Rules.BoxCount(-1,.5)==nil and Rules.BoxCount(0/0,.5)==nil)
 assert(Rules.AmmoID("223","FMJ")=="Ammo223FMJ" and Rules.AmmoID("223","AP")=="Ammo223AP")

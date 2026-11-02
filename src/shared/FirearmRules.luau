@@ -9,6 +9,12 @@ function Rules.BoxCount(maximum,roll)
  if typeof(maximum)~="number" or maximum~=maximum or maximum<1 or maximum==math.huge then return nil end
  return math.min(10000,math.floor(maximum))
 end
+-- A failed aim roll changes the initial trajectory, never collision damage.
+function Rules.RocketYaw(chance,aimRoll,spreadRoll)
+ chance=math.clamp(chance,0,1)
+ if aimRoll<chance then return 0 end
+ return math.rad(5)*(1-chance)*math.clamp(spreadRoll,-1,1)
+end
 -- FMJ and AP use the same world-material budget. Caliber sets material access.
 function Rules.Cost(material,thickness,caliber)
  if material=="Brick" and caliber~="223" and caliber~="308" then return math.huge end

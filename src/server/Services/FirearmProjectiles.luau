@@ -64,11 +64,23 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  if definition.Category=="Rifle" and definition.SingleOnly and definition.BoltAction~=false and (player:GetAttribute("SniperCriticalBonus") or 0)>0 then
   if workspace:GetServerTimeNow()-(player:GetAttribute("StationarySince") or workspace:GetServerTimeNow())>=2 then sniperBonus=player:GetAttribute("SniperCriticalBonus") end
  end
+ local aimedDirection=direction
+ if definition.Projectile=="Rocket" then
+  local skill=Accuracy.ForWeapon(player,{Firearm=definition})
+  local bonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem"))
+  local aimHit=BulletCast.Raycast(origin,direction*definition.Range,{character})
+  local target=aimHit and victimOf(aimHit.Instance)
+  local chance=target and Damage.HitChance and Damage.HitChance(player,target,bonus,skill)
+   or Accuracy.Chance(skill,bonus,aimHit and (aimHit.Position-origin).Magnitude or 0,0,Accuracy.NightMultiplier(player))/100
+  local yaw=Rules.RocketYaw(chance,random:NextNumber(),random:NextNumber(-1,1))
+  local c,s=math.cos(yaw),math.sin(yaw)
+  direction=Vector3.new(direction.X*c-direction.Z*s,direction.Y,direction.X*s+direction.Z*c).Unit
+ end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
   Projectile=definition.Projectile,BlastRadius=definition.BlastRadius,Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
   SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",IgnoredDormant={},BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true and definition.BoltAction~=false,Ignored={character},Impacts=0}
- if definition.Projectile=="Rocket" then Service.Backblast(player,character,origin,direction,definition,itemID) end
+ if definition.Projectile=="Rocket" then Service.Backblast(player,character,origin,aimedDirection,definition,itemID) end
  emit("Muzzle",origin)
  return true
 end

@@ -49,18 +49,21 @@ local function armorClass(actor,model)
  if not hands or hands=="" then value+=actor:GetAttribute("UnarmedArmorClass") or 0 end
  return value
 end
-function Service.RollHit(attacker,humanoid,bonus,skill)
- if attacker:IsA("Player") and attacker:GetAttribute("AttributesConfirmed")==false then return false end
- if friendly(attacker,humanoid.Parent) then return false end
+function Service.HitChance(attacker,humanoid,bonus,skill)
+ if attacker:IsA("Player") and attacker:GetAttribute("AttributesConfirmed")==false then return 0 end
+ if friendly(attacker,humanoid.Parent) then return 0 end
  local defender=Players:GetPlayerFromCharacter(humanoid.Parent)
- if defender and defender:GetAttribute("AttributesConfirmed")==false then return false end
+ if defender and defender:GetAttribute("AttributesConfirmed")==false then return 0 end
  local dodge=armorClass(defender or humanoid.Parent,humanoid.Parent)
  local character=attacker:IsA("Player") and attacker.Character or attacker
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local target=humanoid.Parent:FindFirstChild("HumanoidRootPart",true) or humanoid.Parent:FindFirstChildWhichIsA("BasePart",true)
- if not root or not target then return false end
+ if not root or not target then return 0 end
  local chance=Accuracy.Chance(skill or Accuracy.ForWeapon(attacker,Items[character:GetAttribute("HandsItem")]),bonus,(target.Position-root.Position).Magnitude,dodge,Accuracy.NightMultiplier(attacker))/100
- return math.random()<chance
+ return chance
+end
+function Service.RollHit(attacker,humanoid,bonus,skill)
+ return math.random()<Service.HitChance(attacker,humanoid,bonus,skill)
 end
 function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,options)
  local target = humanoid.Parent
