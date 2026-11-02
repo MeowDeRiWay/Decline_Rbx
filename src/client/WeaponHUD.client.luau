@@ -105,7 +105,7 @@ local function refresh()
   ammoCount.Text=string.format("%d / %d",loaded,definition.Firearm.Magazine)
   ammoCount.TextColor3=character:GetAttribute("Reloading") and Theme.Danger or Theme.Accent
   hint.Text..="\nMode: "..(definition.Firearm.SingleOnly and "Single" or character:GetAttribute("FireMode") or "Auto")..(definition.Firearm.SingleOnly and "" or " · V to switch").."\nR reload · B ammo type"
-  hint.Text..=string.format("\nAmmo %d / %d · %s · Reserve %d%s",loaded,definition.Firearm.Magazine,character:GetAttribute("AmmoType") or "FMJ",character:GetAttribute("ReserveAmmo") or 0,character:GetAttribute("Reloading") and " · Reloading" or "")
+  hint.Text..=string.format("\nAmmo %d / %d · %s · Reserve %d%s",loaded,definition.Firearm.Magazine,definition.Firearm.Projectile=="Rocket" and "HE" or character:GetAttribute("AmmoType") or "FMJ",character:GetAttribute("ReserveAmmo") or 0,character:GetAttribute("Reloading") and " · Reloading" or "")
  end
 end
 local function bind(model)

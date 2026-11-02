@@ -40,6 +40,8 @@ local function update(player)
  if armor then absorption=armor.Absorption or 0;resistance=armor.Resistance or 0 end
  local handSlot=Rules.HandSlot(state)
  local handItem=state.MedicalHeld and state.Equipment.Medicine or Rules.HandItem(state)
+ player:SetAttribute("ArmorExplosiveAbsorption",armor and armor.ExplosiveAbsorption or 0)
+ player:SetAttribute("ArmorExplosiveResistance",armor and armor.ExplosiveResistance or 0)
  player:SetAttribute("HandsEquipped",handItem or "");player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,.9))
  local back=state.Equipment.Back and ItemConfig.Items[state.Equipment.Back]
  local carryBonus=back and back.CarryBonusKg or 0

@@ -72,6 +72,7 @@ action.OnServerEvent:Connect(function(player,command,direction)
   if now<(state.NextMode or 0) then return end
   state.NextMode=now+.25;state.Mode=state.Mode=="Auto" and "Single" or "Auto";Inventory.SaveMagazine(player,state.Loaded,state.Type,state.Mode);sync(player,state,gun);return
  elseif command=="Type" then
+  if gun.Projectile=="Rocket" then return end
   if now<(state.NextType or 0) then return end
   Audio.Stop(state.ReloadSound);state.ReloadSound=nil
   state.NextType=now+.3;state.Token+=1;state.Reloading=false;state.Loaded=0

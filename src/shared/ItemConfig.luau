@@ -202,6 +202,12 @@ for _,kind in ipairs({"FMJ","AP"}) do
   ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="A box of "..ammo.Name.." "..kind.." rounds. Collect it to unpack the ammunition. "..role..armorText,AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=30}}
  end
 end
+-- AT-4 uses the existing magazine channel; its sole ammunition is HE.
+ItemConfig.Items.AT4={Name="AT-4",Weight=6.7,Slot="Hands",Description="Heavy weapon. Fires a high-explosive rocket: 100 explosive damage within 10 studs. Walls reduce blast damage by 50%. Does not destroy structures.",Firearm={Category="Launcher",Skill="HeavyWeapons",Caliber="AT4",Magazine=1,ReloadTime=4,Speed=100,Range=300,Damage=100,DamageMin=100,DamageMax=100,RPM=15,SingleOnly=true,BoltAction=false,ShotDistance=150,Projectile="Rocket",BlastRadius=10},Weapon={Damage=100,DamageType="Explosive",MaxUses=500,AttacksPerMinute=15}}
+ItemConfig.Items.AmmoAT4FMJ={Name="AT-4 HE rocket",Weight=1.8,Description="High-explosive rocket for the AT-4. Does not destroy structures.",Ammo={Caliber="AT4",Type="FMJ"}}
+for _,item in pairs(ItemConfig.Items) do
+ if item.Armor then item.Armor.ExplosiveAbsorption=0;item.Armor.ExplosiveResistance=0 end
+end
 -- Prepared-food quality is an item variant, so it survives sharing, chests and drops.
 for _,id in ipairs({"BoiledPotato","SausageSlice","MashedPotatoesWithSausage_1","MashedPotatoesWithSausage_2"}) do
  local base=ItemConfig.Items[id];local food=table.clone(base);food.Consume=table.clone(base.Consume)

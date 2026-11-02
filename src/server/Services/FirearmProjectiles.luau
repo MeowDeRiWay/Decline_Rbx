@@ -66,7 +66,7 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
-  Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
+  Projectile=definition.Projectile,BlastRadius=definition.BlastRadius,Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
   SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",IgnoredDormant={},BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true and definition.BoltAction~=false,Ignored={character},Impacts=0}
  emit("Muzzle",origin)
  return true
@@ -88,6 +88,33 @@ if Damage.RollHit(bullet.Player,victim,bullet.SightBonus,bullet.Skill) then
  end
 else Damage.Miss(victim.Parent,bullet.Player,"Ranged") end
 end
+local function explode(bullet,point)
+ emit("Explosion",point,{Radius=bullet.BlastRadius or 10})
+ -- Wake nearby actors and geometry before querying; deduplicate multipart rigs.
+ task.spawn(function()
+  local radius=bullet.BlastRadius or 10
+  WorldActivity.Ensure(point,radius+2)
+  local victims={}
+  for _,part in ipairs(workspace:GetPartBoundsInRadius(point,radius+3)) do
+   local hp=victimOf(part)
+   if hp then victims[hp]=true end
+  end
+  local ignored={}
+  for hp in pairs(victims) do table.insert(ignored,hp.Parent) end
+  if bullet.Character then table.insert(ignored,bullet.Character) end
+  for hp in pairs(victims) do
+   local model=hp.Parent
+   local root=model and (model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart",true))
+   if root and hp.Health>0 and (root.Position-point).Magnitude<=radius then
+    local shield=BulletCast.Raycast(point,root.Position-point,ignored)
+    local amount=bullet.Damage*(shield and .5 or 1)
+    model:SetAttribute("LastDamagerID",bullet.Player.UserId)
+    model:SetAttribute("LastHitItem",bullet.ItemID)
+    Damage.Apply(hp,amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=bullet.Player})
+   end
+  end
+ end)
+end
 RunService.Heartbeat:Connect(function(dt)
  for id,bullet in pairs(bullets) do
   local distance=math.min(bullet.Speed*math.min(dt,.1),bullet.Remaining)
@@ -102,6 +129,11 @@ RunService.Heartbeat:Connect(function(dt)
    bullet.Remaining-=traveled;distance-=traveled;bullet.Position=hit.Position
    bullet.Impacts+=1
    if bullet.Impacts>64 then stopped=true;break end
+   if bullet.Projectile=="Rocket" then
+    -- Offset onto the incoming side so the struck wall shields its far side.
+    explode(bullet,hit.Position-bullet.Direction*.05)
+    stopped=true;break
+   end
    local victim=victimOf(hit.Instance)
    if victim and victim.Health>0 then
     if dormant then
@@ -132,7 +164,7 @@ RunService.Heartbeat:Connect(function(dt)
    bullet.Speed*=math.sqrt(math.max(.1,bullet.Remaining/(bullet.Remaining+cost)))
    emit("Impact",bullet.Position,{Direction=bullet.Direction,Material=kind,Exit=true})
   end
-  emit("Trace",bullet.Position,{ID=id,Direction=bullet.Direction})
+  emit("Trace",bullet.Position,{ID=id,Direction=bullet.Direction,Rocket=bullet.Projectile=="Rocket"})
   if stopped or bullet.Remaining<=.00001 then emit("Stop",bullet.Position,{ID=id});bullets[id]=nil;count-=1 end
  end
  if #fx==0 then return end

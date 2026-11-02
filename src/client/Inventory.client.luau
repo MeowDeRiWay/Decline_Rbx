@@ -278,7 +278,7 @@ local function renderItems(frame, items, side)
   if not chestOpen then
    if definition.Slot then itemAction("Equip","Equip",selection) end
    if definition.Consume then itemAction(definition.ConsumeAction or "Consume","Consume",id) end
-   if definition.Ammo then itemAction("Pack ammunition","PackAmmo",id) end
+   if definition.Ammo and definition.Ammo.Caliber~="AT4" then itemAction("Pack ammunition","PackAmmo",id) end
    if definition.PackedAmmo then itemAction("Unpack ammunition","UnpackAmmo",id) end
    if definition.EmptyContainer then itemAction("Pour out","PourOut",id) end
   end

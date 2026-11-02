@@ -156,6 +156,31 @@ for _,entry in ipairs({{"LSW223",18,22},{"ServiceRifle223",21,25},{"MarksmanRifl
  highRoll=false;assert(math.abs(run(nil,"FMJ")-entry[2]*clear/25)<1e-6,entry[1].." minimum damage")
  highRoll=true;assert(math.abs(run(nil,"AP")-entry[3]*clear/25)<1e-6,entry[1].." maximum damage")
 end
+-- Rockets stop at the first wall and apply one area hit per humanoid.
+task={spawn=function(fn) fn() end}
+local rootPart={Position=Vector3.new(0,0,5)}
+function target:FindFirstChild(name) return name=="HumanoidRootPart" and rootPart or nil end
+function workspace:GetPartBoundsInRadius() return {parts[#parts],parts[#parts]} end
+definition=Items.AT4.Firearm
+assert(definition.Skill=="HeavyWeapons" and definition.Magazine==1)
+for _,kind in ipairs({false,"Brick"}) do
+ parts={};packets={};dealt=0
+ if kind then part(group(kind),3,.1) end
+ part(target,5,.5)
+ Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
+ for i=1,200 do heartbeat.fire(1/60) end
+ assert(dealt==(kind and 50 or 100),"blast is flat100, wall halves once, rig parts deduplicated")
+ local explosions=0
+ for _,batch in ipairs(packets) do for _,event in ipairs(batch) do if event.Kind=="Explosion" then explosions+=1 end end end
+ assert(explosions==1,"one explosion per rocket")
+end
+rootPart.Position=Vector3.new(0,0,20)
+parts={};dealt=0;part(group("Brick"),3,.1);part(target,20,.5)
+Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
+for i=1,200 do heartbeat.fire(1/60) end
+assert(dealt==0,"outside blast radius is safe")
+for _,item in pairs(Items) do if item.Armor then assert(item.Armor.ExplosiveAbsorption==0 and item.Armor.ExplosiveResistance==0) end end
+print("PASS: AT4 first-impact detonation,100/50 blast damage, deduplication, radius and separate armor fields")
 print("PASS: configured .223 and .308 marksman weapons roll exact new damage endpoints")
 print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, FMJ/AP wall parity and caliber gates, metal/unknown stop and exact air range")
 '''

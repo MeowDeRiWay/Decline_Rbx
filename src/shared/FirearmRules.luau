@@ -2,6 +2,7 @@ local Rules={}
 -- Gameplay resistance: additional range consumed per stud of material.
 Rules.Resistance={Glass=15,Wood=180,Aluminum=180,Brick=1800,Concrete=3200,Metal=9000,ArmorSteel=24000}
 function Rules.AmmoID(caliber,kind)
+ if caliber=="AT4" then return kind=="FMJ" and "AmmoAT4FMJ" or nil end
  return (caliber=="223" or caliber=="9mm" or caliber=="308") and (kind=="FMJ" or kind=="AP") and ("Ammo"..caliber..kind) or nil
 end
 function Rules.BoxCount(maximum,roll)

@@ -81,10 +81,17 @@ effects.OnClientEvent:Connect(function(events)
    local record=traces[event.ID]
    if not record then record={Part=effectPart()};traces[event.ID]=record;record.Part.Material=Enum.Material.Neon;record.Part.Color=Color3.fromRGB(255,225,150);record.Part.Transparency=.15 end
    record.Expires=os.clock()+.25
-   record.Part.Size=Vector3.new(.015,.015,1.5)
+   record.Part.Size=event.Rocket and Vector3.new(.18,.18,1.2) or Vector3.new(.015,.015,1.5)
+   if event.Rocket then record.Part.Color=Color3.fromRGB(255,150,65) end
    record.Part.CFrame=CFrame.lookAt(event.Point-event.Direction*.75,event.Point)
   elseif event.Kind=="Stop" then
    local record=traces[event.ID];if record then record.Expires=os.clock()+.035 end
+  elseif event.Kind=="Explosion" then
+   local part=effectPart();part.Shape=Enum.PartType.Ball;part.Position=event.Point
+   part.Size=Vector3.new(.5,.5,.5);part.Color=Color3.fromRGB(255,145,40);part.Material=Enum.Material.Neon;part.Transparency=.25
+   local light=Instance.new("PointLight");light.Color=part.Color;light.Range=20;light.Brightness=5;light.Parent=part
+   local tween=game:GetService("TweenService"):Create(part,TweenInfo.new(.35),{Size=Vector3.one*(event.Radius or 10)*2,Transparency=1})
+   tween:Play();Debris:AddItem(part,.4)
   elseif event.Kind=="Impact" then impact(event)
   elseif event.Kind=="Muzzle" then
    -- Invisible anchor preserves flash lighting without a delayed visible orb.

@@ -213,4 +213,9 @@ return {
  {"9 mm AP ammunition box","Коробка набоїв 9 mm AP","Коробка патронов 9 mm AP"},
  {".308 FMJ ammunition box","Коробка набоїв .308 FMJ","Коробка патронов .308 FMJ"},
  {".308 AP ammunition box","Коробка набоїв .308 AP","Коробка патронов .308 AP"},
+ {"AT-4","AT-4","AT-4"},
+ {"AT-4 HE rocket","Фугасна ракета AT-4","Фугасная ракета AT-4"},
+ {"Heavy weapon. Fires a high-explosive rocket: 100 explosive damage within 10 studs. Walls reduce blast damage by 50%. Does not destroy structures.","Важка зброя. Фугасна ракета: 100 вибухової шкоди в радіусі 10 студів. Стіни зменшують шкоду вибуху на 50%. Не руйнує споруди.","Тяжёлое оружие. Фугасная ракета: 100 взрывного урона в радиусе 10 студов. Стены снижают урон взрыва на 50%. Не разрушает постройки."},
+ {"High-explosive rocket for the AT-4. Does not destroy structures.","Фугасна ракета для AT-4. Не руйнує споруди.","Фугасная ракета для AT-4. Не разрушает постройки."},
+ {"Explosive","Вибухова","Взрывной"},
 }
