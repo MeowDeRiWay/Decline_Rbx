@@ -145,7 +145,11 @@ recipes.BoilWater.FuelTab="Coal"
 recipes.BoilWater.Requirements={Skills={Doctor=50}}
 recipes.BoilWater.Description="Purify five bottles of dirty water with one charcoal into five bottles of clean water. Requires Doctor 50. Collect the finished batch before starting again."
 recipes.SmeltIron.Description="Smelt 10 scrap into five iron using one charcoal. Requires a Workshop T2 furnace. Collect the finished batch before starting again."
-recipes.SmeltSteel.Description="Refine five iron into five steel using one charcoal. Requires Repair 150 and a Workshop T2 furnace. Collect the finished batch before starting again."
+recipes.SmeltSteel.Ingredients={Iron=2}
+recipes.SmeltSteel.Fuel={ID="Coal",Count=2}
+recipes.SmeltSteel.OutputCount=1
+recipes.SmeltSteel.Duration=60
+recipes.SmeltSteel.Description="Refine two iron and two charcoal into one steel in 60 seconds. Requires Repair 150 and a Workshop T2 furnace. Results are delivered automatically."
 
 -- Stove food is exclusively boiled; frying/baking belongs at another station.
 -- Fuel is per queued batch, not per serving.

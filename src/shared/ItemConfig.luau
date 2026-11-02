@@ -140,7 +140,7 @@ for _,material in ipairs({"Scrap","Iron","Steel"}) do
  ItemConfig.Items[material.."Shovel"]=shovel
 end
 -- Authored steel templates override these temporary iron-model fallbacks.
-ItemConfig.Items.Steel={Name="Steel",Weight=1,ResourceMaterial="ArmorSteel",TemplateID="Iron",Description="Refined steel used to craft third-tier tools."}
+ItemConfig.Items.Steel={Name="Steel",Weight=1,ResourceMaterial="ArmorSteel",TemplateID="Steel",Description="Refined steel used to craft third-tier tools."}
 for _,tool in ipairs({"Axe","Shovel","Showel","Knife"}) do
  ItemConfig.Items["Steel"..tool].TemplateID="Iron"..(tool=="Showel" and "Shovel" or tool)
 end
