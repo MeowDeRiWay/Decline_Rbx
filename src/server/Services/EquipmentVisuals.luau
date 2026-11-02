@@ -96,6 +96,10 @@ function Visuals.Apply(character, id)
   local p=root.CFrame:PointToObjectSpace(target.Position)
   target=target+root.CFrame:VectorToWorldSpace(Vector3.new(-p.X,root.Size.Y*.4-p.Y,-root.Size.Y*1.1-p.Z))
  end
+ if definition.Firearm and definition.Firearm.Projectile=="Rocket" then
+  -- PrimaryPart is the authored alignment anchor; keep the tube parallel to -Z.
+  target=root.CFrame*CFrame.new(root.Size.X*.62,root.Size.Y*.6,root.Size.Z*.15)
+ end
  if definition.Slot=="Medicine" then target=root.CFrame*CFrame.new(root.Size.X*.25,root.Size.Y*.25,-root.Size.Z/2-.22) end
  -- The model pivot is the point held in the hand. Place it at the handle in Studio.
  held:PivotTo(target)
@@ -109,6 +113,26 @@ function Visuals.Apply(character, id)
  local gripPart = held:IsA("Model") and (held.PrimaryPart or parts[1]) or held
  local handGrip=Instance.new("Attachment")
  handGrip.Name="_HandGrip";handGrip.CFrame=gripPart.CFrame:ToObjectSpace(target);handGrip.Parent=gripPart
+ if definition.Firearm and definition.Firearm.Projectile=="Rocket" then
+  local frame,size=held:GetBoundingBox()
+  local front,rear=math.huge,-math.huge
+  for _,part in ipairs(parts) do
+   local center=target:PointToObjectSpace(part.Position)
+   local half=part.Size*.5
+   for _,x in ipairs({-half.X,half.X}) do for _,y in ipairs({-half.Y,half.Y}) do for _,z in ipairs({-half.Z,half.Z}) do
+    local point=target:PointToObjectSpace(part.CFrame:PointToWorldSpace(Vector3.new(x,y,z)))
+    front=math.min(front,point.Z);rear=math.max(rear,point.Z)
+   end end end
+  end
+  local function anchor(name,position)
+   if held:FindFirstChild(name,true) then return end
+   local a=Instance.new("Attachment");a.Name=name;a.CFrame=gripPart.CFrame:ToObjectSpace(target*CFrame.new(position));a.Parent=gripPart
+  end
+  anchor("Muzzle",Vector3.new(0,0,front))
+  anchor("_BackblastOrigin",Vector3.new(0,0,rear))
+  anchor("RightHandGrip",Vector3.new(0,-.12,front*.25))
+  anchor("LeftHandGrip",Vector3.new(-.04,-.12,front*.7))
+ end
  if definition.Firearm then
   local muzzle=held:FindFirstChild("Muzzle",true)
   if muzzle and (muzzle:IsA("Model") or muzzle:IsA("BasePart") or muzzle:IsA("Attachment")) then

@@ -194,7 +194,9 @@ RunService.PreSimulation:Connect(function(dt)
     local target=CarryPose.SupportPoint(c,root)
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
-    local s,e=Pose.Arm(upper,lower,delta,Vector3.new(side=="Left" and -1 or 1,-1,.2))
+    local launcher=definition and definition.Firearm and definition.Firearm.Projectile=="Rocket"
+    local bend=launcher and Vector3.new(side=="Left" and -.6 or 1,-1,.35) or Vector3.new(side=="Left" and -1 or 1,-1,.2)
+    local s,e=Pose.Arm(upper,lower,delta,bend)
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
    elseif c:GetAttribute("CarryingUserId") then
     local swing=math.sin(r.Phase)*r.Amount*.6
@@ -211,7 +213,9 @@ RunService.PreSimulation:Connect(function(dt)
     end
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
-    local s,e=Pose.Arm(upper,lower,delta,Vector3.new(side=="Left" and -1 or 1,-1,.2))
+    local launcher=definition and definition.Firearm and definition.Firearm.Projectile=="Rocket"
+    local bend=launcher and Vector3.new(side=="Left" and -.6 or 1,-1,.35) or Vector3.new(side=="Left" and -1 or 1,-1,.2)
+    local s,e=Pose.Arm(upper,lower,delta,bend)
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
    elseif equipped and definition.CraftTool=="Knife" and side=="Left" then
     -- Free hand stays forward in a defensive guard; it does not swing at the side.

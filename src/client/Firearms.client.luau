@@ -86,6 +86,18 @@ effects.OnClientEvent:Connect(function(events)
    record.Part.CFrame=CFrame.lookAt(event.Point-event.Direction*.75,event.Point)
   elseif event.Kind=="Stop" then
    local record=traces[event.ID];if record then record.Expires=os.clock()+.035 end
+  elseif event.Kind=="Backblast" then
+   local part=effectPart();part.CFrame=CFrame.lookAt(event.Point,event.Point+event.Direction)
+   local a=Instance.new("Attachment");a.Parent=part
+   local particles=Instance.new("ParticleEmitter");particles.Rate=0
+   particles.EmissionDirection=Enum.NormalId.Front;particles.SpreadAngle=Vector2.new(30,30)
+   particles.Speed=NumberRange.new(20,35);particles.Lifetime=NumberRange.new(.15,.3)
+   particles.Color=ColorSequence.new(Color3.fromRGB(255,180,70),Color3.fromRGB(90,90,85))
+   particles.Size=NumberSequence.new({NumberSequenceKeypoint.new(0,.2),NumberSequenceKeypoint.new(1,1.5)})
+   particles.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.1),NumberSequenceKeypoint.new(1,1)})
+   particles.LightEmission=.7;particles.Parent=a;particles:Emit(35)
+   local light=Instance.new("PointLight");light.Color=Color3.fromRGB(255,170,70);light.Range=8;light.Brightness=3;light.Parent=part
+   Debris:AddItem(light,.12);Debris:AddItem(part,.5)
   elseif event.Kind=="Explosion" then
    local part=effectPart();part.Shape=Enum.PartType.Ball;part.Position=event.Point
    part.Size=Vector3.new(.5,.5,.5);part.Color=Color3.fromRGB(255,145,40);part.Material=Enum.Material.Neon;part.Transparency=.25

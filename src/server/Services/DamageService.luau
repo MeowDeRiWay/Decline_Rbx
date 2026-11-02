@@ -66,7 +66,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  local target = humanoid.Parent
  if not target or humanoid.Health <= 0 or target:GetAttribute("Knockout") then return 0 end
  options=options or {}
- if friendly(options.Attacker,target) then return 0 end
+ if not options.FriendlyFire and friendly(options.Attacker,target) then return 0 end
  local victim=Players:GetPlayerFromCharacter(target)
  if victim and victim:GetAttribute("AttributesConfirmed")==false then return 0 end
  if options.Attacker and options.Attacker:IsA("Player") and options.Attacker:GetAttribute("AttributesConfirmed")==false then return 0 end

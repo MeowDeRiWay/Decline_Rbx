@@ -179,7 +179,21 @@ parts={};dealt=0;part(group("Brick"),3,.1);part(target,20,.5)
 Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
 for i=1,200 do heartbeat.fire(1/60) end
 assert(dealt==0,"outside blast radius is safe")
-for _,item in pairs(Items) do if item.Armor then assert(item.Armor.ExplosiveAbsorption==0 and item.Armor.ExplosiveResistance==0) end end
+for _,item in pairs(Items) do if item.Armor then assert(typeof(item.Armor.ExplosiveAbsorption)=="number" and typeof(item.Armor.ExplosiveResistance)=="number") end end
+parts={};part(target,-5,.5);rootPart.Position=Vector3.new(0,0,-5);dealt=0
+Service.Backblast(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"AT4")
+assert(dealt==50 and lastOptions.FriendlyFire==true,"backblast deals50 even to a teammate")
+rootPart.Position=Vector3.new(5,0,-1);dealt=0
+Service.Backblast(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"AT4")
+assert(dealt==0,"outside rear cone is safe")
+rootPart.Position=Vector3.new(0,0,-11);dealt=0
+Service.Backblast(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"AT4")
+assert(dealt==0,"outside backblast reach is safe")
+rootPart.Position=Vector3.new(0,0,-5);parts={};part(group("Brick"),-2,.1);part(target,-5,.5);dealt=0
+Service.Backblast(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"AT4")
+assert(dealt==0,"wall blocks backblast")
+assert(Items.MiliArmor2.Armor.ExplosiveAbsorption==4 and Items.Exosuit.Armor.ExplosiveResistance==.3)
+print("PASS: rear cone50 damage, ally hazard, angular/range bounds and wall shielding")
 print("PASS: AT4 first-impact detonation,100/50 blast damage, deduplication, radius and separate armor fields")
 print("PASS: configured .223 and .308 marksman weapons roll exact new damage endpoints")
 print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, FMJ/AP wall parity and caliber gates, metal/unknown stop and exact air range")

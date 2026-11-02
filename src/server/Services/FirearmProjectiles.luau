@@ -68,6 +68,7 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
   Projectile=definition.Projectile,BlastRadius=definition.BlastRadius,Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
   SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",IgnoredDormant={},BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true and definition.BoltAction~=false,Ignored={character},Impacts=0}
+ if definition.Projectile=="Rocket" then Service.Backblast(player,character,origin,direction,definition,itemID) end
  emit("Muzzle",origin)
  return true
 end
@@ -111,6 +112,35 @@ local function explode(bullet,point)
     model:SetAttribute("LastDamagerID",bullet.Player.UserId)
     model:SetAttribute("LastHitItem",bullet.ItemID)
     Damage.Apply(hp,amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=bullet.Player})
+   end
+  end
+ end)
+end
+function Service.Backblast(player,character,origin,direction,definition,itemID)
+ local held=character:FindFirstChild("HeldItem")
+ local exhaust=held and held:FindFirstChild("_BackblastOrigin",true)
+ local point=exhaust and exhaust:IsA("Attachment") and exhaust.WorldPosition or origin
+ local rear=-direction
+ local length=definition.BackblastRange or 10
+ local cosine=math.cos(math.rad(definition.BackblastHalfAngle or 30))
+ emit("Backblast",point,{Direction=rear,Length=length})
+ task.spawn(function()
+  WorldActivity.Ensure(point,length+2)
+  local victims={}
+  for _,part in ipairs(workspace:GetPartBoundsInRadius(point,length+2)) do
+   local hp=victimOf(part)
+   if hp and hp.Parent~=character then victims[hp]=true end
+  end
+  local ignored={character}
+  for hp in pairs(victims) do table.insert(ignored,hp.Parent) end
+  for hp in pairs(victims) do
+   local model=hp.Parent
+   local root=model and (model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart",true))
+   local delta=root and root.Position-point
+   if delta and delta.Magnitude>0 and delta.Magnitude<=length and (delta.X*rear.X+delta.Y*rear.Y+delta.Z*rear.Z)/delta.Magnitude>=cosine
+    and not BulletCast.Raycast(point,delta,ignored) then
+    model:SetAttribute("LastDamagerID",player.UserId);model:SetAttribute("LastHitItem",itemID)
+    Damage.Apply(hp,definition.Damage*.5,"Explosive",point,"Explosion",{HitChecked=true,Attacker=player,FriendlyFire=true})
    end
   end
  end)
