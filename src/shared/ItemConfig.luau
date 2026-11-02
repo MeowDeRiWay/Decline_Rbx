@@ -36,12 +36,12 @@ ItemConfig.Items = {
  Antiseptic={Name="Antiseptic",Weight=.6,Slot="Medicine",Description="Apply from the Medicine slot with H. Reduces Sick by 20 plus 1 per 20 First Aid on every use. Poison cure chance: 25% plus 5 percentage points per Luck. Cannot be drunk."},
  Chemicals = {Name="Chemicals",Weight=.2,Description="Scavenged chemical compounds used to produce ammunition."},
  Iron = {Name="Iron",Weight=1,ResourceMaterial="Iron",Description="Smelted iron used for industrial firearms and ammunition."},
- MiliArmor1={Name="Military armor",Weight=10,Slot="Body",Armor={Absorption=6,Resistance=.3},Description="The most talented craftsmen among the remnants of this world began using Kevlar to protect against bites from the infected, adding iron plates to stop bullets."},
- Exosuit={Name="Exoskeleton",Weight=20,Slot="Body",BlocksSlots={Back=true},Armor={Absorption=12,Resistance=.5},Description="Powered armor. Blocks the backpack slot."},
- MiliArmor2={Name="Reinforced military armor",Weight=12,Slot="Body",Armor={Absorption=8,Resistance=.4},Description="As it turned out, the protection was not quite enough, so more Kevlar and plates were added wherever they were needed."},
+ MiliArmor1={Name="Military armor",Weight=10,Slot="Body",Armor={Absorption=4,Resistance=.4},Description="The most talented craftsmen among the remnants of this world began using Kevlar to protect against bites from the infected, adding iron plates to stop bullets."},
+ Exosuit={Name="Exoskeleton",Weight=20,Slot="Body",BlocksSlots={Back=true},Armor={Absorption=12,Resistance=.4},Description="Powered armor. Blocks the backpack slot."},
+ MiliArmor2={Name="Reinforced military armor",Weight=12,Slot="Body",Armor={Absorption=6,Resistance=.4},Description="As it turned out, the protection was not quite enough, so more Kevlar and plates were added wherever they were needed."},
  Kevlar={Name="Kevlar",Weight=.2,Description="Protective fabric used to craft military armor."},
- LeatherArmor2={Name="Reinforced leather jacket",Weight=3,Slot="Body",Armor={Absorption=4,Resistance=.15},Description="Given the circumstances, a few plates were sewn into the jacket to protect the body and arms. Better than it used to be."},
- LeatherArmor={Name="Leather jacket",Weight=2,Slot="Body",Armor={Absorption=2,Resistance=.1},Description="A well-made leather jacket with a few decorative touches."},
+ LeatherArmor2={Name="Reinforced leather jacket",Weight=3,Slot="Body",Armor={Absorption=2,Resistance=.25},Description="Given the circumstances, a few plates were sewn into the jacket to protect the body and arms. Better than it used to be."},
+ LeatherArmor={Name="Leather jacket",Weight=2,Slot="Body",Armor={Absorption=0,Resistance=.2},Description="A well-made leather jacket with a few decorative touches."},
  Backpack1={Name="Simple backpack",Weight=1,Slot="Back",CarryBonusKg=10,Description="A simple handmade backpack. Increases carrying capacity by 10 kg while equipped."},
  Apron = {Name = "Apron", Weight = 0.5, Slot = "Additional", Description = "An apron worn over clothing."},
  SewingKit={Name="Sewing kit",Weight=0.2,CraftTool="SewingKit",CraftSpeed=1,Description="A reusable tool required to craft items from cloth and rags. Keep it in your inventory."},
@@ -207,7 +207,7 @@ ItemConfig.Items.AT4={Name="AT-4",Weight=6.7,Slot="Hands",Description="Heavy wea
 ItemConfig.Items.AmmoAT4FMJ={Name="AT-4 HE rocket",Weight=1.8,Description="High-explosive rocket for the AT-4. Does not destroy structures.",Ammo={Caliber="AT4",Type="FMJ"}}
 for _,item in pairs(ItemConfig.Items) do
  if item.Armor then
-  local defense=({LeatherArmor={0,0},LeatherArmor2={1,.05},MiliArmor1={3,.15},MiliArmor2={4,.2},Exosuit={6,.3}})[_]
+  local defense=({LeatherArmor={0,.2},LeatherArmor2={0,.2},MiliArmor1={6,.4},MiliArmor2={8,.4},Exosuit={20,.5}})[_]
   item.Armor.ExplosiveAbsorption=defense and defense[1] or 0
   item.Armor.ExplosiveResistance=defense and defense[2] or 0
  end

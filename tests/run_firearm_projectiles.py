@@ -192,7 +192,7 @@ assert(dealt==0,"outside backblast reach is safe")
 rootPart.Position=Vector3.new(0,0,-5);parts={};part(group("Brick"),-2,.1);part(target,-5,.5);dealt=0
 Service.Backblast(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"AT4")
 assert(dealt==0,"wall blocks backblast")
-assert(Items.MiliArmor2.Armor.ExplosiveAbsorption==4 and Items.Exosuit.Armor.ExplosiveResistance==.3)
+assert(Items.MiliArmor2.Armor.ExplosiveAbsorption==8 and Items.Exosuit.Armor.ExplosiveResistance==.5)
 print("PASS: rear cone50 damage, ally hazard, angular/range bounds and wall shielding")
 print("PASS: AT4 first-impact detonation,100/50 blast damage, deduplication, radius and separate armor fields")
 print("PASS: configured .223 and .308 marksman weapons roll exact new damage endpoints")
