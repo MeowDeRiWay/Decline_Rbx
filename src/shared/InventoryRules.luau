@@ -20,7 +20,8 @@ function Rules.PackageAmmo(state,definitions,id,unpack)
  else
   local ammo=item.Ammo
   if not ammo then return false end
-  target,needed,produced="AmmoPack"..ammo.Caliber..ammo.Type,30,1
+  target="AmmoPack"..ammo.Caliber..ammo.Type
+  needed,produced=definitions[target] and definitions[target].PackedAmmo.Count or 30,1
  end
  if not definitions[target] or (state.Items[id] or 0)<needed then return false end
  if not Rules.Remove(state,id,needed) then return false end

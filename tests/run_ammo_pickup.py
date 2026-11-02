@@ -20,9 +20,9 @@ a:LoadCharacterAsync()
 '''
 cases='''
 assert(obsoleteCash.destroyed and obsoleteTaggedCash.destroyed,"existing world currency models are removed")
-assert(box:GetAttribute("AmmoCount")==50 and randomCalls==1,"box rolls only once despite repeat registration")
-assert(Service.Pickup(a,box) and grants.Ammo223FMJ==50 and box.destroyed,"box unpacks into loose inventory rounds")
-assert(not Service.Pickup(b,box) and grants.Ammo223FMJ==50,"same box cannot be collected twice")
+assert(box:GetAttribute("AmmoCount")==50 and randomCalls==0,"box uses full capacity without random rolls")
+assert(Service.Pickup(a,box) and grants.AmmoPack223FMJ==1 and box.destroyed,"box remains a sealed inventory package")
+assert(not Service.Pickup(b,box) and grants.AmmoPack223FMJ==1,"same box cannot be collected twice")
 local loose=make("Model","Ammo223AP",world,{Item_ID="Ammo223AP",Quantity=7,AmmoCount=50})
 assert(Service.Pickup(a,loose) and grants.Ammo223AP==7,"dropped loose stack preserves quantity and never rerolls from its box visual")
 local head=make("Part","Head",a.Character);head.Position=Vector3.new(0,1,0)
@@ -86,7 +86,7 @@ for _,id in ipairs({"Money","Bill","bill"}) do
  assert(not Service.Pickup(a,retired) and not grants[id] and Wallet.Balance(a)==beforeMoney,"retired cash cannot grant money or enter pockets")
 end
 print("PASS: physical banknotes removed; account money cannot be picked up")
-print("PASS: box1..MaxAmmo rolls once, pickup grants loose rounds once, dropped-stack exact quantity")
+print("PASS: full-capacity box without RNG, pickup grants sealed package once, dropped-stack exact quantity")
 print("PASS: tabletop head ray, upper shelf item top/center, solid-wall rejection, root-based reach limit")
 '''
 station_source='local Stations=(function()\n'+(root/'src/shared/CraftStations.luau').read_text()+'\nend)()'

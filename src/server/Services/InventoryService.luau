@@ -14,6 +14,20 @@ local disconnected = {}
 local Journal=require(script.Parent.JournalService)
 local changed = Instance.new("BindableEvent")
 Service.Changed = changed.Event
+local function ammoCounts()
+ local counts={}
+ for id,item in pairs(ItemConfig.Items) do
+  if item.PackedAmmo then
+   local template=Visuals.Template(item.TemplateID)
+   local count=template and (template:GetAttribute("MaxAmmo") or template:GetAttribute("AmmoCount")) or 30
+   if typeof(count)~="number" or count~=count or count<1 or count>10000 then count=30 end
+   count=math.floor(count);item.PackedAmmo.Count=count
+   item.Weight=count*ItemConfig.Items[item.PackedAmmo.ID].Weight+.1
+   counts[id]=count
+  end
+ end
+ return counts
+end
 local function update(player)
  local state = states[player]
  if not state then return end
@@ -203,6 +217,7 @@ function Service.TakeEquippedLoot(player,source,id,requested,key)
  update(player);return true
 end
 function Service.PackageAmmo(player,id,unpack)
+ ammoCounts()
  local state=states[player]
  if not state or not Rules.PackageAmmo(state,ItemConfig.Items,id,unpack) then return false end
  update(player);return true
@@ -275,9 +290,10 @@ function Service.UseWeapon(player)
  return Service.GetWeapon(player)
 end
 function Service.Snapshot(player)
+ local counts=ammoCounts()
  local state = states[player]
  if not state then return {Items = {}, Equipment = {}, Weight = 0, CraftTools = {}} end
- return {Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), ActiveWeaponSlot=state.ActiveWeaponSlot, MedicalHeld=state.MedicalHeld, Stacks=Rules.Stacks(state,ItemConfig.Items), Weight = Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")), CraftTools = craftTools(state)}
+ return {AmmoPackCounts=counts,Items = table.clone(state.Items), Equipment = table.clone(state.Equipment), ActiveWeaponSlot=state.ActiveWeaponSlot, MedicalHeld=state.MedicalHeld, Stacks=Rules.Stacks(state,ItemConfig.Items), Weight = Rules.Weight(state, ItemConfig.Items,player:GetAttribute("AmmoWeightMultiplier") or 1,player:GetAttribute("EquippedWeaponWeightMultiplier")), CraftTools = craftTools(state)}
 end
 function Service.Start()
  if Service.Started then return end

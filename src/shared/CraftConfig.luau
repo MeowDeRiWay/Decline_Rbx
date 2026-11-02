@@ -183,4 +183,9 @@ for _,recipe in pairs(recipes) do
   recipe.Description=recipe.Description:gsub("collect the finished batch before starting again%.","results are delivered automatically.")
  end
 end
+for _,recipe in pairs(recipes) do
+ if recipe.Output and recipe.Output:match("^Ammo%d") then
+  recipe.Output=recipe.Output:gsub("^Ammo","AmmoPack");recipe.OutputCount=1
+ end
+end
 return recipes

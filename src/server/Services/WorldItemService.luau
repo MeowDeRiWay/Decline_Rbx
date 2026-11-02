@@ -9,7 +9,6 @@ local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local EquipmentVisuals = require(script.Parent.EquipmentVisuals)
 local AmmoRules=require(ReplicatedStorage.Shared.FirearmRules)
 local Stations=require(ReplicatedStorage.Shared.CraftStations)
-local random=Random.new()
 local Service = {}
 local fallbackItems = {Kevlar=true, TreeLog = true, Scrap = true, Rags = true, Stone = true, Ammo223FMJ=true, Ammo223AP=true}
 local warned = {}
@@ -39,7 +38,7 @@ local function register(item)
  EquipmentVisuals.CaptureTemplate(item,id)
  local box=ItemConfig.Items[id].AmmoBox
  if box and item:GetAttribute("AmmoCount")==nil then
-  local count=AmmoRules.BoxCount(item:GetAttribute("MaxAmmo") or box.Maximum,random:NextNumber())
+  local count=AmmoRules.BoxCount(item:GetAttribute("MaxAmmo") or box.Maximum,0)
   if not count then return end
   item:SetAttribute("AmmoCount",count)
  end
@@ -158,7 +157,7 @@ function Service.Pickup(player, item)
   local ammo=AmmoRules.AmmoID(caliber,kind)
   local rounds=item:GetAttribute("AmmoCount")
   if not ammo or typeof(rounds)~="number" or rounds<1 or rounds>10000 or rounds~=math.floor(rounds) then return false end
-  if not Inventory.Add(player,ammo,rounds) then return false end
+  if not Inventory.Add(player,"AmmoPack"..caliber..kind,count) then return false end
  elseif not Inventory.Add(player, id, count, conditions,weaponData) then return false end
  item:Destroy()
  return true

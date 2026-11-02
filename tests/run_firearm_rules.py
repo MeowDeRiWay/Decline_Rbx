@@ -4,7 +4,7 @@ root=Path(__file__).resolve().parents[1]
 mock=(root/'tests/city_geometry.fixture.luau').read_text()
 rules=(root/'src/shared/FirearmRules.luau').read_text()
 cases='''
-assert(Rules.BoxCount(50,0)==1 and Rules.BoxCount(50,.99999)==50)
+assert(Rules.BoxCount(50,0)==50 and Rules.BoxCount(50,.99999)==50)
 assert(Rules.BoxCount(-1,.5)==nil and Rules.BoxCount(0/0,.5)==nil)
 assert(Rules.AmmoID("223","FMJ")=="Ammo223FMJ" and Rules.AmmoID("223","AP")=="Ammo223AP")
 assert(not Rules.AmmoID("355","FMJ") and not Rules.AmmoID("223","FJM"))
@@ -26,7 +26,7 @@ assert(Rules.Cost("Unknown",.1,"AP")==math.huge)
 for _,case in ipairs({{"223","FMJ",2,.1},{"223","AP",3,.15},{"308","FMJ",5,.2},{"308","AP",5,.4},{"9mm","FMJ",0,0},{"9mm","AP",0,0}}) do
  local absorption,resistance=Rules.ArmorIgnore(case[1],case[2]);assert(absorption==case[3] and resistance==case[4])
 end
-print("PASS: ammo box1..50, invalid caliber/type, thin/angled wall intervals, layer union/no double counting, caliber material gates and armor ignore, unknown stops")
+print("PASS: full ammo boxes, invalid caliber/type, thin/angled wall intervals, layer union/no double counting, caliber material gates and armor ignore, unknown stops")
 '''
 with tempfile.TemporaryDirectory() as directory:
  p=Path(directory)/'rules.luau';p.write_text(mock+'\nlocal Rules=(function()\n'+rules+'\nend)()\n'+cases)

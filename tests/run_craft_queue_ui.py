@@ -45,12 +45,12 @@ local function input(y)
 end
 local function render() objects={};equipment=Instance.new("Frame");renderRecipes() end
 render()
-local start=find("Start queue");assert(start and start.Active,"merged chest stock enables recipe")
+local start=find("Begin work");assert(start and start.Active,"merged chest stock enables recipe")
 local repeats=input(254);repeats.Text="2";repeats.FocusLost:Fire()
-assert(start.Active and find("2 processes · 20 seconds total\\nNearby chests: 1 · Results go to pockets"))
+assert(start.Active and find("Quantity") and not find("Processes"))
 start.Activated:Fire()
 assert(#sent==1 and sent[1][1]=="Cook" and sent[1][2]=="MakePlanks" and sent[1][3].Batch==1 and sent[1][3].Repeats==2)
-find("Queue all").Activated:Fire();assert(sent[2][3].Repeats=="All")
+find("Make maximum").Activated:Fire();assert(sent[2][3].Repeats=="All")
 repeats.Text="4";repeats.FocusLost:Fire();assert(not start.Active,"unaffordable repetitions disabled")
 start.Activated:Fire();assert(#sent==2)
 assert(not find("Collect") and not find("Collect all"),"no manual collection step")
@@ -58,20 +58,20 @@ snapshot.CookingEndsAt=100;snapshot.CookingOwner=99;render()
 assert(find("Cancel queue"));find("Cancel queue").Activated:Fire();assert(sent[3][1]=="CancelCraft")
 snapshot.CookingOwner=100;render();assert(not find("Cancel queue"),"only queue owner sees cancel")
 snapshot.CookingEndsAt=0;snapshot.CookingStation="MedStation";snapshot.CookingItems={Rags=10};snapshot.CookingTools={SewingKit=1}
-selectedRecipe="MakeBandage";render();assert(find("Start queue").Active,"chest sewing kit enables recipe without carrying it")
-snapshot.CookingTools={};render();assert(not find("Start queue").Active,"missing tool disables queue")
+selectedRecipe="MakeBandage";render();assert(find("Begin work").Active,"chest sewing kit enables recipe without carrying it")
+snapshot.CookingTools={};render();assert(not find("Begin work").Active,"missing tool disables queue")
 snapshot.CookingStation="Stove";snapshot.CookingMaxQueue=2;snapshot.CookingItems={Potato=5,CleanWater=1,TreeLog=1};snapshot.CookingTools={};snapshot.CookingReady={}
-selectedRecipe="BoilPotatoes";render();assert(find("Start queue") and find("Queue all") and input(254),"stove exposes bounded process queue")
+selectedRecipe="BoilPotatoes";render();assert(find("Begin work") and find("Make maximum") and input(254),"stove exposes bounded process queue")
 input(254).Text="99";input(254).FocusLost:Fire();assert(input(254).Text=="2","two-burner limit clamps input")
 input(254).Text="1";input(254).FocusLost:Fire()
-assert(find("Start queue").Active);find("Start queue").Activated:Fire()
+assert(find("Begin work").Active);find("Begin work").Activated:Fire()
 assert(sent[#sent][3].Batch==1 and sent[#sent][3].Repeats==1)
 snapshot.CookingReady={};snapshot.CookingItems={Plank=2,Handle=1};selectedRecipe="BurnWoodParts";render()
-assert(find("Start queue").Active and input(254),"mixed wooden parts allow one fixed batch")
+assert(find("Begin work").Active and input(254),"mixed wooden parts allow one fixed batch")
 local grouped=false
 for _,o in ipairs(objects) do if o.Text and o.Text:find("3 total: Plank or Handle (3 owned)",1,true) then grouped=true end end
 assert(grouped,"UI displays the grouped input instead of an empty material list")
-snapshot.CookingItems={Plank=1,Handle=1};render();assert(not find("Start queue").Active,"incomplete mixed batch is disabled")
+snapshot.CookingItems={Plank=1,Handle=1};render();assert(not find("Begin work").Active,"incomplete mixed batch is disabled")
 print("PASS: actual queue UI uses chest materials/tools, repeat count and total time, bounded affordability, structured repeat/all requests, automatic results and owner-only cancellation")
 '''
 with tempfile.TemporaryDirectory() as d:

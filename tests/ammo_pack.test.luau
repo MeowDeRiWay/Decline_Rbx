@@ -15,3 +15,11 @@ for _,caliber in ipairs({'9mm','223','308'}) do for _,kind in ipairs({'FMJ','AP'
 end end
 local s=R.New();assert(not R.PackageAmmo(s,I.Items,'Scrap',false));assert(not R.PackageAmmo(s,I.Items,{},true))
 print('PASS: all six exact 30-round conversions, round-trip weight, caliber/type isolation, insufficient stock and duplicate unpack rejection')
+
+local defs=require("../src/shared/ItemConfig").Items
+local rules=require("../src/shared/InventoryRules")
+defs.AmmoPack223FMJ.PackedAmmo.Count=45
+local state=rules.New();rules.Add(state,defs,"Ammo223FMJ",45)
+assert(rules.PackageAmmo(state,defs,"Ammo223FMJ",false))
+assert(rules.PackageAmmo(state,defs,"AmmoPack223FMJ",true))
+assert(state.Items.Ammo223FMJ==45,"configured capacity survives packing and unpacking")

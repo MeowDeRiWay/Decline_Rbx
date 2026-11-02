@@ -6,7 +6,7 @@ function Rules.AmmoID(caliber,kind)
 end
 function Rules.BoxCount(maximum,roll)
  if typeof(maximum)~="number" or maximum~=maximum or maximum<1 or maximum==math.huge then return nil end
- return math.clamp(math.floor(roll*math.min(10000,math.floor(maximum)))+1,1,math.min(10000,math.floor(maximum)))
+ return math.min(10000,math.floor(maximum))
 end
 -- FMJ and AP use the same world-material budget. Caliber sets material access.
 function Rules.Cost(material,thickness,caliber)

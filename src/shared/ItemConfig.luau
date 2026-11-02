@@ -198,8 +198,8 @@ for _,kind in ipairs({"FMJ","AP"}) do
   local armorText=({["223FMJ"]=" Ignores 2 absorption and 10 percentage points of resistance.",["223AP"]=" Ignores 3 absorption and 15 percentage points of resistance.",["308FMJ"]=" Ignores 5 absorption and 20 percentage points of resistance.",["308AP"]=" Ignores 5 absorption and 40 percentage points of resistance."})[ammo.ID..kind] or ""
   local description=ammo.Name.." ammunition for compatible "..ammo.Use..". "..role..armorText
   ItemConfig.Items["Ammo"..ammo.ID..kind]={Name=ammo.Name.." "..kind,Weight=ammo.Weight,Description=description,Ammo={Caliber=ammo.ID,Type=kind}}
-  ItemConfig.Items["AmmoPack"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammunition pack (30)",Weight=30*ammo.Weight+.1,TemplateID="AmmoBox"..ammo.ID..kind,PackedAmmo={ID="Ammo"..ammo.ID..kind,Count=30},Description="A sealed pack of 30 rounds. Unpack it in your inventory to recover all 30 rounds. Sold as one item."}
-  ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="A box of "..ammo.Name.." "..kind.." rounds. Collect it to unpack the ammunition. "..role..armorText,AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=50}}
+  ItemConfig.Items["AmmoPack"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammunition box",Weight=30*ammo.Weight+.1,TemplateID="AmmoBox"..ammo.ID..kind,PackedAmmo={ID="Ammo"..ammo.ID..kind,Count=30},Description="A sealed pack of 30 rounds. Unpack it in your inventory to recover all 30 rounds. Sold as one item."}
+  ItemConfig.Items["AmmoBox"..ammo.ID..kind]={Name=ammo.Name.." "..kind.." ammo box",Weight=.1,Description="A box of "..ammo.Name.." "..kind.." rounds. Collect it to unpack the ammunition. "..role..armorText,AmmoBox={Caliber=ammo.ID,Type=kind,Maximum=30}}
  end
 end
 -- Prepared-food quality is an item variant, so it survives sharing, chests and drops.
