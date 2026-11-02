@@ -208,6 +208,7 @@ ItemConfig.Items.AmmoAT4FMJ={Name="AT-4 HE rocket",Weight=1.8,Description="High-
 for _,item in pairs(ItemConfig.Items) do
  if item.Armor then
   local defense=({LeatherArmor={0,.2},LeatherArmor2={0,.2},MiliArmor1={6,.4},MiliArmor2={8,.4},Exosuit={20,.5}})[_]
+  item.Armor.ArmorClass=({LeatherArmor=10,LeatherArmor2=15,MiliArmor1=20,MiliArmor2=25,Exosuit=30})[_] or 0
   item.Armor.ExplosiveAbsorption=defense and defense[1] or 0
   item.Armor.ExplosiveResistance=defense and defense[2] or 0
  end

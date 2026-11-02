@@ -218,4 +218,5 @@ return {
  {"Heavy weapon. Fires a high-explosive rocket: 100 explosive damage within 10 studs. Walls reduce blast damage by 50%. Does not destroy structures.","Важка зброя. Фугасна ракета: 100 вибухової шкоди в радіусі 10 студів. Стіни зменшують шкоду вибуху на 50%. Не руйнує споруди.","Тяжёлое оружие. Фугасная ракета: 100 взрывного урона в радиусе 10 студов. Стены снижают урон взрыва на 50%. Не разрушает постройки."},
  {"High-explosive rocket for the AT-4. Does not destroy structures.","Фугасна ракета для AT-4. Не руйнує споруди.","Фугасная ракета для AT-4. Не разрушает постройки."},
  {"Explosive","Вибухова","Взрывной"},
+ {"Armor class +%g","Клас захисту +{1}","Класс защиты +{1}"},
 }

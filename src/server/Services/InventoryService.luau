@@ -38,6 +38,12 @@ local function update(player)
  local body=state.Equipment.Body and ItemConfig.Items[state.Equipment.Body]
  local armor=body and body.Armor
  if armor then absorption=armor.Absorption or 0;resistance=armor.Resistance or 0 end
+ local baseDodge=player:GetAttribute("BaseDodgeChance")
+ if baseDodge==nil then baseDodge=(player:GetAttribute("DodgeChance") or 0)-(player:GetAttribute("EquipmentArmorClass") or 0) end
+ local armorClass=armor and armor.ArmorClass or 0
+ player:SetAttribute("EquipmentArmorClass",armorClass)
+ player:SetAttribute("DodgeChance",baseDodge+armorClass)
+ if player.Character then player.Character:SetAttribute("DodgeChance",baseDodge+armorClass) end
  local handSlot=Rules.HandSlot(state)
  local handItem=state.MedicalHeld and state.Equipment.Medicine or Rules.HandItem(state)
  player:SetAttribute("ArmorExplosiveAbsorption",armor and armor.ExplosiveAbsorption or 0)

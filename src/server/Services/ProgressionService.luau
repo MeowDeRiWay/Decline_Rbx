@@ -55,6 +55,8 @@ function Service.Sync(player)
  for _,category in ipairs({"Automatic","Pistol","Rifle","MachineGun"}) do bonus[category.."AccuracyBonus"]=0;bonus[category.."CritChance"]=0 end
  player:SetAttribute("BaseCarryLimitKg",bonus.CarryLimitKg)
  bonus.CarryLimitKg+=player:GetAttribute("EquipmentCarryBonusKg") or 0
+ player:SetAttribute("BaseDodgeChance",bonus.DodgeChance)
+ bonus.DodgeChance+=player:GetAttribute("EquipmentArmorClass") or 0
  bonus.Accuracy=totals.Unarmed
  for id,value in pairs(bonus) do player:SetAttribute(id,value) end
  local character=player.Character

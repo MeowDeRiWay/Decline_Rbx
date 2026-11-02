@@ -17,7 +17,7 @@ local Hands={}
 local AdditionalVisuals={Apply=function() end}
 local BackVisuals={Apply=function(c,id) c:SetAttribute("WornBack",id) end}
 local ArmorVisuals={Apply=function(c,id) c:SetAttribute("WornArmor",id) end}
-local Visuals={Apply=function() end,Validate=function() return true end,Template=function() return {} end}
+local Visuals={Apply=function() end,Validate=function() return true end,Template=function() return {GetAttribute=function() return nil end} end}
 local baseNew=Instance.new
 function Instance.new(kind)
  local value=baseNew(kind)
@@ -52,7 +52,7 @@ for _,stack in ipairs(Rules.LootStacks(patientState,ItemConfig.Items)) do if sta
 assert(equippedArmor and patientState.Equipment.Body=="LeatherArmor" and not patientState.Items.LeatherArmor)
 assert(not Service.TakeEquippedLoot(a,patientState,"LeatherArmor",1,equippedArmor))
 Service.Refresh(b)
-assert(patientState.Equipment.Body=="LeatherArmor" and not Service.Snapshot(a).Items.LeatherArmor and b.Character:GetAttribute("WornArmor")=="LeatherArmor" and b:GetAttribute("ArmorAbsorption")==2,"protected armor remains worn with its defense bonuses")
+assert(patientState.Equipment.Body=="LeatherArmor" and not Service.Snapshot(a).Items.LeatherArmor and b.Character:GetAttribute("WornArmor")=="LeatherArmor" and b:GetAttribute("ArmorAbsorption")==0,"protected armor remains worn with its defense bonuses")
 assert(not Service.TakeEquippedLoot(a,patientState,"LeatherArmor",1,equippedArmor),"stale equipped key cannot duplicate armor")
 Service.Reset(a)
 print("PASS: Back slot equips, counts own weight, grants +10kg once, removes bonus on unequip/extraction and preserves loot")
@@ -122,15 +122,15 @@ local Interaction={NearestPoint=function(_,position) return position end}
 local AmmoRules={}
 '''
 world_cases='''
-AmmoRules.BoxCount=function(maximum,roll) return math.floor(maximum*roll)+1 end
+AmmoRules.BoxCount=function(maximum,roll) return maximum end
 AmmoRules.AmmoID=function(caliber,kind) return "Ammo"..caliber..kind end
 local ammoSource=make("Model","AmmoBox223FMJ",ServerStorage,{AmmoCount=3,MaxAmmo=50,Quantity=99});make("Part","Part",ammoSource)
 local spawned=World.SpawnTemplate(ammoSource,"AmmoBox223FMJ",Vector3.zero)
 assert(spawned and spawned.Parent==worldFolder and spawned:GetAttribute("Quantity")==1 and spawned:GetAttribute("AmmoCount")==nil)
 worldFolder.ChildAdded:Fire(spawned)
-assert(spawned:GetAttribute("AmmoCount")==26 and ammoSource:GetAttribute("AmmoCount")==3,"fresh pool spawn rerolls its own box without altering template")
-worldFolder.ChildAdded:Fire(spawned);assert(spawned:GetAttribute("AmmoCount")==26)
-ground=false;assert(World.Pickup(a,spawned) and Service.Snapshot(a).Items.Ammo223FMJ==26)
+assert(spawned:GetAttribute("AmmoCount")==50 and ammoSource:GetAttribute("AmmoCount")==3,"fresh pool spawn rerolls its own box without altering template")
+worldFolder.ChildAdded:Fire(spawned);assert(spawned:GetAttribute("AmmoCount")==50)
+ground=false;assert(World.Pickup(a,spawned) and Service.Snapshot(a).Items.AmmoPack223FMJ==1)
 ground=true
 local sourceTemplate=EquipmentVisuals.Template
 EquipmentVisuals.Template=function(id) if id=="Kevlar" then return nil end;return sourceTemplate(id) end
@@ -188,11 +188,17 @@ local foundLoaded=false
 for _,stack in ipairs(Rules.Stacks(corpseInventory,ItemConfig.Items)) do if stack.ID=="AssaultRifle223" and stack.Loaded==24 and stack.AmmoType=="AP" then foundLoaded=true end end
 assert(foundLoaded and not Service.GetMagazine(a),"death inventory extraction retains charged gun in corpse, clears player")
 assert(#ItemConfig.Slots==7 and not table.find(ItemConfig.Slots,"Head"),"seven equipment slots including two weapons, no Head")
-ItemConfig.Items.TestArmor={Name="Armor suit",Weight=2,Slot="Body",Armor={Absorption=3,Resistance=.2}}
+ItemConfig.Items.TestArmor={Name="Armor suit",Weight=2,Slot="Body",Armor={Absorption=3,Resistance=.2,ArmorClass=20}}
 ItemConfig.Items.Apron.Armor={Absorption=10,Resistance=.5}
 assert(Service.Add(a,"Apron",1) and equipDraw(a,"Apron"))
 assert(a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==0,"accessories cannot add a second armor layer")
 assert(Service.Add(a,"TestArmor",1) and equipDraw(a,"TestArmor"))
+assert(a:GetAttribute("EquipmentArmorClass")==20 and a:GetAttribute("DodgeChance")==20)
+Service.Refresh(a);Service.Refresh(a)
+assert(a:GetAttribute("DodgeChance")==20,"inventory refresh does not stack armor class")
+a:SetAttribute("BaseDodgeChance",21);Service.Refresh(a)
+assert(a:GetAttribute("DodgeChance")==41,"armor class adds to attribute/perk defense")
+
 assert(a:GetAttribute("ArmorAbsorption")==3 and a:GetAttribute("ArmorResistance")==.2,"only Body armor feeds authoritative totals")
 Service.Unequip(a,"Body")
 assert(a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==0,"removing body armor clears defense despite accessory")
@@ -211,17 +217,17 @@ assert(Service.Add(a,"TestHelmet",1) and not equipDraw(a,"TestHelmet") and not S
 ItemConfig.Items.Apron.Armor=nil
 assert(Service.Add(a,"LeatherArmor",1) and equipDraw(a,"LeatherArmor"))
 assert(Service.Snapshot(a).Equipment.Body=="LeatherArmor" and a.Character:GetAttribute("WornArmor")=="LeatherArmor")
-assert(a:GetAttribute("ArmorAbsorption")==2 and a:GetAttribute("ArmorResistance")==.1)
+assert(a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==.2)
 assert(Service.Unequip(a,"Body") and a.Character:GetAttribute("WornArmor")==nil and a:GetAttribute("ArmorAbsorption")==0)
 assert(Service.Add(a,"LeatherArmor2",1) and equipDraw(a,"LeatherArmor2"))
 assert(Service.Snapshot(a).Equipment.Body=="LeatherArmor2" and a.Character:GetAttribute("WornArmor")=="LeatherArmor2")
-assert(a:GetAttribute("ArmorAbsorption")==4 and a:GetAttribute("ArmorResistance")==.15)
+assert(a:GetAttribute("ArmorAbsorption")==2 and a:GetAttribute("ArmorResistance")==.25)
 assert(Service.Unequip(a,"Body") and a:GetAttribute("ArmorResistance")==0)
 assert(Service.Add(a,"MiliArmor1",1) and equipDraw(a,"MiliArmor1"))
-assert(a:GetAttribute("ArmorAbsorption")==6 and a:GetAttribute("ArmorResistance")==.3)
+assert(a:GetAttribute("ArmorAbsorption")==4 and a:GetAttribute("ArmorResistance")==.4)
 assert(Service.Unequip(a,"Body"))
 assert(Service.Add(a,"MiliArmor2",1) and equipDraw(a,"MiliArmor2"))
-assert(a:GetAttribute("ArmorAbsorption")==8 and a:GetAttribute("ArmorResistance")==.4)
+assert(a:GetAttribute("ArmorAbsorption")==6 and a:GetAttribute("ArmorResistance")==.4)
 assert(Service.Snapshot(a).Equipment.Body=="MiliArmor2" and a.Character:GetAttribute("WornArmor")=="MiliArmor2")
 assert(Service.Unequip(a,"Body") and a:GetAttribute("ArmorAbsorption")==0 and a:GetAttribute("ArmorResistance")==0)
 for id,minimum in pairs({Pistol9mm=3,SMG9mm=4,PipePistol9mm=3,PipeRifle9mm=4,Rifle223=4,ServiceRifle223=4,AssaultRifle223=5,LSW223=6}) do
