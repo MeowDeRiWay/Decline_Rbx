@@ -2,7 +2,7 @@
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
 ItemConfig.PickupDistance = 2
-ItemConfig.RetiredItems={WoodenPlate=true,Money=true,Bill=true,bill=true,StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Axe=true,Showel=true}
+ItemConfig.RetiredItems={Rifle308=true,WoodenPlate=true,Money=true,Bill=true,bill=true,StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Axe=true,Showel=true}
 ItemConfig.Slots = {"Body", "PrimaryWeapon", "SecondaryWeapon", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
  ZombieHand = {
@@ -164,10 +164,6 @@ ItemConfig.Items.Rifle223={Name=".223 bolt-action rifle",Weight=3.2,Slot="Hands"
  Description="A rifle made by someone at a factory that once produced weapons. Quality and reliability.",
  Firearm={Category="Rifle",Skill="LightWeapons",SingleOnly=true,BoltAction=true,HoldHeightRatio=.4,Caliber="223",ShotDistance=80,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=27,DamageMin=23,DamageMax=27,RPM=40},
  Weapon={Damage=27,DamageMin=23,DamageMax=27,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
-ItemConfig.Items.Rifle308={Name=".308 bolt-action rifle",Weight=3.2,Slot="Hands",
- Description="Bolt-action rifle. R reloads available ammo; B selects FMJ/AP.",
- Firearm={Category="Rifle",SingleOnly=true,HoldHeightRatio=.4,Caliber="308",ShotDistance=100,Magazine=5,ReloadTime=2.5,Speed=750,Range=350,Damage=40,DamageMin=35,DamageMax=40,RPM=40},
- Weapon={Damage=40,DamageMin=35,DamageMax=40,DamageType="Bullet",MaxUses=3000,AttacksPerMinute=40}}
 -- Initial game balance; independent of the authored weapon models.
 ItemConfig.Items.Pistol9mm={Name="9 mm pistol",Weight=.9,Slot="Hands",
  Description="A replica of a pre-epidemic weapon, made by a skilled craftsman.",
