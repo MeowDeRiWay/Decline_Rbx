@@ -29,7 +29,7 @@ local dealt=0
 local lastOptions
 local Damage={RollHit=function() return true end,Apply=function(_,amount,_,_,_,options) lastOptions=options;dealt+=amount*(options and options.CriticalMultiplier or 1);return amount end,Miss=function() error("unexpected miss") end}
 local parts={}
-workspace={}
+workspace={GetServerTimeNow=function() return 0 end}
 function workspace:FindFirstChild() end
 function workspace:Raycast(origin,delta,params)
  local best,nearest=nil,math.huge

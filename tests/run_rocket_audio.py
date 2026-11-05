@@ -6,7 +6,14 @@ source=(root/'tests/rig_math.fixture.luau').read_text()
 source+='\nlocal Rules=(function()\n'+(root/'src/shared/ProjectileAudioRules.luau').read_text()+'\nend)()'
 source+='''
 local created,expires={},{}
-workspace={}
+local now=0
+workspace={GetServerTimeNow=function() return now end}
+local delayed={}
+local task={delay=function(seconds,fn) table.insert(delayed,{At=now+seconds,Run=fn}) end}
+local function advance(seconds)
+ now+=seconds
+ for i=#delayed,1,-1 do if delayed[i].At<=now then local job=table.remove(delayed,i);job.Run() end end
+end
 Enum={RollOffMode={InverseTapered=1}}
 game={GetService=function() return {AddItem=function(_,item,t) expires[item]=t end} end}
 Instance={new=function(kind)
@@ -85,6 +92,41 @@ assert(blast.Parent.Anchored and not blast.Parent.CanQuery and blast.Parent.Pare
 assert(expires[blast.Parent]==15,"blast survives .4-second visual cleanup")
 blast.OnEnded();assert(blast.Parent.Destroyed,"completed blast cleans its anchor")
 local before=#created;assert(Audio.Explode(nil,point)==nil and #created==before)
+-- Distance delay uses server timestamps, compensating network transit.
+local heardFrom=Vector3.zero
+local distant=Audio.OneShot(config,Vector3.new(100,0,0),now,"TestBlast",heardFrom)
+assert(not distant.Playing and math.abs(delayed[#delayed].At-now-1/3)<1e-6)
+advance(.2);assert(not distant.Playing)
+advance(.14);assert(distant.Playing,"blast arrives after light, by distance / 300")
+local late=Audio.OneShot(config,Vector3.new(100,0,0),now-.5,"TestLaunch",heardFrom)
+assert(late.Playing,"an already-arrived network event is not delayed twice")
+-- Acoustic trajectory remains separate from the visible projectile's lifetime.
+now=10
+Audio.Trace(77,Vector3.new(0,0,0),Vector3.new(100,0,0),config,config,10)
+now=10.2;Audio.Trace(77,Vector3.new(20,0,0),Vector3.new(100,0,0),config,config,10.2)
+local listener=Vector3.new(100,0,0)
+Audio.Step(listener,Vector3.zero,.1,10.25)
+local audioPart
+for _,v in ipairs(created) do if v.Name=="RocketFlightAudio" then audioPart=v end end
+local loopsBefore=0
+for _,v in ipairs(created) do if v.Name=="RocketFlight" and v.Parent==audioPart then loopsBefore+=1 end end
+assert(loopsBefore==0,"flight cannot be heard before its first wave arrives")
+Audio.Step(listener,Vector3.zero,.1,10.4)
+assert(audioPart.Position.X>0 and audioPart.Position.X<20,"heard emitter follows historical, not current rocket position")
+Audio.Finish(77)
+Audio.Step(listener,Vector3.zero,.1,10.45)
+assert(not audioPart.Destroyed,"visual stop does not cut off sound still in transit")
+Audio.Step(listener,Vector3.zero,.1,10.5)
+assert(audioPart.Destroyed,"last emitted flight sound drains and cleans its emitter")
+now=20;Audio.Trace(88,Vector3.zero,Vector3.new(100,0,0),config,config,20)
+local abandoned
+for _,v in ipairs(created) do if v.Name=="RocketFlightAudio" then abandoned=v end end
+Audio.Step(nil,Vector3.zero,.1,24)
+assert(abandoned.Destroyed,"missing listener and lost stop packet cannot leak an acoustic stream")
+local history={{Time=0,Position=Vector3.zero,Velocity=Vector3.new(100,0,0)},{Time=.5,Position=Vector3.new(50,0,0),Velocity=Vector3.new(100,0,0)}}
+local pos=Rules.Heard(history,1,Vector3.new(100,0,0),.5,false)
+assert(pos and math.abs(pos.X-25)<.001,"retarded moving-source interpolation")
+print("PASS: propagation delays, network timestamp compensation, historical source position, independent audio tail and cleanup")
 print("PASS: one spatial loop per rocket, no restart on trace updates, independent stop, full-length positional blast and end/timeout cleanup")
 '''
 with tempfile.TemporaryDirectory() as directory:

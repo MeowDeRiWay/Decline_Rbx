@@ -126,7 +126,8 @@ action.OnServerEvent:Connect(function(player,command,direction)
  character:SetAttribute("ShotMovementUntil",workspace:GetServerTimeNow()+Config.ShotMovementLockSeconds+(gun.Projectile=="Rocket" and .5 or 0))
  local humanoid=character:FindFirstChildOfClass("Humanoid")
  if humanoid then humanoid.WalkSpeed=0;humanoid:Move(Vector3.zero,false) end
- local shot=Audio.Play(character,"ShotSound",gun.ShotDistance)
+ local shot
+ if gun.Projectile~="Rocket" then shot=Audio.Play(character,"ShotSound",gun.ShotDistance) end
  Noise.Emit(origin,gun.ShotDistance or (shot and shot.RollOffMaxDistance or 150),"Shot")
  state.Ready=now+60/gun.RPM;state.Loaded-=1
  Inventory.SaveMagazine(player,state.Loaded,state.Type,state.Mode,state.Ready)

@@ -212,3 +212,21 @@ loot/door identity, virtual bullet barriers and 603-part factory rigid placement
 These are deterministic runtime tests, not Studio frame-time measurements. A
 Studio traversal with the actual map is still required to quantify remaining
 server generation, replication and client rendering costs.
+
+# Rocket acoustic propagation — 5 November 2026
+
+ProjectileAudioRules.SoundSpeed=300 is a tunable gameplay speed in studs/second.
+Rocket ignition and rocket/mine explosions carry server emission timestamps;
+clients wait only the remaining distance / speed delay. Ordinary firearm shots
+and local footsteps retain their existing playback behavior.
+
+Rocket flight uses a separate invisible acoustic emitter sampled from timestamped
+trajectory history. It interpolates samples by their arrival at the current
+listener, preserving physical source velocity for the existing Doppler path.
+Visible tracers can stop immediately while the acoustic stream drains. Each
+stream retains at most 256 samples, compacts consumed history and finishes stale
+streams after packet loss. No-listener streams expire without leaking emitters.
+
+Tests cover one-shot arrival timing, late network events, historical source
+interpolation, stopping visuals before acoustic arrival, emitter cleanup and
+unchanged flight volume. Final perceptual tuning still requires in-game listening.

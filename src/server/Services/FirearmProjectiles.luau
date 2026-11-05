@@ -17,7 +17,9 @@ local count,sequence=0,0
 local random=Random.new()
 local remote=Instance.new("RemoteEvent");remote.Name="FirearmEffects";remote.Parent=ReplicatedStorage
 local function emit(kind,point,data)
- data=data or {};data.Kind=kind;data.Point=point;table.insert(fx,data)
+ data=data or {};data.Kind=kind;data.Point=point
+ if data.Rocket or kind=="Backblast" or kind=="Explosion" then data.EmittedAt=workspace:GetServerTimeNow() end
+ table.insert(fx,data)
 end
 local function material(part)
  local ancestor=part
@@ -124,7 +126,9 @@ function Service.Backblast(player,character,origin,direction,definition,itemID)
  local rear=-direction
  local length=definition.BackblastRange or 10
  local cosine=math.cos(math.rad(definition.BackblastHalfAngle or 30))
- emit("Backblast",point,{Direction=rear,Length=length})
+ local sound=Audio.Describe(character,"ShotSound")
+ if sound then sound.MaxDistance=definition.ShotDistance or 150 end
+ emit("Backblast",point,{Direction=rear,Length=length,Sound=sound})
  task.spawn(function()
   WorldActivity.Ensure(point,length+2)
   local victims={}

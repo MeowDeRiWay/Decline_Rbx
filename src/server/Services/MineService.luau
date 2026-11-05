@@ -114,7 +114,7 @@ local function detonate(mine,trigger)
  remove(mine)
  for _,listener in ipairs(Players:GetPlayers()) do
   local root=listener.Character and listener.Character:FindFirstChild("HumanoidRootPart")
-  if root and (root.Position-mine.Point).Magnitude<=200 then remote:FireClient(listener,"Explosion",point,mine.Settings.BlastRadius,mine.Sound) end
+  if root and (root.Position-mine.Point).Magnitude<=200 then remote:FireClient(listener,"Explosion",point,mine.Settings.BlastRadius,mine.Sound,workspace:GetServerTimeNow()) end
  end
  if owner and owner:GetAttribute("AttributesConfirmed")~=true then owner=nil end
  Explosions.Detonate(point,mine.Settings,owner,owner and owner.Character,"Mine",100,{FriendlyFire=true,OwnerUserId=mine.OwnerID,TriggerCharacter=trigger,OnDamage=function(hp,_,victim)

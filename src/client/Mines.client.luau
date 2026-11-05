@@ -27,7 +27,7 @@ Input.InputBegan:Connect(function(input,processed)
  if target then remote:FireServer("Disarm",target)
  elseif player.Character:GetAttribute("HandsItem")=="Mine" then remote:FireServer("Place") end
 end)
-remote.OnClientEvent:Connect(function(kind,id,frame,data)
+remote.OnClientEvent:Connect(function(kind,id,frame,data,emittedAt)
  if kind=="Remove" then clear(id)
  elseif kind=="Reveal" then
   if seen[id] then return end
@@ -43,7 +43,7 @@ remote.OnClientEvent:Connect(function(kind,id,frame,data)
   seen[id]={Model=model,Highlight=highlight,Position=data or frame.Position,Parts=parts}
  elseif kind=="Explosion" then
   local point,radius=id,frame
-  RocketAudio.Explode(data,point)
+  RocketAudio.Explode(data,point,emittedAt)
   local part=Instance.new("Part");part.Shape=Enum.PartType.Ball;part.Size=Vector3.new(.5,.5,.5);part.CFrame=CFrame.new(point)
   part.Anchored=true;part.CanCollide=false;part.CanTouch=false;part.CanQuery=false;part.Material=Enum.Material.Neon;part.Color=Color3.fromRGB(255,140,45);part.Transparency=.2;part.Parent=workspace
   local light=Instance.new("PointLight");light.Range=20;light.Brightness=5;light.Parent=part
