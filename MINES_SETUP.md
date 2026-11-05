@@ -17,7 +17,9 @@ the blast clip; otherwise the server uses AT4's configured ExplosionSound.
 ## Installation and activation
 
 The actor crouches, lowers the mine to the placement point, works with both
-hands, and rises. The held mine is consumed once at the 2.5-second commit.
+hands, and rises. The held mine is consumed once at the 2.5-second commit. If pockets contain
+another mine, exactly one replaces it in the same active primary slot and stays
+drawn. With no spare, the slot and hands become empty.
 Cancellation/KO before commit leaves it in inventory; stale callbacks cannot
 consume it later. The deployed mine arms five seconds after commit. Until then
 it is safe to step on. After arming, owners, allies and enemies all trigger it.

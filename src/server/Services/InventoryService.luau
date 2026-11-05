@@ -170,14 +170,20 @@ function Service.UseMedicine(player)
  update(player)
  return true
 end
--- Only HandActionService calls these commits, at the visual handoff point.
-function Service.ConsumeHeld(player,id)
+-- Equipment/interaction services commit these changes at the visual handoff point.
+function Service.ConsumeHeld(player,id,refill)
  local state=states[player]
  if not state then return false end
  local slot=Rules.HandSlot(state)
  if state.Equipment[slot]~=id then return false end
- state.Equipment[slot]=nil;state.EquipmentCondition[slot]=nil;state.EquipmentWeapon[slot]=nil
- if state.ActiveWeaponSlot==slot then state.ActiveWeaponSlot=nil end
+ local replacement,conditions,data
+ if refill and ItemConfig.Items[id].Trap and (state.Items[id] or 0)>0 then
+  replacement,conditions,data=Rules.Remove(state,id,1)
+ end
+ state.Equipment[slot]=replacement and id or nil
+ state.EquipmentCondition[slot]=replacement and conditions and conditions[1] or nil
+ state.EquipmentWeapon[slot]=replacement and data and data[1] or nil
+ if not replacement and state.ActiveWeaponSlot==slot then state.ActiveWeaponSlot=nil end
  update(player);return true
 end
 function Service.ClearHands(player)

@@ -29,7 +29,8 @@ local Visuals={Template=function(id) return id=="Mine" and source or nil end}
 local Items={Mine={Explosion={KillRadius=5,BlastRadius=20}}}
 local ItemConfig={Items=Items,PickupDistance=2}
 local consumed,recovered=0,0
-local Inventory={ConsumeHeld=function(p,id)
+local Inventory={ConsumeHeld=function(p,id,refill)
+ assert(refill==true,"mine placement must request pocket refill")
  if p.Character:GetAttribute("HandsItem")~=id then return false end
  p.Character:SetAttribute("HandsItem","");consumed+=1;return true
 end,Add=function(_,id,n) assert(id=="Mine" and n==1);recovered+=1;return true end}
@@ -92,7 +93,13 @@ end
 local function plant(x)
  ready(a,x);a:SetAttribute("SkillTraps",250)
  assert(Mines.Place(a));assert(pending[a].Planting)
- assert(finish(a));RunService.Heartbeat:Fire(.1);return lastReveal(a)
+ local stale=pending[a].Complete
+ assert(finish(a))
+ local count=consumed
+ a.Character:SetAttribute("HandsItem","Mine") -- a replacement may already be drawn
+ assert(not stale() and consumed==count,"stale callback cannot consume a freshly refilled mine")
+ a.Character:SetAttribute("HandsItem","")
+ RunService.Heartbeat:Fire(.1);return lastReveal(a)
 end
 -- Cancellation leaves the item owned and stale completion cannot consume it.
 ready(a,0);assert(Mines.Place(a));local old=cancel(a)

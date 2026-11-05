@@ -109,6 +109,19 @@ assert(a.Character:GetAttribute("HandsItem")=="Mine" and Service.Snapshot(a).Ite
 assert(Service.ConsumeHeld(a,"Mine"))
 assert(not Service.ConsumeHeld(a,"Mine"),"double commit cannot consume a second pocket mine")
 assert(Service.Snapshot(a).Items.Mine==1 and not Service.Snapshot(a).Equipment.PrimaryWeapon and not Service.Export(a).ActiveWeaponSlot)
+assert(Service.Add(a,"Mine",2) and Service.Equip(a,"Mine"))
+assert(HandActions.Switch(a,"PrimaryWeapon"));advance(Pose.DrawDuration)
+-- One previously retained pocket mine plus two added = three total before equip.
+for remaining=2,1,-1 do
+ assert(Service.ConsumeHeld(a,"Mine",true))
+ local snapshot=Service.Snapshot(a)
+ assert(snapshot.Equipment.PrimaryWeapon=="Mine" and snapshot.ActiveWeaponSlot=="PrimaryWeapon" and (snapshot.Items.Mine or 0)==remaining-1)
+ assert(a.Character:GetAttribute("HandsItem")=="Mine","replacement stays drawn")
+end
+assert(Service.ConsumeHeld(a,"Mine",true))
+assert(not Service.Snapshot(a).Equipment.PrimaryWeapon and not Service.Export(a).ActiveWeaponSlot and a.Character:GetAttribute("HandsItem")=="")
+assert(not Service.ConsumeHeld(a,"Mine",true),"empty slot cannot consume another mine")
+print("PASS: pocket mines refill the active primary slot exactly once, conserving counts until the final mine empties hands")
 print("PASS: mine equips/draws through primary slot and placement consumes exactly the held item once")
 print("PASS: exact slot classes, separate ownership/UID/magazines/condition/weight, sequential timed switching, medicine draw and delayed treatment, KO/cancel guards, free hands and legacy migration")
 '''

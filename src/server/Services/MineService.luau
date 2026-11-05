@@ -130,7 +130,7 @@ function Service.Place(player)
  local mine={ID=nextID,Marker=marker,Point=hit.Position,Frame=MineGeometry.Placed(hit.Position,math.atan2(-root.CFrame.LookVector.X,-root.CFrame.LookVector.Z),source),State="Installing",OwnerID=player.UserId,OwnerName=player.Name,Skill=Rules.Skill(player:GetAttribute("SkillTraps")),TeamID=player:GetAttribute("TeamID"),TownID=player:GetAttribute("TownID"),GroupID=player:GetAttribute("GroupID"),Sound=explosionSound(),Settings=ExplosionRules.Resolve(source,Items.Mine.Explosion)}
  mines[mine.ID]=mine
  local started=Animation.Work(player,marker,2.5,function()
-  if mines[mine.ID]~=mine or c:GetAttribute("HandsItem")~="Mine" or (root.Position-mine.Point).Magnitude>2.5 or not Inventory.ConsumeHeld(player,"Mine") then return false end
+  if mines[mine.ID]~=mine or mine.State~="Installing" or c:GetAttribute("HandsItem")~="Mine" or (root.Position-mine.Point).Magnitude>2.5 or not Inventory.ConsumeHeld(player,"Mine",true) then return false end
   mine.State="Arming";mine.ArmAt=workspace:GetServerTimeNow()+Rules.ArmDelay
   Journal.Send(player,text(player,"Міну встановлено. Активація через 5 секунд.","Mine planted. Arms in 5 seconds.","Мина установлена. Активация через 5 секунд."))
   return true
