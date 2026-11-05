@@ -3,8 +3,9 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/FirearmProjectiles.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
-service=re.sub(r'local (Rules|Damage|Accuracy|BulletCast|Audio)=require[^\n]+\n','',service)
+service=re.sub(r'local (Rules|Damage|Accuracy|BulletCast|Audio|Items|ExplosionRules|Explosions|Visuals)=require[^\n]+\n','',service)
 mock='''
+local Visuals={Template=function() return nil end}
 local Audio={Describe=function(_,name) return {SoundId="rbxassetid://"..name,Volume=.7,PlaybackSpeed=1,MinDistance=3,MaxDistance=100} end}
 local Accuracy={Chance=function() return 90 end,NightMultiplier=function() return 1 end,SightBonus=function() return 0 end,ForWeapon=function() return 25 end}
 function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
@@ -191,17 +192,34 @@ for _,kind in ipairs({false,"Brick"}) do
  assert(launched,"rocket appears at half a second")
  packets={}
  for i=1,200 do heartbeat.fire(1/60) end
- assert(dealt==(kind and 50 or 100),"blast is flat100, wall halves once, rig parts deduplicated")
+ assert(dealt==100,"direct kill zone bypasses wall reduction, rig parts deduplicated")
  local explosions=0
  for _,batch in ipairs(packets) do for _,event in ipairs(batch) do if event.Kind=="Explosion" then explosions+=1;assert(event.Sound.SoundId=="rbxassetid://ExplosionSound") end
   if event.Kind=="Trace" and event.Rocket then assert(event.FlightSound.SoundId=="rbxassetid://FlightSound" and event.FlybySound.SoundId=="rbxassetid://FlybySound" and math.abs(event.Velocity.Magnitude-100)<1e-5) end end end
  assert(explosions==1,"one explosion per rocket")
 end
-rootPart.Position=Vector3.new(0,0,20)
-parts={};dealt=0;part(group("Brick"),3,.1);part(target,20,.5)
+rootPart.Position=Vector3.new(0,0,30)
+parts={};dealt=0;part(group("Brick"),3,.1);part(target,30,.5)
 Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
 for i=1,200 do heartbeat.fire(1/60) end
 assert(dealt==0,"outside blast radius is safe")
+-- Source is the rocket ammo model, never attributes on the launcher definition.
+local originalTemplate=Visuals.Template
+local attrs={KillRadius=0,BlastRadius=8}
+Visuals.Template=function(id)
+ assert(id=="AmmoAT4FMJ","blast attributes must come from projectile ammunition")
+ return {GetAttribute=function(_,key) return attrs[key] end}
+end
+rootPart.Position=Vector3.new(0,0,5);parts={};packets={};dealt=0;part(target,5,.5)
+definition.BlastRadius=999
+Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
+attrs.BlastRadius=100 -- settings for this airborne rocket must already be frozen
+for i=1,200 do heartbeat.fire(1/60) end
+assert(math.abs(dealt-96.25)<1e-5 and not lastOptions.InstantKill,"custom nonlethal rocket radius uses linear falloff")
+for _,batch in ipairs(packets) do for _,event in ipairs(batch) do
+ if event.Kind=="Explosion" then assert(event.Radius==8,"visual explosion uses the same ammo radius") end
+end end
+Visuals.Template=originalTemplate;definition.BlastRadius=nil
 -- Own blast must bypass affiliation immunity only for the actual shooter.
 local shooterHP={Health=100,Parent=character}
 local shooterRoot={Position=Vector3.zero}
@@ -220,14 +238,14 @@ Damage.Apply=function(victim,amount,kind,point,attackKind,options)
  return amount
 end
 rootPart.Position=Vector3.new(0,0,5)
-for _,case in ipairs({{0,false,100},{-5,true,50},{-20,false,0}}) do
+for _,case in ipairs({{0,false,100},{-5,true,100*(20-9.7)/15*.5},{-30,false,0}}) do
  parts={};packets={};ownDamage=0;otherDamage=0
  shooterRoot.Position=Vector3.new(0,0,case[1])
  if case[2] then part(group("Brick"),-2,.1) end
  part(target,5,.5)
  Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
  for i=1,200 do heartbeat.fire(1/60) end
- assert(ownDamage==case[3],"own blast respects radius and wall shielding exactly once")
+ assert(math.abs(ownDamage-case[3])<1e-5,"own blast respects radius and wall shielding exactly once")
  assert(otherDamage==100,"other victims still use ordinary blast rules")
 end
 Damage.Apply=originalApply
@@ -249,11 +267,15 @@ Service.Backblast(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"A
 assert(dealt==0,"wall blocks backblast")
 assert(Items.MiliArmor2.Armor.ExplosiveAbsorption==8 and Items.Exosuit.Armor.ExplosiveResistance==.5)
 print("PASS: rear cone50 damage, ally hazard, angular/range bounds and wall shielding")
-print("PASS: AT4 first-impact detonation,100/50 blast damage, deduplication, radius and separate armor fields")
+print("PASS: AT4 first-impact detonation, lethal core, outer falloff/shielding, deduplication and radius")
 print("PASS: configured .223 and .308 marksman weapons roll exact new damage endpoints")
 print("PASS: real swept projectile loop hits moving targets, thin two-layer wall entrance/exit, FMJ/AP wall parity and caliber gates, metal/unknown stop and exact air range")
 '''
+explosion=(root/'src/server/Services/ExplosionService.luau').read_text()
+explosion=explosion.replace('local WorldActivity=require(script.Parent.WorldActivityService)','local WorldActivity={Ensure=function() end}')
+explosion=re.sub(r'local (Shared|Rules|BulletCast|Damage)=.*\n','',explosion)
+explosion='local Rules=ExplosionRules\n'+explosion
 with tempfile.TemporaryDirectory() as directory:
  path=Path(directory)/'projectiles.luau'
- path.write_text((root/'tests/city_geometry.fixture.luau').read_text()+'\nlocal Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items\nlocal Rules=(function()\n'+(root/'src/shared/FirearmRules.luau').read_text()+'\nend)()\n'+mock+'\nlocal BulletCast=(function()\n'+(root/'src/shared/BulletCast.luau').read_text()+'\nend)()\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
+ path.write_text((root/'tests/city_geometry.fixture.luau').read_text()+'\nlocal Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items\nlocal Rules=(function()\n'+(root/'src/shared/FirearmRules.luau').read_text()+'\nend)()\n'+mock+'\nlocal BulletCast=(function()\n'+(root/'src/shared/BulletCast.luau').read_text()+'\nend)()\nlocal ExplosionRules=(function()\n'+(root/'src/shared/ExplosionRules.luau').read_text()+'\nend)()\nlocal Explosions=(function()\n'+explosion+'\nend)()\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
  subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

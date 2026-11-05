@@ -14,7 +14,8 @@ setup='''
 local hits=0
 local chance=.1
 local math=table.clone(math);math.random=function() return chance end
-local Life={Damage=function(_,hp,amount) hits+=1; hp.Health-=amount; return amount end}
+local finishes=0
+local Life={Finish=function(_,character) finishes+=1;character.Humanoid.Health=0;character:SetAttribute("IsDead",true);character:SetAttribute("Knockout",false) end,Damage=function(_,hp,amount) hits+=1; hp.Health-=amount; return amount end}
 function Players:GetPlayerFromCharacter(character) if character==a.Character then return a end end
 '''
 cases='''
@@ -175,6 +176,12 @@ assert(Service.Apply(hp,100,"Explosive",nil,"Explosion",{Attacker=a,HitChecked=t
 assert(hp.Health==48 and #playerDamage==observerCount,"self splash does not trigger PvP combat observers")
 assert(Service.Apply(hp,100,"Explosive",nil,"Explosion",{Attacker=b,HitChecked=true,FriendlyFire=false})==0,"ally immunity remains intact")
 print("PASS: actual damage service applies self explosion through armor while preserving ally immunity and PvP observers")
+hp.Health=250;hp.MaxHealth=250;a:SetAttribute("ArmorExplosiveAbsorption",10000);a:SetAttribute("ArmorExplosiveResistance",.9)
+a.Character:SetAttribute("Knockout",true)
+assert(Service.Apply(hp,100,"Explosive",nil,"Explosion",{Attacker=a,HitChecked=true,FriendlyFire=true,InstantKill=true})==250)
+assert(hp.Health==0 and finishes==1 and a.Character:GetAttribute("IsDead"),"lethal core finishes even KO through armor, never merely knocks out")
+assert(Service.Apply(hp,100,"Explosive",nil,"Explosion",{Attacker=a,FriendlyFire=true,InstantKill=true})==0 and finishes==1,"already dead cannot die twice")
+print("PASS: lethal core calls final death once, bypasses huge armor and finishes knocked-out players")
 local rounded=make("Model","Fractional damage target",workspace)
 rounded:SetAttribute("DamageResistance",.25);rounded:SetAttribute("DamageAbsorption",.2)
 local roundedHP=make("Humanoid","Humanoid",rounded);roundedHP.Health=100;roundedHP.MaxHealth=100

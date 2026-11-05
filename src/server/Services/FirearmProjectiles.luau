@@ -7,6 +7,10 @@ local BulletCast=require(ReplicatedStorage.Shared.BulletCast)
 local Damage=require(script.Parent.DamageService)
 local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
 local Audio=require(script.Parent.FirearmAudio)
+local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
+local ExplosionRules=require(ReplicatedStorage.Shared.ExplosionRules)
+local Explosions=require(script.Parent.ExplosionService)
+local Visuals=require(script.Parent.EquipmentVisuals)
 local Service={}
 local bullets,fx={},{}
 local count,sequence=0,0
@@ -77,11 +81,16 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
   local c,s=math.cos(yaw),math.sin(yaw)
   direction=Vector3.new(direction.X*c-direction.Z*s,direction.Y,direction.X*s+direction.Z*c).Unit
  end
+ local explosion
+ if definition.Projectile=="Rocket" then
+  local ammoID=Rules.AmmoID(definition.Caliber,ammoType)
+  explosion=ExplosionRules.Resolve(ammoID and Visuals.Template(ammoID),ammoID and Items[ammoID] and Items[ammoID].Explosion)
+ end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
   FlightSound=definition.Projectile=="Rocket" and Audio.Describe(character,"FlightSound") or nil,FlybySound=definition.Projectile=="Rocket" and Audio.Describe(character,"FlybySound") or nil,ExplosionSound=definition.Projectile=="Rocket" and Audio.Describe(character,"ExplosionSound") or nil,
   LaunchDelay=definition.Projectile=="Rocket" and .5 or nil,
-  Projectile=definition.Projectile,BlastRadius=definition.BlastRadius,Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
+  Projectile=definition.Projectile,Explosion=explosion,Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
   SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",IgnoredDormant={},BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true and definition.BoltAction~=false,Ignored={character},Impacts=0}
  if definition.Projectile=="Rocket" then Service.Backblast(player,character,origin,aimedDirection,definition,itemID) end
  if definition.Projectile~="Rocket" then emit("Muzzle",origin) end
@@ -105,34 +114,8 @@ if Damage.RollHit(bullet.Player,victim,bullet.SightBonus,bullet.Skill) then
 else Damage.Miss(victim.Parent,bullet.Player,"Ranged") end
 end
 local function explode(bullet,point)
- emit("Explosion",point,{Radius=bullet.BlastRadius or 10,Sound=bullet.ExplosionSound})
- -- Wake nearby actors and geometry before querying; deduplicate multipart rigs.
- task.spawn(function()
-  local radius=bullet.BlastRadius or 10
-  WorldActivity.Ensure(point,radius+2)
-  local victims={}
-  for _,part in ipairs(workspace:GetPartBoundsInRadius(point,radius+3)) do
-   local hp=victimOf(part)
-   if hp then victims[hp]=true end
-  end
-  -- The shooter's queryable parts can be missing/filtered, but own splash still applies.
-  local shooter=bullet.Character and bullet.Character:FindFirstChildOfClass("Humanoid")
-  if shooter then victims[shooter]=true end
-  local ignored={}
-  for hp in pairs(victims) do table.insert(ignored,hp.Parent) end
-  if bullet.Character then table.insert(ignored,bullet.Character) end
-  for hp in pairs(victims) do
-   local model=hp.Parent
-   local root=model and (model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart",true))
-   if root and hp.Health>0 and (root.Position-point).Magnitude<=radius then
-    local shield=BulletCast.Raycast(point,root.Position-point,ignored)
-    local amount=bullet.Damage*(shield and .5 or 1)
-    model:SetAttribute("LastDamagerID",bullet.Player.UserId)
-    model:SetAttribute("LastHitItem",bullet.ItemID)
-    Damage.Apply(hp,amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=bullet.Player,FriendlyFire=model==bullet.Character})
-   end
-  end
- end)
+ emit("Explosion",point,{Radius=bullet.Explosion.BlastRadius,Sound=bullet.ExplosionSound})
+ Explosions.Detonate(point,bullet.Explosion,bullet.Player,bullet.Character,bullet.ItemID,bullet.Damage)
 end
 function Service.Backblast(player,character,origin,direction,definition,itemID)
  local held=character:FindFirstChild("HeldItem")

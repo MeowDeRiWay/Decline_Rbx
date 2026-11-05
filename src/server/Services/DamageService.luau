@@ -66,9 +66,10 @@ function Service.RollHit(attacker,humanoid,bonus,skill)
  return math.random()<Service.HitChance(attacker,humanoid,bonus,skill)
 end
 function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,options)
- local target = humanoid.Parent
- if not target or humanoid.Health <= 0 or target:GetAttribute("Knockout") then return 0 end
  options=options or {}
+ local instant=options.InstantKill==true and damageType=="Explosive"
+ local target = humanoid.Parent
+ if not target or humanoid.Health <= 0 or (target:GetAttribute("Knockout") and not instant) then return 0 end
  if not options.FriendlyFire and friendly(options.Attacker,target) then return 0 end
  local victim=Players:GetPlayerFromCharacter(target)
  if victim and victim:GetAttribute("AttributesConfirmed")==false then return 0 end
@@ -83,7 +84,7 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  local player=Players:GetPlayerFromCharacter(target)
  options=options or {}
  local dodge=player and armorClass(player,target) or 0
- if not options.HitChecked and dodge>0 and math.random()<math.clamp(dodge/100,0,1) then
+ if not instant and not options.HitChecked and dodge>0 and math.random()<math.clamp(dodge/100,0,1) then
   target:SetAttribute("LastDamage",0);target:SetAttribute("LastDamageDodged",true);announce(target,"Dodge",0,options.Attacker,attackKind);return 0
  end
  target:SetAttribute("LastDamageDodged",false)
@@ -117,7 +118,13 @@ function Service.Apply(humanoid,amount,damageType,sourcePosition,attackKind,opti
  local postDefense=attackKind=="Ranged" and math.max(0,options.PostDefenseDamage or 0) or 0
  amount*=multiplier
  target:SetAttribute("LastDamageCritical",multiplier>1)
- if player then
+ if instant then
+  if target:FindFirstChildOfClass("ForceField") then amount=0
+  else
+   if player then Life.Finish(player,target) else humanoid.Health=0 end
+   amount=math.max(0,before-humanoid.Health)
+  end
+ elseif player then
   if target:FindFirstChildOfClass("ForceField") then amount=0
   else
    local absorption=(player:GetAttribute(armorAbsorptionKey) or 0)+(player:GetAttribute("DamageAbsorption") or 0)+(attackKind=="Melee" and (player:GetAttribute("MeleeAbsorption") or 0) or 0)

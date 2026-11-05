@@ -1,12 +1,30 @@
-# Own rocket splash
+# Explosion zones — projectile and trap attributes
 
-The shooter's own rocket explosion deals damage within the configured blast
-radius (AT4: 10 studs). It uses the normal flat 100 explosive damage, wall
-shielding (50% reduction), and the shooter's explosive armor/resistance.
-Self-splash alone bypasses affiliation immunity; allied blast protection is
-unchanged. The shooter is considered explicitly even if its parts were absent
-from the overlap query, and deduplicated with other blast victims. Self-damage
-does not trigger player-versus-player combat observers.
+Add two **Number** attributes on the projectile/trap Model or BasePart:
+
+| Attribute | AT4 rocket value | Meaning |
+| --- | --- | --- |
+| `KillRadius` | `5` | Inner radius in studs; immediate final death, including KO victims |
+| `BlastRadius` | `20` | Total outer radius, including the lethal core |
+
+For AT4, put these on `ServerStorage/Items/AmmoAT4FMJ`, **not AT4**.
+Missing/invalid attributes fall back to the ammo's Explosion configuration.
+Settings are snapshotted at launch; editing the template does not change a
+rocket already in flight. The launcher no longer defines a blast radius.
+
+0–5 studs: instant final death, bypassing armor and wall damage reduction.
+Above 5 to 20 studs: base damage = `100 * (20 - distance) / 15`.
+At 12.5 studs this is 50; at/beyond 20 it is 0. Outer-zone wall shielding
+halves damage before explosive armor/resistance. It follows the usual KO rules.
+The shooter is affected too. Existing ally protection and spawn ForceFields
+remain in force. Startup rear exhaust is separate and keeps its existing rules.
+
+Shared trap API (no trap deployment system currently exists):
+`ExplosionRules.Resolve(trapModel, defaults)` returns validated settings;
+`ExplosionService.Detonate(point, settings, ownerPlayer, ownerCharacter, itemID, baseDamage)`
+applies the same zones. Resolve settings when arming a trap. KillRadius 0
+disables instant death. BlastRadius is the total radius, not the width of the
+falloff ring. Victims are deduplicated, and the visual rocket blast matches it.
 
 # Rocket approach, departure and flyby audio
 
