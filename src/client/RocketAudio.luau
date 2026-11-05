@@ -28,16 +28,17 @@ function Audio.Start(record,config,flybyConfig)
  end
  if not record.Flyby and (flybyConfig or config) then
   local settings=table.clone(flybyConfig or config)
-  settings.MinDistance=3;settings.MaxDistance=Rules.FlybyRadius
+  settings.MinDistance=Rules.FlybyMinDistance;settings.MaxDistance=Rules.FlybyRadius
+  settings.Volume*=Rules.WhistleGain
   if not flybyConfig then
-   -- A quiet, raised high-frequency layer works with existing engine hiss.
-   settings.Volume*=.4;settings.PlaybackSpeed*=1.35
+   -- Keep a raised high-frequency fallback when no dedicated whistle is set.
+   settings.Volume*=.7;settings.PlaybackSpeed*=1.35
   end
   record.Flyby=play(settings,record.Part,true)
   if record.Flyby then
    record.Flyby.Name="RocketFlyby";record.Flyby.Volume=0
    record.FlybyVolume=settings.Volume
-   record.FlybyEQ=equalizer(record.Flyby,-30,flybyConfig and -3 or -12,flybyConfig and 0 or 6)
+   record.FlybyEQ=equalizer(record.Flyby,-30,flybyConfig and 0 or -8,flybyConfig and 4 or 8)
   end
  end
 end
@@ -61,7 +62,10 @@ function Audio.Update(record,listener,listenerVelocity,dt)
  end
  if record.Flyby then
   local sound=record.Flyby
-  sound.Volume+=(record.FlybyVolume*mix.Whistle-sound.Volume)*blend
+  local target=record.FlybyVolume*mix.Whistle
+  local rate=target>sound.Volume and Rules.WhistleAttack or Rules.WhistleRelease
+  local whistleBlend=1-math.exp(-rate*math.clamp(dt,0,.1))
+  sound.Volume+=(target-sound.Volume)*whistleBlend
  end
 end
 function Audio.Stop(record)

@@ -39,12 +39,31 @@ assert(whistle.Volume>0 and flight.PlaybackSpeed==config.PlaybackSpeed,"close fl
 Audio.Update(record,Vector3.new(-8,1,0),Vector3.zero,.1)
 assert(record.FlightEQ.HighGain<0,"receding sound is duller")
 for i=1,60 do Audio.Update(record,Vector3.new(80,0,0),Vector3.zero,1/60) end
-assert(whistle.Volume<.00001,"distant rockets have no close whistle")
+assert(whistle.Volume<.001,"whistle tail fades after the pass")
 Audio.Update(record,nil,Vector3.zero,.1);assert(flight.Volume==0 and whistle.Volume==0)
 Audio.Update(record,Vector3.new(8,0,0),Vector3.zero,.1);assert(flight.Volume==config.Volume)
 local custom={Part={Position=Vector3.zero}}
 Audio.Start(custom,nil,config);assert(custom.Flyby and not custom.Flight,"optional whistle works independently")
+assert(custom.Flyby.RollOffMinDistance==16 and custom.Flyby.RollOffMaxDistance==48)
+assert(math.abs(custom.FlybyVolume-config.Volume*1.7)<1e-8,"dedicated whistle gain is boosted")
+custom.Velocity=Vector3.new(100,0,0)
+Audio.Update(custom,Vector3.new(30,0,0),Vector3.zero,.1)
+assert(custom.Flyby.Volume>.35,"whistle builds on approach, not only during a point-blank pass")
+local peak=custom.Flyby.Volume
+Audio.Update(custom,Vector3.new(80,0,0),Vector3.zero,.1)
+assert(custom.Flyby.Volume>peak*.4 and custom.Flyby.Volume<peak,"retreat has a short smooth tail")
 Audio.Stop(custom)
+local sweep={Part={Position=Vector3.new(-80,0,8)},Velocity=Vector3.new(100,0,0)}
+Audio.Start(sweep,config,config)
+local strongTime=0
+for i=1,96 do
+ sweep.Part.Position=Vector3.new(-80+i*100/60,0,8)
+ Audio.Update(sweep,Vector3.zero,Vector3.zero,1/60)
+ if sweep.Flyby.Volume>.2 then strongTime+=1/60 end
+ assert(sweep.Flight.Volume==config.Volume,"flight noise keeps its original volume")
+end
+assert(strongTime>=.4,"100-stud/s close pass sustains whistle instead of a split-second chirp")
+Audio.Stop(sweep)
 Audio.Stop(record);assert(whistle.Destroyed and not whistle.Playing)
 assert(flight.Destroyed and not flight.Playing and record.Flight==nil)
 assert(other.Flight.Playing,"stopping one rocket does not stop another")
@@ -53,7 +72,10 @@ local approaching=Rules.Sample(Vector3.new(-30,0,0),Vector3.new(100,0,0),Vector3
 local receding=Rules.Sample(Vector3.new(30,0,0),Vector3.new(100,0,0),Vector3.zero,Vector3.zero)
 assert(approaching.Radial>0 and receding.Radial<0)
 assert(receding.HighGain<approaching.HighGain)
-assert(approaching.Whistle==0,"outside close-pass radius")
+assert(approaching.Whistle>=.25,"approaching rocket has a strong whistle already at 30 studs")
+assert(approaching.Whistle>receding.Whistle,"approach is more pronounced than retreat")
+local outside=Rules.Sample(Vector3.new(-60,0,0),Vector3.new(100,0,0),Vector3.zero,Vector3.zero)
+assert(outside.Whistle==0,"distant flight stays noise-only")
 local parallel=Rules.Sample(Vector3.new(0,0,5),Vector3.new(100,0,0),Vector3.zero,Vector3.new(100,0,0))
 assert(parallel.Whistle==0 and parallel.Radial==0,"co-moving listener does not get fake flybys")
 local point={X=10,Y=3,Z=20}
