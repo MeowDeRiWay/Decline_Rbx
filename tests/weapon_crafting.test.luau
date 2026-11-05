@@ -24,6 +24,9 @@ assert(mine.Ingredients.Scrap==2 and mine.Ingredients.Chemicals==1 and mine.Ingr
 assert(mine.Requirements.Skills.Traps==100 and mine.Requirements.Skills.Repair==100)
 assert(Stations.Matches(mine,'Workstation') and not Stations.Matches(mine,'ArmsBench'))
 assert(Recipes.MakeAT4.Ingredients.Iron==3)
+assert(Recipes.MakeAT4.Requirements.Skills.Repair==150 and Recipes.MakeAT4.Requirements.Skills.HeavyWeapons==150)
+assert(not Rules.Meets(state({Repair=149}),Recipes.MakeAmmoAT4.Requirements))
+assert(Rules.Meets(state({Repair=150}),Recipes.MakeAmmoAT4.Requirements),'rockets need no heavy weapons skill')
 assert(Recipes.MakeAmmoAT4.Ingredients.Scrap==1 and Recipes.MakeAmmoAT4.Ingredients.Chemicals==1)
 assert(Recipes.MakeAmmoAT4.Output=='AmmoAT4FMJ' and Recipes.MakeAmmoAT4.OutputCount==1,'rockets are individual rounds, not 30-round packs')
 for _,id in ipairs({'MakeAT4','MakeAmmoAT4'}) do
