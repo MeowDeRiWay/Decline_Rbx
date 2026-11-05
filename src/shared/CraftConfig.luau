@@ -1,5 +1,9 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 local recipes = {
+ MakeMine={Name="Make pressure mine",Station="Workstation",Category="Weapons",Description="Assemble a pressure mine. Requires Repair 100 and Traps 100.",Ingredients={Scrap=2,Chemicals=1,Coal=1},Output="Mine",OutputCount=1,MaxBatch=1,Duration=60,RequiresPresence=true,XP=100,Requirements={Skills={Repair=100,Traps=100}}},
+ -- Launcher and rocket skill requirements await balancing.
+ MakeAT4={Name="Make AT-4 launcher",Station="ArmsBench",Description="Assemble an AT-4 launcher from three iron.",Ingredients={Iron=3},Output="AT4",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500},
+ MakeAmmoAT4={Name="Make AT-4 rocket",Station="ArmsBench",Description="Produce one AT-4 rocket from one scrap and one chemical.",Ingredients={Scrap=1,Chemicals=1},Output="AmmoAT4FMJ",OutputCount=1,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100},
  MakeExosuit={Name="Make exoskeleton",Station="ArmsBench",Description="Assemble an exoskeleton from four steel and four Kevlar. Requires Repair 175.",Ingredients={Steel=4,Kevlar=4},Output="Exosuit",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,Requirements={Skills={Repair=175}}},
  MakeSterileBandage={Name="Make sterile bandage",Station="MedStation",Description="Sterilize one great bandage with one antiseptic. Requires First Aid 100.",Ingredients={GreatBandage=1,Antiseptic=1},Output="SterileBandage",OutputCount=1,Byproducts={EmptyBottle=1},MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={FirstAid=100}}},
  MakeAntiseptic={Name="Make antiseptic",Station="MedStation",Description="Prepare five antiseptic bottles from one clean water and one medical alcohol. Requires Doctor 50.",Ingredients={CleanWater=1,MedicalAlcohol=1},Output="Antiseptic",OutputCount=5,Byproducts={EmptyBottle=1},MaxBatch=1,Duration=60,RequiresPresence=true,XP=100,Requirements={Skills={Doctor=50}}},
@@ -116,6 +120,20 @@ for _,recipe in pairs(recipes) do
   recipe.Requirements.Skills=recipe.Requirements.Skills or {}
   recipe.Requirements.Skills.Repair=repair
   recipe.Description=recipe.Description:gsub(" Requires Repair %d+%.","").." Requires Repair "..repair.."."
+ end
+end
+
+-- Crafting a weapon requires the same combat specialization as its repair gate.
+local craftSkills={PipePistol9mm="LightWeapons",PipeRifle9mm="LightWeapons",Pistol9mm="LightWeapons",SMG9mm="LightWeapons",
+ Rifle223="LightWeapons",ServiceRifle223="LightWeapons",AssaultRifle223="LightWeapons",MarksmanRifle223="LightWeapons",LSW223="HeavyWeapons",
+ ScrapKnife="Melee",IronKnife="Melee",SteelKnife="Melee",ScrapAxe="Melee",IronAxe="Melee",SteelAxe="Melee",ScrapShovel="Melee",IronShovel="Melee",SteelShovel="Melee"}
+local skillNames={LightWeapons="Light weapons",HeavyWeapons="Heavy weapons",Melee="Melee"}
+for _,recipe in pairs(recipes) do
+ local skill=craftSkills[recipe.Output]
+ local requirements=recipe.Requirements and recipe.Requirements.Skills
+ if skill and requirements and requirements.Repair then
+  requirements[skill]=requirements.Repair
+  recipe.Description..=" Requires "..skillNames[skill].." "..requirements.Repair.."."
  end
 end
 

@@ -5,7 +5,7 @@ Item ID: `Mine`. Put the existing mine Model/BasePart at `ServerStorage/Items/Mi
 placeholder. A custom model replaces it on the next server startup. The held mine preserves its authored horizontal pose and has two side grips
 close to the torso for bent elbows. The mine
 uses the PrimaryWeapon slot and key 1, then LMB to install in front of the player.
-It is not a melee weapon. No crafting recipe was added.
+It is not a melee weapon. Craft at a workshop Workstation: two scrap, one chemical and one charcoal; requires Repair 100 and Traps 100. Produces one mine in 60 seconds.
 
 ## Model configuration
 
