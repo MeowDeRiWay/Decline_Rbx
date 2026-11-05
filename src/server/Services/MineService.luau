@@ -161,6 +161,16 @@ function Service.Disarm(player,id)
  if not started then release() end
  return started
 end
+-- Track humanoids once; evaluate zombie identity at sampling time so late rig
+-- initialization and CreatureType assignment work without rescanning the world.
+local creatures={}
+local function trackCreature(object)
+ if object:IsA("Humanoid") and object.Parent and object.Parent:IsA("Model") then
+  creatures[object.Parent]=creatures[object.Parent] or {}
+ end
+end
+for _,object in ipairs(workspace:GetDescendants()) do trackCreature(object) end
+workspace.DescendantAdded:Connect(trackCreature)
 local tick=0
 RunService.Heartbeat:Connect(function(dt)
  tick+=dt;if tick<.1 then return end;tick=0
@@ -192,6 +202,22 @@ RunService.Heartbeat:Connect(function(dt)
     end
    end
   else lastPositions[player]=nil;visits[player]=nil end
+ end
+ for model,record in pairs(creatures) do
+  if not model:IsDescendantOf(workspace) then creatures[model]=nil;continue end
+  local hp=model:FindFirstChildOfClass("Humanoid")
+  local root=model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Body")
+  if not hp or not root or not root:IsA("BasePart") or hp.Health<=0 or model:GetAttribute("IsDead") or model:GetAttribute("IsCorpse") or (model.Name~="Zombie" and model:GetAttribute("CreatureType")~="Zombie") then
+   record.Previous=nil;continue
+  end
+  local previous=record.Previous;record.Previous=root.Position
+  for _,mine in pairs(mines) do
+   if mine.State=="Armed" and Rules.Crossed(previous,root.Position,mine.Point,root.Size.Y/2+hp.HipHeight+.65) then
+    detonate(mine,model)
+    -- One blast can kill the trigger; let the next sample check its life state.
+    break
+   end
+  end
  end
 end)
 remote.OnServerEvent:Connect(function(player,command,id)

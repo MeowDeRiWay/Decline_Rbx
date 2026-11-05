@@ -22,7 +22,7 @@ another mine, exactly one replaces it in the same active primary slot and stays
 drawn. With no spare, the slot and hands become empty.
 Cancellation/KO before commit leaves it in inventory; stale callbacks cannot
 consume it later. The deployed mine arms five seconds after commit. Until then
-it is safe to step on. After arming, owners, allies and enemies all trigger it.
+it is safe to step on. After arming, owners, allies, enemies and living zombies all trigger it. Zombie detection supports existing and newly spawned rigs, including custom names with CreatureType=Zombie; dead/corpse rigs do not trigger mines.
 A swept horizontal pressure check catches fast runners between server samples,
 with height separation to prevent triggering through another floor. Teleports
 are not swept across the map. Mines last for the current server session and

@@ -10,6 +10,7 @@ s+='\nlocal Rules='+module('src/shared/MineRules.luau')+'\nlocal ExplosionRules=
 s+='\nlocal Visibility=(function()\n'+(root/'src/shared/VisibilityRules.luau').read_text()+'\nend)()\nlocal Config={CreatureViewAngle=160}'
 s+=r'''
 local RunService={Heartbeat=event()}
+workspace.DescendantAdded=event()
 local oldGet=game.GetService
 function game:GetService(name) return name=="RunService" and RunService or oldGet(self,name) end
 Enum.Material={Metal=1};Color3={fromRGB=function() return {} end}
@@ -164,6 +165,31 @@ move(a,70,-1.3);face(a,Vector3.new(60,0,-1.3));step(.1)
 assert(#notices==noticesBefore+1 and notices[#notices].Text=="Помічена пастка","each new approach announces a previously known mine")
 move(a,70,-1.3);step(.1);face(a,Vector3.new(60,0,-1.3));step(.1)
 assert(#notices==noticesBefore+1,"turning away and back in the same approach does not spam")
+-- Zombies spawned after service startup use the same armed/swept/height rules.
+move(a,100,0);move(b,200,0)
+local zombie=make("Model","Zombie",workspace)
+local zh=make("Humanoid","Humanoid",zombie);zh.Health=20;zh.HipHeight=0
+local zr=make("Part","HumanoidRootPart",zombie);zr.Size=Vector3.new(.5,1,.5)
+local function zmove(x,z,y) zr.Position=Vector3.new(x,y or 1,z) end
+workspace.DescendantAdded:Fire(zh)
+local zid,zframe=plant(110);move(a,150,0);zmove(zframe.Position.X,zframe.Position.Z)
+local count=#blasts
+step(4.9);assert(#blasts==count,"zombies cannot trigger unarmed mines")
+zh.Health=0;step(.2);assert(#blasts==count,"dead zombies cannot trigger mines")
+zh.Health=20;zmove(zframe.Position.X,zframe.Position.Z,8);step(.1)
+assert(#blasts==count,"zombie on another floor cannot trigger mine")
+zmove(zframe.Position.X-3,zframe.Position.Z);step(.1)
+zmove(zframe.Position.X+3,zframe.Position.Z);step(.1)
+assert(#blasts==count+1 and blasts[#blasts].Options.TriggerCharacter==zombie,"fast zombie crossing detonates with its own model as trigger")
+step(.1);assert(#blasts==count+1,"mine detonates only once")
+-- Custom names and late CreatureType assignment are supported.
+local aid,aframe=plant(120);move(a,150,0)
+zombie.Name="Walker";zmove(aframe.Position.X,aframe.Position.Z)
+count=#blasts;step(5.1);assert(#blasts==count,"unrelated humanoids do not trigger zombie logic")
+zombie:SetAttribute("CreatureType","Zombie");step(.1)
+assert(#blasts==count+1,"late zombie identity works while standing on the armed mine")
+zombie.Parent=nil;step(.1)
+print("PASS: zombie pressure, arming grace, dead/other-floor rejection, swept crossings and late zombie initialization")
 -- Formula endpoints and floor/teleport separation.
 assert(Rules.DisarmChance(250,250,false)==.9 and Rules.DisarmChance(0,250,false)==.05)
 assert(Rules.DisarmChance(0,300,true)==1)
