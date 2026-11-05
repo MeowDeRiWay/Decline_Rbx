@@ -7,6 +7,7 @@ s=(root/'tests/fixtures/town_mock.luau').read_text()+'\n'+(root/'tests/rig_math.
 s+='\nlocal Interaction='+module('src/shared/Interaction.luau')
 s+='\nlocal MineGeometry='+module('src/shared/MineGeometry.luau')
 s+='\nlocal Rules='+module('src/shared/MineRules.luau')+'\nlocal ExplosionRules='+module('src/shared/ExplosionRules.luau')+'\nlocal Affiliation='+module('src/shared/AffiliationRules.luau')
+s+='\nlocal Visibility=(function()\n'+(root/'src/shared/VisibilityRules.luau').read_text()+'\nend)()\nlocal Config={CreatureViewAngle=160}'
 s+=r'''
 local RunService={Heartbeat=event()}
 local oldGet=game.GetService
@@ -72,6 +73,10 @@ end
 local function move(p,x,z,y)
  local root=p.Character.HumanoidRootPart;root.Position=Vector3.new(x,y or 1,z);root.CFrame=CFrame.new(root.Position)
 end
+local function face(p,point)
+ local root=p.Character.HumanoidRootPart;local delta=point-root.Position
+ root.CFrame=CFrame.new(root.Position)*CFrame.Angles(0,math.atan2(-delta.X,-delta.Z),0)
+end
 for index,p in ipairs(Players:GetPlayers()) do move(p,index*100,0) end
 function workspace:Raycast(origin,delta)
  if delta.Y==-7 then return {Position=Vector3.new(origin.X,0,origin.Z),Normal=Vector3.yAxis,Instance=source} end
@@ -83,7 +88,7 @@ local function ready(p,x)
 end
 '''
 service=(root/'src/server/Services/MineService.luau').read_text()
-service=re.sub(r'local (Rules|Items|ExplosionRules|Explosions|Inventory|Visuals|Animation|Journal|Towns|Affiliation|ItemConfig|MineGeometry|Interaction)=require[^\n]+\n','',service)
+service=re.sub(r'local (Visibility|Config|Rules|Items|ExplosionRules|Explosions|Inventory|Visuals|Animation|Journal|Towns|Affiliation|ItemConfig|MineGeometry|Interaction)=require[^\n]+\n','',service)
 s+='\nlocal Mines=(function()\n'+service+'\nend)()'
 s+=r'''
 local remote=ReplicatedStorage:FindFirstChild("MineAction")
@@ -117,7 +122,8 @@ roll=1;assert(Mines.Disarm(a,own));assert(finish(a));assert(recovered==1 and #bl
 local other,otherFrame=plant(30)
 b:SetAttribute("Attention",10);b:SetAttribute("SkillTraps",250);b.Character.Humanoid.Health=100
 move(a,100,0);move(b,otherFrame.Position.X+1.2,otherFrame.Position.Z)
-step(.1);assert(lastReveal(b)==other)
+step(.1);assert(lastReveal(b)~=other,"mine outside forward sector is not discovered")
+face(b,otherFrame.Position);step(.1);assert(lastReveal(b)==other)
 local beforeNotices=#notices;step(.1);assert(#notices==beforeNotices,"discovery does not spam")
 roll=.1;assert(Mines.Disarm(b,other));move(a,otherFrame.Position.X+1,otherFrame.Position.Z)
 assert(not Mines.Disarm(a,other),"one disarmer at a time")
@@ -125,7 +131,7 @@ assert(finish(b));assert(recovered==2)
 -- Failure detonates and reports the planter even after disconnect, to victim/mayor.
 local failed,failedFrame=plant(40);move(a,100,0)
 b:SetAttribute("TeamID",1);b:SetAttribute("TownID",1);b:SetAttribute("SkillTraps",0)
-move(b,failedFrame.Position.X+1.2,failedFrame.Position.Z);step(.1)
+move(b,failedFrame.Position.X+1.2,failedFrame.Position.Z);face(b,failedFrame.Position);step(.1)
 assert(lastReveal(b)==failed)
 roll=1;assert(Mines.Disarm(b,failed))
 a.Parent=nil
@@ -150,8 +156,14 @@ ready(a,60);a:SetAttribute("SkillTraps",0);a:SetAttribute("Attention",10)
 local oldReveal=lastReveal(a)
 assert(Mines.Place(a) and finish(a));move(a,70,-1.3);RunService.Heartbeat:Fire(.1)
 assert(lastReveal(a)==oldReveal,"owner does not see their mine from ten studs with only five-stud detection")
-a:SetAttribute("SkillTraps",300);RunService.Heartbeat:Fire(.1)
+a:SetAttribute("SkillTraps",300);face(a,Vector3.new(60,0,-1.3));RunService.Heartbeat:Fire(.1)
 assert(lastReveal(a)~=oldReveal,"owner discovers it under the ordinary skill-weighted rule")
+local noticesBefore=#notices
+move(a,90,-1.3);step(.1)
+move(a,70,-1.3);face(a,Vector3.new(60,0,-1.3));step(.1)
+assert(#notices==noticesBefore+1 and notices[#notices].Text=="Помічена пастка","each new approach announces a previously known mine")
+move(a,70,-1.3);step(.1);face(a,Vector3.new(60,0,-1.3));step(.1)
+assert(#notices==noticesBefore+1,"turning away and back in the same approach does not spam")
 -- Formula endpoints and floor/teleport separation.
 assert(Rules.DisarmChance(250,250,false)==.9 and Rules.DisarmChance(0,250,false)==.05)
 assert(Rules.DisarmChance(0,300,true)==1)

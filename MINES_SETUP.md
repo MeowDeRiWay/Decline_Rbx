@@ -35,10 +35,10 @@ Attention is clamped to 0–10, Traps to 0–300. Attention 10/Traps 300 gives 2
 Attention 10/Traps 0 gives 5. This implementation treats lower skill as a shorter
 radius, not a hard requirement to reach 300. LOS is required for first discovery.
 Owners use the same skill-weighted discovery radius; installation does not auto-reveal a mine. Discovery is remembered per player until
-respawn or removal, announced once as 'Помічена пастка' in the events/chat log,
+respawn or removal. 'Помічена пастка' is announced once per approach in the events/chat log: leaving the detection radius resets the notice for the next approach. Turning away in place does not reset it. Discovery requires the same forward view sector as creature visibility,
 and shown with a red blinking fill. Only detected players receive visual clones;
 undetected mines do not have visible art replicated to everyone. The marker is
-an invisible, non-queryable server anchor. Known art is displayed only within the current skill-weighted radius, at most 20 studs.
+an invisible, non-queryable server anchor. Known art and its highlight are displayed only within the current skill-weighted radius (at most 20 studs) and forward view sector, including its perk multiplier. Mines behind the player are hidden and cannot be clicked.
 
 ## Disarming
 

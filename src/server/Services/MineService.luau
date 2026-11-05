@@ -4,6 +4,8 @@ local ServerStorage=game:GetService("ServerStorage")
 local RunService=game:GetService("RunService")
 local Shared=ReplicatedStorage.Shared
 local Rules=require(Shared.MineRules)
+local Visibility=require(Shared.VisibilityRules)
+local Config=require(Shared.GameConfig)
 local ItemConfig=require(Shared.ItemConfig)
 local Items=ItemConfig.Items
 local MineGeometry=require(Shared.MineGeometry)
@@ -17,7 +19,7 @@ local Journal=require(script.Parent.JournalService)
 local Towns=require(script.Parent.TownService)
 local Affiliation=require(Shared.AffiliationRules)
 local Service={}
-local mines,known,lastPositions,lastCommand={},{},{},{}
+local mines,known,visits,lastPositions,lastCommand={},{},{},{},{}
 local nextID=0
 local random=Random.new()
 local remote=Instance.new("RemoteEvent");remote.Name="MineAction";remote.Parent=ReplicatedStorage
@@ -62,13 +64,15 @@ local function remove(mine)
  mines[mine.ID]=nil;mine.State="Removed"
  mine.Marker:Destroy()
  for _,set in pairs(known) do set[mine.ID]=nil end
+ for _,set in pairs(visits) do set[mine.ID]=nil end
  remote:FireAllClients("Remove",mine.ID)
 end
 local function reveal(player,mine,announce)
  known[player]=known[player] or {}
- if known[player][mine.ID] then return end
- known[player][mine.ID]=true
- remote:FireClient(player,"Reveal",mine.ID,mine.Frame,mine.Point)
+ if not known[player][mine.ID] then
+  known[player][mine.ID]=true
+  remote:FireClient(player,"Reveal",mine.ID,mine.Frame,mine.Point)
+ end
  if announce then Journal.Send(player,text(player,"Помічена пастка","Trap spotted","Замечена ловушка")) end
 end
 local function lineOfSight(c,origin,point)
@@ -169,16 +173,25 @@ RunService.Heartbeat:Connect(function(dt)
   if root and hp and hp.Health>0 and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") then
    local previous=lastPositions[player];lastPositions[player]=root.Position
    local eye=c:FindFirstChild("Head") or root
+   visits[player]=visits[player] or {}
+   local radius=Rules.DetectionRadius(player:GetAttribute("Attention"),player:GetAttribute("SkillTraps"))
+   local forward=root.CFrame.LookVector
+   local angle=Config.CreatureViewAngle*(player:GetAttribute("ViewAngleMultiplier") or 1)
    for _,mine in pairs(mines) do
     if mine.State=="Installing" then continue end
     if mine.State=="Armed" and Rules.Crossed(previous,root.Position,mine.Point,root.Size.Y/2+hp.HipHeight+.65) then
      detonate(mine,c)
-    elseif (not known[player] or not known[player][mine.ID]) then
-     local radius=Rules.DetectionRadius(player:GetAttribute("Attention"),player:GetAttribute("SkillTraps"))
-     if (eye.Position-mine.Point).Magnitude<=radius and lineOfSight(c,eye.Position,mine.Point+Vector3.new(0,.1,0)) then reveal(player,mine,true) end
+    else
+     local offset=mine.Point-root.Position
+     if (eye.Position-mine.Point).Magnitude>radius then
+      visits[player][mine.ID]=nil
+     elseif not visits[player][mine.ID] and Visibility.InSector(forward.X,forward.Z,offset.X,offset.Z,angle) and lineOfSight(c,eye.Position,mine.Point+Vector3.new(0,.1,0)) then
+      visits[player][mine.ID]=true
+      reveal(player,mine,true)
+     end
     end
    end
-  else lastPositions[player]=nil end
+  else lastPositions[player]=nil;visits[player]=nil end
  end
 end)
 remote.OnServerEvent:Connect(function(player,command,id)
@@ -186,10 +199,10 @@ remote.OnServerEvent:Connect(function(player,command,id)
  if command=="Place" then Service.Place(player)
  elseif command=="Disarm" and typeof(id)=="number" then Service.Disarm(player,id) end
 end)
-Players.PlayerRemoving:Connect(function(player) known[player]=nil;lastPositions[player]=nil;lastCommand[player]=nil end)
+Players.PlayerRemoving:Connect(function(player) known[player]=nil;visits[player]=nil;lastPositions[player]=nil;lastCommand[player]=nil end)
 local function bind(player)
- player.CharacterAdded:Connect(function() known[player]=nil;lastPositions[player]=nil end)
- player.CharacterRemoving:Connect(function() known[player]=nil;lastPositions[player]=nil end)
+ player.CharacterAdded:Connect(function() known[player]=nil;visits[player]=nil;lastPositions[player]=nil end)
+ player.CharacterRemoving:Connect(function() known[player]=nil;visits[player]=nil;lastPositions[player]=nil end)
 end
 Players.PlayerAdded:Connect(bind)
 for _,player in ipairs(Players:GetPlayers()) do bind(player) end

@@ -38,8 +38,6 @@ local function resize()
  local camera=workspace.CurrentCamera
  if camera then scale.Scale=math.min(1,(camera.ViewportSize.X-24)/760,(camera.ViewportSize.Y-80)/530) end
 end
-local opener=button(gui,"ADMIN [F6]",0,0,130,function() end)
-opener.AnchorPoint=Vector2.new(1,1);opener.Position=UDim2.new(1,-16,1,-16)
 local status=label(panel,"Ready.",16,486,728,32)
 local busy=false
 local function request(command,data)
@@ -57,7 +55,6 @@ local function setOpen(value)
  resize();panel.Visible=value;player:SetAttribute("AdminOpen",value)
  if value then player:SetAttribute("MedicalMode",nil) end
 end
-opener.Activated:Connect(function() setOpen(not panel.Visible) end)
 label(panel,"DECLINE / ADMINISTRATION",16,8,660,32)
 button(panel,"X",704,8,40,function() setOpen(false) end)
 local pages={}

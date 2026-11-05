@@ -11,6 +11,8 @@ local template=ReplicatedStorage:WaitForChild("MineVisual")
 local RocketAudio=require(script.Parent.RocketAudio)
 local MineTarget=require(script.Parent.MineTarget)
 local MineRules=require(ReplicatedStorage.Shared.MineRules)
+local Visibility=require(ReplicatedStorage.Shared.VisibilityRules)
+local Config=require(ReplicatedStorage.Shared.GameConfig)
 local seen={}
 local function clear(id)
  local r=seen[id];if r then MineTarget.Remove(r.Model);r.Model:Destroy();seen[id]=nil end
@@ -35,6 +37,8 @@ remote.OnClientEvent:Connect(function(kind,id,frame,data)
   local highlight=Instance.new("Highlight");highlight.Adornee=model;highlight.FillColor=Color3.fromRGB(255,30,30);highlight.OutlineColor=highlight.FillColor
   highlight.DepthMode=Enum.HighlightDepthMode.Occluded;highlight.Parent=model
   local parts=model:GetDescendants();if model:IsA("BasePart") then table.insert(parts,model) end
+  highlight.Enabled=false
+  for _,v in ipairs(parts) do if v:IsA("BasePart") then v.LocalTransparencyModifier=1;v.CanQuery=false end end
   MineTarget.Register(id,model,data or frame.Position)
   seen[id]={Model=model,Highlight=highlight,Position=data or frame.Position,Parts=parts}
  elseif kind=="Explosion" then
@@ -51,7 +55,12 @@ RunService.Heartbeat:Connect(function()
  for id,r in pairs(seen) do
   local eye=c and (c:FindFirstChild("Head") or root)
   local radius=MineRules.DetectionRadius(player:GetAttribute("Attention"),player:GetAttribute("SkillTraps"))
-  local visible=eye and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") and (eye.Position-r.Position).Magnitude<=radius
+  local visible=root and eye and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") and (eye.Position-r.Position).Magnitude<=radius
+  if visible then
+   local forward=root.CFrame.LookVector
+   local offset=r.Position-root.Position
+   visible=Visibility.InSector(forward.X,forward.Z,offset.X,offset.Z,Config.CreatureViewAngle*(player:GetAttribute("ViewAngleMultiplier") or 1))
+  end
   if visible~=r.Visible then
    r.Visible=visible
    for _,part in ipairs(r.Parts) do if part:IsA("BasePart") then part.LocalTransparencyModifier=visible and 0 or 1;part.CanQuery=visible==true end end

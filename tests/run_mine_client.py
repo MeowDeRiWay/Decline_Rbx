@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 s=(root/'tests/fixtures/town_mock.luau').read_text()+'\n'+(root/'tests/rig_math.fixture.luau').read_text()
+s+='\nlocal Visibility=(function()\n'+(root/'src/shared/VisibilityRules.luau').read_text()+'\nend)()\nlocal Config={CreatureViewAngle=160}'
 s+=r'''
 local RunService={Heartbeat=event()}
 local Input={InputBegan=event(),GetFocusedTextBox=function() end}
@@ -37,6 +38,7 @@ target=(root/'src/client/MineTarget.luau').read_text().replace('local Cursor=req
 s+='\nlocal MineTarget=(function()\n'+target+'\nend)()'
 s+='\nlocal MineRules=(function()\n'+(root/'src/shared/MineRules.luau').read_text()+'\nend)()'
 source=(root/'src/client/Mines.client.luau').read_text().replace('local RocketAudio=require(script.Parent.RocketAudio)','').replace('local MineTarget=require(script.Parent.MineTarget)','').replace('local MineRules=require(ReplicatedStorage.Shared.MineRules)','')
+source=source.replace('local Visibility=require(ReplicatedStorage.Shared.VisibilityRules)','').replace('local Config=require(ReplicatedStorage.Shared.GameConfig)','')
 s+='\n'+source
 s+=r'''
 Input.InputBegan:Fire({UserInputType=1},false);assert(commands[1][1]=="Place")
@@ -53,6 +55,10 @@ RunService.Heartbeat:Fire(.1)
 local highlight=model:FindFirstChildOfClass("Highlight")
 assert(not model:FindFirstChildOfClass("ProximityPrompt"),"no E disarm prompt")
 assert(highlight.Enabled and model.CanQuery)
+a.Character.HumanoidRootPart.CFrame=CFrame.Angles(0,math.pi,0);RunService.Heartbeat:Fire(.1)
+assert(not highlight.Enabled and model.LocalTransparencyModifier==1 and not model.CanQuery,"mine behind the player is hidden, including its highlight and mouse target")
+a.Character.HumanoidRootPart.CFrame=CFrame.identity;RunService.Heartbeat:Fire(.1)
+assert(highlight.Enabled and model.CanQuery,"turning back restores a known mine")
 sample={Hit={Instance=model}}
 Input.InputBegan:Fire({UserInputType=1},false)
 assert(commands[2][1]=="Disarm" and commands[2][2]==1,"click disarms instead of placing another mine")
