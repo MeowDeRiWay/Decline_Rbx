@@ -4,7 +4,10 @@ local ServerStorage=game:GetService("ServerStorage")
 local RunService=game:GetService("RunService")
 local Shared=ReplicatedStorage.Shared
 local Rules=require(Shared.MineRules)
-local Items=require(Shared.ItemConfig).Items
+local ItemConfig=require(Shared.ItemConfig)
+local Items=ItemConfig.Items
+local MineGeometry=require(Shared.MineGeometry)
+local Interaction=require(Shared.Interaction)
 local ExplosionRules=require(Shared.ExplosionRules)
 local Explosions=require(script.Parent.ExplosionService)
 local Inventory=require(script.Parent.InventoryService)
@@ -36,8 +39,10 @@ end
 local source=template()
 local visual=source:Clone();visual.Name="MineVisual"
 local function prepare(model)
+ model:SetAttribute("Item_ID",nil) -- detected art is not a loose inventory pickup
  local objects=model:GetDescendants();if model:IsA("BasePart") then table.insert(objects,model) end
  for _,v in ipairs(objects) do
+  v:SetAttribute("Item_ID",nil)
   if v:IsA("LuaSourceContainer") or v:IsA("Highlight") or v:IsA("ProximityPrompt") then v:Destroy()
   elseif v:IsA("BasePart") then v.Anchored=true;v.CanCollide=false;v.CanTouch=false;v.CanQuery=false
   elseif v:IsA("Sound") then v:Stop();v.PlayOnRemove=false
@@ -63,7 +68,7 @@ local function reveal(player,mine,announce)
  known[player]=known[player] or {}
  if known[player][mine.ID] then return end
  known[player][mine.ID]=true
- remote:FireClient(player,"Reveal",mine.ID,mine.Frame,mine.Marker,Rules.DisarmChance(player:GetAttribute("SkillTraps"),mine.Skill,player.UserId==mine.OwnerID))
+ remote:FireClient(player,"Reveal",mine.ID,mine.Frame,mine.Point)
  if announce then Journal.Send(player,text(player,"Помічена пастка","Trap spotted","Замечена ловушка")) end
 end
 local function lineOfSight(c,origin,point)
@@ -100,13 +105,14 @@ end
 local function detonate(mine,trigger)
  if mines[mine.ID]~=mine then return end
  local owner=Players:GetPlayerByUserId(mine.OwnerID)
+ local point=mine.Point+Vector3.new(0,.05,0)
  remove(mine)
  for _,listener in ipairs(Players:GetPlayers()) do
   local root=listener.Character and listener.Character:FindFirstChild("HumanoidRootPart")
-  if root and (root.Position-mine.Point).Magnitude<=200 then remote:FireClient(listener,"Explosion",mine.Point,mine.Settings.BlastRadius,mine.Sound) end
+  if root and (root.Position-mine.Point).Magnitude<=200 then remote:FireClient(listener,"Explosion",point,mine.Settings.BlastRadius,mine.Sound) end
  end
  if owner and owner:GetAttribute("AttributesConfirmed")~=true then owner=nil end
- Explosions.Detonate(mine.Point,mine.Settings,owner,owner and owner.Character,"Mine",100,{FriendlyFire=true,OwnerUserId=mine.OwnerID,TriggerCharacter=trigger,OnDamage=function(_,_,victim) notify(mine,victim) end})
+ Explosions.Detonate(point,mine.Settings,owner,owner and owner.Character,"Mine",100,{FriendlyFire=true,OwnerUserId=mine.OwnerID,TriggerCharacter=trigger,OnDamage=function(_,_,victim) notify(mine,victim) end})
 end
 function Service.Place(player)
  local c,root=context(player)
@@ -115,18 +121,17 @@ function Service.Place(player)
  local hit=workspace:Raycast(root.Position+root.CFrame.LookVector*1.3+Vector3.new(0,1,0),Vector3.new(0,-7,0),params)
  if not hit or hit.Normal.Y<.7 or math.abs(root.Position.Y-hit.Position.Y)>4 then return false end
  for _,mine in pairs(mines) do if (mine.Point-hit.Position).Magnitude<1 then return false end end
- local frame,size
- if source:IsA("Model") then frame,size=source:GetBoundingBox() else frame,size=source.CFrame,source.Size end
- local bottom=source:GetPivot():ToObjectSpace(frame).Position.Y-size.Y/2
+ local shape=MineGeometry.Measure(source)
+ local yaw=math.atan2(-root.CFrame.LookVector.X,-root.CFrame.LookVector.Z)
+ local bounds=CFrame.new(hit.Position)*CFrame.Angles(0,yaw,0)*CFrame.new(0,-shape.Bottom,0)*CFrame.new(shape.Center)
  nextID+=1
- local marker=Instance.new("Part");marker.Name="MineAnchor";marker.Size=Vector3.new(.3,.1,.3);marker.Anchored=true;marker.Transparency=1
- marker.CanCollide=false;marker.CanTouch=false;marker.CanQuery=false;marker.Position=hit.Position+Vector3.new(0,.05,0);marker.Parent=folder
- local mine={ID=nextID,Marker=marker,Point=hit.Position,Frame=CFrame.new(hit.Position-Vector3.new(0,bottom,0))*CFrame.Angles(0,math.atan2(-root.CFrame.LookVector.X,-root.CFrame.LookVector.Z),0),State="Installing",OwnerID=player.UserId,OwnerName=player.Name,Skill=Rules.Skill(player:GetAttribute("SkillTraps")),TeamID=player:GetAttribute("TeamID"),TownID=player:GetAttribute("TownID"),GroupID=player:GetAttribute("GroupID"),Sound=explosionSound(),Settings=ExplosionRules.Resolve(source,Items.Mine.Explosion)}
+ local marker=Instance.new("Part");marker.Name="MineAnchor";marker.Size=shape.Size;marker.Anchored=true;marker.Transparency=1
+ marker.CanCollide=false;marker.CanTouch=false;marker.CanQuery=false;marker.Position=bounds.Position;marker.CFrame=bounds;marker.Parent=folder
+ local mine={ID=nextID,Marker=marker,Point=hit.Position,Frame=MineGeometry.Placed(hit.Position,math.atan2(-root.CFrame.LookVector.X,-root.CFrame.LookVector.Z),source),State="Installing",OwnerID=player.UserId,OwnerName=player.Name,Skill=Rules.Skill(player:GetAttribute("SkillTraps")),TeamID=player:GetAttribute("TeamID"),TownID=player:GetAttribute("TownID"),GroupID=player:GetAttribute("GroupID"),Sound=explosionSound(),Settings=ExplosionRules.Resolve(source,Items.Mine.Explosion)}
  mines[mine.ID]=mine
  local started=Animation.Work(player,marker,2.5,function()
   if mines[mine.ID]~=mine or c:GetAttribute("HandsItem")~="Mine" or (root.Position-mine.Point).Magnitude>2.5 or not Inventory.ConsumeHeld(player,"Mine") then return false end
   mine.State="Arming";mine.ArmAt=workspace:GetServerTimeNow()+Rules.ArmDelay
-  reveal(player,mine,false)
   Journal.Send(player,text(player,"Міну встановлено. Активація через 5 секунд.","Mine planted. Arms in 5 seconds.","Мина установлена. Активация через 5 секунд."))
   return true
  end,function() if mine.State=="Installing" then remove(mine) end end,true)
@@ -137,11 +142,11 @@ function Service.Disarm(player,id)
  local mine=mines[id]
  local c,root=context(player)
  if not c or not mine or mine.State=="Installing" or mine.Busy or not (known[player] and known[player][id]) then return false end
- if (root.Position-mine.Point).Magnitude>2.5 or not lineOfSight(c,root.Position,mine.Point+Vector3.new(0,.1,0)) then return false end
+ if Interaction.Distance(mine.Marker,root.Position)>ItemConfig.PickupDistance or not lineOfSight(c,root.Position,mine.Point+Vector3.new(0,.1,0)) then return false end
  mine.Busy=player
  local function release() if mines[id]==mine then mine.Busy=nil end end
- local started=Animation.Work(player,mine.Marker,2.5,function()
-  if mines[id]~=mine or mine.Busy~=player or (root.Position-mine.Point).Magnitude>2.5 or not lineOfSight(c,root.Position,mine.Point+Vector3.new(0,.1,0)) then return false end
+ local started=Animation.Work(player,mine.Marker,ItemConfig.PickupDistance,function()
+  if mines[id]~=mine or mine.Busy~=player or Interaction.Distance(mine.Marker,root.Position)>ItemConfig.PickupDistance or not lineOfSight(c,root.Position,mine.Point+Vector3.new(0,.1,0)) then return false end
   if player.UserId==mine.OwnerID or random:NextNumber()<Rules.DisarmChance(player:GetAttribute("SkillTraps"),mine.Skill,false) then
    if not Inventory.Add(player,"Mine",1) then return false end
    remove(mine)
@@ -169,7 +174,7 @@ RunService.Heartbeat:Connect(function(dt)
     if mine.State=="Armed" and Rules.Crossed(previous,root.Position,mine.Point,root.Size.Y/2+hp.HipHeight+.65) then
      detonate(mine,c)
     elseif (not known[player] or not known[player][mine.ID]) then
-     local radius=player.UserId==mine.OwnerID and 20 or Rules.DetectionRadius(player:GetAttribute("Attention"),player:GetAttribute("SkillTraps"))
+     local radius=Rules.DetectionRadius(player:GetAttribute("Attention"),player:GetAttribute("SkillTraps"))
      if (eye.Position-mine.Point).Magnitude<=radius and lineOfSight(c,eye.Position,mine.Point+Vector3.new(0,.1,0)) then reveal(player,mine,true) end
     end
    end

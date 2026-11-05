@@ -9,6 +9,7 @@ local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local player=Players.LocalPlayer
 local action=ReplicatedStorage:WaitForChild("FirearmAction")
 local effects=ReplicatedStorage:WaitForChild("FirearmEffects")
+local MineTarget=require(script.Parent.MineTarget)
 local firing,ready=false,0
 local function blocked()
  if (player:GetAttribute("PlayerContextOpen") or player:GetAttribute("ExchangeOpen")) then return true end
@@ -16,7 +17,9 @@ local function blocked()
 end
 Input.InputBegan:Connect(function(input,processed)
  if processed or blocked() then return end
- if input.UserInputType==Enum.UserInputType.MouseButton1 then firing=true
+ if input.UserInputType==Enum.UserInputType.MouseButton1 then
+  if MineTarget.Get() then return end
+  firing=true
  elseif input.KeyCode==Enum.KeyCode.R then action:FireServer("Reload")
  elseif input.KeyCode==Enum.KeyCode.V then action:FireServer("Mode")
  elseif input.KeyCode==Enum.KeyCode.B then action:FireServer("Type") end
@@ -24,7 +27,7 @@ end)
 Input.InputEnded:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 then firing=false end end)
 Input.WindowFocusReleased:Connect(function() firing=false end)
 RunService.Heartbeat:Connect(function()
- if not firing or blocked() or os.clock()<ready then return end
+ if not firing or blocked() or MineTarget.Get() or os.clock()<ready then return end
  local character=player.Character
  local definition=character and Items[character:GetAttribute("HandsItem")]
  if not definition or not definition.Firearm or character:GetAttribute("Reloading") then return end

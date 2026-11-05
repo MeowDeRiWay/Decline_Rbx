@@ -192,7 +192,8 @@ for _,kind in ipairs({false,"Brick"}) do
  assert(launched,"rocket appears at half a second")
  packets={}
  for i=1,200 do heartbeat.fire(1/60) end
- assert(dealt==100,"direct kill zone bypasses wall reduction, rig parts deduplicated")
+ assert(dealt==(kind and 50 or 100),"obstructed core becomes normal reduced damage, unshielded core lethal")
+ assert(lastOptions.InstantKill==(not kind),"walls remove instant death even inside lethal radius")
  local explosions=0
  for _,batch in ipairs(packets) do for _,event in ipairs(batch) do if event.Kind=="Explosion" then explosions+=1;assert(event.Sound.SoundId=="rbxassetid://ExplosionSound") end
   if event.Kind=="Trace" and event.Rocket then assert(event.FlightSound.SoundId=="rbxassetid://FlightSound" and event.FlybySound.SoundId=="rbxassetid://FlybySound" and math.abs(event.Velocity.Magnitude-100)<1e-5) end end end
@@ -252,6 +253,25 @@ Damage.Apply=originalApply
 function character:FindFirstChildOfClass() end
 function character:FindFirstChild() end
 print("PASS: own rocket splash bypasses self-affiliation only, ignores missing query parts, respects walls and radius")
+-- Death-created geometry cannot change wall shielding for later victims.
+local originalBounds=workspace.GetPartBoundsInRadius
+local originalDamage=Damage.Apply
+local second=group(nil);local secondHP={Health=100,Parent=second}
+function second:FindFirstChildOfClass() return secondHP end
+function second:FindFirstChild() return {Position=Vector3.new(0,0,3)} end
+parts={};rootPart.Position=Vector3.new(0,0,2);part(target,2,.5);part(second,3,.5)
+function workspace:GetPartBoundsInRadius() return parts end
+local orderedHits=0
+Damage.Apply=function(_,_,_,_,_,options)
+ assert(options.InstantKill,"corpse geometry spawned by first victim must not shield the second")
+ orderedHits+=1
+ if orderedHits==1 then part(group("Brick"),1,.1) end
+ return 100
+end
+Explosions.Detonate(Vector3.zero,{KillRadius=5,BlastRadius=20},player,character,"Mine",100,{FriendlyFire=true})
+assert(orderedHits==2)
+Damage.Apply=originalDamage;workspace.GetPartBoundsInRadius=originalBounds
+print("PASS: wall shielding is snapshotted before terminal deaths spawn new bodies")
 for _,item in pairs(Items) do if item.Armor then assert(typeof(item.Armor.ExplosiveAbsorption)=="number" and typeof(item.Armor.ExplosiveResistance)=="number") end end
 parts={};part(target,-5,.5);rootPart.Position=Vector3.new(0,0,-5);dealt=0
 Service.Backblast(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"AT4")

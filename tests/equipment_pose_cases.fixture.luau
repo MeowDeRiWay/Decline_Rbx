@@ -13,3 +13,5 @@ local templates=Instance.new("Folder",serverStorage);templates.Name="Items"
 for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife"}) do
  local part=Instance.new("Part",templates);part.Name=id;part.CFrame=CFrame.identity;part.Size=Vector3.new(.1,.1,.5)
 end
+
+local mine=Instance.new("Part",templates);mine.Name="Mine";mine.Size=Vector3.new(.16,.9,.9);mine.CFrame=CFrame.new(15,3,8)*CFrame.Angles(0,0,math.pi/2)

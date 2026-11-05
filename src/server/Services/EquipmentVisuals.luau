@@ -2,6 +2,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
 local Presentation=require(ReplicatedStorage.Shared.WeaponPresentation)
+local MineGeometry=require(ReplicatedStorage.Shared.MineGeometry)
 local Visuals = {}
 local function findTemplate(folder,id)
  if not folder then return nil end
@@ -104,6 +105,8 @@ function Visuals.Apply(character, id)
   -- PrimaryPart is the authored alignment anchor; keep the tube parallel to -Z.
   target=root.CFrame*CFrame.new(root.Size.X*.62,root.Size.Y*.6,root.Size.Z*.15)
  end
+ local mineCenter,mineSize
+ if definition.Trap then target,mineCenter,mineSize=MineGeometry.Held(root,template) end
  if definition.Slot=="Medicine" then target=root.CFrame*CFrame.new(root.Size.X*.25,root.Size.Y*.25,-root.Size.Z/2-.22) end
  -- The model pivot is the point held in the hand. Place it at the handle in Studio.
  held:PivotTo(target)
@@ -117,6 +120,16 @@ function Visuals.Apply(character, id)
  local gripPart = held:IsA("Model") and (held.PrimaryPart or parts[1]) or held
  local handGrip=Instance.new("Attachment")
  handGrip.Name="_HandGrip";handGrip.CFrame=gripPart.CFrame:ToObjectSpace(target);handGrip.Parent=gripPart
+ if definition.Trap then
+  for _,side in ipairs({"Right","Left"}) do
+   local name=side.."HandGrip"
+   if not held:FindFirstChild(name,true) then
+    local a=Instance.new("Attachment");a.Name=name
+    local point=mineCenter+Vector3.new((side=="Right" and 1 or -1)*mineSize.X*.42,-mineSize.Y*.25,0)
+    a.CFrame=gripPart.CFrame:ToObjectSpace(root.CFrame*CFrame.new(point));a.Parent=gripPart
+   end
+  end
+ end
  if definition.Firearm and animationSet=="Launcher" then
   local frame,size=held:GetBoundingBox()
   local front,rear=math.huge,-math.huge

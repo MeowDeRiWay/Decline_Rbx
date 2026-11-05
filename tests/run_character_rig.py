@@ -107,15 +107,23 @@ source+='\n'+(root/'tests/equipment_pose_cases.fixture.luau').read_text()
 service=(root/'src/server/Services/EquipmentVisuals.luau').read_text()
 service=re.sub(r'local (ServerStorage|ReplicatedStorage|Items) = [^\n]+\n','',service)
 service=service.replace('local Presentation=require(ReplicatedStorage.Shared.WeaponPresentation)','')
+service=service.replace('require(ReplicatedStorage.Shared.MineGeometry)',module('src/shared/MineGeometry.luau'))
 source+='\nfunction methods:FindFirstChildWhichIsA(kind,recurse) for _,part in ipairs(recurse and self:GetDescendants() or self:GetChildren()) do if part:IsA(kind) then return part end end end\ndo\nlocal ServerStorage=serverStorage\nlocal Items='+module('src/shared/ItemConfig.luau')+'\nlocal Visuals=(function()\n'+service+'\nend)()\n'
 source+='\nlocal StoragePose='+module('src/shared/HandActionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\nlocal Holsters='+module('src/server/Services/HolsterVisuals.luau').replace('require(game:GetService("ReplicatedStorage").Shared.HandActionPose)','StoragePose')
 source+=r'''
-for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife"}) do
+for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife","Mine"}) do
  Visuals.Apply(c,id)
  local held=c:FindFirstChild("HeldItem")
  local localPose=root.CFrame:ToObjectSpace(held.CFrame)
  if id:find("Pistol") then
   assert(math.abs(localPose.Position.X)<.0001 and localPose.Position.Z<-.76,"actual pistol equipment is forward with extended arms")
+ elseif id=="Mine" then
+  assert(math.abs(localPose.RightVector.Y)> .999,"rotated thin-X mine stays horizontal")
+  assert(math.abs(localPose.Position.X)<.0001 and localPose.Position.Z>-.6 and localPose.Position.Z<-.4,"mine is centered close to chest")
+  local right=held:FindFirstChild("RightHandGrip",true);local left=held:FindFirstChild("LeftHandGrip",true)
+  local rp=root.CFrame:PointToObjectSpace((held.CFrame*right.CFrame).Position)
+  local lp=root.CFrame:PointToObjectSpace((held.CFrame*left.CFrame).Position)
+  assert(rp.X>0 and lp.X<0 and math.abs(rp.Z-lp.Z)<.0001,"hands support opposite sides at the same forward distance")
  elseif id=="Rifle223" then
   assert(math.abs(localPose.Position.Z+.2575)<.0001 and math.abs(localPose.Position.X-.24)<.0001,"rifle keeps forward distance while staying inward toward chest")
  end

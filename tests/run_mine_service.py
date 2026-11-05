@@ -4,6 +4,8 @@ import subprocess,re,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 def module(p):return '(function()\n'+(root/p).read_text()+'\nend)()'
 s=(root/'tests/fixtures/town_mock.luau').read_text()+'\n'+(root/'tests/rig_math.fixture.luau').read_text()
+s+='\nlocal Interaction='+module('src/shared/Interaction.luau')
+s+='\nlocal MineGeometry='+module('src/shared/MineGeometry.luau')
 s+='\nlocal Rules='+module('src/shared/MineRules.luau')+'\nlocal ExplosionRules='+module('src/shared/ExplosionRules.luau')+'\nlocal Affiliation='+module('src/shared/AffiliationRules.luau')
 s+=r'''
 local RunService={Heartbeat=event()}
@@ -25,6 +27,7 @@ local source=make("Part","Mine",ServerStorage)
 source.Size=Vector3.new(.9,.16,.9);source.CFrame=CFrame.identity
 local Visuals={Template=function(id) return id=="Mine" and source or nil end}
 local Items={Mine={Explosion={KillRadius=5,BlastRadius=20}}}
+local ItemConfig={Items=Items,PickupDistance=2}
 local consumed,recovered=0,0
 local Inventory={ConsumeHeld=function(p,id)
  if p.Character:GetAttribute("HandsItem")~=id then return false end
@@ -79,7 +82,7 @@ local function ready(p,x)
 end
 '''
 service=(root/'src/server/Services/MineService.luau').read_text()
-service=re.sub(r'local (Rules|Items|ExplosionRules|Explosions|Inventory|Visuals|Animation|Journal|Towns|Affiliation)=require[^\n]+\n','',service)
+service=re.sub(r'local (Rules|Items|ExplosionRules|Explosions|Inventory|Visuals|Animation|Journal|Towns|Affiliation|ItemConfig|MineGeometry|Interaction)=require[^\n]+\n','',service)
 s+='\nlocal Mines=(function()\n'+service+'\nend)()'
 s+=r'''
 local remote=ReplicatedStorage:FindFirstChild("MineAction")
@@ -89,7 +92,7 @@ end
 local function plant(x)
  ready(a,x);a:SetAttribute("SkillTraps",250)
  assert(Mines.Place(a));assert(pending[a].Planting)
- assert(finish(a));return lastReveal(a)
+ assert(finish(a));RunService.Heartbeat:Fire(.1);return lastReveal(a)
 end
 -- Cancellation leaves the item owned and stale completion cannot consume it.
 ready(a,0);assert(Mines.Place(a));local old=cancel(a)
@@ -135,6 +138,13 @@ step(5.1);local oldCount=#blasts
 move(b,sweptFrame.Position.X+3,sweptFrame.Position.Z);step(.1)
 assert(#blasts==oldCount+1 and b.Character.Humanoid.Health==0,"fast allied runner triggers exactly once")
 step(.1);assert(#blasts==oldCount+1)
+-- Own mines follow exactly the same discovery radius and have no auto reveal.
+ready(a,60);a:SetAttribute("SkillTraps",0);a:SetAttribute("Attention",10)
+local oldReveal=lastReveal(a)
+assert(Mines.Place(a) and finish(a));move(a,70,-1.3);RunService.Heartbeat:Fire(.1)
+assert(lastReveal(a)==oldReveal,"owner does not see their mine from ten studs with only five-stud detection")
+a:SetAttribute("SkillTraps",300);RunService.Heartbeat:Fire(.1)
+assert(lastReveal(a)~=oldReveal,"owner discovers it under the ordinary skill-weighted rule")
 -- Formula endpoints and floor/teleport separation.
 assert(Rules.DisarmChance(250,250,false)==.9 and Rules.DisarmChance(0,250,false)==.05)
 assert(Rules.DisarmChance(0,300,true)==1)

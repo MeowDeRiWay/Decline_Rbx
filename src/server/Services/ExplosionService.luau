@@ -32,17 +32,24 @@ function Service.Detonate(point,settings,attacker,character,itemID,baseDamage,op
   local ignored={}
   for hp in pairs(victims) do table.insert(ignored,hp.Parent) end
   if character and not shooter then table.insert(ignored,character) end
+  local impacts={}
   for hp in pairs(victims) do
    local model=hp.Parent
    local root=model and (model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart",true))
    if not root or hp.Health<=0 then continue end
    local amount,lethal=Rules.Sample((root.Position-point).Magnitude,settings,baseDamage)
    if amount<=0 and not lethal then continue end
-   if not lethal and BulletCast.Raycast(point,root.Position-point,ignored) then amount*=.5 end
+   local shield=BulletCast.Raycast(point,root.Position-point,ignored)
+   if shield then amount*=.5;lethal=false end
+   table.insert(impacts,{HP=hp,Model=model,Amount=amount,Lethal=lethal})
+  end
+  -- Resolve every wall ray before deaths can spawn queryable corpses/loot.
+  for _,hit in ipairs(impacts) do
+   local hp,model=hit.HP,hit.Model
    if attacker or options.OwnerUserId then model:SetAttribute("LastDamagerID",options.OwnerUserId or attacker.UserId) end
    model:SetAttribute("LastHitItem",itemID)
    local victim=options.OnDamage and game:GetService("Players"):GetPlayerFromCharacter(model)
-   local dealt=Damage.Apply(hp,amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=attacker,FriendlyFire=options.FriendlyFire or model==character,InstantKill=lethal})
+   local dealt=Damage.Apply(hp,hit.Amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=attacker,FriendlyFire=options.FriendlyFire or model==character,InstantKill=hit.Lethal})
    if options.OnDamage and dealt>0 then
     local ok,err=pcall(options.OnDamage,hp,dealt,victim)
     if not ok then warn("[Decline explosion notice] "..tostring(err)) end

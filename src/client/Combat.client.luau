@@ -7,10 +7,12 @@ local Motion = require(ReplicatedStorage.Shared.WeaponMotion)
 local player = Players.LocalPlayer
 local items = require(ReplicatedStorage.Shared.ItemConfig).Items
 local remote = ReplicatedStorage:WaitForChild("WeaponAttack")
+local MineTarget=require(script.Parent.MineTarget)
 local ready = 0
 local sequence=0
 Input.InputBegan:Connect(function(input,processed)
  if (player.Character and (player.Character:GetAttribute("HandsBusy") or player.Character:GetAttribute("MedicalHeld"))) or (player:GetAttribute("PlayerContextOpen") or player:GetAttribute("ExchangeOpen")) or processed or input.UserInputType ~= Enum.UserInputType.MouseButton1 or Input:GetFocusedTextBox() or GuiService.MenuIsOpen or (player:GetAttribute("MedicalMode") or (((player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) then return end
+ if MineTarget.Get() then return end
  local character = player.Character
  local held = character and character:FindFirstChild("HeldItem")
  local motor = held and held:FindFirstChild("WeaponGrip")

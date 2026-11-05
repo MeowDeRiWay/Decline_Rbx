@@ -12,7 +12,9 @@ Missing/invalid attributes fall back to the ammo's Explosion configuration.
 Settings are snapshotted at launch; editing the template does not change a
 rocket already in flight. The launcher no longer defines a blast radius.
 
-0–5 studs: instant final death, bypassing armor and wall damage reduction.
+0–5 studs with unobstructed line of sight: instant final death, bypassing armor.
+An obstacle cancels instant death even in the core: ordinary damage is halved
+and then reduced by armor, with the normal KO rules.
 Above 5 to 20 studs: base damage = `100 * (20 - distance) / 15`.
 At 12.5 studs this is 50; at/beyond 20 it is 0. Outer-zone wall shielding
 halves damage before explosive armor/resistance. It follows the usual KO rules.

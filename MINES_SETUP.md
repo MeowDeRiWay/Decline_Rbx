@@ -2,7 +2,8 @@
 
 Item ID: `Mine`. Put the existing mine Model/BasePart at `ServerStorage/Items/Mine`
 (category folders are supported). If missing, the server creates a small green
-placeholder. A custom model replaces it on the next server startup. The mine
+placeholder. A custom model replaces it on the next server startup. The held mine preserves its authored horizontal pose and has two side grips
+close to the torso for bent elbows. The mine
 uses the PrimaryWeapon slot and key 1, then LMB to install in front of the player.
 It is not a melee weapon. No crafting recipe was added.
 
@@ -31,16 +32,16 @@ Detection radius in studs is `20 * (.25 * Attention/10 + .75 * Traps/300)`.
 Attention is clamped to 0–10, Traps to 0–300. Attention 10/Traps 300 gives 20;
 Attention 10/Traps 0 gives 5. This implementation treats lower skill as a shorter
 radius, not a hard requirement to reach 300. LOS is required for first discovery.
-The owner knows their own placement. Discovery is remembered per player until
+Owners use the same skill-weighted discovery radius; installation does not auto-reveal a mine. Discovery is remembered per player until
 respawn or removal, announced once as 'Помічена пастка' in the events/chat log,
 and shown with a red blinking fill. Only detected players receive visual clones;
 undetected mines do not have visible art replicated to everyone. The marker is
-an invisible, non-queryable server anchor. Known art displays only within 20 studs.
+an invisible, non-queryable server anchor. Known art is displayed only within the current skill-weighted radius, at most 20 studs.
 
 ## Disarming
 
-Approach a discovered mine without stepping on it and use its E prompt from
-within 2.5 studs. The same crouch/work/rise animation runs. The server checks
+Approach a discovered mine without stepping on it and click it with LMB from
+within the normal interaction distance (ItemConfig.PickupDistance, currently 2 studs). There is no E prompt, and that click takes priority over shooting/punching. The same crouch/work/rise animation runs. The server checks
 range, LOS, discovery, life state and a per-mine lock. Only one disarmer can work
 on a mine at a time. There is no immunity to pressure while disarming.
 
@@ -53,7 +54,8 @@ it immediately, including while unarmed. Cancellation releases the lock.
 
 ## Explosion and accountability
 
-Mine blasts explicitly enable friendly fire. The lethal core causes final death;
+Mine blasts explicitly enable friendly fire. The lethal core causes final death only with no intervening obstacle; a wall
+turns even inner-core damage into an ordinary reduced hit that can cause KO;
 the outer zone uses ordinary wall/armor/KO rules. All actual player victims get
 a private events/chat notice naming the planter's @username, including KO victims.
 For same-team/group/allied-town damage, the victim town's online mayor receives

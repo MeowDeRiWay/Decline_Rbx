@@ -6,6 +6,7 @@ import sys
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/EquipmentVisuals.luau').read_text().replace('local Items = require(ReplicatedStorage.Shared.ItemConfig)','')
 service=service.replace('require(ReplicatedStorage.Shared.WeaponPresentation)','(function()\n'+(root/'src/shared/WeaponPresentation.luau').read_text()+'\nend)()')
+service=service.replace('require(ReplicatedStorage.Shared.MineGeometry)','(function()\n'+(root/'src/shared/MineGeometry.luau').read_text()+'\nend)()')
 cases='''
 local world=make("Folder","WorldItems",workspace)
 make("Folder","Items",ServerStorage)
