@@ -8,6 +8,7 @@ return {
  DormantInterval=10,
  CheckInterval=.25,
  TransitionsPerStep=8,
- GeometryBatch=16,
+ GeometryBatch=32,
+ WorkSliceSeconds=.002,
  BucketSize=128,
 }

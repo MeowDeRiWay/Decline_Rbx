@@ -65,6 +65,14 @@ assert(not Service.Raycast(Vector3.new(0,0,-10),Vector3.new(0,0,20),{},consumed)
 clock+=11;run(function() Service.Step(clock) end)
 assert(w.destroyed and w2.destroyed and not door.destroyed and chest.Parent==h)
 assert(Service.Stats().Cold==2 and Service.Stats().ReleasedParts==2)
+local stats=Service.Stats();stats.Cold=999;stats.ReleasedParts=999
+for _=1,1000 do assert(Service.Stats().Cold==2 and Service.Stats().ReleasedParts==2) end
+assert(Service.Stats().Cold==2,"statistics snapshots cannot mutate live counters")
+local originalPairs=pairs
+pairs=function() error("statistics must not enumerate records or descriptors") end
+local constantStats=Service.Stats()
+pairs=originalPairs
+assert(constantStats.ReleasedParts==2,"statistics use transition counters")
 assert(#ServerStorage.WorldGeometryPrototypes:GetChildren()==1,"one shared leaf prototype per template slot")
 local cold=Service.Raycast(Vector3.new(0,0,-10),Vector3.new(0,0,20),{})
 assert(cold and cold.Distance==hit.Distance and cold.Instance==h)
@@ -87,7 +95,8 @@ run(function() Service.Ensure(Vector3.new(1000,0,0),4) end);assert(h2.Parent==wo
 near.Character=nil
 clock+=22;run(function() Service.Step(clock) end);clock+=11;run(function() Service.Step(clock) end)
 local delay;run(function() delay=Service.Step(clock) end);assert(delay==10,"empty cold world has coarse updates")
-h:Destroy();h2:Destroy();assert(Service.Stats().Cold==0 and #ServerStorage.WorldGeometryPrototypes:GetChildren()==0)
+h:Destroy();h2:Destroy();assert(Service.Stats().ReleasedParts==0)
+assert(Service.Stats().Cold==0 and #ServerStorage.WorldGeometryPrototypes:GetChildren()==0)
 local actor=make("Model","Zombie",workspace);actor.CFrame=CFrame.new();actor.Size=Vector3.new(2,4,2)
 local actorRoot=make("Part","HumanoidRootPart",actor);actorRoot.CFrame=CFrame.new();local health=make("Humanoid","Humanoid",actor);health.Health=20
 Service.Register(actor,"NPC");clock+=11;run(function() Service.Step(clock) end)
@@ -154,6 +163,42 @@ assert(forward.Parent==workspace,"prefetched geometry is not put back to sleep w
 rr.AssemblyLinearVelocity=Vector3.new(-14,0,0)
 clock+=11;run(function() Service.Step(clock) end)
 assert(Service.IsDormant(forward),"turning away releases old prefetch geometry after hysteresis")
+-- A slow metadata pass yields on elapsed time before reaching 32 mutations.
+near.Character=nil
+local slow=building(30000);Service.Register(slow,"Building")
+local getDescendants=methods.GetDescendants
+function methods:GetDescendants()
+ local result=getDescendants(self)
+ if self==slow then clock+=.003 end
+ return result
+end
+clock+=11
+local work=coroutine.create(function() Service.Step(clock) end)
+local ok,err=coroutine.resume(work);assert(ok,err)
+assert(coroutine.status(work)~="dead" and slow.Parent==workspace,"elapsed work budget yields before publishing dormancy")
+for _=1,1000 do
+ if coroutine.status(work)=="dead" then break end
+ local resumed,message=coroutine.resume(work);assert(resumed,message)
+end
+assert(coroutine.status(work)=="dead" and Service.IsDormant(slow))
+methods.GetDescendants=getDescendants
+local disappearing=building(40000)
+for i=1,40 do
+ local part=make("Part","Leaf"..i,disappearing);part.CFrame=CFrame.new(Vector3.new(40000,0,i));part.Size=Vector3.new(1,1,1);part.Material={Name="Wood"};part.Shape=1
+end
+Service.Register(disappearing,"Building")
+clock+=11;run(function() Service.Step(clock) end)
+clock+=11
+local deletionWork=coroutine.create(function() Service.Step(clock) end)
+local resumed,message=coroutine.resume(deletionWork);assert(resumed,message)
+disappearing:Destroy()
+for _=1,1000 do
+ if coroutine.status(deletionWork)=="dead" then break end
+ local ok,err=coroutine.resume(deletionWork);assert(ok,err)
+end
+local afterDelete=Service.Stats()
+assert(coroutine.status(deletionWork)=="dead" and afterDelete.Active>=0 and afterDelete.Sleeping>=0 and afterDelete.Cold>=0 and afterDelete.ReleasedParts>=0,"deletion during yielded work cannot corrupt counters")
+print("PASS: constant-time statistics and elapsed-time yielding during metadata scans")
 print("PASS: predictive waking at 14 studs/s, no prefetch/sleep churn, release after turn")
 print("PASS: road enrollment, nested owner guard, sleeping bounds, folder identity, retained slabs, reconnect and deletion")
 print("PASS: sleep delays, cold geometry release/shared prototypes, exact block raycasts and penetration, live door state, hysteresis, identity/HP/loot restoration, reconnect, idle interval and corpse cleanup")

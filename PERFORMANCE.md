@@ -230,3 +230,27 @@ streams after packet loss. No-listener streams expire without leaking emitters.
 Tests cover one-shot arrival timing, late network events, historical source
 interpolation, stopping visuals before acoustic arrival, emitter cleanup and
 unchanged flight volume. Final perceptual tuning still requires in-game listening.
+
+# Background hitch reduction — 5 November 2026
+
+WorldActivity statistics previously walked every retained descriptor every five
+seconds. Stats now copies four counters maintained at registration, sleep, cold
+release, wake and deletion. Released-part counts are removed when a root wakes or
+is destroyed. Queries no longer scale with the amount of terrain traversed.
+
+Geometry work checks a two-millisecond elapsed-time budget as well as a 32-part
+batch ceiling. Joint/reference metadata scanning and interest-list passes now
+also yield on the time budget. These are cooperative checkpoints; individual
+engine operations such as Clone, Destroy or reparenting remain indivisible.
+Stationary NPC bounds do not trigger repeated spatial index rebuilds.
+
+Tests cover counter transitions, deletion, independent stats snapshots and stats
+queries with table enumeration disabled. A simulated slow metadata scan verifies
+yielding before the part-count limit. These tests do not measure Studio hitch
+improvement; client/server profiling on the real map remains necessary.
+
+Future vehicles require a chosen meters-to-studs scale and stress tests at their
+actual stud/second speed. Far scenery should use cheap exterior LOD while nearby
+areas restore full collision, interiors, interactive state and NPC simulation.
+Increasing the full-detail preload radius alone multiplies replication/memory
+cost, especially for fast aircraft.

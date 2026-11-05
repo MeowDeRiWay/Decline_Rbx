@@ -12,11 +12,21 @@ local Service={}
 local records,prototypes,buckets={},{},{}
 local sequence=0
 local sleeping,library
+local totals={Active=0,Sleeping=0,Cold=0,ReleasedParts=0}
 local mutations=0
+local deadline=os.clock()+(Config.WorkSliceSeconds or .002)
 local nextCheck=0
-local function checkpoint()
- mutations+=1
- if mutations%Config.GeometryBatch==0 then task.wait() end
+local function checkpoint(mutation)
+ if mutation~=false then mutations+=1 end
+ if mutations>=Config.GeometryBatch or os.clock()>=deadline then
+  task.wait();mutations=0;deadline=os.clock()+(Config.WorkSliceSeconds or .002)
+ end
+end
+local function state(record,value)
+ totals[record.State]-=1;totals[value]+=1;record.State=value
+end
+local function clearReleased(record)
+ totals.ReleasedParts-=record.ReleasedParts or 0;record.ReleasedParts=0
 end
 local function containers()
  if sleeping then return end
@@ -101,7 +111,9 @@ local function restore(part,saved)
  for key,value in pairs(saved.Properties) do pcall(function() part[key]=value end) end
 end
 local function forget(root,record)
+ if records[root]~=record then return end
  unindex(record);records[root]=nil
+ totals[record.State]-=1;clearReleased(record)
  if record.Connection then record.Connection:Disconnect() end
  local group=prototypes[record.Source]
  if group then
@@ -127,7 +139,7 @@ function Service.Register(root,kind,source)
  local group=prototypes[record.Source]
  if not group then group={Users=0,Parts={}};prototypes[record.Source]=group end
  group.Users+=1
- records[root]=record;nextCheck=0
+ records[root]=record;totals.Active+=1;nextCheck=0
  root:SetAttribute("WorldActivityState","Active")
  index(record)
  record.Connection=root.Destroying:Connect(function() forget(root,record) end)
@@ -167,6 +179,8 @@ local function prepare(record)
  local descriptors={}
  local protectedJoints={}
  for _,object in ipairs(record.Root:GetDescendants()) do
+  checkpoint(false)
+  if records[record.Root]~=record then return nil end
   if object:IsA("ObjectValue") and object.Value and object.Value:IsA("BasePart") then protectedJoints[object.Value]=true end
   if object:IsA("JointInstance") or object:IsA("WeldConstraint") then
    if object.Part0 then protectedJoints[object.Part0]=true end
@@ -192,7 +206,7 @@ local function sleep(record,now,positions)
  record.Frame,record.Size=frame,size
  local descriptors=prepare(record)
  if not descriptors or records[record.Root]~=record or not record.Root:IsDescendantOf(workspace) or Rules.Near(frame,size,Service.Positions(record.Kind~="NPC"),Config.SleepRadius) then record.Busy=false;return end
- record.Descriptors=descriptors;record.State="Sleeping";record.Since=now
+ record.Descriptors=descriptors;state(record,"Sleeping");record.Since=now
  record.Root:SetAttribute("WorldDormant",true)
  record.Root:SetAttribute("WorldActivityState","Sleeping")
  record.Root.Parent=sleeping
@@ -211,13 +225,16 @@ local function cold(record)
    end
    if group.Parts[d.Slot] then
     d.Saved=snapshot(part);part:Destroy();d.Part=nil
+    if records[record.Root]~=record then record.Busy=false;return end
+    record.ReleasedParts=(record.ReleasedParts or 0)+1;totals.ReleasedParts+=1
     -- A material group may itself have been the destroyed leaf part.
     if d.Group==part then d.Group=d end
    end
   end
   checkpoint()
  end
- record.State="Cold";record.Root:SetAttribute("WorldActivityState","Cold");record.Busy=false
+ if records[record.Root]~=record then record.Busy=false;return end
+ state(record,"Cold");record.Root:SetAttribute("WorldActivityState","Cold");record.Busy=false
 end
 local function wake(record)
  if record.Busy or record.State=="Active" then return false end
@@ -232,8 +249,9 @@ local function wake(record)
   end
   checkpoint()
  end
+ if records[record.Root]~=record then record.Busy=false;return false end
  -- Geometry is fully restored before exposing the root to physics/clients.
- record.State="Active";record.LastNear=os.clock()
+ clearReleased(record);state(record,"Active");record.LastNear=os.clock()
  record.Root:SetAttribute("WorldDormant",nil)
  record.Root:SetAttribute("WorldActivityState","Active")
  record.Root.Parent=record.Parent
@@ -262,6 +280,7 @@ function Service.Ensure(position,radius)
  end
 end
 function Service.Step(now)
+ deadline=os.clock()+(Config.WorkSliceSeconds or .002)
  local points=Service.Positions()
  local predicted=Service.Positions(true)
  local transitions=0
@@ -273,7 +292,7 @@ function Service.Step(now)
     local key=x..":"..z
     if not visited[key] then
      visited[key]=true
-     for record in pairs(buckets[key] or {}) do nearby[record]=true end
+     for record in pairs(buckets[key] or {}) do nearby[record]=true;checkpoint(false) end
     end
    end
   end
@@ -282,6 +301,7 @@ function Service.Step(now)
  -- Otherwise a large backlog of sleeping roads could starve a player's floor.
  local waking,distances={},{}
  for record in pairs(nearby) do
+  checkpoint(false)
   if record.State=="Active" or record.Busy then continue end
   local best=math.huge
   for _,point in ipairs(record.Kind=="NPC" and points or predicted) do best=math.min(best,Rules.DistanceSquared(record.Frame,record.Size,point)) end
@@ -297,10 +317,9 @@ function Service.Step(now)
   if records[record.Root]~=record or record.Busy then continue end
   if wake(record) then transitions+=1;task.wait() end
  end
- local examined=0
  local quiet=true
  for root,record in pairs(records) do
-  examined+=1;if examined%128==0 then task.wait() end
+  checkpoint(false)
   if not root.Parent then continue end
   if record.Kind=="NPC" then
    local hp=root:FindFirstChildOfClass("Humanoid")
@@ -310,7 +329,8 @@ function Service.Step(now)
    end
   end
   if record.Kind=="NPC" and record.State=="Active" then
-   local frame,size=bounds(root);if frame then record.Frame,record.Size=frame,size;index(record) end
+   local frame,size=bounds(root)
+   if frame and (frame~=record.Frame or size~=record.Size) then record.Frame,record.Size=frame,size;index(record) end
   end
   local near=nearby[record] and Rules.Near(record.Frame,record.Size,record.Kind=="NPC" and points or predicted,record.State=="Active" and Config.SleepRadius or Config.ActiveRadius)
   if record.State=="Active" then
@@ -404,12 +424,8 @@ function Service.DormantNPCs()
  return result
 end
 function Service.Stats()
- local result={Active=0,Sleeping=0,Cold=0,ReleasedParts=0}
- for _,record in pairs(records) do
-  result[record.State]+=1
-  for _,d in ipairs(record.Descriptors or {}) do if not d.Part then result.ReleasedParts+=1 end end
- end
- return result
+ -- Constant-time snapshot: cold geometry can contain millions of descriptors.
+ return table.clone(totals)
 end
 function Service.Start()
  if Service.Started then return end;Service.Started=true;containers()
