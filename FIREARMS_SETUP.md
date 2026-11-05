@@ -15,8 +15,8 @@ pipe rifle and Rifle223 use Rifle/SingleRound; LSW223 and MarksmanRifle223
 use Rifle/AR; AT4 uses Launcher/Rocket; melee tools use their matching set
 and None. There is no BeltFed type.
 
-Rocket lowers the tube from the shoulder, moves the support hand to the rear
-loading point, inserts, and returns to the ready pose. SingleRound repeats the
+Rocket tips the muzzle forward/down by 90 degrees so the rear opening faces
+up, feeds from above into that opening, and returns to the shoulder-ready pose. SingleRound repeats the
 hand motion for the number of rounds loaded. Magazine types reach toward the
 pistol grip, forward magazine, or rear bullpup magazine respectively.
 Bullpup reloads use the right hand; the left hand stays on its support grip.

@@ -44,6 +44,16 @@ end
 attributes.ReloadVisualType="Rocket"
 local world,right,left=Reload.Apply(c,root,held,motor,12)
 assert((root.CFrame:ToObjectSpace(world)).Position.Y<rest.Position.Y-.4,"rocket tube lowers before rear loading")
+-- Authored grip-part rotation must not change the tube's pitching axis.
+local pitched=Reload.Frame("Rocket",rest,.5)
+local authoredForward=rest:VectorToObjectSpace(Vector3.new(0,0,-1))
+near(pitched:VectorToWorldSpace(authoredForward),Vector3.new(0,-1,0))
+local earlyFrame,_,earlyHand=Reload.Apply(c,root,held,motor,11.2)
+local lateFrame,_,lateHand=Reload.Apply(c,root,held,motor,12.8)
+local opening=(earlyFrame*CFrame.new(0,0,.65)).Position
+near(earlyHand,opening+root.CFrame.UpVector*.4)
+near(lateHand,(lateFrame*CFrame.new(0,0,.65)).Position)
+near(Reload.Frame("Rocket",rest,1).LookVector,rest.LookVector)
 attributes.ReloadVisualType="Bullpup";local frame,bullpup,support=Reload.Apply(c,root,held,motor,12)
 near(support,(frame*CFrame.new(0,0,-.25)).Position)
 assert((bullpup-frame.Position).Magnitude>.2,"right hand leaves firing grip to load bullpup")
