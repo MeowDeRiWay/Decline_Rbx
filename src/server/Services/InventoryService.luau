@@ -114,6 +114,17 @@ function Service.Add(player, id, count, conditions,weaponData)
  update(player)
  return true
 end
+-- Validate the entire material bundle before mutating any inventory stack.
+function Service.AddBundle(player,items)
+ local state=states[player]
+ if not state then return false end
+ for id,count in pairs(items) do
+  if not ItemConfig.Items[id] or typeof(count)~="number" or count<=0 or count%1~=0 then return false end
+ end
+ for id,count in pairs(items) do Rules.Add(state,ItemConfig.Items,id,count) end
+ update(player)
+ return true
+end
 function Service.Remove(player, id, count,key)
  local state = states[player]
  if not state then return false end

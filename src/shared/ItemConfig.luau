@@ -199,6 +199,7 @@ for _,kind in ipairs({"FMJ","AP"}) do
  end
 end
 -- AT-4 uses the existing magazine channel; its sole ammunition is HE.
+ItemConfig.Items.Pliers={Name="Pliers",Weight=.3,Slot="Hands",Description="Hold and click a scrap pile to dismantle it in five seconds and collect its contents."}
 ItemConfig.Items.Mine={Name="Pressure mine",Weight=1,Slot="PrimaryWeapon",Trap=true,Explosion={KillRadius=5,BlastRadius=20},Description="A pressure mine. Equip in the primary weapon slot and click to plant. Arms after five seconds. Dangerous to everyone, including its owner."}
 ItemConfig.Items.AT4={Name="AT-4",Weight=6.7,Slot="Hands",Description="Heavy weapon. Fires high-explosive rockets. Deadliest near the explosion; damage decreases with distance. Does not destroy structures.",Firearm={Category="Launcher",Skill="HeavyWeapons",Caliber="AT4",Magazine=1,ReloadTime=4,Speed=100,Range=300,Damage=100,DamageMin=100,DamageMax=100,RPM=15,SingleOnly=true,BoltAction=false,ShotDistance=150,Projectile="Rocket",BackblastRange=10,BackblastHalfAngle=30},Weapon={Damage=100,DamageType="Explosive",MaxUses=500,AttacksPerMinute=15}}
 ItemConfig.Items.AmmoAT4FMJ={Name="AT-4 HE rocket",Weight=1.8,Description="High-explosive rocket for the AT-4. Does not destroy structures.",Ammo={Caliber="AT4",Type="FMJ"},Explosion={KillRadius=5,BlastRadius=20}}

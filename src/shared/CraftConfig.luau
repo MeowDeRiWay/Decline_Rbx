@@ -1,5 +1,6 @@
 -- Item IDs must exist in ItemConfig.luau. Time applies to the entire batch.
 local recipes = {
+ MakePliers={Name="Make pliers",Station="Workstation",Category="Tools",Description="Make pliers from two scrap. Requires Repair 50.",Ingredients={Scrap=2},Output="Pliers",OutputCount=1,MaxBatch=1,Duration=20,RequiresPresence=true,XP=100,Requirements={Skills={Repair=50}}},
  MakeMine={Name="Make pressure mine",Station="Workstation",Category="Weapons",Description="Assemble a pressure mine. Requires Repair 100 and Traps 100.",Ingredients={Scrap=2,Chemicals=1,Coal=1},Output="Mine",OutputCount=1,MaxBatch=1,Duration=60,RequiresPresence=true,XP=100,Requirements={Skills={Repair=100,Traps=100}}},
  MakeAT4={Name="Make AT-4 launcher",Station="ArmsBench",Description="Assemble an AT-4 launcher from three iron. Requires Repair 150 and Heavy weapons 150.",Ingredients={Iron=3},Output="AT4",OutputCount=1,MaxBatch=1,Duration=120,RequiresPresence=true,XP=500,Requirements={Skills={Repair=150,HeavyWeapons=150}}},
  MakeAmmoAT4={Name="Make AT-4 rocket",Station="ArmsBench",Description="Produce one AT-4 rocket from one scrap and one chemical. Requires Repair 150.",Ingredients={Scrap=1,Chemicals=1},Output="AmmoAT4FMJ",OutputCount=1,MaxBatch=1,Duration=30,RequiresPresence=true,XP=100,Requirements={Skills={Repair=150}}},

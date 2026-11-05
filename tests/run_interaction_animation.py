@@ -328,6 +328,17 @@ assert(Animation.Work(owner,mineTarget,2,function() committed+=1;return true end
 c:SetAttribute("Knockout",true);advance(3)
 assert(committed==1 and cancelled==1 and not c:GetAttribute("InteractionMine"),"KO cancels mine work and prevents stale commit")
 print("PASS: real mine crouch/work/stand phases, exact commit deadline and KO rollback")
+c:SetAttribute("Knockout",false)
+local pile=target();local valid=true
+assert(Animation.Work(owner,pile,2,function() committed+=1;return true end,function() cancelled+=1 end,false,{Duration=5,KeepTool=true,Validate=function() return valid end}))
+assert(c:GetAttribute("InteractionTool"))
+advance(4.99);assert(committed==1)
+advance(.01);assert(committed==2)
+advance(1.15);assert(not c:GetAttribute("InteractionTool"))
+assert(Animation.Work(owner,pile,2,function() committed+=1;return true end,function() cancelled+=1 end,false,{Duration=5,KeepTool=true,Validate=function() return valid end}))
+valid=false;advance(.1);assert(cancelled==2 and not c:GetAttribute("InteractionLocked"))
+advance(5);assert(committed==2,"cancelled work never grants a stale reward")
+print("PASS: generic five-second tool work and early validation cancellation")
 '''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'interaction.luau';p.write_text(s)

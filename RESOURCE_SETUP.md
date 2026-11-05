@@ -104,3 +104,19 @@ Respawn now applies independently to an emptied chunk, with the same configured
 See PERFORMANCE.md for the World.rbxm audit and validation limits.
 
 Generated resources now share the server sleep/cold lifecycle in WORLD_ACTIVITY.md.
+
+## Pliers dismantling
+
+`Pliers` is a reusable Hands-slot utility item. Craft one at Workstation with two
+Scrap and Repair 50 (20 seconds). Supply an authored Model/BasePart at
+ServerStorage/Items/Pliers; a small four-part fallback is created if none exists.
+
+With pliers held, LMB on a ScrapPile within the normal two-stud interaction range
+starts five seconds of crouched loot/search animation with the tool in hand.
+Movement keys cancel the operation. Tool changes, displacement, KO, death, lost
+LOS, leaving range or target removal cancel validation before completion. A pile
+is exclusively reserved during work, including against shovel hits. Completion
+grants its ordinary randomized, perk-adjusted loot directly to inventory and the
+normal Scavenger/character harvest XP, then uses the existing depletion/respawn
+path. Cancelled or stale callbacks cannot claim rewards. Shovels still harvest
+piles using their original damage and ground-loot path.

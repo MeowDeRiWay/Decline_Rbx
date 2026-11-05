@@ -26,6 +26,7 @@ function Service.Cancel(c)
  if r.Root.Parent and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") then
   r.Root.Anchored=r.Anchored;r.HP.AutoRotate=r.AutoRotate;r.HP.WalkSpeed=r.Speed
  end
+ c:SetAttribute("InteractionTool",nil)
  c:SetAttribute("InteractionMine",nil)
  c:SetAttribute("InteractionCarryAllowed",nil)
  c:SetAttribute("InteractionMode",nil)
@@ -111,10 +112,12 @@ function Service.EndLoot(player)
  phase(r,"LootUp")
  task.delay(Pose.UpDuration,function() if active[c]==r then Service.Cancel(c) end end)
 end
-function Service.Work(player,target,range,complete,cancelled,planting)
- local r=begin(player,target,range,target.Position)
+function Service.Work(player,target,range,complete,cancelled,planting,options)
+ local r=begin(player,target,range,target:IsA("BasePart") and target.Position or nil)
  if not r then return false end
+ options=options or {}
  r.Cancelled=cancelled
+ r.Character:SetAttribute("InteractionTool",options.KeepTool==true)
  r.Character:SetAttribute("InteractionMine",planting==true)
  phase(r,"LootDown")
  task.delay(Pose.DownDuration,function()
@@ -122,9 +125,18 @@ function Service.Work(player,target,range,complete,cancelled,planting)
   if not alive(r) or not target:IsDescendantOf(workspace) then Service.Cancel(r.Character);return end
   phase(r,"Loot")
  end)
- task.delay(2.5,function()
+ if options.Validate then
+  local function check()
+   if active[r.Character]~=r or r.Completed then return end
+   if not alive(r) or not target:IsDescendantOf(workspace) or not options.Validate() then Service.Cancel(r.Character);return end
+   task.delay(.1,check)
+  end
+  task.delay(.1,check)
+ end
+ task.delay(options.Duration or 2.5,function()
   if active[r.Character]~=r then return end
   if not alive(r) or not target:IsDescendantOf(workspace) then Service.Cancel(r.Character);return end
+  if options.Validate and not options.Validate() then Service.Cancel(r.Character);return end
   local ok,result=xpcall(complete,debug.traceback)
   if not ok then warn("[Decline mine interaction] "..tostring(result)) end
   if not ok or result==false then Service.Cancel(r.Character);return end

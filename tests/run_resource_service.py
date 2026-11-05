@@ -5,10 +5,11 @@ import sys
 import tempfile
 root = Path(__file__).resolve().parents[1]
 service = (root/'src/server/Services/ResourceService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
-for name in ['Config', 'Rules', 'CombatRules', 'Journal', 'Area', 'Inventory', 'WorldItems', 'Items', 'Progression']:
+for name in ['Config', 'Rules', 'CombatRules', 'Journal', 'Area', 'Inventory', 'WorldItems', 'Items', 'Progression', 'Animation', 'Interaction']:
     import re
     service = re.sub(rf'local {name} = require\([^\n]+\)\n', '', service)
 setup = 'local CombatRules=(function()\n'+(root/'src/shared/CombatRules.luau').read_text()+'\nend)()\n' + '''
+function vm.__div(v,n) return Vector3.new(v.X/n,v.Y/n,v.Z/n) end
 local messages={}
 local Journal={Send=function(_,message) table.insert(messages,message) end}
 local xp=0
@@ -41,7 +42,13 @@ local lootCalls=0
 local WorldItems={SpawnLoot=function(loot) lootCalls+=1; assert(loot.Stone==1); return true end}
 local weapon={Damage=20}
 local used=0
-local Inventory={GetWeapon=function() return weapon end,UseWeapon=function() used+=1; return true end}
+local pending={}
+local Animation={Work=function(p,target,range,complete,cancel,planting,options)
+ pending[p]={Complete=complete,Cancel=cancel,Options=options};return true
+end,Cancel=function(c) for p,work in pairs(pending) do if p.Character==c then pending[p]=nil;work.Cancel() end end end}
+local received={}
+local Inventory={Export=function(p) return {Equipment={Hands=p.Character:GetAttribute("HandsItem")}} end,
+ AddBundle=function(_,loot) for id,n in pairs(loot) do received[id]=(received[id] or 0)+n end;return true end,GetWeapon=function() return weapon end,UseWeapon=function() used+=1; return true end}
 '''
 cases = '''
 local library=make("Folder","Resources",ServerStorage)
@@ -139,13 +146,35 @@ function os.clock() clock+=.001;return clock end
 for _=1,400 do tick(.01) end
 assert(#workspace.Resources:GetChildren()==baseline+20,"budgeted generation resumes without duplicated or lost cell rolls")
 assert(workspace.Resources:GetAttribute("GenerationMode")=="NearbyChunks20")
+-- Pliers claim one scrap pile and send normal loot straight to inventory.
+function os.clock() return clock end
+groundHits=false
+local pile=make("Model","PileScrap",workspace);pile.CFrame=CFrame.new();pile.Size=Vector3.new(1,1,1);make("Part","Piece",pile)
+workspace.DescendantAdded:Fire(pile)
+local scrapXP=0
+Progression.Harvest=function(_,kind,count) assert(kind=="ScrapPile" and count==1);scrapXP+=count end
+observer:SetAttribute("AttributesConfirmed",true);observerRoot.Position=Vector3.new(0,0,1);observer.Character:SetAttribute("HandsItem","Pliers")
+assert(Service.Dismantle(observer,pile))
+local work=pending[observer];assert(work.Options.Duration==5 and work.Options.KeepTool and not pile.destroyed)
+assert(not Service.Dismantle(observer,pile),"cannot reserve the same pile twice")
+assert(not Service.Hit(player,pile,weapon),"shovel cannot steal a reserved pile")
+Service.CancelDismantle(observer);assert(not pile.destroyed and received.Scrap==nil)
+assert(not work.Complete(),"stale completion cannot claim a cancelled pile")
+assert(Service.Dismantle(observer,pile))
+observer.Character:SetAttribute("HandsItem","ScrapShovel")
+assert(not pending[observer].Options.Validate(),"changing tool cancels dismantling")
+Service.CancelDismantle(observer);observer.Character:SetAttribute("HandsItem","Pliers")
+assert(Service.Dismantle(observer,pile));work=pending[observer]
+assert(work.Complete() and pile.destroyed and received.Scrap==1 and received.Rags==1 and scrapXP==1)
+assert(not work.Complete() and not observer.Character:GetAttribute("DismantlingScrap"),"completion is exactly once and releases actor state")
+print("PASS: pliers five-second work, exclusive claim, cancellation, tool change, direct loot and scavenging XP")
 print("PASS: time-sliced generator resumes correctly under an advancing clock")
 print("PASS: virtual chunks defer distant work, preserve re-entry state and respawn only nearby after cooldown")
 print("PASS: bare hands damage trees using combat rolls and bonuses, without tool wear or stone mining")
 print("PASS: real resource service generates StoneYard by cells, skips duplicate markers, anchors veins, requires shovel and drops stone once")
 '''
 parts = [(root/'tests/fixtures/town_mock.luau').read_text(), (root/'tests/city_geometry.fixture.luau').read_text(), setup]
-for var, file in [('Config','ResourceConfig'),('Rules','ResourceRules'),('Items','ItemConfig')]:
+for var, file in [('Config','ResourceConfig'),('Rules','ResourceRules'),('Items','ItemConfig'),('Interaction','Interaction')]:
     parts.append(f'local {var}=(function()\n'+(root/f'src/shared/{file}.luau').read_text()+'\nend)()')
 parts.append('local Area=(function()\n'+(root/'src/server/Services/AreaService.luau').read_text()+'\nend)()')
 parts.extend(['local Service=(function()\n'+service+'\nend)()',cases])

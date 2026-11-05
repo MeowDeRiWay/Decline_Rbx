@@ -11,7 +11,10 @@ local WorldItems = require(script.Parent.WorldItemService)
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
 local Progression = require(script.Parent.ProgressionService)
 local Journal = require(script.Parent.JournalService)
+local Animation = require(script.Parent.InteractionAnimationService)
+local Interaction = require(ReplicatedStorage.Shared.Interaction)
 local Service = {}
+local working={}
 local random = Random.new()
 local nodes, zones = {}, {}
 local folder
@@ -194,9 +197,27 @@ function Service.Find(part)
  end
  return nil
 end
+local function deplete(player,model,node,loot)
+ local resource=Config[node.Kind]
+  -- Remove the registered node before harvest XP and respawn bookkeeping.
+  nodes[model] = nil
+  footprints:Remove(node.Footprint)
+  local resourceID=({Tree="TreeLog",StoneVein="Stone",ScrapPile="Scrap"})[node.Kind]
+  Progression.Harvest(player,node.Kind,loot[resourceID] or 0)
+  if node.Zone and zones[node.Zone] then
+   local state = zones[node.Zone]
+   state.Nodes[model] = nil
+   local chunk=node.Chunk
+   if chunk then
+    chunk.Nodes[model]=nil
+    if not next(chunk.Nodes) then chunk.NextAt=os.clock()+random:NextInteger(resource.RespawnMin,resource.RespawnMax) end
+   end
+  end
+  model:Destroy()
+end
 function Service.Hit(player,model,weapon)
  local node = nodes[model]
- if not node or node.Health <= 0 or not model:IsDescendantOf(workspace) then return false end
+ if not node or node.Busy or node.Health <= 0 or not model:IsDescendantOf(workspace) then return false end
  local character = player.Character
  local id = character and character:GetAttribute("HandsItem")
  local definition = id and Items.Items[id]
@@ -226,21 +247,7 @@ function Service.Hit(player,model,weapon)
    model:SetAttribute("Health",node.Health)
    return true
   end
-  -- Invalidate before granting loot so a second strike cannot harvest twice.
-  nodes[model] = nil
-  footprints:Remove(node.Footprint)
-  local resourceID=({Tree="TreeLog",StoneVein="Stone",ScrapPile="Scrap"})[node.Kind]
-  Progression.Harvest(player,node.Kind,loot[resourceID] or 0)
-  if node.Zone and zones[node.Zone] then
-   local state = zones[node.Zone]
-   state.Nodes[model] = nil
-   local chunk=node.Chunk
-   if chunk then
-    chunk.Nodes[model]=nil
-    if not next(chunk.Nodes) then chunk.NextAt=os.clock()+random:NextInteger(resource.RespawnMin,resource.RespawnMax) end
-   end
-  end
-  model:Destroy()
+  deplete(player,model,node,loot)
  end
  if damage>0 then
   local name=({Tree="Tree",StoneVein="Stone vein",ScrapPile="Scrap pile"})[node.Kind] or "Resource"
@@ -248,6 +255,42 @@ function Service.Hit(player,model,weapon)
   Journal.Send(player,string.format("%s: %s%d hits remaining.",name,not definition and remaining>0 and "about " or "",remaining))
  end
  return true
+end
+function Service.Dismantle(player,model)
+ local node=nodes[model]
+ local c=player.Character
+ local root=c and c:FindFirstChild("HumanoidRootPart")
+ local hp=c and c:FindFirstChildOfClass("Humanoid")
+ if not node or node.Kind~="ScrapPile" or node.Busy or working[player] or not root or not hp or c:GetAttribute("InteractionLocked") or c:GetAttribute("CarryingUserId") or c:GetAttribute("MedicalHeld") or player:GetAttribute("AttributesConfirmed")~=true then return false end
+ local origin=root.Position
+ local function valid()
+  local state=Inventory.Export(player)
+  if player.Character~=c or not c.Parent or hp.Health<=0 or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") or c:GetAttribute("HandsItem")~="Pliers" or not state or state.Equipment[state.ActiveWeaponSlot or "Hands"]~="Pliers" then return false end
+  if nodes[model]~=node or not model:IsDescendantOf(workspace) or node.Health<=0 or (root.Position-origin).Magnitude>.25 or Interaction.Distance(model,root.Position)>Items.PickupDistance then return false end
+  local point=Interaction.NearestPoint(model,root.Position)
+  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={c,model}
+  return workspace:Raycast(root.Position,point-root.Position,params)==nil
+ end
+ if not valid() then return false end
+ local function release()
+  if node.Busy==player then node.Busy=nil end
+  if working[player]==c then working[player]=nil;c:SetAttribute("DismantlingScrap",nil) end
+ end
+ node.Busy=player;working[player]=c;c:SetAttribute("DismantlingScrap",true)
+ local started=Animation.Work(player,model,Items.PickupDistance,function()
+  if node.Busy~=player or not valid() then return false end
+  local loot={}
+  for id,amount in pairs(Config.ScrapPile.Loot) do loot[id]=random:NextInteger(amount.Min,amount.Max) end
+  loot=Progression.Loot(player,loot)
+  if not Inventory.AddBundle(player,loot) then return false end
+  deplete(player,model,node,loot);release()
+  return true
+ end,release,false,{Duration=5,KeepTool=true,Validate=valid})
+ if not started then release() end
+ return started
+end
+function Service.CancelDismantle(player)
+ local c=working[player];if c then Animation.Cancel(c) end
 end
 local function tick()
  deadline=os.clock()+.002
@@ -295,6 +338,14 @@ end
 function Service.Start()
  if Service.Started then return end
  Service.Started = true
+ local remote=Instance.new("RemoteEvent");remote.Name="ResourceAction";remote.Parent=ReplicatedStorage
+ local last=setmetatable({},{__mode="k"})
+ remote.OnServerEvent:Connect(function(player,command,model)
+  if command=="Cancel" then Service.CancelDismantle(player);return end
+  local now=os.clock();if now<(last[player] or 0) then return end;last[player]=now+.3
+  if command=="Dismantle" and typeof(model)=="Instance" then Service.Dismantle(player,model) end
+ end)
+ Players.PlayerRemoving:Connect(Service.CancelDismantle)
  folder = workspace:FindFirstChild("Resources")
  if not folder then folder = Instance.new("Folder"); folder.Name,folder.Parent = "Resources",workspace end
  folder:SetAttribute("GenerationMode","NearbyChunks20")
