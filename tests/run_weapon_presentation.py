@@ -44,7 +44,13 @@ end
 attributes.ReloadVisualType="Rocket"
 local world,right,left=Reload.Apply(c,root,held,motor,12)
 assert((root.CFrame:ToObjectSpace(world)).Position.Y<rest.Position.Y-.4,"rocket tube lowers before rear loading")
-attributes.ReloadVisualType="Bullpup";local _,_,bullpup=Reload.Apply(c,root,held,motor,12)
+attributes.ReloadVisualType="Bullpup";local frame,bullpup,support=Reload.Apply(c,root,held,motor,12)
+near(support,(frame*CFrame.new(0,0,-.25)).Position)
+assert((bullpup-frame.Position).Magnitude>.2,"right hand leaves firing grip to load bullpup")
+for _,t in ipairs({0,.1,.5,.9,.99999}) do
+ local f,_,left=Reload.Apply(c,root,held,motor,10+4*t)
+ near(left,(f*CFrame.new(0,0,-.25)).Position)
+end
 attributes.ReloadVisualType="AR";local _,_,front=Reload.Apply(c,root,held,motor,12)
 assert((front-bullpup).Magnitude>.3,"bullpup reaches behind the front magazine position")
 attributes.Reloading=false;assert(Reload.Apply(c,root,held,motor,12)==nil,"cancelled reload has no pose")

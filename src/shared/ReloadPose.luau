@@ -51,6 +51,8 @@ function Reload.Apply(c,root,held,motor,now)
   local position=kind=="Bullpup" and Vector3.new(0,-.22,.35) or kind=="Pistol" and Vector3.new(0,-.22,0) or Vector3.new(0,-.22,-.15)
   load=anchor("ReloadGrip",position)-root.CFrame.UpVector*(.35*(1-insertion))
  end
+ -- Bullpups keep the front support hand planted while the right hand loads.
+ if kind=="Bullpup" then return world,right+(load-right)*weight,support end
  return world,right,support+(load-support)*weight
 end
 return Reload

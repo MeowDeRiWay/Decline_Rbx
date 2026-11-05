@@ -19,6 +19,7 @@ Rocket lowers the tube from the shoulder, moves the support hand to the rear
 loading point, inserts, and returns to the ready pose. SingleRound repeats the
 hand motion for the number of rounds loaded. Magazine types reach toward the
 pistol grip, forward magazine, or rear bullpup magazine respectively.
+Bullpup reloads use the right hand; the left hand stays on its support grip.
 These are procedural hand/weapon gestures; they do not spawn loose cartridge,
 rocket or magazine meshes or detach model parts.
 
