@@ -198,6 +198,7 @@ redraw=function()
  for id,row in pairs(skillRows) do
   local preview=not snapshot.Confirmed and Rules.SkillValues(draft) or snapshot.Skills
   local value=preview[id] or 0;local practice=snapshot.Practice[id]
+  if not snapshot.Confirmed and tagDraft[id] then value=math.min(300,value+Rules.TagBonus) end
   Locale.Set(row.Value,"Text",practice and string.format("%d · XP %d / %d",value,practice.XP,10*(value+1)) or tostring(value))
   if row.Plus then
    local tagged=snapshot.TagsConfirmed and snapshot.TaggedSkills[id] or (not snapshot.TagsConfirmed and tagDraft[id])

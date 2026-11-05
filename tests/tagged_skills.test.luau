@@ -11,13 +11,19 @@ end
 local s,attrs=fresh();assert(R.Confirm(s,attrs,main));assert(s.TagsConfirmed and s.TaggedSkills.Doctor)
 main[1]="Cook";assert(s.TaggedSkills.LightWeapons and not s.TaggedSkills.Cook,"copied selection")
 assert(not R.SelectTags(s,{"Cook","Melee","Doctor"}),"selection is immutable")
+local totals=R.TotalSkills(s)
+assert(totals.Repair==55 and totals.Doctor==55 and totals.LightWeapons==40,"each selected skill gets +25")
+assert(totals.Cook==36 and totals.Melee==15,"untagged skills retain their base values")
+local trained=s.Skills.Repair
+for _=1,10 do assert(R.TotalSkills(s).Repair==55) end
+assert(s.Skills.Repair==trained,"bonus does not mutate or accumulate in trained ranks")
 local baseline=R.TotalSkills(s).Repair;s.SkillPoints=10
 assert(R.SpendSkill(s,"Repair") and R.TotalSkills(s).Repair==baseline+2 and s.SkillPoints==9,"tagged: +2 per purchase, no doubled starting attribute bonus")
 local plain=R.TotalSkills(s).Cook
 assert(R.SpendSkill(s,"Cook") and R.TotalSkills(s).Cook==plain+1 and s.SkillPoints==8)
 local function at(value,tagged)
  local t=R.New();t.Confirmed=true;t.Stats={Strength=1,Attention=1,Endurance=1,Intelligence=1,Agility=1,Luck=1}
- t.Skills.Repair=value-3;t.SkillPoints=100;t.TaggedSkills=tagged and {Repair=true} or {}
+ t.Skills.Repair=value-3-(tagged and 25 or 0);t.SkillPoints=100;t.TaggedSkills=tagged and {Repair=true} or {}
  return t
 end
 for _,case in ipairs({{0,1},{99,1},{100,2},{199,2},{200,3},{299,3}}) do
@@ -37,9 +43,15 @@ local legacy=at(100,false);local attrsBefore=table.clone(legacy.Stats)
 assert(R.SelectTags(legacy,{"Cook","Melee","Doctor"}))
 for id,value in pairs(attrsBefore) do assert(legacy.Stats[id]==value) end
 assert(not R.SelectTags(legacy,{"Repair","Melee","Doctor"}))
-print("PASS: exactly three immutable tags, legacy selection, +2 gains, base skills unchanged, all tier boundaries, affordability, cap300 and passive exclusion")
+assert(R.TotalSkills(legacy).Doctor==28,"existing characters gain bonus when choosing tags")
+assert(R.TotalSkills(capped).Repair==300,"tag bonus respects the cap")
+print("PASS: exactly three immutable tags, legacy selection, +25 tagged bonus, +2 gains, untagged skills unchanged, all tier boundaries, affordability, cap300 and passive exclusion")
 
 local farmer,fa=fresh();assert(R.Confirm(farmer,fa,{"Farmer","Repair","Doctor"}))
 local before=R.TotalSkills(farmer).Farmer
 assert(R.SpendSkill(farmer,"Farmer") and R.TotalSkills(farmer).Farmer==before+2,"farming supports tagged manual training")
 assert(not R.Practice(farmer,"Farmer",100),"harvest no longer levels farming passively")
+
+assert(R.ResetProgression(farmer))
+assert(R.TotalSkills(farmer).Farmer==40 and farmer.Skills.Farmer==0,"reset preserves +25 tags without trained ranks")
+assert(R.Meets(farmer,{Skills={Farmer=40}}) and not R.Meets(farmer,{Skills={Farmer=41}}),"requirements use tag-adjusted totals")

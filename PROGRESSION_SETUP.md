@@ -1,3 +1,13 @@
+## Tagged skill bonus
+
+Each of the three tagged skills receives a fixed +25 to its total, in addition
+to attribute-derived and trained ranks, capped at 300. Existing selections gain
+the bonus automatically; repeated sync does not add ranks or stack the bonus.
+Creation previews include it. Resetting progression preserves the selection and
+its +25 bonus; creating a new character clears the selection as before.
+The existing +2 gain per tagged training purchase is retained, with costs based
+on the resulting total skill tier.
+
 # Current progression update — 27 October 2026
 
 This section supersedes the historical profession/talent notes below.

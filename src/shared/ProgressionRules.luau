@@ -95,9 +95,13 @@ function Rules.SkillValues(stats)
   Sneak=3*stats.Agility,Traps=2*stats.Attention,Repair=3*stats.Intelligence,
   Cook=3*stats.Intelligence+stats.Endurance,Farmer=3*stats.Strength}
 end
+Rules.TagBonus=25
 function Rules.TotalSkills(state)
  local values=Rules.SkillValues(state.Stats)
- for id in pairs(skills) do values[id]=math.min(300,values[id]+(state.Skills[id] or 0)) end
+ for id in pairs(skills) do
+  local tagged=state.TaggedSkills and state.TaggedSkills[id]
+  values[id]=math.min(300,values[id]+(state.Skills[id] or 0)+(tagged and Rules.TagBonus or 0))
+ end
  for id in pairs(passive) do values[id]=state.Practice[id] and state.Practice[id].Value or 0 end
  return values
 end

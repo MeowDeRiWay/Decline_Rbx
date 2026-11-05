@@ -102,7 +102,7 @@ for id,v in pairs(capped.Skills) do assert(v==0) end
 for id,v in pairs(capped.Practice) do assert(v.Value==0 and v.XP==0) end
 for id,v in pairs(stats) do assert(capped.Stats[id]==v) end
 assert(capped.SkillPoints==20 and capped.PerkPoints==0 and capped.TaggedSkills.Melee and capped.TagsConfirmed and capped.Confirmed)
-assert(R.TotalSkills(capped).Melee==15,"reset retains only attribute-derived skill values")
+assert(R.TotalSkills(capped).Melee==40,"reset retains attribute-derived values and the fixed tag bonus")
 assert(R.ResetProgression(capped) and capped.SkillPoints==20,"repeat reset cannot accumulate points")
 assert(not R.ResetProgression(R.New()))
 print("PASS: hard level30 cap, no surplus XP/rewards, fixed HP per level, additive Lifegiver, complete level1 progression reset")

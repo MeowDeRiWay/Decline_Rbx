@@ -18,6 +18,8 @@ local draft=table.clone(Service.Snapshot(a).Stats);draft.Intelligence=10;draft.E
 clock+=.2;action.OnServerEvent:Fire(a,"Confirm",{Stats=draft,TaggedSkills={"LightWeapons","LightWeapons","Doctor"}})
 assert(not Service.Snapshot(a).Confirmed,"invalid duplicate main skills cannot unlock creation")
 send("Confirm",draft)
+assert(a:GetAttribute("SkillLightWeapons")==40 and a:GetAttribute("SkillHeavyWeapons")==40 and a:GetAttribute("SkillThrowing")==40,"server publishes the +25 tag bonus")
+Service.Sync(a);assert(a:GetAttribute("SkillLightWeapons")==40,"sync never stacks the tag bonus")
 assert(a:GetAttribute("AttributesConfirmed") and a:GetAttribute("CarryLimitKg")==25 and a.Character.Humanoid.MaxHealth==34)
 a:SetAttribute("EquipmentCarryBonusKg",10);Service.Sync(a)
 assert(a:GetAttribute("BaseCarryLimitKg")==25 and a:GetAttribute("CarryLimitKg")==35 and a.Character:GetAttribute("CarryLimitKg")==35)
