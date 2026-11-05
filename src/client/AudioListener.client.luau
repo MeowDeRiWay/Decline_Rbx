@@ -1,4 +1,4 @@
--- Character-height hearing, screen-relative yaw, independent of overhead-camera tilt.
+-- Character-height hearing, character-relative yaw, independent of overhead-camera tilt.
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
@@ -54,7 +54,7 @@ RunService:BindToRenderStep("DeclineAudioListener",Enum.RenderPriority.Camera.Va
   return
  end
  local position=head and head:IsA("BasePart") and head.Position or root.Position
- local frame=Rules.Frame(position,camera.CFrame.RightVector)
+ local frame=Rules.Frame(position,root.CFrame.RightVector)
  SoundService:SetListener(Enum.ListenerType.CFrame,frame)
  bound=true
  if not attachment or attachment.Parent~=root then

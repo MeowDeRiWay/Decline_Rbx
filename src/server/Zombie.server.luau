@@ -82,6 +82,7 @@ local function prepare(model)
  humanoid.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None
  local stats=ZombieStats.Roll(statRandom)
  model:SetAttribute("ZombieBornGameHours",nil)
+ model:SetAttribute("ZombieKillXPGranted",nil)
  baseStats[model]=stats
  applyDayStats(model,humanoid,stats)
  humanoid.Health=humanoid.MaxHealth

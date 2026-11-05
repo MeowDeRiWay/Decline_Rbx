@@ -16,6 +16,7 @@ local Inventory=require(script.Parent.InventoryService)
 local Visuals=require(script.Parent.EquipmentVisuals)
 local Animation=require(script.Parent.InteractionAnimationService)
 local Journal=require(script.Parent.JournalService)
+local Progression=require(script.Parent.ProgressionService)
 local Towns=require(script.Parent.TownService)
 local Affiliation=require(Shared.AffiliationRules)
 local Service={}
@@ -116,7 +117,11 @@ local function detonate(mine,trigger)
   if root and (root.Position-mine.Point).Magnitude<=200 then remote:FireClient(listener,"Explosion",point,mine.Settings.BlastRadius,mine.Sound) end
  end
  if owner and owner:GetAttribute("AttributesConfirmed")~=true then owner=nil end
- Explosions.Detonate(point,mine.Settings,owner,owner and owner.Character,"Mine",100,{FriendlyFire=true,OwnerUserId=mine.OwnerID,TriggerCharacter=trigger,OnDamage=function(_,_,victim) notify(mine,victim) end})
+ Explosions.Detonate(point,mine.Settings,owner,owner and owner.Character,"Mine",100,{FriendlyFire=true,OwnerUserId=mine.OwnerID,TriggerCharacter=trigger,OnDamage=function(hp,_,victim)
+  notify(mine,victim)
+  local model=hp.Parent
+  if not victim and model and hp.Health<=0 and (model.Name=="Zombie" or model:GetAttribute("CreatureType")=="Zombie") then Progression.ZombieKillXP(model) end
+ end})
 end
 function Service.Place(player)
  local c,root=context(player)
@@ -153,7 +158,10 @@ function Service.Disarm(player,id)
   if mines[id]~=mine or mine.Busy~=player or Interaction.Distance(mine.Marker,root.Position)>ItemConfig.PickupDistance or not lineOfSight(c,root.Position,mine.Point+Vector3.new(0,.1,0)) then return false end
   if player.UserId==mine.OwnerID or random:NextNumber()<Rules.DisarmChance(player:GetAttribute("SkillTraps"),mine.Skill,false) then
    if not Inventory.Add(player,"Mine",1) then return false end
+   local proxy={GetAttribute=function(_,key) return mine[key] end}
+   local hostile=player.UserId~=mine.OwnerID and not Affiliation.Friendly(proxy,player) and Towns.RelationBetween(proxy,player)~="Ally"
    remove(mine)
+   if hostile then Progression.Award(player,mine.Skill) end
    Journal.Send(player,text(player,"Міну знешкоджено й забрано.","Mine disarmed and recovered.","Мина обезврежена и подобрана."))
   else detonate(mine,c) end
   return true

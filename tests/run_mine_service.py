@@ -52,6 +52,8 @@ local function cancel(p)
  if action.Cancel then action.Cancel() end
  return action
 end
+local xpAwards,killCredits={},{}
+local Progression={Award=function(p,xp) table.insert(xpAwards,{Player=p,XP=xp}) end,ZombieKillXP=function(model) table.insert(killCredits,model) end}
 local notices={}
 local Journal={Send=function(p,msg) table.insert(notices,{Player=p,Text=msg}) end}
 local Towns={RelationBetween=function(first,second) return first:GetAttribute("TownID")==second:GetAttribute("TownID") and "Ally" or "Neutral" end,TradeTown=function(id) return id==1 and {LeaderID=c.UserId} or nil end}
@@ -65,6 +67,10 @@ local Explosions={Detonate=function(point,settings,owner,character,id,damage,opt
  if victim then
   local hp=trigger:FindFirstChildOfClass("Humanoid");hp.Health=0
   options.OnDamage(hp,100,victim)
+ elseif trigger then
+  local hp=trigger:FindFirstChildOfClass("Humanoid");hp.Health=0
+  trigger:SetAttribute("LastDamagerID",options.OwnerUserId)
+  options.OnDamage(hp,100,nil)
  end
 end}
 for _,p in ipairs(Players:GetPlayers()) do
@@ -89,7 +95,7 @@ local function ready(p,x)
 end
 '''
 service=(root/'src/server/Services/MineService.luau').read_text()
-service=re.sub(r'local (Visibility|Config|Rules|Items|ExplosionRules|Explosions|Inventory|Visuals|Animation|Journal|Towns|Affiliation|ItemConfig|MineGeometry|Interaction)=require[^\n]+\n','',service)
+service=re.sub(r'local (Progression|Visibility|Config|Rules|Items|ExplosionRules|Explosions|Inventory|Visuals|Animation|Journal|Towns|Affiliation|ItemConfig|MineGeometry|Interaction)=require[^\n]+\n','',service)
 s+='\nlocal Mines=(function()\n'+service+'\nend)()'
 s+=r'''
 local remote=ReplicatedStorage:FindFirstChild("MineAction")
@@ -119,6 +125,7 @@ assert(not Mines.Disarm(a,id),"detonated mine cannot be recovered")
 -- Owner defuses at 100%, even with the maximum adversarial random roll.
 local own,ownFrame=plant(20);move(a,ownFrame.Position.X+1,ownFrame.Position.Z)
 roll=1;assert(Mines.Disarm(a,own));assert(finish(a));assert(recovered==1 and #blasts==1)
+assert(#xpAwards==0,"own defuse gives no XP")
 -- Discovery is private, skill weighted, one notice per trap; lock concurrent work.
 local other,otherFrame=plant(30)
 b:SetAttribute("Attention",10);b:SetAttribute("SkillTraps",250);b.Character.Humanoid.Health=100
@@ -129,6 +136,13 @@ local beforeNotices=#notices;step(.1);assert(#notices==beforeNotices,"discovery 
 roll=.1;assert(Mines.Disarm(b,other));move(a,otherFrame.Position.X+1,otherFrame.Position.Z)
 assert(not Mines.Disarm(a,other),"one disarmer at a time")
 assert(finish(b));assert(recovered==2)
+assert(#xpAwards==1 and xpAwards[1].Player==b and xpAwards[1].XP==250,"enemy defuse awards snapshotted planter skill")
+-- Allied defuse recovers the item but cannot farm XP.
+local allied,alliedFrame=plant(35);move(a,100,0)
+b:SetAttribute("TeamID",1);b:SetAttribute("TownID",1)
+move(b,alliedFrame.Position.X+1.2,alliedFrame.Position.Z);face(b,alliedFrame.Position);step(.1)
+assert(Mines.Disarm(b,allied) and finish(b))
+assert(#xpAwards==1,"allied defuse gives no XP")
 -- Failure detonates and reports the planter even after disconnect, to victim/mayor.
 local failed,failedFrame=plant(40);move(a,100,0)
 b:SetAttribute("TeamID",1);b:SetAttribute("TownID",1);b:SetAttribute("SkillTraps",0)
@@ -182,6 +196,8 @@ zmove(zframe.Position.X-3,zframe.Position.Z);step(.1)
 zmove(zframe.Position.X+3,zframe.Position.Z);step(.1)
 assert(#blasts==count+1 and blasts[#blasts].Options.TriggerCharacter==zombie,"fast zombie crossing detonates with its own model as trigger")
 step(.1);assert(#blasts==count+1,"mine detonates only once")
+assert(killCredits[#killCredits]==zombie,"mine death callback forwards zombie kill credit")
+zh.Health=20
 -- Custom names and late CreatureType assignment are supported.
 local aid,aframe=plant(120);move(a,150,0)
 zombie.Name="Walker";zmove(aframe.Position.X,aframe.Position.Z)

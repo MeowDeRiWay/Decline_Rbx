@@ -39,7 +39,7 @@ local function modernListener()
 end
 local modern=modernListener()
 function camera:GetDescendants() return {modern} end
-local rootPart={Position=Vector3.new(3,1,4)}
+local rootPart={Position=Vector3.new(3,1,4),CFrame=CFrame.new(Vector3.zero)}
 local head={Position=Vector3.new(3,2,4),IsA=function(_,kind) return kind=="BasePart" end}
 local character={DescendantAdded=signal(),FindFirstChild=function(_,name) return name=="Head" and head or rootPart end,GetDescendants=function() return {} end}
 local player={Character=character,CharacterAdded=signal(),CharacterRemoving=signal()}
@@ -61,7 +61,12 @@ local attachment=modern.Parent
 camera.CFrame=CFrame.new(Vector3.new(0,200,30));frames.step()
 near(SoundService.Frame.Position.Y,2);assert(modern.Parent==attachment,"zoom does not move hearing to camera")
 camera.CFrame=CFrame.lookAt(Vector3.zero,Vector3.new(-1,0,0));frames.step()
+near(SoundService.Frame.RightVector.X,1)
+rootPart.CFrame=CFrame.lookAt(Vector3.zero,Vector3.new(-1,0,0));frames.step()
 near(SoundService.Frame.RightVector.Z,-1)
+local front=rootPart.CFrame.LookVector
+near(SoundService.Frame:VectorToObjectSpace(front).X,0)
+near(SoundService.Frame:VectorToObjectSpace(front).Z,-1)
 local late=modernListener()
 camera.DescendantAdded:Fire(late);frames.step()
 assert(late.Parent==attachment,"late modern listeners are aligned without extra output wires")
@@ -71,7 +76,7 @@ assert(late.Parent==camera)
 player.Character=character;player.CharacterAdded:Fire(character);frames.step()
 assert(attachment.Destroyed and modern.Parent~=attachment,"respawn replaces local hearing attachment")
 changed:Fire();frames.step();assert(modern.Parent.Parent==rootPart,"camera replacement rebinds listeners")
-print("PASS: screen left/right across yaw and tilt, horizontal head, zoom-independent distance, legacy/modern parity, late listeners, fallback, respawn and camera replacement")
+print("PASS: character left/right across yaw and tilt, facing source centers it, camera rotation independence, horizontal head, zoom-independent distance, legacy/modern parity, late listeners, fallback, respawn and camera replacement")
 '''
 with tempfile.TemporaryDirectory() as folder:
  path=Path(folder)/'listener.luau';path.write_text('\n'.join([geometry,rules,setup,source,cases]));subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)

@@ -83,6 +83,12 @@ assert(Service.Snapshot(rejoined).TagsConfirmed and Service.Snapshot(rejoined).T
 local zombie=make("Model","Zombie",workspace,{LastDamagerID=a.UserId});local zhp=make("Humanoid","Humanoid",zombie);zhp.MaxHealth=60
 local oldXP=totalXP(Service.Snapshot(a));Service.ZombieDied(zombie,{})
 assert(totalXP(Service.Snapshot(a))==oldXP+150,"kill XP derives from max HP, not health remaining")
+assert(not Service.ZombieKillXP(zombie) and totalXP(Service.Snapshot(a))==oldXP+150,"mine fallback cannot duplicate normal zombie kill XP")
+local mined=make("Model","Zombie",workspace,{LastDamagerID=a.UserId,LastHitItem="Mine"})
+local minedHP=make("Humanoid","Humanoid",mined);minedHP.MaxHealth=20
+oldXP=totalXP(Service.Snapshot(a));assert(Service.ZombieKillXP(mined))
+Service.ZombieDied(mined,{})
+assert(totalXP(Service.Snapshot(a))==oldXP+50,"mine fallback grants one kill reward even before AI death cleanup")
 local med=player(700);Players.PlayerAdded:Fire(med);med:LoadCharacterAsync()
 clock+=.2;action.OnServerEvent:Fire(med,"Confirm",{Stats={Strength=5,Attention=10,Endurance=5,Intelligence=10,Agility=5,Luck=1},TaggedSkills={"LightWeapons","HeavyWeapons","Throwing"}})
 Service.Award(med,20000)

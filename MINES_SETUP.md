@@ -65,3 +65,11 @@ an additional notice naming planter and victim. The username and affiliation
 are stored when planted, so notices still work after the owner disconnects.
 The blast records LastDamagerID and LastHitItem=Mine. There is no offline mayor
 notification queue and no deployed-mine persistence across server shutdown.
+
+## Experience
+
+Zombie kills credit the planter using normal max-HP-based kill XP. The mine
+callback and normal zombie death event share an idempotent reward path.
+Successful disarming of another player's non-allied mine awards XP equal to
+its snapshotted planter Traps skill. Own and allied mines, failed attempts and
+cancellations do not award disarming XP. Normal XP multipliers and level caps apply.

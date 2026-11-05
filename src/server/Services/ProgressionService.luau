@@ -117,13 +117,22 @@ function Service.Harvest(player,kind,count)
  local perItem=({Tree=10,StoneVein=20,ScrapPile=50})[kind] or 0
  Service.Award(player,count*perItem)
 end
+-- Both the zombie death event and explosive damage callbacks can report a kill.
+function Service.ZombieKillXP(model)
+ if model:GetAttribute("ZombieKillXPGranted") then return false end
+ local killer=Players:GetPlayerByUserId(model:GetAttribute("LastDamagerID") or 0)
+ if not killer or killer.Parent~=Players then return false end
+ model:SetAttribute("ZombieKillXPGranted",true)
+ Service.Award(killer,Rules.KillExperience((model:FindFirstChildOfClass("Humanoid") or {}).MaxHealth))
+ return true
+end
 function Service.ZombieDied(model,items)
  local killer=Players:GetPlayerByUserId(model:GetAttribute("LastDamagerID") or 0)
  if killer and (killer:GetAttribute("ScroungerMultiplier") or 1)>1 then
   local definitions=require(ReplicatedStorage.Shared.ItemConfig).Items
   for id,count in pairs(items) do if definitions[id] and definitions[id].Ammo then items[id]=math.ceil(count*(killer:GetAttribute("ScroungerMultiplier") or 1)) end end
  end
- Service.Award(killer,Rules.KillExperience((model:FindFirstChildOfClass("Humanoid") or {}).MaxHealth))
+ Service.ZombieKillXP(model)
  return items
 end
 function Service.Start()
