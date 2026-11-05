@@ -11,8 +11,13 @@ instances. Assign permitted Roblox audio assets to their `SoundId` properties:
 | `ExplosionSound` | Plays once at impact, independently of the short visual flash |
 
 Volume and PlaybackSpeed are authored on each Sound. Optional numeric attributes
-MinDistance/MaxDistance control spatial falloff for flight (default 3–100 studs)
+MinDistance/MaxDistance control spatial falloff for flight (default 40–100 studs)
 and explosion (3–150 studs). Reload/launch retain existing weapon audio rules.
+Rocket ignition emits the rear jet immediately; the rocket/muzzle effect begins
+0.5 seconds later. Ammo is spent once on accepted ignition, and the movement
+pause covers this delay. The existing launch sound starts with ignition.
+FlightSound stays at authored volume through 40 studs (MinDistance floor 40),
+then fades toward MaxDistance (default 100; always greater than MinDistance).
 Flight and explosion remain spatial for the shooter as well as observers.
 Their settings are captured on launch, so holstering or dying does not silence
 an already airborne rocket or its later blast. Missing/empty audio is silent;

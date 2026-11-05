@@ -27,7 +27,12 @@ cases='''
 local flight=Audio.Describe(character,"FlightSound")
 local blast=Audio.Describe(character,"ExplosionSound")
 assert(flight.SoundId==sound.SoundId and flight.Volume==.7 and flight.PlaybackSpeed==1.2 and flight.MaxDistance==100)
-assert(blast.MaxDistance==150)
+assert(blast.MaxDistance==150 and blast.MinDistance==3)
+assert(flight.MinDistance==40,"rocket flight remains at authored volume within 40 studs")
+sound.attributes.MinDistance=2;sound.attributes.MaxDistance=20
+local close=Audio.Describe(character,"FlightSound")
+assert(close.MinDistance==40 and close.MaxDistance>40,"short authored ranges cannot silence the requested 40-stud radius")
+sound.attributes.MinDistance=nil;sound.attributes.MaxDistance=nil
 sound.SoundId="rbxassetid://456";assert(flight.SoundId=="rbxassetid://123","snapshot survives template edits/removal")
 sound.SoundId="rbxassetid://123"
 assert(Audio.Describe(character,"Missing")==nil)

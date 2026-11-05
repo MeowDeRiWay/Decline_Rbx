@@ -80,10 +80,11 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
   FlightSound=definition.Projectile=="Rocket" and Audio.Describe(character,"FlightSound") or nil,ExplosionSound=definition.Projectile=="Rocket" and Audio.Describe(character,"ExplosionSound") or nil,
+  LaunchDelay=definition.Projectile=="Rocket" and .5 or nil,
   Projectile=definition.Projectile,BlastRadius=definition.BlastRadius,Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
   SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",IgnoredDormant={},BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true and definition.BoltAction~=false,Ignored={character},Impacts=0}
  if definition.Projectile=="Rocket" then Service.Backblast(player,character,origin,aimedDirection,definition,itemID) end
- emit("Muzzle",origin)
+ if definition.Projectile~="Rocket" then emit("Muzzle",origin) end
  return true
 end
 local function damageVictim(bullet,victim)
@@ -161,7 +162,17 @@ function Service.Backblast(player,character,origin,direction,definition,itemID)
 end
 RunService.Heartbeat:Connect(function(dt)
  for id,bullet in pairs(bullets) do
-  local distance=math.min(bullet.Speed*math.min(dt,.1),bullet.Remaining)
+  local travelTime=dt
+  if bullet.LaunchDelay then
+   local remaining=bullet.LaunchDelay
+   bullet.LaunchDelay=remaining-dt
+   -- Accepted ignition spends ammo now; only the exhaust exists during warmup.
+   if bullet.LaunchDelay>1e-6 then continue end
+   bullet.LaunchDelay=nil
+   travelTime=math.max(0,dt-remaining)
+   emit("Muzzle",bullet.Position)
+  end
+  local distance=math.min(bullet.Speed*math.min(travelTime,.1),bullet.Remaining)
   local stopped=false
   for _=1,16 do
    if distance<=.00001 or bullet.Remaining<=.00001 then break end

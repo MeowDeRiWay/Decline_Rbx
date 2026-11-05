@@ -173,6 +173,23 @@ for _,kind in ipairs({false,"Brick"}) do
  if kind then part(group(kind),3,.1) end
  part(target,5,.5)
  Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
+ heartbeat.fire(.1)
+ local backblast=false
+ for _,batch in ipairs(packets) do for _,event in ipairs(batch) do
+  if event.Kind=="Backblast" then backblast=true end
+  assert(event.Kind~="Trace" and event.Kind~="Muzzle" and event.Kind~="Explosion","warmup emits exhaust only")
+ end end
+ assert(backblast,"rear jet starts before rocket leaves")
+ for i=1,3 do heartbeat.fire(.1) end
+ packets={};heartbeat.fire(.09)
+ assert(#packets==0,"no rocket before half-second ignition")
+ heartbeat.fire(.01)
+ local launched=false
+ for _,batch in ipairs(packets) do for _,event in ipairs(batch) do
+  if event.Kind=="Trace" and event.Rocket then launched=true;assert(event.Point.Magnitude<1e-5,"no travel during warmup") end
+ end end
+ assert(launched,"rocket appears at half a second")
+ packets={}
  for i=1,200 do heartbeat.fire(1/60) end
  assert(dealt==(kind and 50 or 100),"blast is flat100, wall halves once, rig parts deduplicated")
  local explosions=0

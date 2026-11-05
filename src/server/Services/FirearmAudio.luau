@@ -6,9 +6,12 @@ function Audio.Describe(character,name)
  local folder=held and held:FindFirstChild("Sounds")
  local source=folder and folder:FindFirstChild(name)
  if not source or not source:IsA("Sound") or source.SoundId=="" then return nil end
+ local minimum=source:GetAttribute("MinDistance") or 3
+ if name=="FlightSound" then minimum=math.max(40,minimum) end
  local maximum=source:GetAttribute("MaxDistance") or (name=="ExplosionSound" and 150 or 100)
+ maximum=math.max(maximum,minimum+1)
  return {SoundId=source.SoundId,Volume=source.Volume,PlaybackSpeed=source.PlaybackSpeed,
-  MinDistance=math.min(source:GetAttribute("MinDistance") or 3,maximum),MaxDistance=maximum}
+  MinDistance=minimum,MaxDistance=maximum}
 end
 function Audio.Play(character,name,maxDistance)
  local held=character and character:FindFirstChild("HeldItem")

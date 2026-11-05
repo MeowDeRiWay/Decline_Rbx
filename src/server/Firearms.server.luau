@@ -123,7 +123,7 @@ action.OnServerEvent:Connect(function(player,command,direction)
  direction=direction.Unit
  if not Projectiles.Fire(player,character,origin,direction,gun,state.Type,id) then return end
  -- Only an accepted shot stops walking; rejected input and reload do not.
- character:SetAttribute("ShotMovementUntil",workspace:GetServerTimeNow()+Config.ShotMovementLockSeconds)
+ character:SetAttribute("ShotMovementUntil",workspace:GetServerTimeNow()+Config.ShotMovementLockSeconds+(gun.Projectile=="Rocket" and .5 or 0))
  local humanoid=character:FindFirstChildOfClass("Humanoid")
  if humanoid then humanoid.WalkSpeed=0;humanoid:Move(Vector3.zero,false) end
  local shot=Audio.Play(character,"ShotSound",gun.ShotDistance)
