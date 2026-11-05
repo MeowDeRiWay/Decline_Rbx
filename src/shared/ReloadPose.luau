@@ -10,7 +10,7 @@ function Reload.Sample(kind,t,rounds)
 end
 function Reload.Frame(kind,rest,t)
  local weight=Reload.Sample(kind,t)
- local shift=kind=="Rocket" and Vector3.new(0,-.5,-.15) or Vector3.new(0,-.15,.08)
+ local shift=kind=="Rocket" and Vector3.new(0,-.5,-.55) or Vector3.new(0,-.15,.08)
  local rotation=rest-rest.Position
  if kind=="Rocket" then
   -- Tip the muzzle forward/down; the rear opening faces up for top loading.
