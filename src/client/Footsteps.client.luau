@@ -1,6 +1,7 @@
 -- Source volume is independent of Attention; listeners extend hearing range only.
 local Players=game:GetService("Players")
 local Storage=game:GetService("ReplicatedStorage")
+local SoundService=game:GetService("SoundService")
 local Config=require(Storage.Shared.GameConfig)
 local Noise=require(Storage.Shared.NoiseRules)
 local watched=setmetatable({},{__mode="k"})
@@ -26,7 +27,19 @@ local function configure(sound,player,character)
  local b=player:GetAttributeChangedSignal("SkillSneak"):Connect(apply)
  local perk=player:GetAttributeChangedSignal("SilentRunning"):Connect(apply)
  local c=sound:GetPropertyChangedSignal("Volume"):Connect(apply)
- sound.Destroying:Once(function() a:Disconnect();b:Disconnect();c:Disconnect();perk:Disconnect() end)
+ local removing
+ if player==Players.LocalPlayer and sound:IsDescendantOf(character) then
+  -- Reuse Roblox's Running sound and playback state; only the owner's local
+  -- instance becomes non-positional. Other clients keep their spatial source.
+  sound.Parent=SoundService
+  removing=player.CharacterRemoving:Connect(function(old)
+   if old==character then sound:Destroy() end
+  end)
+ end
+ sound.Destroying:Once(function()
+  a:Disconnect();b:Disconnect();c:Disconnect();perk:Disconnect()
+  if removing then removing:Disconnect() end
+ end)
  apply()
 end
 local connections={}

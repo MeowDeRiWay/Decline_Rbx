@@ -99,6 +99,7 @@ assert(wire.SourceInstance==listener,"range-only hearing creates no gain faders"
 player.attrs.HearingAttention=nil;attention(5)
 Config.FootstepMinDistance=2;Config.FootstepMaxDistance=5;Config.RunFootstepMaxDistance=10
 FOOTSTEPS
+player.CharacterRemoving=signal()
 player.attrs.SkillSneak=0;configure(sound,player,player.Character)
 assert(sound.RollOffMaxDistance==5 and sound.Volume==.15)
 attention(10);assert(sound.RollOffMaxDistance==10 and sound.Volume==.15)
@@ -107,6 +108,20 @@ assert(sound.RollOffMaxDistance==20 and sound.Volume==.15,"run base10 overrides 
 sound.Volume=.65;assert(sound.Volume==.15,"Roblox default sound script cannot reset footstep source gain")
 player.attrs.SkillSneak=30;player.Character.attrs.Running=false;player.Character:GetAttributeChangedSignal("Running"):Fire()
 assert(sound.RollOffMaxDistance==4 and math.abs(sound.Volume-.06)<1e-9,"Sneak quiet source combines with range-only hearing")
+local ownStep=Instance.new("Sound");ownStep.Name="Running";ownStep.Parent=player.Character
+ownStep.Looped=true;ownStep.PlaybackSpeed=1.3;ownStep.TimePosition=.4
+configure(ownStep,player,player.Character)
+assert(ownStep.Parent==SoundService,"own footsteps are non-positional and centered")
+assert(ownStep.Playing and ownStep.Looped and ownStep.PlaybackSpeed==1.3 and ownStep.TimePosition==.4,"centering keeps engine playback state, cadence and phase")
+local foreignPlayer=Instance.new("Player")
+local foreignCharacter=Instance.new("Model");foreignCharacter.Parent=workspace
+local foreignStep=Instance.new("Sound");foreignStep.Name="Running";foreignStep.Parent=foreignCharacter
+configure(foreignStep,foreignPlayer,foreignCharacter)
+assert(foreignStep.Parent==foreignCharacter,"other players retain spatial footsteps")
+player.CharacterRemoving:Fire(foreignCharacter);assert(not ownStep.Destroyed)
+player.CharacterRemoving:Fire(player.Character)
+assert(ownStep.Destroyed and not foreignStep.Destroyed,"respawn cleans only centered own footsteps")
+print("PASS: own footsteps centered without duplicate playback, other footsteps spatial, character removal cleanup")
 print("PASS: Attention changes range only for legacy/centered audio and voice emitters; authored volumes and audio mix untouched, walking5/run10 scale with hearing")
 deferredProperties=true
 local delayed=Instance.new("Sound");delayed.Parent=workspace;flush()
