@@ -97,14 +97,16 @@ assert(#legacy:GetDescendants()==2,"legacy/incomplete model is untouched")
 print("PASS: actual model, 11 joints, authored orientations/gap, height, repeated prepare, rotated origin, IK and legacy fallback")
 '''
 source+='\n'+(root/'tests/character_animation.fixture.luau').read_text()
+source+='\nlocal Presentation='+module('src/shared/WeaponPresentation.luau')+'\nlocal ReloadPose='+module('src/shared/ReloadPose.luau')
 controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
 import re
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose|Presentation|ReloadPose)\s*=.*\n','',controller)
 controller=controller.replace('return Driver','Driver.Start(Players.LocalPlayer,false)')
-source+='\nlocal CarryPose='+module('src/shared/CarryPose.luau')+'\nlocal HandPose={Apply=function() end}\nlocal Motion='+module('src/shared/WeaponMotion.luau')+'\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
+source+='\nlocal CarryPose='+module('src/shared/CarryPose.luau')+'\nlocal HandPose={Apply=function() end}\nlocal Motion='+module('src/shared/WeaponMotion.luau')+'\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose').replace('local Carry=require(script.Parent.CarryPose)','local Carry=CarryPose')+'\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
 source+='\n'+(root/'tests/equipment_pose_cases.fixture.luau').read_text()
 service=(root/'src/server/Services/EquipmentVisuals.luau').read_text()
 service=re.sub(r'local (ServerStorage|ReplicatedStorage|Items) = [^\n]+\n','',service)
+service=service.replace('local Presentation=require(ReplicatedStorage.Shared.WeaponPresentation)','')
 source+='\nfunction methods:FindFirstChildWhichIsA(kind,recurse) for _,part in ipairs(recurse and self:GetDescendants() or self:GetChildren()) do if part:IsA(kind) then return part end end end\ndo\nlocal ServerStorage=serverStorage\nlocal Items='+module('src/shared/ItemConfig.luau')+'\nlocal Visuals=(function()\n'+service+'\nend)()\n'
 source+='\nlocal StoragePose='+module('src/shared/HandActionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\nlocal Holsters='+module('src/server/Services/HolsterVisuals.luau').replace('require(game:GetService("ReplicatedStorage").Shared.HandActionPose)','StoragePose')
 source+=r'''

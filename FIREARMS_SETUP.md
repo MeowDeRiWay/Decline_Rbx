@@ -1,3 +1,39 @@
+# Weapon animation attributes — 5 November 2026
+
+Add these **String** attributes to the top-level weapon Model/BasePart in
+`ServerStorage/Items` (category folders are supported). They are copied to
+`HeldItem`. Missing or invalid values use existing item defaults.
+
+| Attribute | Supported values | Purpose |
+| --- | --- | --- |
+| `AnimationSet` | `Pistol`, `Rifle`, `Launcher`, `Knife`, `Axe`, `Shovel` | Held posture and one/two-hand support; pistol/launcher placement |
+| `ReloadType` | `Pistol`, `AR`, `Bullpup`, `SingleRound`, `Rocket`, `None` | Cosmetic reload motion; `None` disables the motion |
+
+Defaults: pistols use Pistol/Pistol; pipe pistol uses Pistol/SingleRound;
+pipe rifle and Rifle223 use Rifle/SingleRound; LSW223 and MarksmanRifle223
+(Enfild X7) use Rifle/Bullpup; other long guns, including MachineGun308,
+use Rifle/AR; AT4 uses Launcher/Rocket; melee tools use their matching set
+and None. There is no BeltFed type.
+
+Rocket lowers the tube from the shoulder, moves the support hand to the rear
+loading point, inserts, and returns to the ready pose. SingleRound repeats the
+hand motion for the number of rounds loaded. Magazine types reach toward the
+pistol grip, forward magazine, or rear bullpup magazine respectively.
+These are procedural hand/weapon gestures; they do not spawn loose cartridge,
+rocket or magazine meshes or detach model parts.
+
+Optional **Attachment** `ReloadGrip` marks the insertion point on a particular
+model; place it on a weapon BasePart. Without it, magazine types use generic
+positions and Rocket uses `_BackblastOrigin`. Existing RightHandGrip and
+LeftHandGrip attachments still control the ready hand positions.
+
+The server announces accepted reload start, duration and round count. Each
+viewer samples the same timeline, and cancellation/expiry restores the grip.
+Attributes do not change ammo capacity, damage, actual reload time, slot,
+requirements, or melee attack/contact timing; those remain in ItemConfig.
+Changing a template takes effect on the next equip. Verify the final hand fit
+on authored models in Studio.
+
 # Current wall and armor penetration — 23 October 2026
 
 This section supersedes earlier ammunition penetration descriptions below.

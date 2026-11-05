@@ -15,6 +15,7 @@ function vm.__index(a,k)
 end
 Vector3.zero=Vector3.new(0,0,0);Vector3.xAxis=Vector3.new(1,0,0);Vector3.yAxis=Vector3.new(0,1,0);Vector3.zAxis=Vector3.new(0,0,1)
 local function cf(p,r) return setmetatable({Position=p,R=r or {1,0,0,0,1,0,0,0,1}},cm) end
+function cm.__sub(frame,v) return cf(frame.Position-v,frame.R) end
 function CFrame.new(x,y,z) return cf(type(x)=="table" and x or Vector3.new(x or 0,y or 0,z or 0)) end
 function cm:VectorToWorldSpace(v)
  local r=self.R

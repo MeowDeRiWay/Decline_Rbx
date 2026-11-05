@@ -1,6 +1,7 @@
 local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Items = require(ReplicatedStorage.Shared.ItemConfig)
+local Presentation=require(ReplicatedStorage.Shared.WeaponPresentation)
 local Visuals = {}
 local function findTemplate(folder,id)
  if not folder then return nil end
@@ -76,6 +77,9 @@ function Visuals.Apply(character, id)
  local held = template:Clone()
  held.Name = "HeldItem"
  held:SetAttribute("Item_ID",id)
+ local animationSet=Presentation.AnimationSet(held,definition)
+ held:SetAttribute("AnimationSet",animationSet)
+ held:SetAttribute("ReloadType",Presentation.ReloadType(held,definition,id))
  local grip = root:FindFirstChild("HandsGrip")
  local offset = definition.HeldOffset or CFrame.new(root.Size.X / 2 + 0.1, root.Size.Y * 0.15, -root.Size.Z / 2 - 0.1)
  local target = grip and grip:IsA("Attachment") and grip.WorldCFrame or root.CFrame * offset
@@ -85,18 +89,18 @@ function Visuals.Apply(character, id)
   target=target+root.CFrame.UpVector*(root.Size.Y*(definition.Firearm.HoldHeightRatio or .4)-height)
  end
  -- Keep the inward shoulder fit, but preserve the original forward distance.
- if definition.Firearm and definition.Firearm.Category~="Pistol" then
+ if definition.Firearm and animationSet~="Pistol" then
   local p=root.CFrame:PointToObjectSpace(target.Position)
   local inset=math.min(math.abs(p.X),root.Size.X*.15)
   local x=p.X>0 and -inset or (p.X<0 and inset or 0)
   target=target+root.CFrame:VectorToWorldSpace(Vector3.new(x,0,0))
  end
  -- Pistol grip is forward of the chest so both arms can extend toward it.
- if definition.Firearm and definition.Firearm.Category=="Pistol" then
+ if definition.Firearm and animationSet=="Pistol" then
   local p=root.CFrame:PointToObjectSpace(target.Position)
   target=target+root.CFrame:VectorToWorldSpace(Vector3.new(-p.X,root.Size.Y*.4-p.Y,-root.Size.Y*1.1-p.Z))
  end
- if definition.Firearm and definition.Firearm.Projectile=="Rocket" then
+ if definition.Firearm and animationSet=="Launcher" then
   -- PrimaryPart is the authored alignment anchor; keep the tube parallel to -Z.
   target=root.CFrame*CFrame.new(root.Size.X*.62,root.Size.Y*.6,root.Size.Z*.15)
  end
@@ -113,7 +117,7 @@ function Visuals.Apply(character, id)
  local gripPart = held:IsA("Model") and (held.PrimaryPart or parts[1]) or held
  local handGrip=Instance.new("Attachment")
  handGrip.Name="_HandGrip";handGrip.CFrame=gripPart.CFrame:ToObjectSpace(target);handGrip.Parent=gripPart
- if definition.Firearm and definition.Firearm.Projectile=="Rocket" then
+ if definition.Firearm and animationSet=="Launcher" then
   local frame,size=held:GetBoundingBox()
   local front,rear=math.huge,-math.huge
   for _,part in ipairs(parts) do

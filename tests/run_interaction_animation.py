@@ -89,8 +89,9 @@ end
 service=(root/'src/server/Services/InteractionAnimationService.luau').read_text()
 service=re.sub(r'local (Shared|Pose|Interaction|Motion)=.*\n','',service)
 s+='\nlocal Animation=(function()\nlocal Pose=Interact\n'+service+'\nend)()'
+s+='\nlocal Presentation='+module('src/shared/WeaponPresentation.luau')+'\nlocal ReloadPose='+module('src/shared/ReloadPose.luau')
 controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose|Presentation|ReloadPose)\s*=.*\n','',controller)
 s+='\nlocal Driver=(function()\n'+controller+'\nend)()\nDriver.Start(owner,false)'
 s+=r'''
 local object=target();local contacts=0

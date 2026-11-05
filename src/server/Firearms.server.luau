@@ -10,6 +10,7 @@ local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
 local Config=require(ReplicatedStorage.Shared.GameConfig)
 local Journal=require(script.Parent.Services.JournalService)
+local Presentation=require(ReplicatedStorage.Shared.WeaponPresentation)
 local states={}
 local random=Random.new()
 local action=Instance.new("RemoteEvent");action.Name="FirearmAction";action.Parent=ReplicatedStorage
@@ -91,6 +92,12 @@ action.OnServerEvent:Connect(function(player,command,direction)
     return
    end
   end
+  local held=character:FindFirstChild("HeldItem")
+  character:SetAttribute("ReloadItemID",id)
+  character:SetAttribute("ReloadStartedAt",workspace:GetServerTimeNow())
+  character:SetAttribute("ReloadDuration",gun.ReloadTime)
+  character:SetAttribute("ReloadVisualType",Presentation.ReloadType(held,Items[id],id))
+  character:SetAttribute("ReloadRoundCount",math.min(gun.Magazine-state.Loaded,Inventory.Snapshot(player).Items[Rules.AmmoID(gun.Caliber,state.Type)] or 0))
   state.Token+=1;local token=state.Token;state.Reloading=true;sync(player,state,gun)
   state.ReloadSound=Audio.Play(character,"ReloadSound")
   task.delay(gun.ReloadTime,function()

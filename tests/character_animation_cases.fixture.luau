@@ -72,6 +72,24 @@ serverTime+=1.1;RunService.PreSimulation:Fire(1/120)
 assert((axeGrip.Transform.LookVector-CFrame.identity.LookVector).Magnitude<1e-7,"finish presents rest pose immediately")
 Motion.Cancel(axeGrip);axeGrip.Parent=nil;oc:SetAttribute("HandsItem","Gun")
 print("PASS: real axe motion and remote two-hand IK advance at120Hz without C0 replication or stale held-part feedback")
+-- Reload is rendered by the same viewer driver and releases its motor on cancel.
+local reloadMotor=Instance.new("Motor6D",held);reloadMotor.Name="WeaponGrip"
+reloadMotor.Part0=root;reloadMotor.Part1=held;reloadMotor.C0=CFrame.new(.3,.6,0);reloadMotor.C1=CFrame.identity
+reloadMotor:SetAttribute("RestC0",reloadMotor.C0)
+held:SetAttribute("Item_ID","Gun");held:SetAttribute("AnimationSet","Launcher")
+c:SetAttribute("ReloadItemID","Gun");c:SetAttribute("ReloadStartedAt",serverTime)
+c:SetAttribute("ReloadDuration",4);c:SetAttribute("ReloadVisualType","Rocket");c:SetAttribute("ReloadRoundCount",1)
+c:SetAttribute("Reloading",true);c.DescendantAdded:Fire(reloadMotor);flush()
+serverTime+=2;RunService.PreSimulation:Fire(1/30)
+assert(reloadMotor.Transform.Position.Magnitude>.1,"viewer actually lowers rocket tube during reload")
+c:SetAttribute("Reloading",false);c:GetAttributeChangedSignal("Reloading"):Fire()
+RunService.PreSimulation:Fire(1/30)
+assert(reloadMotor.Transform.Position.Magnitude<1e-7,"cancel restores weapon grip")
+c:SetAttribute("Reloading",true);c:SetAttribute("ReloadStartedAt",serverTime-5)
+RunService.PreSimulation:Fire(1/30)
+assert(reloadMotor.Transform.Position.Magnitude<1e-7,"expired pose cannot stick while completion packet is delayed")
+c:SetAttribute("Reloading",false);reloadMotor.Parent=nil;held:SetAttribute("AnimationSet",nil)
+print("PASS: real viewer reload lowers launcher, cancellation and expiry restore held motor")
 otherRoot.CFrame=CFrame.new(300,0,0)*otherRoot.CFrame
 local previous=remoteHip.Transform
 RunService.PreSimulation:Fire(1/30);assert(remoteHip.Transform==previous,"distant rigs do no pose work")

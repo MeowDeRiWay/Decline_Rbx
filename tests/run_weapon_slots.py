@@ -13,7 +13,7 @@ local Crafting={Close=function() end}
 local Progression={Meets=function(_,r) return not r.Attributes or (r.Attributes.Strength or 0)<=10 end}
 local Motion={Cancel=function() end}
 local Journal={Send=function() end}
-local Visuals={Template=function() return {} end,Validate=function() return true end,Apply=function(c,id) c:SetAttribute("HandsItem",id or "") end}
+local Visuals={Template=function() return {GetAttribute=function() return nil end} end,Validate=function() return true end,Apply=function(c,id) c:SetAttribute("HandsItem",id or "") end}
 local HolsterVisuals={Apply=function(c,slot,id) c:SetAttribute("Stored"..slot,id or "") end}
 local ArmorVisuals={Apply=function() end};local AdditionalVisuals={Apply=function() end}
 local BackVisuals={Apply=function() end}

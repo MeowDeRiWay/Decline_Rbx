@@ -12,6 +12,8 @@ local Interact=require(Shared:WaitForChild("InteractionPose"))
 local CarryPose=require(Shared:WaitForChild("CarryPose"))
 local HandPose=require(Shared:WaitForChild("HandActionPose"))
 local Motion=require(Shared:WaitForChild("WeaponMotion"))
+local Presentation=require(Shared:WaitForChild("WeaponPresentation"))
+local ReloadPose=require(Shared:WaitForChild("ReloadPose"))
 local Driver={}
 function Driver.Start(localPlayer,serverPreview)
 local records={}
@@ -82,6 +84,11 @@ local function bind(player,character)
    if character:GetAttribute("HandAction") then Motion.Cancel(motor) end
    motor.Transform=CFrame.identity
   end
+ end))
+ table.insert(links,character:GetAttributeChangedSignal("Reloading"):Connect(function()
+  invalidate(player,character)
+  local held=character:FindFirstChild("HeldItem");local motor=held and held:FindFirstChild("WeaponGrip")
+  if motor then motor.Transform=CFrame.identity end
  end))
  table.insert(links,character:GetAttributeChangedSignal("BodyPoseKind"):Connect(function()
   invalidate(player,character)
@@ -176,10 +183,15 @@ RunService.PreSimulation:Connect(function(dt)
   m.LeftHip.Transform=lh;m.RightHip.Transform=rh;m.LeftKnee.Transform=lk;m.RightKnee.Transform=rk
   end
   local equipped=held and definition and (definition.Firearm or definition.Weapon or definition.Slot=="Medicine")
-  local twoHands=definition and (definition.Firearm or definition.HarvestTool=="Axe" or definition.HarvestTool=="Shovel")
+  local animationSet=Presentation.AnimationSet(held,definition)
+  local twoHands=animationSet=="Pistol" or animationSet=="Rifle" or animationSet=="Launcher" or animationSet=="Axe" or animationSet=="Shovel"
+  local reloadFrame,reloadRight,reloadLeft=ReloadPose.Apply(c,root,held,motor,workspace:GetServerTimeNow())
+  if not reloadFrame and r.Reloading and motor then motor.Transform=CFrame.identity end
+  r.Reloading=reloadFrame~=nil
   local grip=held and (held:FindFirstChild("RightHandGrip",true) or held:FindFirstChild("_HandGrip",true))
   local targetFrame=equipped and (grip and grip:IsA("Attachment") and grip.WorldCFrame or held:GetPivot())
   if chopFrame then targetFrame=Motion.GripFrame(motor,grip,chopFrame) end
+  if reloadFrame then targetFrame=Motion.GripFrame(motor,grip,reloadFrame) end
   local punchTime=c:GetAttribute("PunchStartedAt")
   local punchElapsed=typeof(punchTime)=="number" and workspace:GetServerTimeNow()-punchTime or -1
   local punchSequence=c:GetAttribute("PunchSequence") or 0
@@ -194,7 +206,7 @@ RunService.PreSimulation:Connect(function(dt)
     local target=CarryPose.SupportPoint(c,root)
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
-    local launcher=definition and definition.Firearm and definition.Firearm.Projectile=="Rocket"
+    local launcher=animationSet=="Launcher"
     local bend=launcher and Vector3.new(side=="Left" and -.6 or 1,-1,.35) or Vector3.new(side=="Left" and -1 or 1,-1,.2)
     local s,e=Pose.Arm(upper,lower,delta,bend)
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
@@ -205,19 +217,20 @@ RunService.PreSimulation:Connect(function(dt)
    elseif equipped and (side=="Right" or twoHands) then
     -- Primary hand at the grip; support hand toward the barrel. Clamp reach in IK.
     local support=held:FindFirstChild("LeftHandGrip",true)
-    local pistol=definition.Firearm and definition.Firearm.Category=="Pistol"
+    local pistol=animationSet=="Pistol"
     local target=targetFrame.Position
     if side=="Left" then
      local supportFrame=chopFrame and support and support:IsA("Attachment") and Motion.GripFrame(motor,support,chopFrame)
      target=supportFrame and supportFrame.Position or support and support:IsA("Attachment") and support.WorldPosition or target+(pistol and -root.CFrame.RightVector*.04 or targetFrame.LookVector*.25)
     end
+    if reloadFrame then target=side=="Left" and reloadLeft or reloadRight end
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
-    local launcher=definition and definition.Firearm and definition.Firearm.Projectile=="Rocket"
+    local launcher=animationSet=="Launcher"
     local bend=launcher and Vector3.new(side=="Left" and -.6 or 1,-1,.35) or Vector3.new(side=="Left" and -1 or 1,-1,.2)
     local s,e=Pose.Arm(upper,lower,delta,bend)
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
-   elseif equipped and definition.CraftTool=="Knife" and side=="Left" then
+   elseif equipped and animationSet=="Knife" and side=="Left" then
     -- Free hand stays forward in a defensive guard; it does not swing at the side.
     local target=root.CFrame:PointToWorldSpace(Vector3.new(-root.Size.X*.6,root.Size.Y*.28,-root.Size.Y*.75))
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position

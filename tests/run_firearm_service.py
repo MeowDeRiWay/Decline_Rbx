@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,tempfile,re
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Firearms.server.luau').read_text()
-service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression|Noise|Config|BulletCast)=require[^\n]+\n','',service)
+service=re.sub(r'local (Inventory|Projectiles|Items|Rules|Audio|Journal|Progression|Noise|Config|BulletCast|Presentation)=require[^\n]+\n','',service)
 mock='''
 local function signal() return {Connect=function(self,fn) self.callback=fn end} end
 local changed=signal()
@@ -22,7 +22,7 @@ local Config={ShotMovementLockSeconds=.2}
 local hp={Health=100,WalkSpeed=8,Move=function(self) self.Stopped=true end}
 local root={Position=Vector3.new(0,0,0)}
 local muzzle={GetPivot=function() return CFrame.new(Vector3.new(0,.8,-.5)) end,IsA=function(_,kind) return kind=="Model" end}
-local held={FindFirstChild=function() return muzzle end}
+local held={GetAttribute=function() return nil end,FindFirstChild=function() return muzzle end}
 function character:FindFirstChild(name) return name=="HeldItem" and held or root end
 function character:FindFirstChildOfClass() return hp end
 local player={Character=character,attributes={AttributesConfirmed=true}}
@@ -191,6 +191,7 @@ print("PASS: persistent per-weapon charge, independent identical guns, loose/loa
 '''
 parts=[(root/'tests/city_geometry.fixture.luau').read_text(),
  'local Items=(function()\n'+(root/'src/shared/ItemConfig.luau').read_text()+'\nend)().Items',
+ 'local Presentation=(function()\n'+(root/'src/shared/WeaponPresentation.luau').read_text()+'\nend)()',
  'local Rules=(function()\n'+(root/'src/shared/FirearmRules.luau').read_text()+'\nend)()',mock,service,cases]
 with tempfile.TemporaryDirectory() as directory:
  p=Path(directory)/'service.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(p)],check=True)
