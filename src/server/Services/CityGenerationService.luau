@@ -7,6 +7,7 @@ local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)
 local Furniture=require(script.Parent.StoreFurnitureService)
 local Walls=require(script.Parent.WallReplacementService)
 local Placement=require(script.Parent.StaticPlacement)
+local Prefetch=require(ReplicatedStorage.Shared.WorldPrefetchRules)
 local Service = {}
 local started = false
 local configuredSeed = Config.Seed
@@ -51,14 +52,19 @@ local function invalidateBounds(object)
  while current and current~=workspace do boundsCache[current]=nil;current=current.Parent end
 end
 local function positions()
- local result={}
+ local result,current={},{}
+ local speed=0
  for _,player in ipairs(Players:GetPlayers()) do
   local character=player.Character
   local root=character and character:FindFirstChild("HumanoidRootPart")
   local hp=character and character:FindFirstChildOfClass("Humanoid")
-  if root and hp and hp.Health>0 then table.insert(result,root.Position) end
+  if root and hp and hp.Health>0 then
+   local velocity=Prefetch.Velocity(root,hp)
+   Prefetch.Append(result,root.Position,velocity,Config)
+   table.insert(current,root.Position);speed=math.max(speed,velocity.Magnitude)
+  end
  end
- return result
+ return result,speed,current
 end
 local function distance(object,points)
  local frame,size=authoredBox(object)
@@ -120,9 +126,9 @@ local function sortNearby(list,distances)
   return distances[a]==distances[b] and rank[a]<rank[b] or distances[a]<distances[b]
  end)
 end
--- Each newly discovered nearby batch gets its own stable 30-second window.
+-- Distant work is paced; approaching/nearby work can pull deadlines forward.
 -- Polling/movement must not push deadlines back for jobs already in the queue.
-local function schedule(list,due,now)
+local function schedule(list,due,now,distances,speed)
  local present,new={},{}
  for _,object in ipairs(list) do
   present[object]=true
@@ -131,6 +137,9 @@ local function schedule(list,due,now)
  for object in pairs(due) do if not present[object] then due[object]=nil end end
  for i,object in ipairs(new) do
   due[object]=now+(#new>1 and Config.ZoneLoadSeconds*(i-1)/(#new-1) or 0)
+ end
+ for _,object in ipairs(list) do
+  due[object]=Prefetch.Due(now,due[object],math.sqrt(distances[object]),speed,Config)
  end
 end
 -- Keep authored candidates indexed; retry ticks never allocate a full world descendant list.
@@ -261,10 +270,13 @@ local function place(plot, sources, roadList)
   end
  end
  yard:SetAttribute("BlocksVision",false)
- for _, part in ipairs(clone:GetDescendants()) do if part:IsA("BasePart") then part.Anchored = true end end
- Placement.Move(clone,chosen.frame)
- Walls.Fill(clone)
- Furniture.Fill(clone)
+ for i, part in ipairs(clone:GetDescendants()) do
+  if part:IsA("BasePart") then part.Anchored = true end
+  if i%32==0 then budget() end
+ end
+ Placement.Move(clone,chosen.frame,budget)
+ Walls.Fill(clone,budget)
+ Furniture.Fill(clone,budget)
  local placedYard=box(yard)
  local anchorError=placedYard and (placedYard.Position-plotFrame.Position).Magnitude or math.huge
  clone:SetAttribute("GenerationPlacementVersion","RigidParts1")
@@ -292,7 +304,7 @@ local function generate(incremental)
   for _,object in ipairs(WorldActivity.Roads()) do track(object) end
  end
  if not incremental then table.clear(retryAt) end
- local points=positions()
+ local points,speed,current=positions()
  local plots,distances={},{}
  if #points>0 then
   for object in pairs(plotIndex) do
@@ -300,12 +312,12 @@ local function generate(incremental)
    local house=generated[object]
    if not object:IsDescendantOf(workspace) or (house and (house:IsDescendantOf(workspace) or WorldActivity.IsDormant(house))) or os.clock()<(retryAt[object] or 0) then continue end
    local gap=distance(object,points)
-   if gap<=Config.GenerationRadius*Config.GenerationRadius then table.insert(plots,object);distances[object]=gap end
+   if gap<=Config.GenerationRadius*Config.GenerationRadius then table.insert(plots,object);distances[object]=distance(object,current) end
   end
  end
  sortNearby(plots,distances)
  local now=os.clock()
- schedule(plots,plotDue,now)
+ schedule(plots,plotDue,now,distances,speed)
  local ready={}
  for _,plot in ipairs(plots) do if plotDue[plot]<=now then table.insert(ready,plot) end end
  local jobsDone=0
@@ -336,13 +348,13 @@ local function generate(incremental)
    budget()
    if object:IsDescendantOf(workspace) and not generatedContent(object) and os.clock()>=(retryAt[object] or 0) and not (Furniture.IsMarker(object) and object:FindFirstChild("GeneratedFurniture")) then
     local gap=distance(object,points)
-    if gap<=Config.GenerationRadius*Config.GenerationRadius then table.insert(markers,object);markerDistances[object]=gap end
+    if gap<=Config.GenerationRadius*Config.GenerationRadius then table.insert(markers,object);markerDistances[object]=distance(object,current) end
    end
   end
  end
  sortNearby(markers,markerDistances)
  now=os.clock()
- schedule(markers,markerDue,now)
+ schedule(markers,markerDue,now,markerDistances,speed)
  local processed=0
  for _,object in ipairs(markers) do
   budget()
@@ -351,7 +363,7 @@ local function generate(incremental)
   if dueAt and dueAt<=now and nearby(object) then
    betweenJobs()
    if not object:IsDescendantOf(workspace) or not nearby(object) then continue end
-   if Furniture.IsMarker(object) then Furniture.Fill(object) else Walls.Fill(object) end
+   if Furniture.IsMarker(object) then Furniture.Fill(object,budget) else Walls.Fill(object,budget) end
    if object:IsDescendantOf(workspace) then retryAt[object]=os.clock()+Config.RetryInterval
    else retryAt[object]=nil end
    markerDue[object]=nil
@@ -360,6 +372,7 @@ local function generate(incremental)
  end
  -- Release markers that have been removed; do not leave their generated houses behind.
  for plot, house in pairs(generated) do
+  budget()
   if not plot:IsDescendantOf(workspace) then house:Destroy(); generated[plot],warnings[plot],busy[plot],categories[plot] = nil,nil,nil,nil end
  end
 end

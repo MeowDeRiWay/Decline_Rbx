@@ -38,7 +38,9 @@ for _,yaw in ipairs({0,math.pi/2,math.pi,-math.pi/2}) do
   if o.PrimaryPart then if seen[o.PrimaryPart] then sharedCount+=1 end;seen[o.PrimaryPart]=true end
  end
  assert(partCount==603 and sharedCount==183)
- Placement.Move(factory,target)
+ local checkpoints=0
+ Placement.Move(factory,target,function() checkpoints+=1 end)
+ assert(checkpoints>=50,"large placements offer budget checkpoints across capture/anchor/move")
  assert((factory:GetPivot().Position-Data.Plot).Magnitude<1e-6 and (yard:GetPivot().Position-Data.Plot).Magnitude<1e-6)
  for id,old in pairs(before) do
   local expected=target*origin:ToObjectSpace(old)

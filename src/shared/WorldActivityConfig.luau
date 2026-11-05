@@ -1,4 +1,6 @@
 return {
+ PrefetchSeconds=8,
+ MaxPrefetchDistance=160,
  ActiveRadius=140,
  SleepRadius=180,
  SleepDelay=10,

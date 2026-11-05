@@ -1,4 +1,8 @@
 return {
+ UrgentRadius=60,
+ ArrivalSafetySeconds=2,
+ PrefetchSeconds=8,
+ MaxPrefetchDistance=160,
  -- false chooses a fresh random seed for each server/Play session.
  -- Set a number to reproduce a particular layout for testing.
  Seed = false,

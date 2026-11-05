@@ -185,3 +185,30 @@ and standalone furniture timing. Existing placement, resource and zombie-home
 regressions, source compilation and Rojo build pass. This does not subdivide a
 single template's synchronous clone/internal assembly; that remains a possible
 source of a short per-building hitch and requires live Studio comparison.
+
+# Moving world prefetch — 5 November 2026
+
+City generation and dormant geometry now sample a bounded corridor along the
+player's horizontal movement, up to eight seconds / 160 studs ahead. At 14
+studs/s the lead is 112 studs. Samples are at most 40 studs apart; this extends
+the existing interest radius along the route instead of enlarging it everywhere.
+Stationary players retain the original radius. NPC waking retains its original
+radius; predicting geometry does not activate distant zombies.
+
+Plots and standalone decoration within 60 studs bypass the artificial ten-second
+schedule. Moving players can pull pending deadlines earlier, allowing two seconds
+of margin before reaching that zone. Existing deadlines are never postponed.
+Nearest current geometry is restored before distant prefetched geometry.
+Prefetched geometry remains near for sleep hysteresis, avoiding wake/sleep churn.
+
+Large building transforms, wall replacement and furniture generation share the
+city generator's two-millisecond cooperative budget. Complete houses are assembled
+outside Workspace before publication. PlotsPerStep and TransitionsPerStep still
+bound each pass; catch-up construction continues across frames.
+
+Validation covers production generator/wake services at 14 studs/s, reversing
+direction, urgent frame-paced jobs, bounded look-ahead, cold geometry restoration,
+loot/door identity, virtual bullet barriers and 603-part factory rigid placement.
+These are deterministic runtime tests, not Studio frame-time measurements. A
+Studio traversal with the actual map is still required to quantify remaining
+server generation, replication and client rendering costs.

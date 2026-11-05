@@ -46,17 +46,19 @@ local function replace(marker)
  warnings[marker]=nil
  marker:Destroy()
 end
-function Service.Fill(root)
+function Service.Fill(root,budget)
  local markers={}
  local yards={}
  if root.Name=="WallYard" then table.insert(yards,root) end
  if typeof(root:GetAttribute("Replace"))=="string" then table.insert(markers,root) end
  for _,object in ipairs(root:GetDescendants()) do
+  if budget then budget() end
   if object.Name=="WallYard" then table.insert(yards,object) end
   if (object:IsA("Model") or object:IsA("BasePart")) and typeof(object:GetAttribute("Replace"))=="string" then table.insert(markers,object) end
  end
  for _,yard in ipairs(yards) do hideYard(yard) end
  for _,marker in ipairs(markers) do
+  if budget then budget() end
   if marker==root or marker:IsDescendantOf(root) then replace(marker) end
  end
 end

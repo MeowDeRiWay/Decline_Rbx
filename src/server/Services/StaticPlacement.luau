@@ -1,7 +1,8 @@
 -- Place an anchored authored hierarchy from one snapshot of its reference frame.
 -- Shared PrimaryParts and nested Models must not influence the order of movement.
 local Service={}
-function Service.Move(model,target)
+function Service.Move(model,target,budget)
+ local function checkpoint(index) if budget and index%32==0 then budget() end end
  local origin=model:GetPivot()
  local parts,pivots={},{}
  local function capture(object)
@@ -12,11 +13,11 @@ function Service.Move(model,target)
   end
  end
  capture(model)
- for _,object in ipairs(model:GetDescendants()) do capture(object) end
+ for i,object in ipairs(model:GetDescendants()) do capture(object);checkpoint(i) end
  -- Anchor every physical part before changing any coordinates.
- for _,entry in ipairs(parts) do entry.Object.Anchored=true end
- for _,entry in ipairs(parts) do entry.Object.CFrame=target*entry.Local end
+ for i,entry in ipairs(parts) do entry.Object.Anchored=true;checkpoint(i) end
+ for i,entry in ipairs(parts) do entry.Object.CFrame=target*entry.Local;checkpoint(i) end
  -- Updating a no-PrimaryPart model's cached pivot never moves its geometry.
- for _,entry in ipairs(pivots) do entry.Object.WorldPivot=target*entry.Local end
+ for i,entry in ipairs(pivots) do entry.Object.WorldPivot=target*entry.Local;checkpoint(i) end
 end
 return Service

@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/WorldActivityService.luau').read_text()
-source=re.sub(r'local (Config|Rules|Ballistics|Stations)=require[^\n]+\n','',source)
+source=re.sub(r'local (Prefetch|Config|Rules|Ballistics|Stations)=require[^\n]+\n','',source)
 setup='''
 function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
 function vm.__div(a,b) return Vector3.new(a.X/b,a.Y/b,a.Z/b) end
@@ -139,11 +139,27 @@ near.Character=nil;Config.TransitionsPerStep=8;cleanupRoad:Destroy()
 run(function() Service.Ensure(Vector3.new(2000,0,0),4) end)
 assert(slab.Parent==roads and slab.Anchored,"road collision restored before reconnect caller returns")
 slab:Destroy();roadModel:Destroy();assert(#Service.Roads()==0,"destroyed sleeping road metadata is released")
+-- A runner wakes geometry before entering the ordinary active radius.
+near.Character=nil
+local forward=building(10000);Service.Register(forward,"Building")
+clock+=11;run(function() Service.Step(clock) end)
+assert(Service.IsDormant(forward))
+near.Character=make("Model","Runner",workspace)
+local rr=make("Part","HumanoidRootPart",near.Character);rr.Position=Vector3.new(9760,0,0);rr.AssemblyLinearVelocity=Vector3.new(14,0,0)
+local rh=make("Humanoid","Humanoid",near.Character);rh.Health=100
+run(function() Service.Step(clock) end)
+assert(forward.Parent==workspace,"14 studs/s wakes ahead geometry while current gap exceeds 140")
+clock+=20;run(function() Service.Step(clock) end)
+assert(forward.Parent==workspace,"prefetched geometry is not put back to sleep while still on the route")
+rr.AssemblyLinearVelocity=Vector3.new(-14,0,0)
+clock+=11;run(function() Service.Step(clock) end)
+assert(Service.IsDormant(forward),"turning away releases old prefetch geometry after hysteresis")
+print("PASS: predictive waking at 14 studs/s, no prefetch/sleep churn, release after turn")
 print("PASS: road enrollment, nested owner guard, sleeping bounds, folder identity, retained slabs, reconnect and deletion")
 print("PASS: sleep delays, cold geometry release/shared prototypes, exact block raycasts and penetration, live door state, hysteresis, identity/HP/loot restoration, reconnect, idle interval and corpse cleanup")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),(root/'tests/city_geometry.fixture.luau').read_text(),setup]
-for var,module in [('Config','WorldActivityConfig'),('Rules','WorldActivityRules'),('Ballistics','FirearmRules'),('Stations','CraftStations')]:
+for var,module in [('Prefetch','WorldPrefetchRules'),('Config','WorldActivityConfig'),('Rules','WorldActivityRules'),('Ballistics','FirearmRules'),('Stations','CraftStations')]:
  parts.append(f'local {var}=(function()\n'+(root/f'src/shared/{module}.luau').read_text()+'\nend)()')
 parts+=['local Service=(function()\n'+source+'\nend)()',cases]
 with tempfile.TemporaryDirectory() as d:

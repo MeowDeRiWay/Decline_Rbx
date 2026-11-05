@@ -4,9 +4,10 @@ import tempfile
 import subprocess
 import sys
 root=Path(__file__).resolve().parents[1]
-mock=(root/'tests/fixtures/town_mock.luau').read_text()
+mock=(root/'tests/fixtures/town_mock.luau').read_text().replace('for _,co in ipairs(loops) do local ok,err=coroutine.resume(co); assert(ok,err) end','for _,co in ipairs(loops) do if coroutine.status(co)~="dead" then local ok,err=coroutine.resume(co); assert(ok,err) end end')
 geometry=(root/'tests/city_geometry.fixture.luau').read_text()
 service=(root/'src/server/Services/CityGenerationService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function(o) return o and o:GetAttribute("WorldDormant")==true end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end,Footprint=function(o) return o.StoredFrame,o.StoredSize end,Roads=function() return sleepingRoads or {} end,IsRoad=function(o) return o:GetAttribute("Road")==true end,RegisterRoad=function() end}')
+service=service.replace('local Prefetch=require(ReplicatedStorage.Shared.WorldPrefetchRules)','')
 service=service.replace('local Config = require(ReplicatedStorage.Shared.CityGenerationConfig)','')
 service=service.replace('local Rules = require(ReplicatedStorage.Shared.CityGenerationRules)','')
 service=service.replace('local Furniture=require(script.Parent.StoreFurnitureService)','')
@@ -284,6 +285,7 @@ assert(workspace.GeneratedCityHouses:GetAttribute("GenerationMode")=="NearbyPlot
 assert(workspace.GeneratedCityHouses:GetAttribute("GenerationRadius")==Config.GenerationRadius)
 print("PASS: lazy city generation, hidden markers, no-player/dead-player guards, multiple towns/players, state retention, closest-first bounded queue and moved geometry")
 Config.ZoneLoadSeconds=10
+Config.UrgentRadius=0 -- isolate original distant pacing behavior
 addRoad(70000,30)
 local paced={addPlot(70000,0),addPlot(70020,0),addPlot(70040,0)}
 observerRoot.Position=Vector3.new(70000,0,0)
@@ -353,14 +355,39 @@ local afterRebuild=addPlot(110020,0)
 Service.Generate(false)
 assert(afterRebuild:FindFirstChild("GeneratedHouse"),"full rebuild discovers sleeping road footprints")
 print("PASS: sleeping roads orient houses after incremental and full index rebuilds")
+assert(Prefetch.Due(100,110,60,0,{UrgentRadius=60})==100,"nearby work is never artificially delayed")
+assert(Prefetch.Due(100,110,102,14,{UrgentRadius=60,ArrivalSafetySeconds=2})==101,"moving deadlines leave two seconds of arrival margin")
+local fallback=Prefetch.Velocity({AssemblyLinearVelocity=Vector3.zero},{MoveDirection=Vector3.new(0,0,-1),WalkSpeed=14})
+assert(fallback.Z==-14 and fallback.Y==0,"movement intent covers temporarily unavailable physics velocity")
+local capped={};Prefetch.Append(capped,Vector3.zero,Vector3.new(1000,0,0),Config)
+assert(#capped==5 and capped[#capped].X==160,"high speed cannot request an unbounded corridor")
+-- At 14 studs/s prepare a corridor 112 studs ahead, not behind.
+Config.ZoneLoadSeconds=0;Config.UrgentRadius=60
+addRoad(120200,30)
+local ahead=addPlot(120240,0);local behind=addPlot(119760,0)
+observerRoot.Position=Vector3.new(120000,0,0);observerRoot.AssemblyLinearVelocity=Vector3.new(14,0,0)
+Service.Generate(true)
+assert(ahead:FindFirstChild("GeneratedHouse") and not behind:FindFirstChild("GeneratedHouse"),"14 studs/s generates beyond current radius along the actual route")
+observerRoot.AssemblyLinearVelocity=Vector3.new(-14,0,0);Service.Generate(true)
+assert(behind:FindFirstChild("GeneratedHouse"),"direction reversal replaces the prefetch corridor")
+observerRoot.AssemblyLinearVelocity=Vector3.zero
+-- Nearby surfaces are due immediately, but each building still yields a frame.
+Config.ZoneLoadSeconds=10;addRoad(130000,30)
+local urgent={addPlot(130000,0),addPlot(130020,0),addPlot(130040,0)}
+observerRoot.Position=Vector3.new(130000,0,0)
+local done=false;task.spawn(function() Service.Generate(true);done=true end)
+assert(urgent[1]:FindFirstChild("GeneratedHouse") and not done)
+for _=1,8 do tick(0) end
+assert(done and urgent[3]:FindFirstChild("GeneratedHouse"),"nearby plots load across frames without waiting ten seconds")
+print("PASS: 14-stud/s forward generation, direction reversal and urgent frame-paced construction")
 print("PASS: missed-deadline catch-up yields between buildings and standalone furniture uses 10-second pacing")
 print("PASS: 10-second pacing, nearest-first slots at 0/5/10 seconds, stable polling deadlines, departure cancellation and paced re-entry")
 
 
 
 '''
-parts=[mock,geometry,(root/'tests/city_service.fixture.luau').read_text()]
-for name,var in [('CityGenerationConfig','Config'),('CityGenerationRules','Rules')]:
+parts=[mock,geometry,'function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end',(root/'tests/city_service.fixture.luau').read_text()]
+for name,var in [('CityGenerationConfig','Config'),('CityGenerationRules','Rules'),('WorldPrefetchRules','Prefetch')]:
     parts.append('local '+var+'=(function()\n'+(root/f'src/shared/{name}.luau').read_text()+'\nend)()')
 parts.append('local Walls=(function()\n'+(root/'src/server/Services/WallReplacementService.luau').read_text()+'\nend)()')
 parts.append('local Furniture=(function()\n'+furniture+'\nend)()')

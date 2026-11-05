@@ -7,6 +7,7 @@ local Config=require(Replicated.Shared.WorldActivityConfig)
 local Rules=require(Replicated.Shared.WorldActivityRules)
 local Ballistics=require(Replicated.Shared.FirearmRules)
 local Stations=require(Replicated.Shared.CraftStations)
+local Prefetch=require(Replicated.Shared.WorldPrefetchRules)
 local Service={}
 local records,prototypes,buckets={},{},{}
 local sequence=0
@@ -190,7 +191,7 @@ local function sleep(record,now,positions)
  if not frame then record.Busy=false;return end
  record.Frame,record.Size=frame,size
  local descriptors=prepare(record)
- if not descriptors or records[record.Root]~=record or not record.Root:IsDescendantOf(workspace) or Rules.Near(frame,size,Service.Positions(),Config.SleepRadius) then record.Busy=false;return end
+ if not descriptors or records[record.Root]~=record or not record.Root:IsDescendantOf(workspace) or Rules.Near(frame,size,Service.Positions(record.Kind~="NPC"),Config.SleepRadius) then record.Busy=false;return end
  record.Descriptors=descriptors;record.State="Sleeping";record.Since=now
  record.Root:SetAttribute("WorldDormant",true)
  record.Root:SetAttribute("WorldActivityState","Sleeping")
@@ -239,11 +240,14 @@ local function wake(record)
  record.Descriptors=nil;record.Busy=false
  return true
 end
-function Service.Positions()
+function Service.Positions(prefetch)
  local result={}
  for _,player in ipairs(Players:GetPlayers()) do
   local c=player.Character;local root=c and c:FindFirstChild("HumanoidRootPart");local hp=c and c:FindFirstChildOfClass("Humanoid")
-  if root and hp and hp.Health>0 then table.insert(result,root.Position) end
+  if root and hp and hp.Health>0 then
+   if prefetch then Prefetch.Append(result,root.Position,Prefetch.Velocity(root,hp),Config)
+   else table.insert(result,root.Position) end
+  end
  end
  return result
 end
@@ -259,13 +263,18 @@ function Service.Ensure(position,radius)
 end
 function Service.Step(now)
  local points=Service.Positions()
+ local predicted=Service.Positions(true)
  local transitions=0
- local nearby={}
+ local nearby,visited={},{}
  local cell=Config.BucketSize
- for _,point in ipairs(points) do
+ for _,point in ipairs(predicted) do
   for x=math.floor((point.X-Config.SleepRadius)/cell),math.floor((point.X+Config.SleepRadius)/cell) do
    for z=math.floor((point.Z-Config.SleepRadius)/cell),math.floor((point.Z+Config.SleepRadius)/cell) do
-    for record in pairs(buckets[x..":"..z] or {}) do nearby[record]=true end
+    local key=x..":"..z
+    if not visited[key] then
+     visited[key]=true
+     for record in pairs(buckets[key] or {}) do nearby[record]=true end
+    end
    end
   end
  end
@@ -275,8 +284,12 @@ function Service.Step(now)
  for record in pairs(nearby) do
   if record.State=="Active" or record.Busy then continue end
   local best=math.huge
-  for _,point in ipairs(points) do best=math.min(best,Rules.DistanceSquared(record.Frame,record.Size,point)) end
-  if best<=Config.ActiveRadius^2 then distances[record]=best;table.insert(waking,record) end
+  for _,point in ipairs(record.Kind=="NPC" and points or predicted) do best=math.min(best,Rules.DistanceSquared(record.Frame,record.Size,point)) end
+  if best<=Config.ActiveRadius^2 then
+   local actual=math.huge
+   for _,point in ipairs(points) do actual=math.min(actual,Rules.DistanceSquared(record.Frame,record.Size,point)) end
+   distances[record]=actual;table.insert(waking,record)
+  end
  end
  table.sort(waking,function(a,b) return distances[a]<distances[b] end)
  for _,record in ipairs(waking) do
@@ -299,7 +312,7 @@ function Service.Step(now)
   if record.Kind=="NPC" and record.State=="Active" then
    local frame,size=bounds(root);if frame then record.Frame,record.Size=frame,size;index(record) end
   end
-  local near=nearby[record] and Rules.Near(record.Frame,record.Size,points,record.State=="Active" and Config.SleepRadius or Config.ActiveRadius)
+  local near=nearby[record] and Rules.Near(record.Frame,record.Size,record.Kind=="NPC" and points or predicted,record.State=="Active" and Config.SleepRadius or Config.ActiveRadius)
   if record.State=="Active" then
    quiet=false
    if near then record.LastNear=now
