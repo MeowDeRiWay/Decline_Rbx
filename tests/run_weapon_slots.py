@@ -103,6 +103,13 @@ assert(legacy.ActiveWeaponSlot=="PrimaryWeapon" and legacy.EquipmentWeapon.Prima
 -- A fresh inventory on the same rig also invalidates queued draw callbacks.
 assert(HandActions.Medicine(a,true));Service.Reset(a);advance(3)
 assert(not a.Character:GetAttribute("HandsBusy") and not a.Character:GetAttribute("MedicalHeld") and not Service.Export(a).ActiveWeaponSlot)
+assert(Service.Add(a,"Mine",2) and Service.Equip(a,"Mine"))
+assert(HandActions.Switch(a,"PrimaryWeapon"));advance(Pose.DrawDuration)
+assert(a.Character:GetAttribute("HandsItem")=="Mine" and Service.Snapshot(a).Items.Mine==1)
+assert(Service.ConsumeHeld(a,"Mine"))
+assert(not Service.ConsumeHeld(a,"Mine"),"double commit cannot consume a second pocket mine")
+assert(Service.Snapshot(a).Items.Mine==1 and not Service.Snapshot(a).Equipment.PrimaryWeapon and not Service.Export(a).ActiveWeaponSlot)
+print("PASS: mine equips/draws through primary slot and placement consumes exactly the held item once")
 print("PASS: exact slot classes, separate ownership/UID/magazines/condition/weight, sequential timed switching, medicine draw and delayed treatment, KO/cancel guards, free hands and legacy migration")
 '''
 with tempfile.TemporaryDirectory() as d:

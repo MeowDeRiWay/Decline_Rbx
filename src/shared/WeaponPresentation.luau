@@ -1,6 +1,6 @@
 -- Cosmetic model attributes never change damage, ammunition or gameplay timing.
 local Presentation={}
-local sets={Pistol=true,Rifle=true,Launcher=true,Knife=true,Axe=true,Shovel=true}
+local sets={Pistol=true,Rifle=true,Launcher=true,Knife=true,Axe=true,Shovel=true,Mine=true}
 local reloads={Pistol=true,AR=true,Bullpup=true,SingleRound=true,Rocket=true,None=true}
 local function attribute(model,name,allowed,fallback)
  local value=model and model:GetAttribute(name)
@@ -9,7 +9,7 @@ end
 function Presentation.AnimationSet(model,definition)
  definition=definition or {}
  local gun=definition.Firearm
- local fallback=gun and (gun.Projectile=="Rocket" and "Launcher" or gun.Category=="Pistol" and "Pistol" or "Rifle")
+ local fallback=definition.Trap and "Mine" or gun and (gun.Projectile=="Rocket" and "Launcher" or gun.Category=="Pistol" and "Pistol" or "Rifle")
   or definition.HarvestTool=="Axe" and "Axe" or definition.HarvestTool=="Shovel" and "Shovel" or (definition.Weapon or definition.CraftTool=="Knife") and "Knife" or nil
  return attribute(model,"AnimationSet",sets,fallback)
 end

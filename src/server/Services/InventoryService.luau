@@ -171,6 +171,15 @@ function Service.UseMedicine(player)
  return true
 end
 -- Only HandActionService calls these commits, at the visual handoff point.
+function Service.ConsumeHeld(player,id)
+ local state=states[player]
+ if not state then return false end
+ local slot=Rules.HandSlot(state)
+ if state.Equipment[slot]~=id then return false end
+ state.Equipment[slot]=nil;state.EquipmentCondition[slot]=nil;state.EquipmentWeapon[slot]=nil
+ if state.ActiveWeaponSlot==slot then state.ActiveWeaponSlot=nil end
+ update(player);return true
+end
 function Service.ClearHands(player)
  local state=states[player];if not state then return false end
  if state.ActiveWeaponSlot then state.LastWeaponSlot=state.ActiveWeaponSlot end

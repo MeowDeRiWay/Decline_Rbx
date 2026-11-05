@@ -17,6 +17,7 @@ function Service.Cancel(c)
  local r=active[c]
  if not r then return end
  active[c]=nil
+ if r.Cancelled and not r.Completed then r.Cancelled() end
  for _,link in ipairs(r.Links) do link:Disconnect() end
  local held=c:FindFirstChild("HeldItem")
  local motor=held and held:FindFirstChild("WeaponGrip")
@@ -25,6 +26,7 @@ function Service.Cancel(c)
  if r.Root.Parent and not c:GetAttribute("Knockout") and not c:GetAttribute("IsDead") then
   r.Root.Anchored=r.Anchored;r.HP.AutoRotate=r.AutoRotate;r.HP.WalkSpeed=r.Speed
  end
+ c:SetAttribute("InteractionMine",nil)
  c:SetAttribute("InteractionCarryAllowed",nil)
  c:SetAttribute("InteractionMode",nil)
  c:SetAttribute("InteractionLocked",nil)
@@ -108,5 +110,29 @@ function Service.EndLoot(player)
  c:SetAttribute("InteractionLayFrom",laid)
  phase(r,"LootUp")
  task.delay(Pose.UpDuration,function() if active[c]==r then Service.Cancel(c) end end)
+end
+function Service.Work(player,target,range,complete,cancelled,planting)
+ local r=begin(player,target,range,target.Position)
+ if not r then return false end
+ r.Cancelled=cancelled
+ r.Character:SetAttribute("InteractionMine",planting==true)
+ phase(r,"LootDown")
+ task.delay(Pose.DownDuration,function()
+  if active[r.Character]~=r then return end
+  if not alive(r) or not target:IsDescendantOf(workspace) then Service.Cancel(r.Character);return end
+  phase(r,"Loot")
+ end)
+ task.delay(2.5,function()
+  if active[r.Character]~=r then return end
+  if not alive(r) or not target:IsDescendantOf(workspace) then Service.Cancel(r.Character);return end
+  local ok,result=xpcall(complete,debug.traceback)
+  if not ok then warn("[Decline mine interaction] "..tostring(result)) end
+  if not ok or result==false then Service.Cancel(r.Character);return end
+  r.Completed=true
+  if active[r.Character]~=r or not alive(r) then return end
+  phase(r,"LootUp")
+  task.delay(Pose.UpDuration,function() if active[r.Character]==r then Service.Cancel(r.Character) end end)
+ end)
+ return true
 end
 return Service

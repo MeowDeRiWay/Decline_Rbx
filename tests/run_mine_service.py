@@ -1,0 +1,149 @@
+"""Production mine service under deterministic players, time, inventory and ground."""
+from pathlib import Path
+import subprocess,re,sys,tempfile
+root=Path(__file__).resolve().parents[1]
+def module(p):return '(function()\n'+(root/p).read_text()+'\nend)()'
+s=(root/'tests/fixtures/town_mock.luau').read_text()+'\n'+(root/'tests/rig_math.fixture.luau').read_text()
+s+='\nlocal Rules='+module('src/shared/MineRules.luau')+'\nlocal ExplosionRules='+module('src/shared/ExplosionRules.luau')+'\nlocal Affiliation='+module('src/shared/AffiliationRules.luau')
+s+=r'''
+local RunService={Heartbeat=event()}
+local oldGet=game.GetService
+function game:GetService(name) return name=="RunService" and RunService or oldGet(self,name) end
+Enum.Material={Metal=1};Color3={fromRGB=function() return {} end}
+local roll=.99
+local Random={new=function() return {NextNumber=function() return roll end} end}
+local actualNew=Instance.new
+Instance.new=function(class)
+ local o=actualNew(class)
+ if class=="RemoteEvent" then
+  function o:FireClient(p,...) table.insert(self.sent,{player=p,args={...}}) end
+  function o:FireAllClients(...) table.insert(self.sent,{args={...},all=true}) end
+ end
+ return o
+end
+local source=make("Part","Mine",ServerStorage)
+source.Size=Vector3.new(.9,.16,.9);source.CFrame=CFrame.identity
+local Visuals={Template=function(id) return id=="Mine" and source or nil end}
+local Items={Mine={Explosion={KillRadius=5,BlastRadius=20}}}
+local consumed,recovered=0,0
+local Inventory={ConsumeHeld=function(p,id)
+ if p.Character:GetAttribute("HandsItem")~=id then return false end
+ p.Character:SetAttribute("HandsItem","");consumed+=1;return true
+end,Add=function(_,id,n) assert(id=="Mine" and n==1);recovered+=1;return true end}
+local pending={}
+local Animation={Work=function(p,target,range,complete,cancel,planting)
+ if pending[p] then return false end
+ pending[p]={Complete=complete,Cancel=cancel,Target=target,Planting=planting}
+ p.Character:SetAttribute("InteractionLocked",true);return true
+end}
+local function finish(p)
+ local action=pending[p];assert(action)
+ local ok=action.Complete()
+ p.Character:SetAttribute("InteractionLocked",nil);pending[p]=nil;return ok
+end
+local function cancel(p)
+ local action=pending[p];pending[p]=nil;p.Character:SetAttribute("InteractionLocked",nil)
+ if action.Cancel then action.Cancel() end
+ return action
+end
+local notices={}
+local Journal={Send=function(p,msg) table.insert(notices,{Player=p,Text=msg}) end}
+local Towns={RelationBetween=function(first,second) return first:GetAttribute("TownID")==second:GetAttribute("TownID") and "Ally" or "Neutral" end,TradeTown=function(id) return id==1 and {LeaderID=c.UserId} or nil end}
+local blasts={}
+local Explosions={Detonate=function(point,settings,owner,character,id,damage,options)
+ assert(options.FriendlyFire==true and options.OwnerUserId==a.UserId)
+ table.insert(blasts,{Point=point,Settings=settings,Owner=owner,Options=options})
+ local trigger=options.TriggerCharacter
+ local victim
+ for _,p in ipairs(Players:GetPlayers()) do if p.Character==trigger then victim=p end end
+ if victim then
+  local hp=trigger:FindFirstChildOfClass("Humanoid");hp.Health=0
+  options.OnDamage(hp,100,victim)
+ end
+end}
+for _,p in ipairs(Players:GetPlayers()) do
+ p.CharacterRemoving=event();p.LocaleId="uk-UA";p:SetAttribute("TeamID",p==b and 2 or 1);p:SetAttribute("TownID",p==b and 2 or 1)
+ p:LoadCharacterAsync();p.Character.HumanoidRootPart.Size=Vector3.new(.5,1,.5)
+end
+local function move(p,x,z,y)
+ local root=p.Character.HumanoidRootPart;root.Position=Vector3.new(x,y or 1,z);root.CFrame=CFrame.new(root.Position)
+end
+for index,p in ipairs(Players:GetPlayers()) do move(p,index*100,0) end
+function workspace:Raycast(origin,delta)
+ if delta.Y==-7 then return {Position=Vector3.new(origin.X,0,origin.Z),Normal=Vector3.yAxis,Instance=source} end
+ return nil
+end
+local function step(dt) tick(dt);RunService.Heartbeat:Fire(dt) end
+local function ready(p,x)
+ p.Character.Humanoid.Health=100;p.Character:SetAttribute("Knockout",nil);p.Character:SetAttribute("IsDead",nil);p.Character:SetAttribute("HandsItem","Mine");move(p,x,0)
+end
+'''
+service=(root/'src/server/Services/MineService.luau').read_text()
+service=re.sub(r'local (Rules|Items|ExplosionRules|Explosions|Inventory|Visuals|Animation|Journal|Towns|Affiliation)=require[^\n]+\n','',service)
+s+='\nlocal Mines=(function()\n'+service+'\nend)()'
+s+=r'''
+local remote=ReplicatedStorage:FindFirstChild("MineAction")
+local function lastReveal(p)
+ for i=#remote.sent,1,-1 do local e=remote.sent[i];if e.player==p and e.args[1]=="Reveal" then return e.args[2],e.args[3] end end
+end
+local function plant(x)
+ ready(a,x);a:SetAttribute("SkillTraps",250)
+ assert(Mines.Place(a));assert(pending[a].Planting)
+ assert(finish(a));return lastReveal(a)
+end
+-- Cancellation leaves the item owned and stale completion cannot consume it.
+ready(a,0);assert(Mines.Place(a));local old=cancel(a)
+assert(consumed==0 and not old.Complete() and a.Character:GetAttribute("HandsItem")=="Mine")
+local id,frame=plant(10)
+assert(consumed==1 and not Mines.Disarm(b,id),"unknown mine cannot be remotely disarmed")
+move(a,frame.Position.X,frame.Position.Z)
+step(4.9);assert(#blasts==0,"unarmed grace period")
+step(.11);assert(#blasts==1 and a.Character.Humanoid.Health==0,"own mine kills its owner after exactly five seconds")
+assert(not Mines.Disarm(a,id),"detonated mine cannot be recovered")
+-- Owner defuses at 100%, even with the maximum adversarial random roll.
+local own,ownFrame=plant(20);move(a,ownFrame.Position.X+1,ownFrame.Position.Z)
+roll=1;assert(Mines.Disarm(a,own));assert(finish(a));assert(recovered==1 and #blasts==1)
+-- Discovery is private, skill weighted, one notice per trap; lock concurrent work.
+local other,otherFrame=plant(30)
+b:SetAttribute("Attention",10);b:SetAttribute("SkillTraps",250);b.Character.Humanoid.Health=100
+move(a,100,0);move(b,otherFrame.Position.X+1.2,otherFrame.Position.Z)
+step(.1);assert(lastReveal(b)==other)
+local beforeNotices=#notices;step(.1);assert(#notices==beforeNotices,"discovery does not spam")
+roll=.1;assert(Mines.Disarm(b,other));move(a,otherFrame.Position.X+1,otherFrame.Position.Z)
+assert(not Mines.Disarm(a,other),"one disarmer at a time")
+assert(finish(b));assert(recovered==2)
+-- Failure detonates and reports the planter even after disconnect, to victim/mayor.
+local failed,failedFrame=plant(40);move(a,100,0)
+b:SetAttribute("TeamID",1);b:SetAttribute("TownID",1);b:SetAttribute("SkillTraps",0)
+move(b,failedFrame.Position.X+1.2,failedFrame.Position.Z);step(.1)
+assert(lastReveal(b)==failed)
+roll=1;assert(Mines.Disarm(b,failed))
+a.Parent=nil
+assert(finish(b));assert(#blasts==2 and blasts[2].Owner==nil and b.Character.Humanoid.Health==0)
+local toldVictim,toldMayor=false,false
+for _,n in ipairs(notices) do
+ if string.find(n.Text,"@"..a.Name,1,true) then
+  if n.Player==b then toldVictim=true elseif n.Player==c then toldMayor=true end
+ end
+end
+assert(toldVictim and toldMayor,"friendly victims and mayor learn the saved planter username")
+a.Parent=Players
+-- Swept pressure checks catch a fast runner between two samples, no ally immunity.
+move(b,200,0);local swept,sweptFrame=plant(50);move(a,100,0)
+b.Character.Humanoid.Health=100;move(b,sweptFrame.Position.X-3,sweptFrame.Position.Z)
+step(5.1);local oldCount=#blasts
+move(b,sweptFrame.Position.X+3,sweptFrame.Position.Z);step(.1)
+assert(#blasts==oldCount+1 and b.Character.Humanoid.Health==0,"fast allied runner triggers exactly once")
+step(.1);assert(#blasts==oldCount+1)
+-- Formula endpoints and floor/teleport separation.
+assert(Rules.DisarmChance(250,250,false)==.9 and Rules.DisarmChance(0,250,false)==.05)
+assert(Rules.DisarmChance(0,300,true)==1)
+assert(Rules.DetectionRadius(10,300)==20 and Rules.DetectionRadius(10,0)==5)
+assert(not Rules.Crossed(Vector3.new(-3,8,0),Vector3.new(3,8,0),Vector3.zero,2))
+assert(not Rules.Crossed(Vector3.new(-100,1,0),Vector3.new(100,1,0),Vector3.zero,2))
+print("PASS: exact arming grace, owner/ally lethality, fast-run sweep, cancellation and stale callbacks")
+print("PASS: private discovery/no spam, disarm odds/ownership, concurrent lock, recovery/failure and offline planter accountability")
+'''
+with tempfile.TemporaryDirectory() as d:
+ p=Path(d)/'mines.luau';p.write_text(s)
+ subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(p)],check=True)

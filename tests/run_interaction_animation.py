@@ -313,6 +313,22 @@ assert(math.abs(m.LeftShoulder.Transform.R[6])<1e-8,"only right hand draws the l
 c:SetAttribute("HandAction",nil)
 print("PASS: uploaded rifle/SMG parts clear torso throughout shoulder path, right-side outward magazine fit and no early pistol/long-weapon support hand")
 '''
+s+=r'''
+Animation.Cancel(c)
+local mineTarget=target();local committed,cancelled=0,0
+local mineHeld,mineMotor=heldWeapon()
+assert(Animation.Work(owner,mineTarget,2,function() committed+=1;return true end,function() cancelled+=1 end,true))
+assert(c:GetAttribute("InteractionMine") and root.Anchored)
+advance(.9);assert(c:GetAttribute("InteractionMode")=="Loot" and committed==0)
+advance(1.59);assert(committed==0)
+advance(.01);assert(committed==1 and c:GetAttribute("InteractionMode")=="LootUp")
+advance(1.15);assert(not c:GetAttribute("InteractionLocked") and not root.Anchored and cancelled==0)
+mineTarget=target()
+assert(Animation.Work(owner,mineTarget,2,function() committed+=1;return true end,function() cancelled+=1 end,true))
+c:SetAttribute("Knockout",true);advance(3)
+assert(committed==1 and cancelled==1 and not c:GetAttribute("InteractionMine"),"KO cancels mine work and prevents stale commit")
+print("PASS: real mine crouch/work/stand phases, exact commit deadline and KO rollback")
+'''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'interaction.luau';p.write_text(s)
  subprocess.run([sys.argv[1],str(p)],check=True)

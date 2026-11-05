@@ -16,7 +16,8 @@ local function victimOf(part)
  end
 end
 -- Resolve attributes when arming a trap, or snapshot rocket settings on launch.
-function Service.Detonate(point,settings,attacker,character,itemID,baseDamage)
+function Service.Detonate(point,settings,attacker,character,itemID,baseDamage,options)
+ options=options or {}
  task.spawn(function()
   WorldActivity.Ensure(point,settings.BlastRadius+2)
   local victims={}
@@ -26,6 +27,8 @@ function Service.Detonate(point,settings,attacker,character,itemID,baseDamage)
   end
   local shooter=character and character:FindFirstChildOfClass("Humanoid")
   if shooter then victims[shooter]=true end
+  local trigger=options.TriggerCharacter and options.TriggerCharacter:FindFirstChildOfClass("Humanoid")
+  if trigger then victims[trigger]=true end
   local ignored={}
   for hp in pairs(victims) do table.insert(ignored,hp.Parent) end
   if character and not shooter then table.insert(ignored,character) end
@@ -36,9 +39,14 @@ function Service.Detonate(point,settings,attacker,character,itemID,baseDamage)
    local amount,lethal=Rules.Sample((root.Position-point).Magnitude,settings,baseDamage)
    if amount<=0 and not lethal then continue end
    if not lethal and BulletCast.Raycast(point,root.Position-point,ignored) then amount*=.5 end
-   if attacker then model:SetAttribute("LastDamagerID",attacker.UserId) end
+   if attacker or options.OwnerUserId then model:SetAttribute("LastDamagerID",options.OwnerUserId or attacker.UserId) end
    model:SetAttribute("LastHitItem",itemID)
-   Damage.Apply(hp,amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=attacker,FriendlyFire=model==character,InstantKill=lethal})
+   local victim=options.OnDamage and game:GetService("Players"):GetPlayerFromCharacter(model)
+   local dealt=Damage.Apply(hp,amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=attacker,FriendlyFire=options.FriendlyFire or model==character,InstantKill=lethal})
+   if options.OnDamage and dealt>0 then
+    local ok,err=pcall(options.OnDamage,hp,dealt,victim)
+    if not ok then warn("[Decline explosion notice] "..tostring(err)) end
+   end
   end
  end)
 end

@@ -60,6 +60,9 @@ function Pose.Apply(c,root,m,now)
   else
    local ground=-(root.Size.Y/2+(c:GetAttribute("RigHipHeight") or legLength))
    local onGround=CFrame.new(root.Size.X/2+.5,ground+.12,-.15)*CFrame.Angles(0,0,math.pi/2)*(CFrame.new(-rest.Position)*rest)
+   if c:GetAttribute("InteractionMine") then
+    onGround=CFrame.new(root.CFrame:PointToObjectSpace(target+Vector3.new(0,.08,0)))*(rest-rest.Position)
+   end
    localFrame=(rest+CFrame.new(0,-drop,0).Position):Lerp(onGround,laid)
   end
   motor.Transform=motor.C0:Inverse()*localFrame

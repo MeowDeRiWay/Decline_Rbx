@@ -1,5 +1,8 @@
 -- Hand-authored Ukrainian and Russian translations. English source is stable.
 return {
+ {"Heavy weapon. Fires high-explosive rockets. Deadliest near the explosion; damage decreases with distance. Does not destroy structures.","Важка зброя. Стріляє осколково-фугасними ракетами. Поблизу вибуху смертельна; шкода зменшується з відстанню. Не руйнує споруди.","Тяжёлое оружие. Стреляет осколочно-фугасными ракетами. Вблизи взрыва смертельна; урон уменьшается с расстоянием. Не разрушает постройки."},
+ {"Pressure mine","Натискна міна","Нажимная мина"},
+ {"A pressure mine. Equip in the primary weapon slot and click to plant. Arms after five seconds. Dangerous to everyone, including its owner.","Натискна міна. Спорядьте у слот дворучної зброї та натисніть ЛКМ для встановлення. Активується через п’ять секунд. Небезпечна для всіх, включно з власником.","Нажимная мина. Экипируйте в слот двуручного оружия и нажмите ЛКМ для установки. Активируется через пять секунд. Опасна для всех, включая владельца."},
  {"Enfild X7","Enfild X7","Enfild X7"},
  {"A .223 bullpup marksman rifle. Fires single shots.","Влучна гвинтівка калібру .223 із компонуванням булпап. Стріляє одиночними пострілами.","Точная винтовка калибра .223 с компоновкой буллпап. Стреляет одиночными выстрелами."},
  {".308 marksman rifle","Влучна гвинтівка .308","Точная винтовка .308"},
