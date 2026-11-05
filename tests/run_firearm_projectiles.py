@@ -3,8 +3,9 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/FirearmProjectiles.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
-service=re.sub(r'local (Rules|Damage|Accuracy|BulletCast)=require[^\n]+\n','',service)
+service=re.sub(r'local (Rules|Damage|Accuracy|BulletCast|Audio)=require[^\n]+\n','',service)
 mock='''
+local Audio={Describe=function(_,name) return {SoundId="rbxassetid://"..name,Volume=.7,PlaybackSpeed=1,MinDistance=3,MaxDistance=100} end}
 local Accuracy={Chance=function() return 90 end,NightMultiplier=function() return 1 end,SightBonus=function() return 0 end,ForWeapon=function() return 25 end}
 function vm.__mul(a,b) if type(a)=="number" then a,b=b,a end;return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
 local function signal() return {Connect=function(self,fn) self.fire=fn end} end
@@ -175,7 +176,8 @@ for _,kind in ipairs({false,"Brick"}) do
  for i=1,200 do heartbeat.fire(1/60) end
  assert(dealt==(kind and 50 or 100),"blast is flat100, wall halves once, rig parts deduplicated")
  local explosions=0
- for _,batch in ipairs(packets) do for _,event in ipairs(batch) do if event.Kind=="Explosion" then explosions+=1 end end end
+ for _,batch in ipairs(packets) do for _,event in ipairs(batch) do if event.Kind=="Explosion" then explosions+=1;assert(event.Sound.SoundId=="rbxassetid://ExplosionSound") end
+  if event.Kind=="Trace" and event.Rocket then assert(event.FlightSound.SoundId=="rbxassetid://FlightSound") end end end
  assert(explosions==1,"one explosion per rocket")
 end
 rootPart.Position=Vector3.new(0,0,20)

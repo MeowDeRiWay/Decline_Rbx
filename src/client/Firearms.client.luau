@@ -4,6 +4,7 @@ local Input=game:GetService("UserInputService")
 local RunService=game:GetService("RunService")
 local GuiService=game:GetService("GuiService")
 local Debris=game:GetService("Debris")
+local RocketAudio=require(script.Parent.RocketAudio)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local player=Players.LocalPlayer
 local action=ReplicatedStorage:WaitForChild("FirearmAction")
@@ -84,8 +85,9 @@ effects.OnClientEvent:Connect(function(events)
    record.Part.Size=event.Rocket and Vector3.new(.18,.18,1.2) or Vector3.new(.015,.015,1.5)
    if event.Rocket then record.Part.Color=Color3.fromRGB(255,150,65) end
    record.Part.CFrame=CFrame.lookAt(event.Point-event.Direction*.75,event.Point)
+   if event.Rocket then RocketAudio.Start(record,event.FlightSound) end
   elseif event.Kind=="Stop" then
-   local record=traces[event.ID];if record then record.Expires=os.clock()+.035 end
+   local record=traces[event.ID];if record then RocketAudio.Stop(record);record.Expires=os.clock()+.035 end
   elseif event.Kind=="Backblast" then
    local part=effectPart();part.CFrame=CFrame.lookAt(event.Point,event.Point+event.Direction)
    local a=Instance.new("Attachment");a.Parent=part
@@ -99,6 +101,7 @@ effects.OnClientEvent:Connect(function(events)
    local light=Instance.new("PointLight");light.Color=Color3.fromRGB(255,170,70);light.Range=8;light.Brightness=3;light.Parent=part
    Debris:AddItem(light,.12);Debris:AddItem(part,.5)
   elseif event.Kind=="Explosion" then
+   RocketAudio.Explode(event.Sound,event.Point)
    local part=effectPart();part.Shape=Enum.PartType.Ball;part.Position=event.Point
    part.Size=Vector3.new(.5,.5,.5);part.Color=Color3.fromRGB(255,145,40);part.Material=Enum.Material.Neon;part.Transparency=.25
    local light=Instance.new("PointLight");light.Color=part.Color;light.Range=20;light.Brightness=5;light.Parent=part
@@ -114,5 +117,5 @@ effects.OnClientEvent:Connect(function(events)
  end
 end)
 RunService.Heartbeat:Connect(function()
- for id,record in pairs(traces) do if os.clock()>=record.Expires then record.Part:Destroy();traces[id]=nil end end
+ for id,record in pairs(traces) do if os.clock()>=record.Expires then RocketAudio.Stop(record);record.Part:Destroy();traces[id]=nil end end
 end)

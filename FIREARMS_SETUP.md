@@ -1,3 +1,23 @@
+# AT4 audio
+
+Inside the AT4 model add a Folder named `Sounds` containing four **Sound**
+instances. Assign permitted Roblox audio assets to their `SoundId` properties:
+
+| Sound name | Trigger / position |
+| --- | --- |
+| `ReloadSound` | Accepted reload; stops if interrupted |
+| `ShotSound` | Accepted rocket launch at muzzle |
+| `FlightSound` | Loops on the moving rocket; stops on impact, range expiry or trace timeout |
+| `ExplosionSound` | Plays once at impact, independently of the short visual flash |
+
+Volume and PlaybackSpeed are authored on each Sound. Optional numeric attributes
+MinDistance/MaxDistance control spatial falloff for flight (default 3–100 studs)
+and explosion (3–150 studs). Reload/launch retain existing weapon audio rules.
+Flight and explosion remain spatial for the shooter as well as observers.
+Their settings are captured on launch, so holstering or dying does not silence
+an already airborne rocket or its later blast. Missing/empty audio is silent;
+no placeholder audio IDs are supplied. Audio adds no damage or blast events.
+
 # Weapon animation attributes — 5 November 2026
 
 Add these **String** attributes to the top-level weapon Model/BasePart in

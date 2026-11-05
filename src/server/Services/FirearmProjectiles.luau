@@ -6,6 +6,7 @@ local Rules=require(ReplicatedStorage.Shared.FirearmRules)
 local BulletCast=require(ReplicatedStorage.Shared.BulletCast)
 local Damage=require(script.Parent.DamageService)
 local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
+local Audio=require(script.Parent.FirearmAudio)
 local Service={}
 local bullets,fx={},{}
 local count,sequence=0,0
@@ -78,6 +79,7 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
+  FlightSound=definition.Projectile=="Rocket" and Audio.Describe(character,"FlightSound") or nil,ExplosionSound=definition.Projectile=="Rocket" and Audio.Describe(character,"ExplosionSound") or nil,
   Projectile=definition.Projectile,BlastRadius=definition.BlastRadius,Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
   SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",IgnoredDormant={},BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true and definition.BoltAction~=false,Ignored={character},Impacts=0}
  if definition.Projectile=="Rocket" then Service.Backblast(player,character,origin,aimedDirection,definition,itemID) end
@@ -102,7 +104,7 @@ if Damage.RollHit(bullet.Player,victim,bullet.SightBonus,bullet.Skill) then
 else Damage.Miss(victim.Parent,bullet.Player,"Ranged") end
 end
 local function explode(bullet,point)
- emit("Explosion",point,{Radius=bullet.BlastRadius or 10})
+ emit("Explosion",point,{Radius=bullet.BlastRadius or 10,Sound=bullet.ExplosionSound})
  -- Wake nearby actors and geometry before querying; deduplicate multipart rigs.
  task.spawn(function()
   local radius=bullet.BlastRadius or 10
@@ -206,7 +208,7 @@ RunService.Heartbeat:Connect(function(dt)
    bullet.Speed*=math.sqrt(math.max(.1,bullet.Remaining/(bullet.Remaining+cost)))
    emit("Impact",bullet.Position,{Direction=bullet.Direction,Material=kind,Exit=true})
   end
-  emit("Trace",bullet.Position,{ID=id,Direction=bullet.Direction,Rocket=bullet.Projectile=="Rocket"})
+  emit("Trace",bullet.Position,{ID=id,Direction=bullet.Direction,Rocket=bullet.Projectile=="Rocket",FlightSound=bullet.FlightSound})
   if stopped or bullet.Remaining<=.00001 then emit("Stop",bullet.Position,{ID=id});bullets[id]=nil;count-=1 end
  end
  if #fx==0 then return end

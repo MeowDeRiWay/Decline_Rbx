@@ -19,11 +19,18 @@ function sound:Clone()
  function copy:Destroy() self.destroyed=true end
  return copy
 end
-local sounds={FindFirstChild=function(_,name) return (name=="ShotSound" or name=="ReloadSound") and sound end}
+local sounds={FindFirstChild=function(_,name) return (name=="ShotSound" or name=="ReloadSound" or name=="FlightSound" or name=="ExplosionSound") and sound end}
 local held={FindFirstChild=function(_,name) return name=="Sounds" and sounds or name=="_ShotOrigin" and origin end}
 local character={FindFirstChild=function(_,name) return name=="HeldItem" and held or origin end}
 '''
 cases='''
+local flight=Audio.Describe(character,"FlightSound")
+local blast=Audio.Describe(character,"ExplosionSound")
+assert(flight.SoundId==sound.SoundId and flight.Volume==.7 and flight.PlaybackSpeed==1.2 and flight.MaxDistance==100)
+assert(blast.MaxDistance==150)
+sound.SoundId="rbxassetid://456";assert(flight.SoundId=="rbxassetid://123","snapshot survives template edits/removal")
+sound.SoundId="rbxassetid://123"
+assert(Audio.Describe(character,"Missing")==nil)
 local shot=Audio.Play(character,"ShotSound")
 assert(shot.played and shot.Parent==origin and shot.Volume==.7 and shot.PlaybackSpeed==1.2)
 assert(shot.RollOffMaxDistance==150 and shot.RollOffMinDistance==3 and not shot.Looped and not shot.PlayOnRemove and expirations[shot]==15)
