@@ -202,6 +202,38 @@ parts={};dealt=0;part(group("Brick"),3,.1);part(target,20,.5)
 Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
 for i=1,200 do heartbeat.fire(1/60) end
 assert(dealt==0,"outside blast radius is safe")
+-- Own blast must bypass affiliation immunity only for the actual shooter.
+local shooterHP={Health=100,Parent=character}
+local shooterRoot={Position=Vector3.zero}
+function character:FindFirstChildOfClass() return shooterHP end
+function character:FindFirstChild(name) if name=="HumanoidRootPart" then return shooterRoot end end
+local originalApply=Damage.Apply
+local ownDamage,otherDamage=0,0
+Damage.Apply=function(victim,amount,kind,point,attackKind,options)
+ if victim==shooterHP then
+  assert(options.FriendlyFire==true and options.Attacker==player,"self-blast bypasses same-team/group immunity")
+  ownDamage+=amount
+ else
+  assert(not options.FriendlyFire,"self-blast exception must not enable ally damage")
+  otherDamage+=amount
+ end
+ return amount
+end
+rootPart.Position=Vector3.new(0,0,5)
+for _,case in ipairs({{0,false,100},{-5,true,50},{-20,false,0}}) do
+ parts={};packets={};ownDamage=0;otherDamage=0
+ shooterRoot.Position=Vector3.new(0,0,case[1])
+ if case[2] then part(group("Brick"),-2,.1) end
+ part(target,5,.5)
+ Service.Fire(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"FMJ","AT4")
+ for i=1,200 do heartbeat.fire(1/60) end
+ assert(ownDamage==case[3],"own blast respects radius and wall shielding exactly once")
+ assert(otherDamage==100,"other victims still use ordinary blast rules")
+end
+Damage.Apply=originalApply
+function character:FindFirstChildOfClass() end
+function character:FindFirstChild() end
+print("PASS: own rocket splash bypasses self-affiliation only, ignores missing query parts, respects walls and radius")
 for _,item in pairs(Items) do if item.Armor then assert(typeof(item.Armor.ExplosiveAbsorption)=="number" and typeof(item.Armor.ExplosiveResistance)=="number") end end
 parts={};part(target,-5,.5);rootPart.Position=Vector3.new(0,0,-5);dealt=0
 Service.Backblast(player,character,Vector3.zero,Vector3.new(0,0,1),definition,"AT4")

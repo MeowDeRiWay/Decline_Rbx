@@ -115,6 +115,9 @@ local function explode(bullet,point)
    local hp=victimOf(part)
    if hp then victims[hp]=true end
   end
+  -- The shooter's queryable parts can be missing/filtered, but own splash still applies.
+  local shooter=bullet.Character and bullet.Character:FindFirstChildOfClass("Humanoid")
+  if shooter then victims[shooter]=true end
   local ignored={}
   for hp in pairs(victims) do table.insert(ignored,hp.Parent) end
   if bullet.Character then table.insert(ignored,bullet.Character) end
@@ -126,7 +129,7 @@ local function explode(bullet,point)
     local amount=bullet.Damage*(shield and .5 or 1)
     model:SetAttribute("LastDamagerID",bullet.Player.UserId)
     model:SetAttribute("LastHitItem",bullet.ItemID)
-    Damage.Apply(hp,amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=bullet.Player})
+    Damage.Apply(hp,amount,"Explosive",point,"Explosion",{HitChecked=true,Attacker=bullet.Player,FriendlyFire=model==bullet.Character})
    end
   end
  end)

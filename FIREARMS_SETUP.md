@@ -1,3 +1,13 @@
+# Own rocket splash
+
+The shooter's own rocket explosion deals damage within the configured blast
+radius (AT4: 10 studs). It uses the normal flat 100 explosive damage, wall
+shielding (50% reduction), and the shooter's explosive armor/resistance.
+Self-splash alone bypasses affiliation immunity; allied blast protection is
+unchanged. The shooter is considered explicitly even if its parts were absent
+from the overlap query, and deduplicated with other blast victims. Self-damage
+does not trigger player-versus-player combat observers.
+
 # Rocket approach, departure and flyby audio
 
 Rocket traces carry their actual velocity to the local anchored emitter.

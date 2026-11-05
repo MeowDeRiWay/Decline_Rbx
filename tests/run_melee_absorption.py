@@ -167,6 +167,14 @@ Service.Apply(targetHP,5,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})
 b:SetAttribute("TeamID",10)
 assert(Service.Apply(hp,5,"Bullet",nil,"Ranged",{Attacker=b,HitChecked=true})==0)
 assert(#playerDamage==1,"only positive player-versus-player damage reaches ambient observers; no NPCs, misses, absorption or friendlies")
+-- Projectile caller can allow self-splash without disabling normal friendly protection.
+hp.Health=100;a:SetAttribute("ArmorExplosiveAbsorption",8);a:SetAttribute("ArmorExplosiveResistance",.4)
+local observerCount=#playerDamage
+assert(Service.Apply(hp,100,"Explosive",nil,"Explosion",{Attacker=a,HitChecked=true})==0,"same-team self hit is normally protected")
+assert(Service.Apply(hp,100,"Explosive",nil,"Explosion",{Attacker=a,HitChecked=true,FriendlyFire=true})==52,"own splash uses explosive armor: 100*.6-8")
+assert(hp.Health==48 and #playerDamage==observerCount,"self splash does not trigger PvP combat observers")
+assert(Service.Apply(hp,100,"Explosive",nil,"Explosion",{Attacker=b,HitChecked=true,FriendlyFire=false})==0,"ally immunity remains intact")
+print("PASS: actual damage service applies self explosion through armor while preserving ally immunity and PvP observers")
 local rounded=make("Model","Fractional damage target",workspace)
 rounded:SetAttribute("DamageResistance",.25);rounded:SetAttribute("DamageAbsorption",.2)
 local roundedHP=make("Humanoid","Humanoid",rounded);roundedHP.Health=100;roundedHP.MaxHealth=100
