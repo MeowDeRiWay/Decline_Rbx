@@ -79,7 +79,7 @@ function Service.Fire(player,character,origin,direction,definition,ammoType,item
  end
  sequence+=1;count+=1
  bullets[sequence]={ID=sequence,Player=player,Character=character,Position=origin,Direction=direction,
-  FlightSound=definition.Projectile=="Rocket" and Audio.Describe(character,"FlightSound") or nil,ExplosionSound=definition.Projectile=="Rocket" and Audio.Describe(character,"ExplosionSound") or nil,
+  FlightSound=definition.Projectile=="Rocket" and Audio.Describe(character,"FlightSound") or nil,FlybySound=definition.Projectile=="Rocket" and Audio.Describe(character,"FlybySound") or nil,ExplosionSound=definition.Projectile=="Rocket" and Audio.Describe(character,"ExplosionSound") or nil,
   LaunchDelay=definition.Projectile=="Rocket" and .5 or nil,
   Projectile=definition.Projectile,BlastRadius=definition.BlastRadius,Skill=Accuracy.ForWeapon(player,{Firearm=definition}),SightBonus=Accuracy.SightBonus(character:FindFirstChild("HeldItem")),Remaining=definition.Range,Initial=definition.Range,Speed=definition.Speed,Damage=random:NextInteger(definition.DamageMin or definition.Damage,definition.DamageMax or definition.Damage)*(definition.Category=="Pistol" and (player:GetAttribute("CowboyMultiplier") or 1) or 1),PostDefenseDamage=player:GetAttribute("RangedDamageBonus") or 0,
   SniperBonus=sniperBonus,Caliber=definition.Caliber,AmmoType=ammoType,ItemID=itemID,Category=definition.Category or "Rifle",IgnoredDormant={},BoltAction=definition.Category=="Rifle" and definition.SingleOnly==true and definition.BoltAction~=false,Ignored={character},Impacts=0}
@@ -219,7 +219,7 @@ RunService.Heartbeat:Connect(function(dt)
    bullet.Speed*=math.sqrt(math.max(.1,bullet.Remaining/(bullet.Remaining+cost)))
    emit("Impact",bullet.Position,{Direction=bullet.Direction,Material=kind,Exit=true})
   end
-  emit("Trace",bullet.Position,{ID=id,Direction=bullet.Direction,Rocket=bullet.Projectile=="Rocket",FlightSound=bullet.FlightSound})
+  emit("Trace",bullet.Position,{ID=id,Direction=bullet.Direction,Rocket=bullet.Projectile=="Rocket",FlightSound=bullet.FlightSound,FlybySound=bullet.FlybySound,Velocity=bullet.Projectile=="Rocket" and bullet.Direction*bullet.Speed or nil})
   if stopped or bullet.Remaining<=.00001 then emit("Stop",bullet.Position,{ID=id});bullets[id]=nil;count-=1 end
  end
  if #fx==0 then return end

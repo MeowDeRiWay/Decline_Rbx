@@ -194,7 +194,7 @@ for _,kind in ipairs({false,"Brick"}) do
  assert(dealt==(kind and 50 or 100),"blast is flat100, wall halves once, rig parts deduplicated")
  local explosions=0
  for _,batch in ipairs(packets) do for _,event in ipairs(batch) do if event.Kind=="Explosion" then explosions+=1;assert(event.Sound.SoundId=="rbxassetid://ExplosionSound") end
-  if event.Kind=="Trace" and event.Rocket then assert(event.FlightSound.SoundId=="rbxassetid://FlightSound") end end end
+  if event.Kind=="Trace" and event.Rocket then assert(event.FlightSound.SoundId=="rbxassetid://FlightSound" and event.FlybySound.SoundId=="rbxassetid://FlybySound" and math.abs(event.Velocity.Magnitude-100)<1e-5) end end end
  assert(explosions==1,"one explosion per rocket")
 end
 rootPart.Position=Vector3.new(0,0,20)

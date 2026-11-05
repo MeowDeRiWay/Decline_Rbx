@@ -85,7 +85,11 @@ effects.OnClientEvent:Connect(function(events)
    record.Part.Size=event.Rocket and Vector3.new(.18,.18,1.2) or Vector3.new(.015,.015,1.5)
    if event.Rocket then record.Part.Color=Color3.fromRGB(255,150,65) end
    record.Part.CFrame=CFrame.lookAt(event.Point-event.Direction*.75,event.Point)
-   if event.Rocket then RocketAudio.Start(record,event.FlightSound) end
+   if event.Rocket then
+    record.Velocity=event.Velocity or Vector3.zero
+    record.Part.AssemblyLinearVelocity=record.Velocity
+    RocketAudio.Start(record,event.FlightSound,event.FlybySound)
+   end
   elseif event.Kind=="Stop" then
    local record=traces[event.ID];if record then RocketAudio.Stop(record);record.Expires=os.clock()+.035 end
   elseif event.Kind=="Backblast" then
@@ -116,6 +120,16 @@ effects.OnClientEvent:Connect(function(events)
   end
  end
 end)
-RunService.Heartbeat:Connect(function()
- for id,record in pairs(traces) do if os.clock()>=record.Expires then RocketAudio.Stop(record);record.Part:Destroy();traces[id]=nil end end
+local lastListener
+RunService.Heartbeat:Connect(function(dt)
+ local character=player.Character
+ local head=character and (character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart"))
+ local listener=head and head.Position or workspace.CurrentCamera and workspace.CurrentCamera.CFrame.Position
+ local velocity=listener and lastListener and dt>0 and (listener-lastListener)/dt or Vector3.zero
+ if velocity.Magnitude>200 then velocity=Vector3.zero end -- teleport/respawn
+ lastListener=listener
+ for id,record in pairs(traces) do
+  if os.clock()>=record.Expires then RocketAudio.Stop(record);record.Part:Destroy();traces[id]=nil
+  else RocketAudio.Update(record,listener,velocity,dt) end
+ end
 end)

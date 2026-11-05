@@ -1,3 +1,30 @@
+# Rocket approach, departure and flyby audio
+
+Rocket traces carry their actual velocity to the local anchored emitter.
+Roblox's native Doppler handles the higher approaching pitch and lower receding
+pitch (`SoundService.DopplerScale`, normally 1). The module does not change this
+global property or apply another scripted Doppler pitch shift.
+
+`RocketAudio` smooths an equalizer: distant sound loses high frequencies, and
+receding sound is duller. A separate loop swells within 24 studs of the listener,
+then fades on departure. Listener-relative speed gates this layer, so stationary
+or co-moving sources do not create a false high-speed flyby. The mix uses the
+character's head, matching Decline's hearing position, with camera fallback.
+
+Optional `AT4/Sounds/FlybySound` is a dedicated seamless whistle loop. Without it,
+the existing FlightSound supplies a quieter, higher-pitched high-frequency layer;
+this fallback cannot turn a hiss recording into a clean tonal whistle. Main
+FlightSound retains its authored volume through 40 studs. Both loops stop on
+impact, range expiry or trace timeout; network updates never restart them.
+No extra per-frame remotes are added.
+
+For another project, copy `ProjectileAudioRules` (Shared) and `RocketAudio`
+(client). Call Start once per projectile with flight/optional flyby settings,
+set record.Part and record.Velocity, Update with listener position/velocity and
+delta time, and Stop when the projectile ends. Sounds are local to each viewer.
+Final timbre and native Doppler should be auditioned in Studio with the actual
+chosen audio assets.
+
 # AT4 audio
 
 Inside the AT4 model add a Folder named `Sounds` containing four **Sound**

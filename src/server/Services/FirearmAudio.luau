@@ -8,7 +8,7 @@ function Audio.Describe(character,name)
  if not source or not source:IsA("Sound") or source.SoundId=="" then return nil end
  local minimum=source:GetAttribute("MinDistance") or 3
  if name=="FlightSound" then minimum=math.max(40,minimum) end
- local maximum=source:GetAttribute("MaxDistance") or (name=="ExplosionSound" and 150 or 100)
+ local maximum=source:GetAttribute("MaxDistance") or (name=="ExplosionSound" and 150 or name=="FlybySound" and 24 or 100)
  maximum=math.max(maximum,minimum+1)
  return {SoundId=source.SoundId,Volume=source.Volume,PlaybackSpeed=source.PlaybackSpeed,
   MinDistance=minimum,MaxDistance=maximum}
