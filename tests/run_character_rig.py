@@ -111,12 +111,15 @@ service=service.replace('require(ReplicatedStorage.Shared.MineGeometry)',module(
 source+='\nfunction methods:FindFirstChildWhichIsA(kind,recurse) for _,part in ipairs(recurse and self:GetDescendants() or self:GetChildren()) do if part:IsA(kind) then return part end end end\ndo\nlocal ServerStorage=serverStorage\nlocal Items='+module('src/shared/ItemConfig.luau')+'\nlocal Visuals=(function()\n'+service+'\nend)()\n'
 source+='\nlocal StoragePose='+module('src/shared/HandActionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\nlocal Holsters='+module('src/server/Services/HolsterVisuals.luau').replace('require(game:GetService("ReplicatedStorage").Shared.HandActionPose)','StoragePose')
 source+=r'''
-for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife","Mine"}) do
+for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife","Mine","Pliers"}) do
  Visuals.Apply(c,id)
  local held=c:FindFirstChild("HeldItem")
  local localPose=root.CFrame:ToObjectSpace(held.CFrame)
  if id:find("Pistol") then
   assert(math.abs(localPose.Position.X)<.0001 and localPose.Position.Z<-.76,"actual pistol equipment is forward with extended arms")
+ elseif id=="Pliers" then
+  near(held.CFrame.Position,Presentation.ToolGrip(root).Position)
+  assert(held:GetAttribute("AnimationSet")=="Tool","actual equipment uses the dedicated tool set")
  elseif id=="Mine" then
   assert(math.abs(localPose.RightVector.Y)> .999,"rotated thin-X mine stays horizontal")
   assert(math.abs(localPose.Position.X)<.0001 and localPose.Position.Z>-.6 and localPose.Position.Z<-.4,"mine is centered close to chest")

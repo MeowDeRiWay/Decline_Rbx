@@ -120,3 +120,8 @@ grants its ordinary randomized, perk-adjusted loot directly to inventory and the
 normal Scavenger/character harvest XP, then uses the existing depletion/respawn
 path. Cancelled or stale callbacks cannot claim rewards. Shovels still harvest
 piles using their original damage and ground-loot path.
+
+Pliers use the dedicated `AnimationSet="Tool"` holding pose automatically.
+The right hand tracks a close forward grip with a bent elbow, while the left
+hand keeps its ordinary gait. Other hand-held utility templates can opt into
+this pose with the same attribute; axe/shovel/knife poses stay specialized.

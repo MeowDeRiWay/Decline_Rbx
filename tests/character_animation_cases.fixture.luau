@@ -104,7 +104,7 @@ print("PASS: viewer controller movement, late weapon, other players, distance cu
 
 -- Reuse precisely the client pose implementation in Studio's server viewport.
 Driver.Start(nil,true)
-for _,id in ipairs({"Pistol","Knife","Axe","Shovel"}) do
+for _,id in ipairs({"Pistol","Knife","Axe","Shovel","Pliers"}) do
  c:SetAttribute("HandsItem",id);RunService.PreSimulation:Fire(1/30)
  assert(shoulder.Transform.R[1]==shoulder.Transform.R[1],"all equipment poses stay finite")
 end
@@ -145,3 +145,12 @@ assert(supporting.X<-root.Size.X/2 and supporting.Y>0,"left arm supports the pat
 assert(free.Y<-.3,"right arm stays free instead of cradling the patient in both arms")
 c:SetAttribute("CarryingUserId",nil)
 print("PASS: carrier left-arm shoulder support and free right arm")
+
+c:SetAttribute("HandsItem","Pliers");held:SetAttribute("AnimationSet",nil)
+RunService.PreSimulation:Fire(1/30)
+local right=c:FindFirstChild("RightShoulder",true)
+local left=c:FindFirstChild("LeftShoulder",true)
+local leftElbow=c:FindFirstChild("LeftElbow",true)
+assert(right.Transform~=CFrame.identity,"utility tool engages right-hand IK without a Weapon definition")
+assert(leftElbow.Transform==CFrame.identity,"tool free hand does not enter a two-hand support pose")
+print("PASS: utility tool grip IK and free left hand in the shared viewer/server driver")

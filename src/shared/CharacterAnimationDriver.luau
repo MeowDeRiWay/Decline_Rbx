@@ -182,8 +182,8 @@ RunService.PreSimulation:Connect(function(dt)
   else
   m.LeftHip.Transform=lh;m.RightHip.Transform=rh;m.LeftKnee.Transform=lk;m.RightKnee.Transform=rk
   end
-  local equipped=held and definition and (definition.Firearm or definition.Weapon or definition.Trap or definition.Slot=="Medicine")
   local animationSet=Presentation.AnimationSet(held,definition)
+  local equipped=held and definition and (definition.Firearm or definition.Weapon or definition.Trap or definition.Slot=="Medicine" or animationSet=="Tool")
   local twoHands=animationSet=="Pistol" or animationSet=="Rifle" or animationSet=="Launcher" or animationSet=="Axe" or animationSet=="Shovel" or animationSet=="Mine"
   local reloadFrame,reloadRight,reloadLeft=ReloadPose.Apply(c,root,held,motor,workspace:GetServerTimeNow())
   if not reloadFrame and r.Reloading and motor then motor.Transform=CFrame.identity end

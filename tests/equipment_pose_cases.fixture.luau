@@ -10,7 +10,7 @@ end
 function methods:PivotTo(frame) self.CFrame=frame end
 local serverStorage=Instance.new("Folder")
 local templates=Instance.new("Folder",serverStorage);templates.Name="Items"
-for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife"}) do
+for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife","Pliers"}) do
  local part=Instance.new("Part",templates);part.Name=id;part.CFrame=CFrame.identity;part.Size=Vector3.new(.1,.1,.5)
 end
 

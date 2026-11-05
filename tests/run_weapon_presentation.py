@@ -22,6 +22,12 @@ attrs.AnimationSet="typo";attrs.ReloadType=12
 assert(Presentation.AnimationSet(held,Items.AT4)=="Launcher")
 assert(Presentation.ReloadType(held,Items.AT4,"AT4")=="Rocket")
 attrs.AnimationSet=nil;attrs.ReloadType=nil
+assert(Presentation.AnimationSet(nil,Items.Pliers)=="Tool")
+attrs.AnimationSet="Tool";assert(Presentation.AnimationSet(held,{})=="Tool")
+attrs.AnimationSet=nil
+local toolRoot={CFrame=CFrame.new(4,2,3),Size=Vector3.new(.4,.8,.315)}
+local toolGrip=toolRoot.CFrame:PointToObjectSpace(Presentation.ToolGrip(toolRoot).Position)
+assert(toolGrip.X>toolRoot.Size.X/2 and toolGrip.Z<-.3 and toolGrip.Z>-.8,"tool grip is outside torso and within bent-arm reach")
 assert(Presentation.AnimationSet(nil,{Slot="Medicine"})==nil)
 local attributes={Reloading=true,ReloadItemID="AT4",ReloadStartedAt=10,ReloadDuration=4,ReloadVisualType="Rocket",ReloadRoundCount=1}
 local c={GetAttribute=function(_,key) return attributes[key] end}

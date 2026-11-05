@@ -105,6 +105,7 @@ function Visuals.Apply(character, id)
   -- PrimaryPart is the authored alignment anchor; keep the tube parallel to -Z.
   target=root.CFrame*CFrame.new(root.Size.X*.62,root.Size.Y*.6,root.Size.Z*.15)
  end
+ if animationSet=="Tool" then target=Presentation.ToolGrip(root) end
  local mineCenter,mineSize
  if definition.Trap then target,mineCenter,mineSize=MineGeometry.Held(root,template) end
  if definition.Slot=="Medicine" then target=root.CFrame*CFrame.new(root.Size.X*.25,root.Size.Y*.25,-root.Size.Z/2-.22) end
