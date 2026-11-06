@@ -1,4 +1,6 @@
--- Each named folder is welded to the matching articulated body section.
+-- Each named section Model is welded to the matching articulated body section.
+-- Model pivots specify the mounting center in authored rig axes. Legacy folders
+-- retain automatic bounds/helmet fitting; optional Anchor parts still override.
 -- Optional Anchor parts preserve exact authored fit; otherwise fit the group's
 -- center to the body section in the rig's authored T-pose axes. Helmets
 -- retain their authored height above the head using the torso as a reference.
@@ -70,6 +72,10 @@ function Armor.Apply(character,id,template)
    if #parts>0 then
     local source,destination
     if anchor and anchor:IsA("BasePart") then source=anchor.CFrame;destination=body.CFrame
+    elseif group:IsA("Model") then
+     source=group:GetPivot()
+     local rest=authored[body] or root.CFrame:ToObjectSpace(body.CFrame)
+     destination=body.CFrame*rotation(rest):Inverse()
     else
      source=name=="Head" and headFrame(template,axes,authored,character)
      if source then destination=body.CFrame
@@ -79,7 +85,8 @@ function Armor.Apply(character,id,template)
       destination=body.CFrame*rotation(rest):Inverse()
      end
     end
-    local folder=Instance.new("Folder",model);folder.Name=name
+    local section=Instance.new("Model",model);section.Name=name
+    section.WorldPivot=destination
     for _,p in ipairs(parts) do
      local copy=p:Clone()
      for _,child in ipairs(copy:GetDescendants()) do
@@ -88,7 +95,7 @@ function Armor.Apply(character,id,template)
      copy.CFrame=destination*source:ToObjectSpace(p.CFrame)
      copy.Anchored=false;copy.Massless=true
      copy.CanCollide=false;copy.CanTouch=false;copy.CanQuery=false
-     copy.Parent=folder
+     copy.Parent=section
      local weld=Instance.new("WeldConstraint",copy)
      weld.Name="ArmorWeld";weld.Part0=body;weld.Part1=copy
      count+=1
@@ -96,7 +103,7 @@ function Armor.Apply(character,id,template)
    end
   end
  end
- if count==0 then model:Destroy();warn("[Decline] Armor needs body-section folders: "..id);return false end
+ if count==0 then model:Destroy();warn("[Decline] Armor needs body-section Models: "..id);return false end
  model.Parent=character
  return true
 end

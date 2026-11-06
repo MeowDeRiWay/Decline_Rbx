@@ -236,3 +236,27 @@ Firearms повторно перевіряє їх при пострілі/пер
 блокує вже екіпіровану зброю. Інвентар показує вимоги, невдале Equip
 повідомляє гравця обраною мовою. Вимога ремонту для крафту не є вимогою
 сили для користування виготовленим предметом.
+
+
+### Armor section Models (Exosuit and other armor)
+
+Use an outer armor Model named by its item ID (`Exosuit`) and nested Models
+named exactly `Head`, `UpperTorso`, `LowerTorso`, `LeftUpperArm`,
+`LeftLowerArm`, `RightUpperArm`, `RightLowerArm`, `LeftUpperLeg`,
+`LeftLowerLeg`, `RightUpperLeg`, `RightLowerLeg` for the sections present.
+Names are case-sensitive; `head` or `lower` are not aliases.
+
+For a section Model, its pivot is the mounting center. Place it at the center
+of the corresponding body part on the reference T-pose rig; keep pivot axes
+consistent with the reference rig's root axes. A Model's default bounds center
+is usable for symmetric shells. For asymmetric plates or a helmet, edit the
+pivot to the body's center rather than centering only the visible shell.
+No PrimaryPart or Anchor is required. A manually set pivot is honored even
+when it is outside the visible geometry. Optional Anchor parts still override
+the pivot and retain their existing body-local alignment behavior.
+
+EquippedArmor now also contains Models for each section. Individual geometry
+parts stay welded to their matching articulated body parts. Legacy Folder
+sections retain their previous bounds-based fitting and helmet-height rules.
+Actual Studio templates must be converted to Models by the model author;
+the source change does not rewrite ServerStorage objects in the place file.

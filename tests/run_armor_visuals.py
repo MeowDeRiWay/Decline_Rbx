@@ -35,6 +35,7 @@ end
 local held=Instance.new("Part",c);held.Name="HeldItem"
 assert(Armor.Apply(c,"LeatherArmor",template))
 local model=c:FindFirstChild("EquippedArmor");assert(model and held.Parent==c)
+assert(model:FindFirstChild("UpperTorso"):IsA("Model"),"worn sections are Models")
 local count=0
 for _,p in ipairs(model:GetDescendants()) do if p:IsA("Part") then
  count+=1
@@ -55,8 +56,46 @@ assert(Armor.Apply(c,"LeatherArmor",anchored))
 local fitted=c:FindFirstChild("EquippedArmor"):FindFirstChild("UpperTorso"):FindFirstChild("Front")
 near(c:FindFirstChild("UpperTorso").CFrame:ToObjectSpace(fitted.CFrame).Position,Vector3.new(0,0,-.2))
 assert(#c:FindFirstChild("EquippedArmor"):GetDescendants()==3,"Anchor is not worn/copied")
+-- Model pivots are explicit mounting centers, including asymmetric helmets.
+-- Use the real authored axes while turning the complete template in the scene.
+for _,yaw in ipairs({0,.8,-1.5}) do
+ local frame=CFrame.new(30,5,-12)*CFrame.Angles(0,yaw,0)
+ local models=Instance.new("Model");models.CFrame=frame
+ local expected={}
+ for _,name in ipairs({"Head","LowerTorso","LeftLowerArm","RightUpperLeg"}) do
+  local section=Instance.new("Model",models);section.Name=name
+  -- Deliberately place geometry far from its mount; bounds must not recenter it.
+  section.CFrame=frame*CFrame.new(2,3,4)
+  local plate=Instance.new("Part",section);plate.Name="Plate";plate.Size=Vector3.new(.1,.3,.2)
+  plate.CFrame=section.CFrame*CFrame.new(.12,.25,-.18)
+  expected[name]=plate.CFrame
+ end
+ Armor.Apply(c,nil);assert(Armor.Apply(c,"Exosuit",models))
+ local worn=c:FindFirstChild("EquippedArmor")
+ for name in pairs(expected) do
+  local body=c:FindFirstChild(name)
+  local section=worn:FindFirstChild(name);assert(section:IsA("Model"))
+  local plate=section:FindFirstChild("Plate")
+  -- Reconstruct the rig's authored axes from its unposed body part rotation.
+  local rest=originals[name].CFrame
+  local axes=CFrame.new(-rest.Position)*rest
+  local mount=body.CFrame*axes:Inverse()
+  local fitted=mount:ToObjectSpace(plate.CFrame)
+  near(fitted.Position,Vector3.new(.12,.25,-.18))
+  near(fitted.LookVector,Vector3.new(0,0,-1))
+  assert(plate:FindFirstChild("ArmorWeld").Part0==body)
+ end
+ -- Anchor remains higher priority than a Model pivot.
+ local section=models:FindFirstChild("Head")
+ local marker=Instance.new("Part",section);marker.Name="Anchor";marker.CFrame=section.CFrame*CFrame.new(0,.1,0)
+ Armor.Apply(c,nil);assert(Armor.Apply(c,"Exosuit",models))
+ local helmet=c:FindFirstChild("EquippedArmor"):FindFirstChild("Head"):FindFirstChild("Plate")
+ near(c:FindFirstChild("Head").CFrame:ToObjectSpace(helmet.CFrame).Position,marker.CFrame:ToObjectSpace(expected.Head).Position)
+end
+print("PASS: nested armor Models use explicit pivots under scene rotations; asymmetric head/limbs retain offsets and Anchor overrides")
+
 local item=Items.Items.LeatherArmor;local recipe=Recipes.MakeLeatherArmor
-assert(item.Slot=="Body" and item.Weight==2 and item.Armor.Absorption==2 and item.Armor.Resistance==.1)
+assert(item.Slot=="Body" and item.Weight==2 and item.Armor.Absorption==0 and item.Armor.Resistance==.2)
 assert(Defense.Resolve(20,item.Armor.Resistance,item.Armor.Absorption)==16)
 assert(recipe.Station=="Workstation" and recipe.Duration==60 and recipe.Requirements.Skills.Repair==60 and recipe.RequiresPresence)
 assert(recipe.Ingredients.Cloth==6 and recipe.Ingredients.SewingKit==nil and recipe.Tool=="SewingKit")
@@ -65,7 +104,7 @@ assert(not Craft.Plan({Cloth=5},recipe,1))
 local plan=assert(Craft.Plan({Cloth=6,SewingKit=1},recipe,1))
 assert(plan.Ingredients.Cloth==6 and plan.Ingredients.SewingKit==nil and plan.Outputs.LeatherArmor==1)
 local improved=Items.Items.LeatherArmor2;local upgrade=Recipes.MakeLeatherArmor2
-assert(improved.Slot=="Body" and improved.Weight==3 and improved.Armor.Absorption==4 and improved.Armor.Resistance==.15)
+assert(improved.Slot=="Body" and improved.Weight==3 and improved.Armor.Absorption==2 and improved.Armor.Resistance==.25)
 assert(Defense.Resolve(20,improved.Armor.Resistance,improved.Armor.Absorption)==13)
 assert(upgrade.Station=="Workstation" and upgrade.Duration==60 and upgrade.Requirements.Skills.Repair==80 and upgrade.Tool=="SewingKit")
 assert(not Craft.Plan({LeatherArmor=1,Scrap=4},upgrade,1) and not Craft.Plan({Scrap=5},upgrade,1))
