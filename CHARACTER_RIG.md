@@ -247,8 +247,9 @@ named exactly `Head`, `UpperTorso`, `LowerTorso`, `LeftUpperArm`,
 Names are case-sensitive; `head` or `lower` are not aliases.
 
 For a section Model, its pivot is the mounting center. Place it at the center
-of the corresponding body part on the reference T-pose rig; keep pivot axes
-consistent with the reference rig's root axes. A Model's default bounds center
+of the corresponding body part on the reference T-pose rig. Section pivot
+rotations are ignored: all geometry uses the outer armor Model's T-pose axes.
+The arms of both the reference character and armor must point sideways. A Model's default bounds center
 is usable for symmetric shells. For asymmetric plates or a helmet, edit the
 pivot to the body's center rather than centering only the visible shell.
 No PrimaryPart or Anchor is required. A manually set pivot is honored even

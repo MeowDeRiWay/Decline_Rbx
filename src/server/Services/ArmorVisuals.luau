@@ -1,5 +1,6 @@
 -- Each named section Model is welded to the matching articulated body section.
--- Model pivots specify the mounting center in authored rig axes. Legacy folders
+-- Model pivot positions specify mounting centers in the template T-pose axes.
+-- Per-section pivot rotations must not rotate an already authored armor shell. Legacy folders
 -- retain automatic bounds/helmet fitting; optional Anchor parts still override.
 -- Optional Anchor parts preserve exact authored fit; otherwise fit the group's
 -- center to the body section in the rig's authored T-pose axes. Helmets
@@ -73,7 +74,7 @@ function Armor.Apply(character,id,template)
     local source,destination
     if anchor and anchor:IsA("BasePart") then source=anchor.CFrame;destination=body.CFrame
     elseif group:IsA("Model") then
-     source=group:GetPivot()
+     source=CFrame.new(group:GetPivot().Position)*axes
      local rest=authored[body] or root.CFrame:ToObjectSpace(body.CFrame)
      destination=body.CFrame*rotation(rest):Inverse()
     else

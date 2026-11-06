@@ -68,6 +68,8 @@ for _,yaw in ipairs({0,.8,-1.5}) do
   section.CFrame=frame*CFrame.new(2,3,4)
   local plate=Instance.new("Part",section);plate.Name="Plate";plate.Size=Vector3.new(.1,.3,.2)
   plate.CFrame=section.CFrame*CFrame.new(.12,.25,-.18)
+  -- Studio may orient a section pivot along its arm; geometry stays in T-pose.
+  section.CFrame=section.CFrame*CFrame.Angles(0,0,math.pi/2)
   expected[name]=plate.CFrame
  end
  Armor.Apply(c,nil);assert(Armor.Apply(c,"Exosuit",models))
