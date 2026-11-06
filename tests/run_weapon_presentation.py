@@ -89,7 +89,7 @@ for _,t in ipairs({0,.1,.5,.9,.99999}) do
  near(right,(f*motor.Part1.CFrame:ToObjectSpace(grip)).Position)
  if t==0 then near(left,(f*motor.Part1.CFrame:ToObjectSpace(handguard)).Position) end
 end
-near(Presentation.RestFrame(rest,"Rifle",0).Position,rest.Position)
+near(Presentation.RestFrame(rest,"Rifle",0).Position,rest.Position-Vector3.new(0,.16,0))
 assert(Presentation.RestFrame(rest,"Rifle",1).Position.Y<rest.Position.Y)
 assert(Presentation.PartFrame(held,"Sight")==nil)
 -- Rest rotations act in character axes, independent of authored grip rotation.

@@ -61,7 +61,9 @@ function Presentation.RestFrame(rest,kind,weight,size,category)
   shift=Vector3.new(0,-.28,.08)
   tilt=CFrame.Angles(math.rad(-35)*weight,0,0)
  end
- return CFrame.new(rest.Position+shift*weight)*tilt*(rest-rest.Position)
+ -- Lower the firing pose slightly; fade this offset out in relaxed carry.
+ local firingDrop=(kind=="Pistol" or kind=="Rifle" and category~="MachineGun") and size.Y*.2*(1-weight) or 0
+ return CFrame.new(rest.Position+shift*weight-Vector3.new(0,firingDrop,0))*tilt*(rest-rest.Position)
 end
 function Presentation.SupportWeight(kind,relaxed,reloading)
  if reloading then return 1 end
