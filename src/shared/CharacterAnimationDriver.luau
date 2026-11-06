@@ -212,6 +212,24 @@ RunService.PreSimulation:Connect(function(dt)
     desired=desired+point-delta:PointToWorldSpace(point)+(desired.Position-rest.Position)
    end
    if animationSet=="Pistol" or animationSet=="Rifle" then desired=desired+breath end
+   if animationSet=="Pistol" then
+    -- Place the grip at the natural hanging hand, using actual limb lengths.
+    -- A fixed chest-relative offset leaves the elbow bent across the body.
+    local shoulder=m.RightShoulder
+    local authored=shoulder:GetAttribute("AuthoredC0")
+    local upper,lower=shoulder:GetAttribute("UpperVector"),shoulder:GetAttribute("LowerVector")
+    if authored and upper and lower then
+     local standing=shoulder:GetAttribute("StandingRotation") or CFrame.identity
+     local offset=shoulder:GetAttribute("StandingOffset") or Vector3.zero
+     local parent=shoulder.Part0==waist.Part1 and chestFrame or shoulder.Part0.CFrame
+     local anchor=(parent*authored*CFrame.new(offset)).Position
+     local hand=anchor+root.CFrame:VectorToWorldSpace(standing:VectorToWorldSpace(upper+lower))
+     local world=root.CFrame*desired*(motor.C1 or CFrame.identity):Inverse()
+     local grip=held:FindFirstChild("RightHandGrip",true) or held:FindFirstChild("_HandGrip",true)
+     local current=Presentation.PartFrame(held,"Grip",motor,world) or Motion.GripFrame(motor,grip,world)
+     desired=desired+root.CFrame:VectorToObjectSpace(hand-current.Position)*r.Relaxed
+    end
+   end
    motor.Transform=motor.C0:Inverse()*desired
   elseif reloadFrame then r.Relaxed=0 end
   local supportWeight=Presentation.SupportWeight(animationSet,r.Relaxed,reloadFrame~=nil)

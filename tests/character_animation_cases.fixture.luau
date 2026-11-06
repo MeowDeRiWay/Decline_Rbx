@@ -107,6 +107,16 @@ assert(c:FindFirstChild("LeftElbow",true).Transform==CFrame.identity,"relaxed la
 c:SetAttribute("WeaponCombatUntil",serverTime+4)
 for _=1,60 do RunService.PreSimulation:Fire(1/60) end
 assert(reloadMotor.Transform.Position.Magnitude<.001,"combat returns weapon to ready")
+held:SetAttribute("AnimationSet","Pistol");c:SetAttribute("WeaponCombatUntil",0)
+for _=1,120 do RunService.PreSimulation:Fire(1/60) end
+local rightShoulder=c:FindFirstChild("RightShoulder",true)
+local rightElbow=c:FindFirstChild("RightElbow",true)
+local standing=rightShoulder:GetAttribute("StandingRotation")
+local upper,lower=rightShoulder:GetAttribute("UpperVector"),rightShoulder:GetAttribute("LowerVector")
+local arm=standing*rightShoulder.Transform
+local hand=arm:VectorToWorldSpace(upper)+(arm*rightElbow.Transform):VectorToWorldSpace(lower)
+assert(hand.Unit:Dot(standing:VectorToWorldSpace(upper+lower).Unit)>.999,"resting pistol hand hangs straight down")
+assert(c:FindFirstChild("LeftElbow",true).Transform==CFrame.identity,"pistol support hand stays free")
 reloadMotor.Parent=nil;held:SetAttribute("AnimationSet",nil)
 print("PASS: real viewer reload lowers launcher, cancellation and expiry restore held motor")
 otherRoot.CFrame=CFrame.new(300,0,0)*otherRoot.CFrame
