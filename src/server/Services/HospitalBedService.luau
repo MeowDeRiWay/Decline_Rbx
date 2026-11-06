@@ -56,7 +56,7 @@ function Service.PlacePatient(operator,player,bed)
  local character=player.Character;local hp=character and character:FindFirstChildOfClass("Humanoid")
  local root=character and character:FindFirstChild("HumanoidRootPart")
  if not root or not hp or hp.Health<=0 or character:GetAttribute("IsDead") then return false end
- if player~=operator and not character:GetAttribute("Knockout") then return false end
+ if character:GetAttribute("Reviving") or (player~=operator and not character:GetAttribute("Knockout")) then return false end
  local ko=character:GetAttribute("Knockout")
  require(script.Parent.InventoryService).ClearHands(player)
  local savedPivot=character:GetPivot()

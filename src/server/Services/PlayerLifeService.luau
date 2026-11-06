@@ -99,25 +99,35 @@ function Service.Knockout(player,character)
  BodyFall.Play(character,"Knockout")
 
 end
-function Service.Revive(player,lockSeconds,healingBonus)
+function Service.Revive(player,lockSeconds,healingBonus,animated)
  local character=player.Character
  local record=character and knocked[character]
  local hp=character and character:FindFirstChildOfClass("Humanoid")
- if not record or not hp or hp.Health<=0 or finished[character] or not character:GetAttribute("Knockout") then return false end
+ if not record or record.Reviving or not hp or hp.Health<=0 or finished[character] or not character:GetAttribute("Knockout") then return false end
  if workspace:GetServerTimeNow()<(player:GetAttribute("ReviveLockedUntil") or 0) then return false end
  if character:GetAttribute("HospitalResting") and (hp.Health<hp.MaxHealth*.5 or (character:GetAttribute("Sick") or 0)>0 or character:GetAttribute("Poisoned")) then return false end
  if character:GetAttribute("CarriedByUserId") then require(script.Parent.CarryService).ReleasePlayer(player) end
- knocked[character]=nil
- BodyFall.Restore(character)
- character:PivotTo(record.Pivot)
- for part,flags in pairs(record.Parts) do
-  if part.Parent then part.Anchored=flags.Anchored;part.CanCollide=flags.CanCollide;part.CanQuery=flags.CanQuery end
+ local function finish()
+  if player.Character~=character or knocked[character]~=record or finished[character] or hp.Health<=0 then return end
+  knocked[character]=nil
+  for part,flags in pairs(record.Parts) do
+   if part.Parent then part.Anchored=flags.Anchored;part.CanCollide=flags.CanCollide;part.CanQuery=flags.CanQuery end
+  end
+  hp.PlatformStand=false;hp.AutoRotate=true
+  hp:ChangeState(Enum.HumanoidStateType.GettingUp)
+  character:SetAttribute("Reviving",nil)
+  character:SetAttribute("Knockout",false);character:SetAttribute("KnockoutEndsAt",nil)
+  character:SetAttribute("BlocksVision",record.BlocksVision)
+  if character:GetAttribute("HospitalResting") then Beds.Reposition(player) end
  end
- hp.PlatformStand=false;hp.AutoRotate=true;hp.Health=math.min(hp.MaxHealth,math.max(hp.Health,math.ceil(2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0)+(healingBonus or 0))))
- hp:ChangeState(Enum.HumanoidStateType.GettingUp)
- character:SetAttribute("Knockout",false);character:SetAttribute("KnockoutEndsAt",nil)
- character:SetAttribute("Health",hp.Health);character:SetAttribute("BlocksVision",record.BlocksVision)
- if character:GetAttribute("HospitalResting") then Beds.Reposition(player) end
+ hp.Health=math.min(hp.MaxHealth,math.max(hp.Health,math.ceil(2+hp.MaxHealth*(player:GetAttribute("ReviveHealthBonus") or 0)+(healingBonus or 0))))
+ character:SetAttribute("Health",hp.Health)
+ if animated and not character:GetAttribute("HospitalResting") then
+  record.Reviving=true;character:SetAttribute("Reviving",true)
+  BodyFall.Play(character,"Rise",record.Pivot,finish)
+ else
+  BodyFall.Restore(character);character:PivotTo(record.Pivot);finish()
+ end
  player:SetAttribute("ReviveLockedUntil",workspace:GetServerTimeNow()+math.max(0,lockSeconds-(player:GetAttribute("ReviveLockReduction") or 0)))
  return true
 end

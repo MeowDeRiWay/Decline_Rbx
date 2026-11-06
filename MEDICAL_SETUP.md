@@ -189,3 +189,19 @@ then receives the 10 HP; existing doctor/Paramedic/fortune effects still apply.
 Blocked, out-of-range, cooldown/lock-denied or non-KO targets grant no kit healing.
 A failed attempt remains a knockout. The Doctor targeting hint includes the kit's
 chance bonus, and removing/transferring the last kit removes it immediately.
+
+## Doctor resuscitation animation
+
+Key 4 selects Doctor mode; clicking a nearby knocked-out player starts five
+seconds of the shared loot/down/search animation. The server reserves one doctor
+per patient, validates identity/life/range/LOS during the work and rolls only at
+completion. Cancelling Doctor mode with 4/Escape, actor KO/disconnect, patient
+movement/removal or lost eligibility releases the reservation without a roll.
+Existing skill odds, kit bonuses, cooldown and reward rules are retained.
+
+A successful ground revival starts a 1.15-second replicated KO-to-upright body
+transition. The patient stays anchored and unavailable for another revival,
+carry or bed placement until the transition completes; saved physics flags are
+then restored. Interrupted body transitions cannot invoke stale completion.
+Hospital-resting patients retain the existing bed-rest behavior; admin and bed
+revival callers retain their existing instant path unless they opt into animation.

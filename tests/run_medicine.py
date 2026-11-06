@@ -3,12 +3,17 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 medicine=(root/'src/server/Medicine.server.luau').read_text().replace('local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', 'local Literal={Protect=function(v) return v end}')
-medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight|Medical|Config|Hands|Items)=require[^\n]+\n','',medicine)
+medicine=re.sub(r'local (Inventory|Progression|Life|Journal|Rules|Sight|Medical|Config|Hands|Items|Animation)=require[^\n]+\n','',medicine)
 life=(root/'src/server/Services/PlayerLifeService.luau').read_text().replace('require(script.Parent.HandActionService).Cancel(player)','').replace('require(script.Parent.WorldItemService).DropKnockoutWeapon(player,character)','').replace('require(script.Parent.CraftingService).CancelPlayer(player)','')
 life=life[life.index('function Service.Knockout'):life.index('function Service.Damage')]
 setup='''
 local Hands={Treat=function(_,_,apply) return apply() end}
-local Animation={Cancel=function() end}
+local doctorWork={}
+local Animation={Cancel=function(c)
+ for p,w in pairs(doctorWork) do if p.Character==c then doctorWork[p]=nil;w.Cancel();c:SetAttribute("InteractionLocked",nil) end end
+end,Work=function(p,target,range,complete,cancel,planting,options)
+ doctorWork[p]={Complete=complete,Cancel=cancel,Options=options};p.Character:SetAttribute("InteractionLocked",true);return true
+end}
 local Beds={Leave=function() end,Reposition=function() end}
 a:LoadCharacterAsync();b:LoadCharacterAsync();c:LoadCharacterAsync()
 Enum.HumanoidStateType={GettingUp=1}
@@ -23,7 +28,15 @@ local Chests={Close=function() end}
 local function freeze(c)
  for _,p in ipairs(c:GetDescendants()) do if p:IsA("BasePart") then p.Anchored=true;p.CanCollide=false;p.CanQuery=true end end
 end
-local BodyFall={Play=function(c,kind) c:SetAttribute("BodyPoseKind",kind);c:PivotTo(CFrame.new(Vector3.new(0,-1,0))) end,Restore=function(c) c:SetAttribute("BodyPoseKind",nil) end}
+local delayedRise=false
+local pendingRise
+local BodyFall={Play=function(c,kind,standing,complete)
+ c:SetAttribute("BodyPoseKind",kind)
+ if kind=="Rise" then
+  local function finish() c:PivotTo(standing);c:SetAttribute("BodyPoseKind",nil);complete() end
+  if delayedRise then pendingRise=finish else finish() end
+ else c:PivotTo(CFrame.new(Vector3.new(0,-1,0))) end
+end,Restore=function(c) c:SetAttribute("BodyPoseKind",nil) end}
 local finishedCount=0
 local Service={Finish=function() finishedCount+=1 end}
 LIFE
@@ -38,13 +51,22 @@ local Journal={Send=function(_,text) table.insert(notices,text) end}
 local wall=false
 local Sight={Cast=function() return wall and {Instance={IsDescendantOf=function() return false end}} or nil end}
 local roll=0
-local Random={new=function() return {NextNumber=function() return roll end} end}
+local rolls=0
+local Random={new=function() return {NextNumber=function() rolls+=1;return roll end} end}
 a:SetAttribute("Endurance",11);b:SetAttribute("Endurance",11);a.Character:SetAttribute("MedicineItem","Bandage")
 a:SetAttribute("SkillFirstAid",25);a:SetAttribute("FirstAidMultiplier",1);a:SetAttribute("SkillDoctor",20)
 '''
 cases='''
 local remote=ReplicatedStorage.MedicalAction
-local function use(mode,target) a.Character:SetAttribute("MedicalHeld",true);clock+=.6;remote.OnServerEvent:Fire(a,mode,target) end
+local function use(mode,target)
+ a.Character:SetAttribute("MedicalHeld",true);clock+=.6;remote.OnServerEvent:Fire(a,mode,target)
+ local work=doctorWork[a]
+ if mode=="Doctor" and work then
+  assert(work.Options.Duration==5);clock+=5
+  if work.Options.Validate() then work.Complete() else work.Cancel() end
+  doctorWork[a]=nil;a.Character:SetAttribute("InteractionLocked",nil)
+ end
+end
 b.Character.Humanoid.Health=70
 use("Bandage",b)
 assert(b.Character.Humanoid.Health==82 and equipped==2 and xp==12,"actual healing, one bandage and HP-based XP")
@@ -176,6 +198,26 @@ clock+=11;b.Character.Humanoid.Health=50;b:SetAttribute("ReviveLockedUntil",cloc
 b:SetAttribute("ReviveLockedUntil",0);clock+=11;kitCount=1;kitEquipped=false;use("Doctor",b);assert(b.Character.Humanoid.Health==50,"unequipped pocket kit gives no healing bonus")
 kitCount=1;kitEquipped=true;clock+=11;b.Character.HumanoidRootPart.Position=Vector3.new(4,0,0);use("Doctor",b);assert(b.Character.Humanoid.Health==50,"out of reach attempt gives no kit healing")
 b.Character.HumanoidRootPart.Position=Vector3.zero;clock+=11;wall=true;use("Doctor",b);assert(b.Character.Humanoid.Health==50,"blocked attempt gives no kit healing");wall=false
+-- Explicitly assert the roll is deferred and cancellation never rolls.
+clock+=20;b:SetAttribute("ReviveLockedUntil",0);a:SetAttribute("SkillDoctor",20);a:SetAttribute("DoctorFortuneChance",0);kitEquipped=false
+b.Character:SetAttribute("HospitalResting",nil);b.Character:SetAttribute("Knockout",true);b.Character.Humanoid.Health=1
+local beforeRolls=rolls
+remote.OnServerEvent:Fire(a,"Doctor",b)
+assert(doctorWork[a] and doctorWork[a].Options.Duration==5 and rolls==beforeRolls,"starting resuscitation does not roll or heal")
+local work=doctorWork[a];clock+=4.99;assert(rolls==beforeRolls and b.Character.Humanoid.Health==1)
+Animation.Cancel(a.Character);assert(not work.Complete() and rolls==beforeRolls,"cancelled callback cannot roll")
+clock+=11;remote.OnServerEvent:Fire(a,"Doctor",b)
+assert(doctorWork[a]);local otherBefore=doctorWork[c]
+remote.OnServerEvent:Fire(c,"Doctor",b)
+assert(doctorWork[c]==otherBefore,"patient has one active doctor")
+Animation.Cancel(a.Character)
+delayedRise=true;b:SetAttribute("ReviveLockedUntil",0)
+assert(Life.Revive(b,0,0,true))
+assert(b.Character:GetAttribute("Reviving") and b.Character:GetAttribute("Knockout") and b.Character.HumanoidRootPart.Anchored,"patient remains physically locked during get-up")
+assert(not Life.Revive(b,0,0,true),"a rising patient cannot be revived twice")
+pendingRise()
+assert(not b.Character:GetAttribute("Knockout") and not b.Character:GetAttribute("Reviving") and not b.Character.HumanoidRootPart.Anchored,"get-up completion restores movement flags")
+print("PASS: five-second doctor work, deferred roll, cancellation and exclusive patient reservation")
 print("PASS: reusable surgical kit +50 effective Doctor, +10HP success/failure, consent/cooldown/range/lock guards, healing cap and no stacking")
 print("PASS: sterile healing, fixed50% sterile and25%+Luck antiseptic cure boundaries, scaled Sick clamp, item consumption, full-HP debuff treatment, KO treatment without waking, retained HP and self-treatment")
 print("PASS: medical authority, self/other actual HP XP, medicine consumption, overheal, wall/range guards; doctor chance, both cooldowns, restoration and stale knockout timer safety")

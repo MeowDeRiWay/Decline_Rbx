@@ -12,10 +12,16 @@ local Config=require(ReplicatedStorage.Shared.MedicalConfig)
 local Sight=require(ReplicatedStorage.Shared.Sight)
 local remote=Instance.new("RemoteEvent");remote.Name="MedicalAction";remote.Parent=ReplicatedStorage
 local Hands=require(script.Parent.Services.HandActionService)
+local Animation=require(script.Parent.Services.InteractionAnimationService)
 local last,doctorReady={},{}
+local patients,working={},{}
 local random=Random.new()
 local handle
 handle=function(player,mode,target,contact)
+ if mode=="CancelDoctor" then
+  if working[player] then Animation.Cancel(working[player]) end
+  return
+ end
  if mode~="Bandage" and mode~="Doctor" then return end
  if typeof(target)~="Instance" or not target:IsA("Player") or target.Parent~=Players then return end
  local now=workspace:GetServerTimeNow()
@@ -26,7 +32,7 @@ handle=function(player,mode,target,contact)
  local character=player.Character
  local root=character and character:FindFirstChild("HumanoidRootPart")
  local hp=character and character:FindFirstChildOfClass("Humanoid")
- if character and character:GetAttribute("HandsBusy") and not contact then return end
+ if character and (character:GetAttribute("HandsBusy") or character:GetAttribute("InteractionLocked")) and not contact then return end
  if not root or not hp or hp.Health<=0 or player:GetAttribute("AttributesConfirmed")~=true or character:GetAttribute("Knockout") or character:GetAttribute("IsDead") or character:GetAttribute("CraftingLocked") then return end
  local patient=target.Character
  local body=patient and patient:FindFirstChild("HumanoidRootPart")
@@ -75,10 +81,30 @@ handle=function(player,mode,target,contact)
   end
   return true
  else
-  if target==player or not patient:GetAttribute("Knockout") then return end
-  if now<math.max(doctorReady[player] or 0,player:GetAttribute("DoctorReadyAt") or 0) then Journal.Send(player,"Doctor is on cooldown.");return end
-  if now<(target:GetAttribute("ReviveLockedUntil") or 0) then Journal.Send(player,"This patient cannot be revived yet.");return end
-  doctorReady[player]=now+10;player:SetAttribute("DoctorReadyAt",now+10)
+  if target==player or not patient:GetAttribute("Knockout") or patient:GetAttribute("Reviving") then return end
+  if not contact then
+   if patients[patient] or working[player] then return end
+   if now<math.max(doctorReady[player] or 0,player:GetAttribute("DoctorReadyAt") or 0) then Journal.Send(player,"Doctor is on cooldown.");return end
+   if now<(target:GetAttribute("ReviveLockedUntil") or 0) then Journal.Send(player,"This patient cannot be revived yet.");return end
+   local function validate()
+    if player.Character~=character or target.Character~=patient or target.Parent~=Players or not patient.Parent or health.Health<=0 or patient:GetAttribute("IsDead") or not patient:GetAttribute("Knockout") or patient:GetAttribute("Reviving") or patient:GetAttribute("CarriedByUserId") or (body.Position-root.Position).Magnitude>3 then return false end
+    local hit=Sight.Cast(root.Position,body.Position-root.Position,character)
+    return not hit or hit.Instance:IsDescendantOf(patient)
+   end
+   local function release()
+    if patients[patient]==player then patients[patient]=nil end
+    if working[player]==character then working[player]=nil;character:SetAttribute("DoctorWorking",nil) end
+   end
+   patients[patient]=player;working[player]=character;character:SetAttribute("DoctorWorking",true)
+   local started=Animation.Work(player,patient,3,function()
+    if patients[patient]~=player or not validate() then return false end
+    handle(player,mode,target,true);release();return true
+   end,release,false,{Duration=5,Validate=validate})
+   if not started then release();return end
+   doctorReady[player]=now+10;player:SetAttribute("DoctorReadyAt",now+10)
+   return
+  end
+  if now<(target:GetAttribute("ReviveLockedUntil") or 0) then return end
   local kit=(Inventory.Snapshot(player).Equipment or {}).Additional=="SurgicalKit" and Items.SurgicalKit
   local function kitHealing()
    if not kit then return end
@@ -92,7 +118,7 @@ handle=function(player,mode,target,contact)
   local skill=(player:GetAttribute("SkillDoctor") or 0)+(kit and kit.DoctorSkillBonus or 0)
   if random:NextNumber()>=Rules.ReviveChance(skill) then kitHealing();Journal.Send(player,"Your revival attempt failed.");return end
   local fortunate=random:NextNumber()<(player:GetAttribute("DoctorFortuneChance") or 0)
-  local revived=Life.Revive(target,fortunate and 0 or (player:GetAttribute("ReviveLockSeconds") or 600),player:GetAttribute("MedicalHealingBonus"))
+  local revived=Life.Revive(target,fortunate and 0 or (player:GetAttribute("ReviveLockSeconds") or 600),player:GetAttribute("MedicalHealingBonus"),true)
   kitHealing()
   if revived then
    if fortunate then health.Health=health.MaxHealth;patient:SetAttribute("Health",health.Health);target:SetAttribute("ReviveLockedUntil",0) end
@@ -103,4 +129,4 @@ handle=function(player,mode,target,contact)
  end
 end
 remote.OnServerEvent:Connect(function(player,mode,target) handle(player,mode,target,false) end)
-Players.PlayerRemoving:Connect(function(player) last[player]=nil;doctorReady[player]=nil end)
+Players.PlayerRemoving:Connect(function(player) if working[player] then Animation.Cancel(working[player]) end;last[player]=nil;doctorReady[player]=nil end)

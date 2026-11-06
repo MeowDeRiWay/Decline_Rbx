@@ -201,6 +201,23 @@ for _,j in ipairs(rjoints) do if j.Name:find("Knee") then assert(j.C0.LookVector
 assert(math.abs(rroot.CFrame.LookVector:Dot(surface.UpVector))<.01,"unconscious body lies on side")
 Service.Restore(resting);assert(not resting:GetAttribute("BodyPoseKind"))
 for _,j in ipairs(rjoints) do near(j.C0.Position,Fall.Rest(j).Position) end
+local rising,risingRoot,risingJoints=build(.4)
+local upright=risingRoot.CFrame
+Service.Play(rising,"Knockout");tweens[#tweens]:Finish()
+local completed=0
+Service.Play(rising,"Rise",upright,function() completed+=1 end)
+local rise=tweens[#tweens]
+assert(rise.Duration==1.15 and completed==0 and rising:GetAttribute("BodyPoseKind")=="Rise")
+rise:Finish()
+near(risingRoot.Position,upright.Position)
+assert(risingRoot.CFrame.UpVector.Y>.99 and completed==1 and not rising:GetAttribute("BodyPoseKind"))
+for _,joint in ipairs(risingJoints) do near(joint.C0.Position,Fall.Rest(joint).Position) end
+Service.Play(rising,"Knockout");tweens[#tweens]:Finish()
+Service.Play(rising,"Rise",upright,function() completed+=1 end)
+local staleRise=tweens[#tweens]
+Service.Play(rising,"Death");staleRise:Finish()
+assert(completed==1,"interrupted rise cannot invoke a stale restoration callback")
+print("PASS: replicated KO-to-standing transition, saved upright destination and interrupted rise cleanup")
 print("PASS: bed face-up rest, straight legs, arms beside torso, mattress clearance, fetal unconscious patients and upright joint restoration")
 print("PASS: left shoulder prone carry, hanging arms/legs, relaxed knees, interrupted KO cancellation, ground drop and attached armor/backpack preservation")
 print("PASS: fetal KO, relaxed death, restore/cancellation, directional zombie falls, head/feet arm poses and final ground contact on authored rig, marked plates, Terrain, ignored walls/furniture/home floors and missing-ground guard")

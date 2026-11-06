@@ -40,7 +40,7 @@ function Service.Pickup(player,patient)
  if typeof(patient)~="Instance" or not patient:IsA("Player") or patient==player or patient.Parent~=Players or carrying[player] or carriedBy[player] or carriedBy[patient] or carrying[patient] then return false end
  local root=active(player);local character=patient.Character
  local body=character and character:FindFirstChild("HumanoidRootPart")
- if not root or not body or not character:GetAttribute("Knockout") or character:GetAttribute("HospitalResting") or character:GetAttribute("IsDead") or (root.Position-body.Position).Magnitude>Config.InteractionDistance then return false end
+ if not root or not body or not character:GetAttribute("Knockout") or character:GetAttribute("Reviving") or character:GetAttribute("HospitalResting") or character:GetAttribute("IsDead") or (root.Position-body.Position).Magnitude>Config.InteractionDistance then return false end
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={player.Character};params.RespectCanCollide=true
  local hit=workspace:Raycast(root.Position,body.Position-root.Position,params)
  if hit and not hit.Instance:IsDescendantOf(character) then return false end

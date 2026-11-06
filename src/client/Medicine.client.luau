@@ -24,7 +24,9 @@ local function blocked()
  if (player:GetAttribute("PlayerContextOpen") or player:GetAttribute("ExchangeOpen")) then return true end
  return (player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or GuiService.MenuIsOpen or Input:GetFocusedTextBox() or (player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen")
 end
-local function cancel() player:SetAttribute("MedicalMode",nil);selected=nil;highlight.Enabled=false;hint.Visible=false end
+local function cancel()
+ if player.Character and player.Character:GetAttribute("DoctorWorking") then remote:FireServer("CancelDoctor") end
+ player:SetAttribute("MedicalMode",nil);selected=nil;highlight.Enabled=false;hint.Visible=false end
 Input.InputBegan:Connect(function(key,processed)
  if processed or Input:GetFocusedTextBox() then return end
  if key.KeyCode==Enum.KeyCode.H and not blocked() then

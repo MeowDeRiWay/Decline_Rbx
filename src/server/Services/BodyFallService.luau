@@ -78,7 +78,7 @@ local function groundBelow(origin,model)
  end
  return nil
 end
-function Service.Play(model,kind)
+function Service.Play(model,kind,standing,completed)
  Service.Cancel(model)
  local root=model:FindFirstChild("HumanoidRootPart")
  if not root then return end
@@ -93,7 +93,9 @@ function Service.Play(model,kind)
  local upright=model:GetAttribute("BodyFallUprightRotation") or CFrame.new(-start.Position)*start
  model:SetAttribute("BodyFallUprightRotation",upright)
  local destination=start
- if kind=="Death" then
+ if kind=="Rise" then
+  destination=standing or (CFrame.new(start.Position)*upright)
+ elseif kind=="Death" then
   destination=CFrame.new(start.Position)*upright*CFrame.Angles(math.pi/2,0,0)
  elseif kind=="Knockout" then
   destination=CFrame.new(start.Position)*upright*CFrame.Angles(0,0,math.pi/2)
@@ -104,6 +106,7 @@ function Service.Play(model,kind)
  end
  local joints=bodyJoints(model)
  local targets=Fall.Targets(joints,kind,prone)
+ if kind=="Rise" then for _,j in ipairs(joints) do targets[j]=Fall.Rest(j) end end
  local initial={}
  for _,j in ipairs(joints) do initial[j]=j.C0 end
  local frames=Fall.Solve(root,destination,joints,targets)
@@ -128,7 +131,7 @@ function Service.Play(model,kind)
  model:SetAttribute("BodyPoseKind",kind)
  local shift=-math.huge
  for p,cf in pairs(frames) do
-  if p.Transparency<1 and not (held and (p==held or p:IsDescendantOf(held))) then
+  if kind~="Rise" and p.Transparency<1 and not (held and (p==held or p:IsDescendantOf(held))) then
    local origin=Vector3.new(cf.Position.X,start.Position.Y+.15,cf.Position.Z)
    local floor=groundBelow(origin,model)
    if floor then shift=math.max(shift,floor.Position.Y+.02-(cf.Position.Y-Fall.RadiusY(cf,p.Size))) end
@@ -145,7 +148,7 @@ function Service.Play(model,kind)
   for p,offset in pairs(offsets) do if p.Parent then p.CFrame=frame*offset end end
  end
  local value=Instance.new("NumberValue")
- local tween=TweenService:Create(value,TweenInfo.new(kind=="Knockout" and .65 or .8,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{Value=1})
+ local tween=TweenService:Create(value,TweenInfo.new(kind=="Rise" and 1.15 or kind=="Knockout" and .65 or .8,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut),{Value=1})
  local lastSample=-math.huge
  local connection=value.Changed:Connect(function(a)
   if not model.Parent then Service.Cancel(model);return end
@@ -158,6 +161,10 @@ function Service.Play(model,kind)
   if active[model]~=record then return end
   if model.Parent then apply(1) end
   active[model]=nil;connection:Disconnect();value:Destroy()
+  if kind=="Rise" and model.Parent then
+   model:SetAttribute("BodyPoseKind",nil);model:SetAttribute("BodyFallUprightRotation",nil)
+   if completed then completed() end
+  end
  end)
  apply(0);tween:Play()
 end
