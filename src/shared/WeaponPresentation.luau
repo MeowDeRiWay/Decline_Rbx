@@ -54,7 +54,7 @@ function Presentation.RestFrame(rest,kind,weight,size,category)
   tilt=CFrame.Angles(-math.pi/2*weight,0,0)
  elseif kind=="Rifle" and category~="MachineGun" then
   -- Across the waist: muzzle points toward the character's left (-X).
-  shift=Vector3.new(0,-size.Y*.35,.04)
+  shift=Vector3.new(0,-size.Y*.7,.04)
   tilt=CFrame.Angles(0,math.pi/2*weight,0)*CFrame.Angles(math.rad(-8)*weight,0,0)
  else
   -- Machine-gun carry will be designed separately; retain its previous pose.
