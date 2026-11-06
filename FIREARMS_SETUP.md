@@ -326,3 +326,33 @@ Enfild X7 initially uses ServiceRifle223 combat values (Strength 4, 3.2 kg, 2.5 
 ## .308 marksman rifle
 
 `MarksmanRifle308` uses the X7 configuration with .308 ammunition and 30–34 damage: 20 rounds, semi-auto only, 300 RPM, LightWeapons, Strength 4, 3.2 kg, 2.5 s reload. Sight accuracy comes from the authored model. No crafting recipe until steel and its crafting station exist.
+
+## Component-based weapon models
+
+A firearm Model can contain `Stock`, `Receiver`, `Grip`, `Magazine`,
+`Handguard`, `Barrel`, and `Sight` (each a Model or BasePart). `Sounds` stays
+separate. Sight replacement/modification is reserved for a later update.
+
+The right hand uses the geometric center of `Grip`; the left hand uses the
+center of `Handguard`. No manually authored hand Attachments are required.
+The model pivot may stay elsewhere: equipping aligns the Grip bounding-box
+frame to the existing held pose. Keep the Grip frame axes consistent between
+weapons, with forward along local -Z. An empty component is ignored.
+Legacy models still use their existing attachment/pivot fallbacks.
+
+All reload types, including Bullpup, keep the right hand on Grip and load with
+the left hand. Magazine reloads reach the center of `Magazine`; SingleRound
+reaches `Receiver`. Rocket rear loading retains its existing rear-opening
+fallback. This update animates the hands; detachable moving magazines and
+Sight swaps are not implemented here.
+
+No visible Muzzle object is necessary. With no explicit marker, the code creates
+an invisible `_ShotOrigin` Attachment at the forward face of `Barrel`, using the
+Grip forward axis. Optional `ShotOrigin` or legacy `Muzzle` markers override
+this; their marker geometry is hidden on the held clone. The actual Barrel
+geometry remains visible. Runtime-generated helpers need no Studio setup.
+
+Firearms blend into a lowered carry pose outside combat. An accepted shot keeps
+the ready pose active for four seconds; reload poses take priority. This is a
+cosmetic timer, not a new aiming control, accuracy modifier, or damage rule.
+Check each weapon's fit, barrel direction, and hand reach in Studio before release.

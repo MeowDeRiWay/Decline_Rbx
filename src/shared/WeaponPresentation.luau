@@ -28,4 +28,24 @@ function Presentation.ReloadType(model,definition,id)
  end
  return attribute(model,"ReloadType",reloads,fallback)
 end
+-- Named components use their geometric center, never an authored pivot.
+-- Convert through the grip motor's predicted frame to avoid one-frame IK lag.
+function Presentation.PartFrame(model,name,motor,world)
+ local part=model and model:FindFirstChild(name,true)
+ if not part then return nil end
+ local frame
+ if part:IsA("Model") then
+  if not part:FindFirstChildWhichIsA("BasePart",true) then return nil end
+  frame=part:GetBoundingBox()
+ elseif part:IsA("BasePart") then frame=part.CFrame end
+ if frame and world and motor and motor.Part1 then
+  frame=world*motor.Part1.CFrame:ToObjectSpace(frame)
+ end
+ return frame
+end
+function Presentation.RestFrame(rest,kind,weight)
+ local shift=kind=="Pistol" and Vector3.new(.12,-.35,.15) or Vector3.new(0,-.28,.08)
+ -- Rotate around the right-hand grip, independent of the authored part axes.
+ return CFrame.new(rest.Position+shift*weight)*CFrame.Angles(math.rad(-35)*weight,0,0)*(rest-rest.Position)
+end
 return Presentation

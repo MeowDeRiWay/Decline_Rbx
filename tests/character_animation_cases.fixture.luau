@@ -82,13 +82,21 @@ c:SetAttribute("ReloadDuration",4);c:SetAttribute("ReloadVisualType","Rocket");c
 c:SetAttribute("Reloading",true);c.DescendantAdded:Fire(reloadMotor);flush()
 serverTime+=2;RunService.PreSimulation:Fire(1/30)
 assert(reloadMotor.Transform.Position.Magnitude>.1,"viewer actually lowers rocket tube during reload")
+c:SetAttribute("WeaponCombatUntil",serverTime+4)
 c:SetAttribute("Reloading",false);c:GetAttributeChangedSignal("Reloading"):Fire()
 RunService.PreSimulation:Fire(1/30)
 assert(reloadMotor.Transform.Position.Magnitude<1e-7,"cancel restores weapon grip")
 c:SetAttribute("Reloading",true);c:SetAttribute("ReloadStartedAt",serverTime-5)
 RunService.PreSimulation:Fire(1/30)
 assert(reloadMotor.Transform.Position.Magnitude<1e-7,"expired pose cannot stick while completion packet is delayed")
-c:SetAttribute("Reloading",false);reloadMotor.Parent=nil;held:SetAttribute("AnimationSet",nil)
+c:SetAttribute("Reloading",false)
+serverTime+=5
+for _=1,60 do RunService.PreSimulation:Fire(1/60) end
+assert(reloadMotor.Transform.Position.Magnitude>.1,"weapon lowers after combat expires")
+c:SetAttribute("WeaponCombatUntil",serverTime+4)
+for _=1,60 do RunService.PreSimulation:Fire(1/60) end
+assert(reloadMotor.Transform.Position.Magnitude<.001,"combat returns weapon to ready")
+reloadMotor.Parent=nil;held:SetAttribute("AnimationSet",nil)
 print("PASS: real viewer reload lowers launcher, cancellation and expiry restore held motor")
 otherRoot.CFrame=CFrame.new(300,0,0)*otherRoot.CFrame
 local previous=remoteHip.Transform

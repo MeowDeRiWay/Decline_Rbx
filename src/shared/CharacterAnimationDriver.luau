@@ -188,8 +188,29 @@ RunService.PreSimulation:Connect(function(dt)
   local reloadFrame,reloadRight,reloadLeft=ReloadPose.Apply(c,root,held,motor,workspace:GetServerTimeNow())
   if not reloadFrame and r.Reloading and motor then motor.Transform=CFrame.identity end
   r.Reloading=reloadFrame~=nil
+  local now=workspace:GetServerTimeNow()
+  if equipped and definition.Firearm and motor and not reloadFrame and not c:GetAttribute("HandAction") then
+   local untilTime=c:GetAttribute("WeaponCombatUntil") or 0
+   local relaxed=now>=untilTime
+   r.Relaxed=(r.Relaxed or 0)+((relaxed and 1 or 0)-(r.Relaxed or 0))*(1-math.exp(-10*elapsed))
+   local rest=motor:GetAttribute("RestC0") or motor.C0
+   local desired=Presentation.RestFrame(rest,animationSet,r.Relaxed)
+   -- Rotate about the component grip even if PrimaryPart is elsewhere.
+   local right=Presentation.PartFrame(held,"Grip",motor,root.CFrame*rest)
+   if right then
+    local point=root.CFrame:PointToObjectSpace(right.Position)
+    local delta=desired*rest:Inverse()
+    desired=desired+point-delta:PointToWorldSpace(point)+(desired.Position-rest.Position)
+   end
+   motor.Transform=motor.C0:Inverse()*desired
+  elseif reloadFrame then r.Relaxed=0 end
+  local posedFrame=motor and motor.Part1 and motor.Part0.CFrame*motor.C0*motor.Transform*(motor.C1 or CFrame.identity):Inverse()
+  local componentRight=equipped and Presentation.PartFrame(held,"Grip",motor,posedFrame)
+  local componentLeft=equipped and Presentation.PartFrame(held,"Handguard",motor,posedFrame)
   local grip=held and (held:FindFirstChild("RightHandGrip",true) or held:FindFirstChild("_HandGrip",true))
   local targetFrame=equipped and (grip and grip:IsA("Attachment") and grip.WorldCFrame or held:GetPivot())
+  if componentRight then targetFrame=componentRight end
+  if definition and definition.Firearm and not componentRight and posedFrame then targetFrame=Motion.GripFrame(motor,grip,posedFrame) end
   if chopFrame then targetFrame=Motion.GripFrame(motor,grip,chopFrame) end
   if reloadFrame then targetFrame=Motion.GripFrame(motor,grip,reloadFrame) end
   local punchTime=c:GetAttribute("PunchStartedAt")
@@ -220,9 +241,11 @@ RunService.PreSimulation:Connect(function(dt)
     local pistol=animationSet=="Pistol"
     local target=targetFrame.Position
     if side=="Left" then
-     local supportFrame=chopFrame and support and support:IsA("Attachment") and Motion.GripFrame(motor,support,chopFrame)
+     local supportPose=chopFrame or definition.Firearm and posedFrame
+     local supportFrame=supportPose and support and support:IsA("Attachment") and Motion.GripFrame(motor,support,supportPose)
      target=supportFrame and supportFrame.Position or support and support:IsA("Attachment") and support.WorldPosition or target+(pistol and -root.CFrame.RightVector*.04 or targetFrame.LookVector*.25)
     end
+    if componentLeft and side=="Left" then target=componentLeft.Position end
     if reloadFrame then target=side=="Left" and reloadLeft or reloadRight end
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)

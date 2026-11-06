@@ -2,7 +2,7 @@
 from pathlib import Path
 import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-def module(path): return '(function()\n'+(root/path).read_text()+'\nend)()'
+def module(path): return '(function()\n'+(root/path).read_text().replace('local Presentation=require(game:GetService("ReplicatedStorage").Shared.WeaponPresentation)\n','')+'\nend)()'
 s=(root/'tests/rig_math.fixture.luau').read_text()
 s+="\nlocal Presentation="+module('src/shared/WeaponPresentation.luau')
 s+="\nlocal Reload="+module('src/shared/ReloadPose.luau')
@@ -61,17 +61,37 @@ near(earlyHand,opening+root.CFrame.UpVector*.4)
 near(lateHand,(lateFrame*CFrame.new(0,0,.65)).Position)
 near(Reload.Frame("Rocket",rest,1).LookVector,rest.LookVector)
 attributes.ReloadVisualType="Bullpup";local frame,bullpup,support=Reload.Apply(c,root,held,motor,12)
-near(support,(frame*CFrame.new(0,0,-.25)).Position)
-assert((bullpup-frame.Position).Magnitude>.2,"right hand leaves firing grip to load bullpup")
+near(bullpup,frame.Position)
+assert((support-frame.Position).Magnitude>.2,"left hand reaches the rear magazine")
 for _,t in ipairs({0,.1,.5,.9,.99999}) do
- local f,_,left=Reload.Apply(c,root,held,motor,10+4*t)
- near(left,(f*CFrame.new(0,0,-.25)).Position)
+ local f,right=Reload.Apply(c,root,held,motor,10+4*t)
+ near(right,f.Position)
 end
 attributes.ReloadVisualType="AR";local _,_,front=Reload.Apply(c,root,held,motor,12)
-assert((front-bullpup).Magnitude>.3,"bullpup reaches behind the front magazine position")
+assert((front-support).Magnitude>.3,"bullpup reaches behind the front magazine position")
 attributes.Reloading=false;assert(Reload.Apply(c,root,held,motor,12)==nil,"cancelled reload has no pose")
 attributes.Reloading=true;attrs.Item_ID="Other";assert(Reload.Apply(c,root,held,motor,12)==nil,"late reload cannot pose a replacement weapon")
 attrs.Item_ID="AT4";attributes.ReloadVisualType="None";assert(Reload.Apply(c,root,held,motor,12)==nil)
+-- Model centers must ignore displaced pivots and follow predicted motor poses.
+local components={}
+local function component(name,frame)
+ local part={IsA=function(_,kind) return kind=="Model" end,FindFirstChildWhichIsA=function() return true end,GetBoundingBox=function() return frame,Vector3.new(.2,.2,.2) end}
+ components[name]=part
+end
+local grip=motor.Part1.CFrame*CFrame.new(.1,-.2,.3)
+local handguard=motor.Part1.CFrame*CFrame.new(.1,-.2,-.6)
+component("Grip",grip);component("Handguard",handguard)
+component("Magazine",motor.Part1.CFrame*CFrame.new(0,-.4,.4))
+held.FindFirstChild=function(_,name) return components[name] end
+attributes.ReloadVisualType="Bullpup"
+for _,t in ipairs({0,.1,.5,.9,.99999}) do
+ local f,right,left=Reload.Apply(c,root,held,motor,10+4*t)
+ near(right,(f*motor.Part1.CFrame:ToObjectSpace(grip)).Position)
+ if t==0 then near(left,(f*motor.Part1.CFrame:ToObjectSpace(handguard)).Position) end
+end
+near(Presentation.RestFrame(rest,"Rifle",0).Position,rest.Position)
+assert(Presentation.RestFrame(rest,"Rifle",1).Position.Y<rest.Position.Y)
+assert(Presentation.PartFrame(held,"Sight")==nil)
 print("PASS: model overrides, invalid/missing defaults, rocket lower/rear-load/return, distinct magazine positions, cancellation and replacement guards")
 '''
 with tempfile.TemporaryDirectory() as directory:

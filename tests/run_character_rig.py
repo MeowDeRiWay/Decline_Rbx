@@ -2,7 +2,7 @@
 from pathlib import Path
 import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-def module(path):return '(function()\n'+(root/path).read_text()+'\nend)()'
+def module(path):return '(function()\n'+(root/path).read_text().replace('local Presentation=require(game:GetService("ReplicatedStorage").Shared.WeaponPresentation)\n','')+'\nend)()'
 source=(root/'tests/rig_math.fixture.luau').read_text()
 source+='\nlocal Rig='+module('src/shared/CharacterRig.luau')
 source+='\nlocal Pose='+module('src/shared/CharacterPose.luau')
@@ -136,6 +136,46 @@ for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel
  near(point,held.CFrame.Position)
 end
 print("PASS: actual equipment positions for both pistols, closer rifle grip, knife/axe/shovel and movable grip")
+
+-- Equip a nested Grip model with a deliberately displaced pivot and no markers.
+local oldClone,oldPivot=methods.Clone,methods.PivotTo
+function methods:Clone()
+ local copy=oldClone(self)
+ for _,child in ipairs(self:GetChildren()) do local clone=child:Clone();clone.Parent=copy end
+ return copy
+end
+function methods:PivotTo(frame)
+ local delta=frame*self:GetPivot():Inverse()
+ if self:IsA("Model") then
+  for _,part in ipairs(self:GetDescendants()) do if part:IsA("BasePart") then part.CFrame=delta*part.CFrame end end
+ end
+ self.CFrame=frame
+end
+function methods:GetBoundingBox()
+ local part=self:FindFirstChildWhichIsA("BasePart",true)
+ return part.CFrame,part.Size
+end
+local oldTemplate=templates:FindFirstChild("Rifle223");oldTemplate.Name="OldRifle"
+local model=Instance.new("Model",templates);model.Name="Rifle223";model.CFrame=CFrame.new(15,3,5)
+local gripModel=Instance.new("Model",model);gripModel.Name="Grip";gripModel.CFrame=CFrame.new(100,0,0)
+local handle=Instance.new("Part",gripModel);handle.Name="Handle";handle.CFrame=CFrame.new(16,3,5);handle.Size=Vector3.new(.1,.2,.1)
+local barrel=Instance.new("Part",model);barrel.Name="Barrel";barrel.CFrame=CFrame.new(16,3.1,4);barrel.Size=Vector3.new(.1,.1,1)
+local guard=Instance.new("Part",model);guard.Name="Handguard";guard.CFrame=CFrame.new(16,3,4.5);guard.Size=Vector3.new(.1,.1,.4)
+Visuals.Apply(c,nil);Visuals.Apply(c,"Rifle223")
+local assembled=c:FindFirstChild("HeldItem")
+local equippedGrip=Presentation.PartFrame(assembled,"Grip")
+local localGrip=root.CFrame:ToObjectSpace(equippedGrip)
+near(localGrip.Position,Vector3.new(.24,root.Size.Y*.4,-.2575))
+local shot=assembled:FindFirstChild("_ShotOrigin",true)
+assert(shot and shot:IsA("Attachment"),"barrel generates invisible shot origin")
+local shotPoint=root.CFrame:PointToObjectSpace((shot.Parent.CFrame*shot.CFrame).Position)
+near(shotPoint,localGrip.Position+Vector3.new(0,.1,-1.5))
+assert(not assembled:FindFirstChild("Muzzle",true),"no visible marker required")
+assert(assembled:FindFirstChild("Barrel",true).Transparency~=1,"barrel remains visible")
+Visuals.Apply(c,nil);model:Destroy();oldTemplate.Name="Rifle223"
+methods.Clone=oldClone;methods.PivotTo=oldPivot
+print("PASS: nested geometric Grip alignment ignores model pivots; barrel generates exact front-face shot origin")
+
 for _,entry in ipairs({{"PrimaryWeapon","Rifle223"},{"SecondaryWeapon","Pistol9mm"}}) do
  local slot,id=entry[1],entry[2]
  assert(Holsters.Apply(c,slot,id,Visuals.Template))

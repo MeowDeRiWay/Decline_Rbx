@@ -109,8 +109,12 @@ function Visuals.Apply(character, id)
  local mineCenter,mineSize
  if definition.Trap then target,mineCenter,mineSize=MineGeometry.Held(root,template) end
  if definition.Slot=="Medicine" then target=root.CFrame*CFrame.new(root.Size.X*.25,root.Size.Y*.25,-root.Size.Z/2-.22) end
- -- The model pivot is the point held in the hand. Place it at the handle in Studio.
- held:PivotTo(target)
+ -- Component models align the geometric Grip center; legacy models keep their pivot.
+ local componentGrip=definition.Firearm and Presentation.PartFrame(held,"Grip")
+ if componentGrip then
+  local relative=held:GetPivot():ToObjectSpace(componentGrip)
+  held:PivotTo(target*relative:Inverse())
+ else held:PivotTo(target) end
  local parts = {}
  if held:IsA("BasePart") then table.insert(parts,held) end
  for _, part in ipairs(held:GetDescendants()) do if part:IsA("BasePart") then table.insert(parts,part) end end
@@ -152,11 +156,35 @@ function Visuals.Apply(character, id)
   anchor("LeftHandGrip",Vector3.new(-.04,-.12,front*.7))
  end
  if definition.Firearm then
-  local muzzle=held:FindFirstChild("Muzzle",true)
+  local muzzle=held:FindFirstChild("ShotOrigin",true) or held:FindFirstChild("Muzzle",true)
   if muzzle and (muzzle:IsA("Model") or muzzle:IsA("BasePart") or muzzle:IsA("Attachment")) then
    local frame=muzzle:IsA("Attachment") and muzzle.WorldCFrame or muzzle:GetPivot()
    local origin=Instance.new("Attachment");origin.Name="_ShotOrigin"
    origin.CFrame=gripPart.CFrame:ToObjectSpace(frame);origin.Parent=gripPart
+   -- Legacy marker geometry is a helper, not a visible muzzle accessory.
+   if muzzle:IsA("BasePart") then muzzle.Transparency=1;muzzle.CastShadow=false end
+   for _,part in ipairs(muzzle:GetDescendants()) do
+    if part:IsA("BasePart") then part.Transparency=1;part.CastShadow=false end
+   end
+  else
+   local barrel=Presentation.PartFrame(held,"Barrel")
+   if barrel then
+    -- Use the authored Grip forward axis (-Z); find the barrel's front face.
+    local component=held:FindFirstChild("Barrel",true)
+    local front=math.huge
+    local barrelParts=component:IsA("BasePart") and {component} or component:GetDescendants()
+    for _,part in ipairs(barrelParts) do
+     if part:IsA("BasePart") then
+      local half=part.Size/2
+      for _,x in ipairs({-half.X,half.X}) do for _,y in ipairs({-half.Y,half.Y}) do for _,z in ipairs({-half.Z,half.Z}) do
+       front=math.min(front,target:PointToObjectSpace(part.CFrame:PointToWorldSpace(Vector3.new(x,y,z))).Z)
+      end end end
+     end
+    end
+    local center=target:PointToObjectSpace(barrel.Position)
+    local origin=Instance.new("Attachment");origin.Name="_ShotOrigin"
+    origin.CFrame=gripPart.CFrame:ToObjectSpace(target*CFrame.new(center.X,center.Y,front));origin.Parent=gripPart
+   end
   end
  end
  for _, part in ipairs(parts) do

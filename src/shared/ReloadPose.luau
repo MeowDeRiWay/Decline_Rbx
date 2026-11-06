@@ -1,4 +1,5 @@
 -- Sample one server-announced reload on every viewer; no per-frame remotes.
+local Presentation=require(game:GetService("ReplicatedStorage").Shared.WeaponPresentation)
 local Reload={}
 local function smooth(t) t=math.clamp(t,0,1);return t*t*(3-2*t) end
 function Reload.Sample(kind,t,rounds)
@@ -32,6 +33,9 @@ function Reload.Apply(c,root,held,motor,now)
  motor.Transform=motor.C0:Inverse()*desired
  local world=root.CFrame*desired*(motor.C1 or CFrame.identity):Inverse()
  local function anchor(name,fallback)
+  local component=({RightHandGrip="Grip",LeftHandGrip="Handguard",ReloadGrip=kind=="SingleRound" and "Receiver" or kind~="Rocket" and "Magazine" or nil})[name]
+  local frame=component and Presentation.PartFrame(held,component,motor,world)
+  if frame then return frame.Position end
   local attachment=held:FindFirstChild(name,true)
   if attachment and attachment:IsA("Attachment") then
    local offset=motor.Part1.CFrame:ToObjectSpace(attachment.WorldCFrame)
@@ -40,7 +44,7 @@ function Reload.Apply(c,root,held,motor,now)
   return (world*CFrame.new(fallback)).Position
  end
  local right=anchor("RightHandGrip",Vector3.zero)
- if not held:FindFirstChild("RightHandGrip",true) then right=anchor("_HandGrip",Vector3.zero) end
+ if not Presentation.PartFrame(held,"Grip") and not held:FindFirstChild("RightHandGrip",true) then right=anchor("_HandGrip",Vector3.zero) end
  local support=anchor("LeftHandGrip",Vector3.new(0,0,-.25))
  local weight,insertion=Reload.Sample(kind,t,c:GetAttribute("ReloadRoundCount"))
  -- Optional authored targets keep the same animation usable across model sizes.
@@ -56,8 +60,7 @@ function Reload.Apply(c,root,held,motor,now)
   local position=kind=="Bullpup" and Vector3.new(0,-.22,.35) or kind=="Pistol" and Vector3.new(0,-.22,0) or Vector3.new(0,-.22,-.15)
   load=anchor("ReloadGrip",position)-root.CFrame.UpVector*(.35*(1-insertion))
  end
- -- Bullpups keep the front support hand planted while the right hand loads.
- if kind=="Bullpup" then return world,right+(load-right)*weight,support end
+ -- Every reload uses the left hand; the right hand remains on Grip.
  return world,right,support+(load-support)*weight
 end
 return Reload
