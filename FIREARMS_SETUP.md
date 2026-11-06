@@ -352,7 +352,12 @@ Grip forward axis. Optional `ShotOrigin` or legacy `Muzzle` markers override
 this; their marker geometry is hidden on the held clone. The actual Barrel
 geometry remains visible. Runtime-generated helpers need no Studio setup.
 
-Firearms blend into a lowered carry pose outside combat. An accepted shot keeps
-the ready pose active for four seconds; reload poses take priority. This is a
+Rifles and automatic weapons rest across the waist with their muzzle pointing
+left, held with both hands. Pistols point down in the right hand, with the left
+arm free. Launchers stay on the shoulder and release the left support hand.
+Support release and return blend smoothly; reload always restores its left-hand
+action. MachineGun category retains its previous carry pose pending a separate
+design. An accepted shot keeps the ready pose active for four seconds; reload
+poses take priority. This is a
 cosmetic timer, not a new aiming control, accuracy modifier, or damage rule.
 Check each weapon's fit, barrel direction, and hand reach in Studio before release.

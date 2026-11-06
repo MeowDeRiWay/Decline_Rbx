@@ -43,9 +43,29 @@ function Presentation.PartFrame(model,name,motor,world)
  end
  return frame
 end
-function Presentation.RestFrame(rest,kind,weight)
- local shift=kind=="Pistol" and Vector3.new(.12,-.35,.15) or Vector3.new(0,-.28,.08)
- -- Rotate around the right-hand grip, independent of the authored part axes.
- return CFrame.new(rest.Position+shift*weight)*CFrame.Angles(math.rad(-35)*weight,0,0)*(rest-rest.Position)
+function Presentation.RestFrame(rest,kind,weight,size,category)
+ size=size or Vector3.new(.4,.8,.315)
+ local shift,tilt
+ if kind=="Launcher" then
+  -- The ready launcher already sits on the shoulder. Only release support.
+  return rest
+ elseif kind=="Pistol" then
+  shift=Vector3.new(size.X*.65,-size.Y*.7,size.Y*.65)
+  tilt=CFrame.Angles(-math.pi/2*weight,0,0)
+ elseif kind=="Rifle" and category~="MachineGun" then
+  -- Across the waist: muzzle points toward the character's left (-X).
+  shift=Vector3.new(0,-size.Y*.35,.04)
+  tilt=CFrame.Angles(0,math.pi/2*weight,0)*CFrame.Angles(math.rad(-8)*weight,0,0)
+ else
+  -- Machine-gun carry will be designed separately; retain its previous pose.
+  shift=Vector3.new(0,-.28,.08)
+  tilt=CFrame.Angles(math.rad(-35)*weight,0,0)
+ end
+ return CFrame.new(rest.Position+shift*weight)*tilt*(rest-rest.Position)
+end
+function Presentation.SupportWeight(kind,relaxed,reloading)
+ if reloading then return 1 end
+ if kind=="Pistol" or kind=="Launcher" then return 1-math.clamp(relaxed or 0,0,1) end
+ return 1
 end
 return Presentation

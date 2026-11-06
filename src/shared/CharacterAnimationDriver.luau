@@ -194,7 +194,7 @@ RunService.PreSimulation:Connect(function(dt)
    local relaxed=now>=untilTime
    r.Relaxed=(r.Relaxed or 0)+((relaxed and 1 or 0)-(r.Relaxed or 0))*(1-math.exp(-10*elapsed))
    local rest=motor:GetAttribute("RestC0") or motor.C0
-   local desired=Presentation.RestFrame(rest,animationSet,r.Relaxed)
+   local desired=Presentation.RestFrame(rest,animationSet,r.Relaxed,root.Size,definition.Firearm.Category)
    -- Rotate about the component grip even if PrimaryPart is elsewhere.
    local right=Presentation.PartFrame(held,"Grip",motor,root.CFrame*rest)
    if right then
@@ -204,6 +204,7 @@ RunService.PreSimulation:Connect(function(dt)
    end
    motor.Transform=motor.C0:Inverse()*desired
   elseif reloadFrame then r.Relaxed=0 end
+  local supportWeight=Presentation.SupportWeight(animationSet,r.Relaxed,reloadFrame~=nil)
   local posedFrame=motor and motor.Part1 and motor.Part0.CFrame*motor.C0*motor.Transform*(motor.C1 or CFrame.identity):Inverse()
   local componentRight=equipped and Presentation.PartFrame(held,"Grip",motor,posedFrame)
   local componentLeft=equipped and Presentation.PartFrame(held,"Handguard",motor,posedFrame)
@@ -235,7 +236,7 @@ RunService.PreSimulation:Connect(function(dt)
     local swing=math.sin(r.Phase)*r.Amount*.6
     shoulder.Transform=standing:Inverse()*CFrame.Angles(swing,0,0)*standing
     elbow.Transform=CFrame.identity
-   elseif equipped and (side=="Right" or twoHands) then
+   elseif equipped and (side=="Right" or twoHands and supportWeight>.001) then
     -- Primary hand at the grip; support hand toward the barrel. Clamp reach in IK.
     local support=held:FindFirstChild("LeftHandGrip",true)
     local pistol=animationSet=="Pistol"
@@ -248,6 +249,11 @@ RunService.PreSimulation:Connect(function(dt)
     if componentLeft and side=="Left" then target=componentLeft.Position end
     if reloadFrame then target=side=="Left" and reloadLeft or reloadRight end
     local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
+    if side=="Left" and not reloadFrame and supportWeight<1 then
+     local swing=-math.sin(r.Phase)*r.Amount*.6
+     local hanging=anchor+root.CFrame:VectorToWorldSpace((CFrame.Angles(swing,0,0)*standing):VectorToWorldSpace(upper+lower))
+     target=hanging+(target-hanging)*supportWeight
+    end
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
     local launcher=animationSet=="Launcher"
     local bend=launcher and Vector3.new(side=="Left" and -.6 or 1,-1,.35) or Vector3.new(side=="Left" and -1 or 1,-1,.2)

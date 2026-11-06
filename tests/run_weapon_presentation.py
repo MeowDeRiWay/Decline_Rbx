@@ -92,6 +92,23 @@ end
 near(Presentation.RestFrame(rest,"Rifle",0).Position,rest.Position)
 assert(Presentation.RestFrame(rest,"Rifle",1).Position.Y<rest.Position.Y)
 assert(Presentation.PartFrame(held,"Sight")==nil)
+-- Rest rotations act in character axes, independent of authored grip rotation.
+local axes=rest-rest.Position
+local localForward=axes:VectorToObjectSpace(Vector3.new(0,0,-1))
+local rifle=Presentation.RestFrame(rest,"Rifle",1)
+assert(rifle:VectorToWorldSpace(localForward).X<-.98,"rifle muzzle points left")
+local pistol=Presentation.RestFrame(rest,"Pistol",1)
+near(pistol:VectorToWorldSpace(localForward),Vector3.new(0,-1,0))
+near(Presentation.RestFrame(rest,"Launcher",1).Position,rest.Position)
+near(Presentation.RestFrame(rest,"Launcher",1).LookVector,rest.LookVector)
+for _,kind in ipairs({"Pistol","Launcher"}) do
+ assert(Presentation.SupportWeight(kind,1,false)==0,"relaxed support hand is free")
+ assert(Presentation.SupportWeight(kind,1,true)==1,"reload restores left-hand animation")
+ assert(Presentation.SupportWeight(kind,.5,false)==.5,"support blends smoothly")
+end
+assert(Presentation.SupportWeight("Rifle",1,false)==1,"rifle retains both hands")
+local mg=Presentation.RestFrame(rest,"Rifle",1,nil,"MachineGun")
+near(mg:VectorToWorldSpace(localForward),(CFrame.Angles(math.rad(-35),0,0)):VectorToWorldSpace(Vector3.new(0,0,-1)))
 print("PASS: model overrides, invalid/missing defaults, rocket lower/rear-load/return, distinct magazine positions, cancellation and replacement guards")
 '''
 with tempfile.TemporaryDirectory() as directory:

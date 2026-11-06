@@ -92,7 +92,8 @@ assert(reloadMotor.Transform.Position.Magnitude<1e-7,"expired pose cannot stick 
 c:SetAttribute("Reloading",false)
 serverTime+=5
 for _=1,60 do RunService.PreSimulation:Fire(1/60) end
-assert(reloadMotor.Transform.Position.Magnitude>.1,"weapon lowers after combat expires")
+assert(reloadMotor.Transform.Position.Magnitude<1e-7,"launcher remains on shoulder after combat expires")
+assert(c:FindFirstChild("LeftElbow",true).Transform==CFrame.identity,"relaxed launcher frees left arm")
 c:SetAttribute("WeaponCombatUntil",serverTime+4)
 for _=1,60 do RunService.PreSimulation:Fire(1/60) end
 assert(reloadMotor.Transform.Position.Magnitude<.001,"combat returns weapon to ready")
