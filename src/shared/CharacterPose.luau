@@ -11,7 +11,7 @@ function Pose.Between(a,b)
  end
  return CFrame.fromAxisAngle(axis.Unit,math.acos(dot))
 end
-function Pose.Arm(upper,lower,target,pole)
+function Pose.Arm(upper,lower,target,pole,hingeWeight)
  local a,b=upper.Magnitude,lower.Magnitude
  if a<.0001 or b<.0001 then return CFrame.identity,CFrame.identity end
  local d=math.clamp(target.Magnitude,math.abs(a-b)+.0001,a+b-.0001)
@@ -23,7 +23,26 @@ function Pose.Arm(upper,lower,target,pole)
  local elbow=direction*along+bend.Unit*math.sqrt(math.max(0,a*a-along*along))
  local shoulder=Pose.Between(upper,elbow)
  local forearm=Pose.Between(lower,direction*d-elbow)
- return shoulder,shoulder:Inverse()*forearm
+ local relative=shoulder:Inverse()*forearm
+ if hingeWeight and hingeWeight>0 then
+  -- Solve the elbow in its parent's frame. Independent world-space shortest
+  -- arcs aim the hands correctly but introduce axial roll into armored sleeves.
+  local hinged=Pose.Between(lower,shoulder:VectorToObjectSpace(direction*d-elbow))
+  local weight=math.clamp(hingeWeight,0,1)
+  if weight>=1 then relative=hinged
+  else
+   -- Both solutions reach the same hand point; their difference is pure roll
+   -- around the authored forearm axis. Blend only that roll, preserving reach.
+   local axis=lower.Unit
+   local reference=axis:Cross(Vector3.yAxis)
+   if reference.Magnitude<.0001 then reference=axis:Cross(Vector3.zAxis) end
+   reference=reference.Unit
+   local rolled=(hinged:Inverse()*relative):VectorToWorldSpace(reference)
+   local angle=math.atan2(axis:Dot(reference:Cross(rolled)),reference:Dot(rolled))
+   relative=hinged*CFrame.fromAxisAngle(axis,angle*(1-weight))
+  end
+ end
+ return shoulder,relative
 end
 function Pose.Gait(speed,running)
  if speed<=.025 then return 0,0 end

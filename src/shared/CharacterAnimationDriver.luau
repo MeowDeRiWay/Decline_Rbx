@@ -257,7 +257,8 @@ RunService.PreSimulation:Connect(function(dt)
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
     local launcher=animationSet=="Launcher"
     local bend=launcher and Vector3.new(side=="Left" and -.6 or 1,-1,.35) or Vector3.new(side=="Left" and -1 or 1,-1,.2)
-    local s,e=Pose.Arm(upper,lower,delta,bend)
+    local hingeWeight=definition.Firearm and (reloadFrame and 1 or 1-(r.Relaxed or 0)) or 0
+    local s,e=Pose.Arm(upper,lower,delta,bend,hingeWeight)
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
    elseif equipped and animationSet=="Knife" and side=="Left" then
     -- Free hand stays forward in a defensive guard; it does not swing at the side.

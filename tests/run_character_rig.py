@@ -88,6 +88,28 @@ local function test(frame)
   assert(math.abs(endpoint.Magnitude-d)<.0001,"IK preserves lengths and clamps reach")
  end
 end
+-- Combat forearms bend relative to the shoulder, without added axial elbow roll.
+for _,sign in ipairs({-1,1}) do
+ local upper,lower=Vector3.new(sign*.4,0,0),Vector3.new(sign*.5,0,0)
+ for _,target in ipairs({Vector3.new(sign*.1,-.15,-.65),Vector3.new(-sign*.15,.1,-.5),Vector3.new(sign*.3,-.4,-.3)}) do
+  local pole=Vector3.new(sign,-1,.2)
+  local oldS,oldE=Pose.Arm(upper,lower,target,pole)
+  local restS,restE=Pose.Arm(upper,lower,target,pole,0)
+  near(oldE.LookVector,restE.LookVector)
+  local s,e=Pose.Arm(upper,lower,target,pole,1)
+  local endpoint=s:VectorToWorldSpace(upper)+(s*e):VectorToWorldSpace(lower)
+  near(endpoint,target)
+  -- Minimal elbow bending leaves its hinge normal unchanged (no pronation).
+  local localTarget=s:VectorToObjectSpace(target-s:VectorToWorldSpace(upper))
+  local normal=lower:Cross(localTarget).Unit
+  near(e:VectorToWorldSpace(normal),normal)
+  for _,weight in ipairs({.1,.5,.9}) do
+   local a,b=Pose.Arm(upper,lower,target,pole,weight)
+   near(a:VectorToWorldSpace(upper)+(a*b):VectorToWorldSpace(lower),target)
+  end
+ end
+end
+print("PASS: mirrored combat elbows preserve hinge normal, blend axial roll without changing hand targets and retain original relaxed pose")
 -- Translate and rotate the entire authored model: joint placement is root-local.
 test(CFrame.identity)
 test(CFrame.new(-400,20,60)*CFrame.Angles(0,1.3,0))
