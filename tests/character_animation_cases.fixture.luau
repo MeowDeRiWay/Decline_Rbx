@@ -1,4 +1,14 @@
 local tick=RunService.PreSimulation.Fire
+local waistBreath=c:FindFirstChild("Waist",true)
+local savedTime=serverTime
+serverTime=101;RunService.PreSimulation:Fire(1/30)
+local inhale=waistBreath.Transform.Position.Y
+serverTime=103;RunService.PreSimulation:Fire(1/30)
+assert(inhale>0 and waistBreath.Transform.Position.Y<0,"viewer actually animates chest breathing")
+c:SetAttribute("Reloading",true);RunService.PreSimulation:Fire(1/30)
+near(waistBreath.Transform.Position,Vector3.zero)
+c:SetAttribute("Reloading",false);serverTime=savedTime
+print("PASS: viewer breathing raises/lowers chest and suppresses during reload")
 RunService.PreSimulation:Fire(1/30)
 local hip=c:FindFirstChild("LeftHip",true)
 assert(hip.Transform)

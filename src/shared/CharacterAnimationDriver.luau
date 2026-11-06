@@ -189,6 +189,15 @@ RunService.PreSimulation:Connect(function(dt)
   if not reloadFrame and r.Reloading and motor then motor.Transform=CFrame.identity end
   r.Reloading=reloadFrame~=nil
   local now=workspace:GetServerTimeNow()
+  local punchStarted=c:GetAttribute("PunchStartedAt")
+  local punching=typeof(punchStarted)=="number" and now>=punchStarted and now-punchStarted<1.5
+  local breathBlocked=punching or reloadFrame~=nil or c:GetAttribute("Reloading") or c:GetAttribute("HandAction") or c:GetAttribute("CarryingUserId") or hp.Sit or hp.PlatformStand or (equipped and not definition.Firearm)
+  local breath=Pose.Breath(now,(player.UserId or 0)%97,root.Size.Y,speed,breathBlocked)
+  m.Waist.Transform=CFrame.new(breath)
+  -- Predict the same-step chest position for IK instead of reading its previous
+  -- physics frame. Hands and chest must rise together without feedback jitter.
+  local waist=m.Waist
+  local chestFrame=waist.Part0.CFrame*waist.C0*waist.Transform*(waist.C1 or CFrame.identity):Inverse()
   if equipped and definition.Firearm and motor and not reloadFrame and not c:GetAttribute("HandAction") then
    local untilTime=c:GetAttribute("WeaponCombatUntil") or 0
    local relaxed=now>=untilTime
@@ -202,6 +211,7 @@ RunService.PreSimulation:Connect(function(dt)
     local delta=desired*rest:Inverse()
     desired=desired+point-delta:PointToWorldSpace(point)+(desired.Position-rest.Position)
    end
+   if animationSet=="Pistol" or animationSet=="Rifle" then desired=desired+breath end
    motor.Transform=motor.C0:Inverse()*desired
   elseif reloadFrame then r.Relaxed=0 end
   local supportWeight=Presentation.SupportWeight(animationSet,r.Relaxed,reloadFrame~=nil)
@@ -226,7 +236,7 @@ RunService.PreSimulation:Connect(function(dt)
    if not rest or not upper or not lower or not shoulder.Part0 or not shoulder.Part1 or not elbow.Part0 or not elbow.Part1 then continue end
    if c:GetAttribute("CarryingUserId") and side=="Left" then
     local target=CarryPose.SupportPoint(c,root)
-    local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
+    local anchor=((shoulder.Part0==waist.Part1 and chestFrame or shoulder.Part0.CFrame)*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
     local launcher=animationSet=="Launcher"
     local bend=launcher and Vector3.new(side=="Left" and -.6 or 1,-1,.35) or Vector3.new(side=="Left" and -1 or 1,-1,.2)
@@ -248,7 +258,7 @@ RunService.PreSimulation:Connect(function(dt)
     end
     if componentLeft and side=="Left" then target=componentLeft.Position end
     if reloadFrame then target=side=="Left" and reloadLeft or reloadRight end
-    local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
+    local anchor=((shoulder.Part0==waist.Part1 and chestFrame or shoulder.Part0.CFrame)*rest*CFrame.new(offset)).Position
     if side=="Left" and not reloadFrame and supportWeight<1 then
      local swing=-math.sin(r.Phase)*r.Amount*.6
      local hanging=anchor+root.CFrame:VectorToWorldSpace((CFrame.Angles(swing,0,0)*standing):VectorToWorldSpace(upper+lower))
@@ -263,13 +273,13 @@ RunService.PreSimulation:Connect(function(dt)
    elseif equipped and animationSet=="Knife" and side=="Left" then
     -- Free hand stays forward in a defensive guard; it does not swing at the side.
     local target=root.CFrame:PointToWorldSpace(Vector3.new(-root.Size.X*.6,root.Size.Y*.28,-root.Size.Y*.75))
-    local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
+    local anchor=((shoulder.Part0==waist.Part1 and chestFrame or shoulder.Part0.CFrame)*rest*CFrame.new(offset)).Position
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)
     local s,e=Pose.Arm(upper,lower,delta,Vector3.new(-1,-.5,.15))
     shoulder.Transform=standing:Inverse()*s;elbow.Transform=e
    elseif not definition and not held and punchElapsed>=0 and punchElapsed<1.5 then
     local localTarget,weight=Punch.Target(root.Size,side,punchSequence,punchElapsed)
-    local anchor=(shoulder.Part0.CFrame*rest*CFrame.new(offset)).Position
+    local anchor=((shoulder.Part0==waist.Part1 and chestFrame or shoulder.Part0.CFrame)*rest*CFrame.new(offset)).Position
     local hanging=anchor+root.CFrame:VectorToWorldSpace(standing:VectorToWorldSpace(upper+lower))
     local target=hanging+(root.CFrame:PointToWorldSpace(localTarget)-hanging)*weight
     local delta=root.CFrame:VectorToObjectSpace(target-anchor)

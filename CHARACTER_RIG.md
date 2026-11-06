@@ -261,3 +261,11 @@ parts stay welded to their matching articulated body parts. Legacy Folder
 sections retain their previous bounds-based fitting and helmet-height rules.
 Actual Studio templates must be converted to Models by the model author;
 the source change does not rewrite ServerStorage objects in the place file.
+
+
+Idle breathing uses a four-second clocked chest lift (1.8% of root height).
+Rifle/pistol grip frames follow the same lift, with predicted chest anchors for
+hand IK. The effect fades out with movement and is suppressed during reload,
+hand actions, punches, carrying, sitting and tool use. Existing interaction,
+knockout/death and distance-culling priorities remain in force. This is cosmetic;
+no new remotes, collision changes or accuracy penalties are introduced.

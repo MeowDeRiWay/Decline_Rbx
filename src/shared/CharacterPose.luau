@@ -44,6 +44,13 @@ function Pose.Arm(upper,lower,target,pole,hingeWeight)
  end
  return shoulder,relative
 end
+-- Clock-based breathing never accumulates transforms or changes game state.
+function Pose.Breath(now,seed,height,speed,blocked)
+ if blocked then return Vector3.zero end
+ local weight=math.clamp(1-(speed or 0)/2,0,1)
+ local wave=math.sin(now*2*math.pi/4+(seed or 0)*.618)
+ return Vector3.new(0,wave*height*.018*weight,0)
+end
 function Pose.Gait(speed,running)
  if speed<=.025 then return 0,0 end
  if running then return .42,math.clamp(speed*.65,.8,1.8) end

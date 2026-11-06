@@ -88,6 +88,13 @@ local function test(frame)
   assert(math.abs(endpoint.Magnitude-d)<.0001,"IK preserves lengths and clamps reach")
  end
 end
+-- Breathing has a four-second cycle, bounded size, no movement/action drift.
+local inhale=Pose.Breath(1,0,.8,0,false)
+local exhale=Pose.Breath(3,0,.8,0,false)
+assert(inhale.Y>0 and exhale.Y<0 and math.abs(inhale.Y)<=.8*.018+.000001)
+near(Pose.Breath(5,0,.8,0,false),inhale)
+near(Pose.Breath(1,0,.8,2,false),Vector3.zero)
+near(Pose.Breath(1,0,.8,0,true),Vector3.zero)
 -- Combat forearms bend relative to the shoulder, without added axial elbow roll.
 for _,sign in ipairs({-1,1}) do
  local upper,lower=Vector3.new(sign*.4,0,0),Vector3.new(sign*.5,0,0)
