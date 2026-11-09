@@ -9,15 +9,20 @@ local Life=require(script.Parent.PlayerLifeService)
 local Towns=require(script.Parent.TownService)
 local Beds=require(script.Parent.HospitalBedService)
 local Animation=require(script.Parent.InteractionAnimationService)
+local OfflineHouses=require(script.Parent.OfflineHouseService)
 local Service={}
 local records={}
 local transient={MapOpen=true,HelpOpen=true,HelpHidden=true,HelpPreferenceReady=true,HelpPreferenceStatus=true,Money=true,MoneyReady=true,MoneyStatus=true,TradeOpen=true,InventoryOpen=true,ProgressionOpen=true,TownMenuOpen=true,GroupOpen=true,MedicalMode=true,PlayerContextOpen=true,CharacterLoading=true,Reconnecting=true,GroupID=true}
 local function disconnect(record)
  if record.HealthConnection then record.HealthConnection:Disconnect();record.HealthConnection=nil end
 end
+local function releaseHouse(record)
+ OfflineHouses.Release(record.House);record.House=nil
+end
 local function corpse(record)
  if record.Returned or not record.Body then return end
  local body=record.Body;record.Body=nil
+ releaseHouse(record)
  disconnect(record)
  Inventory.ForgetOffline(record.UserID,record.Inventory)
  Life.OfflineCorpse(body,Inventory.CorpseStorage(record.Inventory),record.UserID,record.DisplayName)
@@ -26,6 +31,8 @@ local function corpse(record)
  if not record.Attributes.TownID then record.Attributes.OutcastEnd=true end
 end
 local function leave(player)
+ -- Keep the original record if the player leaves while the house is waking.
+ if player:GetAttribute("Reconnecting") and records[player.UserId] then return end
  if player.Character and (player.Character:GetAttribute("CarryingUserId") or player.Character:GetAttribute("CarriedByUserId")) then require(script.Parent.CarryService).ReleasePlayer(player) end
  Beds.Leave(player)
  if player.Character then Animation.Cancel(player.Character) end
@@ -72,6 +79,8 @@ local function leave(player)
  local folder=workspace:FindFirstChild("DisconnectedPlayers")
  if not folder then folder=Instance.new("Folder");folder.Name="DisconnectedPlayers";folder.Parent=workspace end
  record.Body=body
+ record.House=OfflineHouses.Find(character,hp)
+ OfflineHouses.Reserve(record.House)
  body.Parent=folder
  local health=body:FindFirstChildOfClass("Humanoid")
  record.HealthConnection=health.HealthChanged:Connect(function(value)
@@ -79,7 +88,12 @@ local function leave(player)
   if value<=0 then corpse(record) end
  end)
  local timeout=Config.ReconnectGraceSeconds
- task.delay(timeout,function() if records[record.UserID]==record then corpse(record) end end)
+ task.delay(timeout,function()
+  if records[record.UserID]~=record or record.Body~=body or record.Returned then return end
+  -- End physical exposure without discarding a living character or its gear.
+  disconnect(record)
+  body.Parent=nil
+ end)
  if health.Health<=0 then corpse(record) end
 end
 local function added(player)
@@ -90,18 +104,23 @@ local function added(player)
  task.defer(function()
   if player.Parent~=Players or records[player.UserId]~=record then return end
   if record.Body then
-   local deadline=record.Body:GetAttribute("OfflineUntil") or 0
    local health=record.Body:FindFirstChildOfClass("Humanoid")
-   if workspace:GetServerTimeNow()>=deadline or not health or health.Health<=0 then corpse(record) end
+   if not health or health.Health<=0 then corpse(record) end
+  end
+  local waitingBody=record.Body
+  if waitingBody then
+   disconnect(record)
+   waitingBody.Parent=nil
+   local root=waitingBody:FindFirstChild("HumanoidRootPart")
+   if root then WorldActivity.Ensure(root.Position,4) end
+   if player.Parent~=Players or records[player.UserId]~=record then return end
   end
   record.Returned=true;disconnect(record);records[player.UserId]=nil
   for key,value in pairs(record.Attributes) do if not transient[key] then player:SetAttribute(key,value) end end
   player.Team=record.Team;player.Neutral=record.Team==nil
   local body=record.Body
-  if body and body.Parent and body:FindFirstChildOfClass("Humanoid").Health>0 then
+  if body and body:FindFirstChildOfClass("Humanoid").Health>0 then
    body:SetAttribute("ReturningSession",true);body:SetAttribute("OfflineUserId",nil);body:SetAttribute("OfflineUntil",nil)
-   local root=body:FindFirstChild("HumanoidRootPart")
-   if root then WorldActivity.Ensure(root.Position,4) end
    body.Parent=workspace
    for part,entry in pairs(record.Parts) do
     if part.Parent then part.Anchored=entry.Anchored;part.CanCollide=entry.CanCollide;part.CanQuery=entry.CanQuery end
@@ -116,6 +135,7 @@ local function added(player)
    player:SetAttribute("Reconnecting",nil)
    if player:GetAttribute("TownID") then Towns.LoadCharacter(player) end
   end
+  releaseHouse(record)
   Towns.Publish()
  end)
 end
@@ -125,7 +145,7 @@ function Service.OfflineInventory(model)
 end
 function Service.OfflineCharacters()
  local result={}
- for _,record in pairs(records) do if record.Body and not record.Returned then table.insert(result,record.Body) end end
+ for _,record in pairs(records) do if record.Body and record.Body.Parent and not record.Returned then table.insert(result,record.Body) end end
  return result
 end
 function Service.Start()

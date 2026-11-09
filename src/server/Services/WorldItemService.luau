@@ -26,9 +26,12 @@ local function itemID(object)
  -- Their explicit registered model name takes precedence over that stale value.
  local name=object.Name
  if ItemConfig.RetiredItems and ItemConfig.RetiredItems[name] then return name end
+ local aliases=ItemConfig.ToolAliases or {}
+ if aliases[name] then return aliases[name] end
  local named=ItemConfig.Items[name]
  if named and (named.HarvestTool or named.CraftTool=="Knife") then return name end
- return object:GetAttribute("Item_ID") or name
+ local id=object:GetAttribute("Item_ID") or name
+ return aliases[id] or id
 end
 local function register(item)
  if not item:IsA("Model") and not item:IsA("BasePart") then return end

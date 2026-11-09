@@ -281,11 +281,11 @@ print("PASS: actual inventory disconnect/reconnect continuity, crafting refund o
 world_cases+='''
 local staleTool=make("Model","ScrapShowel",worldFolder,{Item_ID="Showel",Quantity=1});make("Part","Blade",staleTool)
 worldFolder.ChildAdded:Fire(staleTool)
-assert(staleTool:GetAttribute("Item_ID")=="ScrapShowel" and not staleTool.destroyed,"material model name repairs stale generic Item_ID")
-ground=false;assert(World.Pickup(rejoined,staleTool) and Service.Snapshot(rejoined).Items.ScrapShowel==1)
-assert(equipDraw(rejoined,"ScrapShowel"),"scrap shovel equips under its actual material ID")
+assert(staleTool:GetAttribute("Item_ID")=="ScrapShovel" and not staleTool.destroyed,"material model name repairs stale generic Item_ID")
+ground=false;assert(World.Pickup(rejoined,staleTool) and Service.Snapshot(rejoined).Items.ScrapShovel==1)
+assert(equipDraw(rejoined,"ScrapShovel"),"scrap shovel equips under its canonical ID")
 assert(Service.ClearHands(rejoined) and Service.Unequip(rejoined,"PrimaryWeapon"))
-ground=true;assert(World.Drop(rejoined,"ScrapShowel",1),"scrap shovel can be dropped again")
+ground=true;assert(World.Drop(rejoined,"ScrapShovel",1),"scrap shovel can be dropped again")
 for _,id in ipairs({"Knife","Axe","Showel","WoodenPlate"}) do
  assert(not ItemConfig.Items[id] and not Service.Add(rejoined,id,1))
  local retired=make("Model",id,worldFolder,{Item_ID=id,Quantity=1});make("Part","Part",retired)

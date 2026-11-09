@@ -66,7 +66,7 @@ local function fill(recipe,repeats)
  if recipe.Fuel then stock[recipe.Fuel.ID]=(stock[recipe.Fuel.ID] or 0)+recipe.Fuel.Count*repeats end
  if recipe.Variants then stock[recipe.Variants[1].Ingredient]=repeats end
 end
-local requirements={MakeSurgicalKit=100,MakePlate=25,MakeBucket=50,MakePistol9mm=75,MakeSMG9mm=90,MakeAmmo9mm=50,MakeAmmo223=100,MakeRifle223=100,MakeServiceRifle223=110,MakeAssaultRifle223=120,MakeMarksmanRifle223=130,MakeLSW223=140,MakeLeatherArmor=60,MakeLeatherArmor2=80,MakeMiliArmor1=100,MakeMiliArmor2=130,MakeScrapAxe=50,MakeScrapShovel=50,MakeKnife=50,MakeIronAxe=100,MakeIronShovel=100,MakeIronKnife=100,MakeSteelAxe=150,MakeSteelShovel=150,MakeSteelKnife=150,MakeSewingKit=50,MakeBackpack1=50,MakeHandle=50,MakePlanks=50}
+local requirements={MakeSurgicalKit=100,MakePlate=25,MakeBucket=50,MakePistol9mm=75,MakeSMG9mm=90,MakeAmmo9mm=50,MakeAmmo223=100,MakeRifle223=100,MakeServiceRifle223=110,MakeAssaultRifle223=120,MakeMarksmanRifle223=130,MakeLSW223=140,MakeLeatherArmor=60,MakeLeatherArmor2=80,MakeMiliArmor1=100,MakeMiliArmor2=130,MakeScrapAxe=50,MakeScrapShovel=50,MakeKnife=50,MakeIronKnife=100,MakeSteelKnife=150,MakeSewingKit=50,MakeBackpack1=50,MakeHandle=50,MakePlanks=50}
 for id,threshold in pairs(requirements) do
  local recipe=Recipes[id];assert(recipe.Requirements.Skills.Repair==threshold)
  Service.Close(a);fill(recipe,2);assert(Service.Open(a,stations[recipe.Station]))

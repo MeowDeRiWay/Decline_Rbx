@@ -4,10 +4,15 @@ import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/PlayerSessionService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
 source=source.replace('require(script.Parent.HandActionService).Cancel(player)','')
-source=re.sub(r'local (Config|Inventory|Progression|Life|Towns|Beds|Animation)=require[^\n]+\n','',source)
+source=re.sub(r'local (Config|Inventory|Progression|Life|Towns|Beds|Animation|OfflineHouses)=require[^\n]+\n','',source)
 setup='''
 local Animation={Cancel=function() end}
 local Beds={Leave=function() end}
+local house=make("Model","House",workspace,{ZHouse=true})
+local floor=make("Model","Floor",house,{Zombie_home=true})
+local floorPart=make("Part","Surface",floor)
+local otherFloor=make("Model","OtherFloor",house,{Zombie_home=true})
+function workspace:Raycast() return {Instance=floorPart} end
 function methods:GetAttributes() return table.clone(self.attrs) end
 local baseClone=methods.Clone
 function methods:Clone()
@@ -59,6 +64,16 @@ end
 '''
 cases='''
 Service.Start()
+house:SetAttribute("LogoutSpawnExempt",true)
+local sample=prepare(a)
+assert(OfflineHouses.Find(sample,sample.Humanoid)==nil,"infrastructure is exempt")
+house:SetAttribute("LogoutSpawnExempt",nil)
+assert(OfflineHouses.Find(sample,sample.Humanoid)==house,"floor maps to its whole house")
+OfflineHouses.Reserve(house);OfflineHouses.Reserve(house)
+OfflineHouses.Release(house)
+assert(OfflineHouses.Blocked(otherFloor),"one return does not clear another offline resident")
+OfflineHouses.Release(house)
+sample:Destroy()
 local original=prepare(a);local originalPosition=original:GetPivot().Position
 a:SetAttribute("Money",45);a:SetAttribute("TradeOpen",true)
 Players.PlayerRemoving:Fire(a);a.Parent=nil;original:Destroy()
@@ -75,15 +90,15 @@ local second=prepare(b)
 Players.PlayerRemoving:Fire(b);b.Parent=nil;second:Destroy()
 local abandoned=Service.OfflineCharacters()[1]
 advance(300)
-assert(consumed==1 and corpses[abandoned].Items.TreeLog==2 and abandoned:GetAttribute("OwnerUserId")==b.UserId)
-assert(not saved[b.UserId] and #Service.OfflineCharacters()==0,"expired body loot is no longer cached as player inventory")
+assert(consumed==0 and not abandoned.Parent and saved[b.UserId].Items.TreeLog==2)
+assert(#Service.OfflineCharacters()==0 and OfflineHouses.Blocked(otherFloor),"stored body remains reserved but is no longer a target")
 local late=player(b.UserId);Players.PlayerAdded:Fire(late)
-assert(loads==1 and next(stock[late].Items)==nil and corpses[abandoned].Magazine.Loaded==7,"late return spawns fresh without reclaiming loot")
+assert(loads==0 and late.Character==abandoned and stock[late].Magazine.Loaded==7 and not OfflineHouses.Blocked(otherFloor),"late return restores character and gear")
 local third=prepare(c)
 Players.PlayerRemoving:Fire(c);c.Parent=nil;third:Destroy()
 local killed=Service.OfflineCharacters()[1];killed.Humanoid.Health=0;killed.Humanoid.HealthChanged:Fire(0)
-assert(consumed==2 and corpses[killed],"offline damage can turn waiting body into corpse")
-advance(300);assert(consumed==2,"death plus timeout cannot duplicate loot")
+assert(consumed==1 and corpses[killed],"offline damage can turn waiting body into corpse")
+advance(300);assert(consumed==1,"death plus timeout cannot duplicate loot")
 local fourth=prepare(d)
 fourth:SetAttribute("Knockout",true);fourth:SetAttribute("KnockoutEndsAt",clock+120)
 local part=fourth.HumanoidRootPart;part.Anchored=true
@@ -101,15 +116,23 @@ loner:SetAttribute("TownID",nil);loner:SetAttribute("TeamID",nil)
 lonerBody:SetAttribute("Knockout",true);lonerBody:SetAttribute("KnockoutEndsAt",clock+120)
 ko[lonerBody]={Pivot=lonerBody:GetPivot(),Parts={},BlocksVision=true}
 Players.PlayerRemoving:Fire(loner);loner.Parent=nil;lonerBody:Destroy()
-local beforeLoads=loads;advance(300)
+local beforeLoads=loads
+local offlineLoner=Service.OfflineCharacters()[1]
+offlineLoner.Humanoid.Health=0;offlineLoner.Humanoid.HealthChanged:Fire(0)
+advance(300)
 local lonerBack=player(1001);Players.PlayerAdded:Fire(lonerBack)
 assert(lonerBack:GetAttribute("OutcastEnd")==true and lonerBack.Character==nil and loads==beforeLoads,"offline neutral death restores ending instead of spawning")
 Players.PlayerRemoving:Fire(lonerBack);lonerBack.Parent=nil
 local endingAgain=player(1001);Players.PlayerAdded:Fire(endingAgain)
 assert(endingAgain:GetAttribute("OutcastEnd")==true,"logging out from the ending cannot bypass it")
 print("PASS: offline unaffiliated death and repeated reconnect preserve ending")
-print("PASS: actual reconnect clone/health/needs/position/inventory, timeout/death single loot transfer, late fresh spawn, old-timer cancellation and knockout adoption")
+print("PASS: actual reconnect clone/health/needs/position/inventory, storage after grace, single loot transfer on real death, late restore, old-timer cancellation and knockout adoption")
 '''
-parts=[(root/'tests/fixtures/town_mock.luau').read_text(),setup,'local Service=(function()\n'+source+'\nend)()',cases]
+house_rules=(root/'src/shared/ZombieHomeRules.luau').read_text()
+offline=(root/'src/server/Services/OfflineHouseService.luau').read_text()
+offline=re.sub(r'local HomeRules = require[^\n]+\n','',offline)
+parts=[(root/'tests/fixtures/town_mock.luau').read_text(),
+ 'local HomeRules=(function()\n'+house_rules+'\nend)()',
+ 'local OfflineHouses=(function()\n'+offline+'\nend)()',setup,'local Service=(function()\n'+source+'\nend)()',cases]
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'test.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)

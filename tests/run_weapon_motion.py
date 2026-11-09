@@ -26,7 +26,7 @@ local function motor()
  return m
 end
 local blade=Vector3.new(.0250244,-.1999874,-1.1337914)
-for _,material in ipairs({"Scrap","Iron","Steel"}) do
+for _,material in ipairs({"Scrap"}) do
  local axe=Items[material.."Axe"].Weapon
  local shovel=Items[material.."Shovel"].Weapon
  assert(axe.Animation=="Chop" and shovel.Animation=="Thrust" and axe.AttacksPerMinute==40 and shovel.AttacksPerMinute==40)
@@ -86,7 +86,7 @@ Motion.Cancel(m)
 local cancelledPose=m.C0
 for _,fn in ipairs(pending) do fn() end
 assert(m.C0==cancelledPose,"cancelled motions cannot start stale delayed phases")
-local fast=table.clone(Items.IronAxe.Weapon);fast.AttacksPerMinute=50
+local fast=table.clone(Items.ScrapAxe.Weapon);fast.AttacksPerMinute=50
 assert(Motion.HitDelay(fast)==1.2)
 print("PASS: all axe tiers 40/min, single clocked motion, predicted acknowledgement without restart, 60Hz observer replay and grip-space hand IK")
 print("PASS: exact contact/rest deadline, cancellation, rotated authored grip and unchanged shovel/knife motions")

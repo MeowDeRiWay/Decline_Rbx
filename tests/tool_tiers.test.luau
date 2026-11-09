@@ -10,7 +10,12 @@ assert(not Items.StoneAxe and not Items.StoneShovel and not Items.StoneShowel)
 assert(not Recipes.MakeAxe and not Recipes.MakeShovel)
 for tier,material in ipairs({"Scrap","Iron","Steel"}) do
  for _,tool in ipairs({"Axe","Shovel"}) do
+  if tier>1 then
+   assert(not Items[material..tool] and not Recipes["Make"..material..tool])
+   continue
+  end
   local item=assert(Items[material..tool])
+  assert(item.Name==tool)
   local node=tool=="Axe" and Config.Tree or Config.ScrapPile
   assert(item.Weapon.Damage==5 and item.HarvestTier==tier and item.HarvestMultiplier==tier)
   assert(Rules.HarvestDamage(node,item)==5*tier)
@@ -54,4 +59,4 @@ state.Equipment.PrimaryWeapon="StoneShovel";state.EquipmentCondition.PrimaryWeap
 Inventory.ReconcileEquipment(state,Items,require("../src/shared/ItemConfig").Slots)
 assert(not state.Items.StoneAxe and not state.Conditions.StoneAxe and not state.Equipment.PrimaryWeapon and not state.ActiveWeaponSlot)
 assert(Inventory.Weight(state,Items)==0)
-print("PASS: retired stone cleanup, scrap/iron/steel tiers and 50/100/150 repair, steel batch, complete station categories and fuel filters")
+print("PASS: retired stone cleanup, single axe/shovel recipes and material knife tiers, steel batch, complete station categories and fuel filters")

@@ -110,9 +110,10 @@ TOWN LIFE
 While there is only one town in the game, the mayor has no other towns to conduct foreign policy with. Inside the town, however, the mayor decides which buildings get approved and which do not.
 
 PLAN BEFORE YOU BUILD
-If you want a workshop, a hospital or something similar, read the requirements first and only then allocate your skills. A poor build means grinding more levels - or leaving for 10-15 minutes so the server has time to clear your character after reconnect protection expires.
+If you want a workshop or hospital, read its requirements before allocating your skills.
 
-Reconnect protection is there to save your character if you lose your connection.
+RETURNING TO THE SERVER
+Your character, items and location are saved until this server shuts down. Rejoin this same server to continue. After leaving, your body stays in the world for up to five minutes and can still be killed. If you survive, it is stored safely until you return.
 
 A LITTLE MEDICAL ADVICE
 If you find someone's body, take a moment to try your Doctor skill with 4: activate it, then click the nearby knocked-out player. You might save someone a lot of time and earn a pleasant "Thank you!"

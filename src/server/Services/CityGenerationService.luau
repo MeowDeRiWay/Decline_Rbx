@@ -258,6 +258,9 @@ local function place(plot, sources, roadList)
  local chosen = candidates[random:NextInteger(1,#candidates)]
  local clone = chosen.house:Clone()
  clone:SetAttribute("GeneratedCityHouse",true)
+ if plot:GetAttribute("ForInfrastructure")==true or category=="Factories" then
+  clone:SetAttribute("LogoutSpawnExempt",true)
+ end
  clone:SetAttribute("ForInfrastructure",nil)
  clone:SetAttribute("GenerationCategory",category)
  clone:SetAttribute("GenerationSeed",seed)

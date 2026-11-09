@@ -140,7 +140,7 @@ service=service.replace('require(ReplicatedStorage.Shared.MineGeometry)',module(
 source+='\nfunction methods:FindFirstChildWhichIsA(kind,recurse) for _,part in ipairs(recurse and self:GetDescendants() or self:GetChildren()) do if part:IsA(kind) then return part end end end\ndo\nlocal ServerStorage=serverStorage\nlocal Items='+module('src/shared/ItemConfig.luau')+'\nlocal Visuals=(function()\n'+service+'\nend)()\n'
 source+='\nlocal StoragePose='+module('src/shared/HandActionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')+'\nlocal Holsters='+module('src/server/Services/HolsterVisuals.luau').replace('require(game:GetService("ReplicatedStorage").Shared.HandActionPose)','StoragePose')
 source+=r'''
-for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","IronAxe","IronShovel","IronKnife","Mine","Pliers"}) do
+for _,id in ipairs({"Pistol9mm","PipePistol9mm","Rifle223","ScrapAxe","ScrapShovel","IronKnife","Mine","Pliers"}) do
  Visuals.Apply(c,id)
  local held=c:FindFirstChild("HeldItem")
  local localPose=root.CFrame:ToObjectSpace(held.CFrame)

@@ -31,7 +31,7 @@ end
 local function update(player)
  local state = states[player]
  if not state then return end
- Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots)
+ Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots,ItemConfig.ToolAliases)
  player:SetAttribute("DoctorKitBonus",state.Equipment.Additional=="SurgicalKit" and ItemConfig.Items.SurgicalKit.DoctorSkillBonus or 0)
  if not state.Equipment.Medicine then state.MedicalHeld=nil end
  local absorption,resistance=0,0
@@ -80,7 +80,7 @@ function Service.Reset(player)
 end
 function Service.ExtractAll(player)
  local state=states[player] or Rules.New()
- Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots)
+ Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots,ItemConfig.ToolAliases)
  for _,slot in ipairs(ItemConfig.Slots) do
   if state.Equipment[slot] then Rules.Unequip(state,ItemConfig.Items,ItemConfig.Slots,slot) end
  end
@@ -101,7 +101,7 @@ function Service.ForgetOffline(userID,state)
 end
 function Service.CorpseStorage(state)
  state=state or Rules.New()
- Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots)
+ Rules.ReconcileEquipment(state,ItemConfig.Items,ItemConfig.Slots,ItemConfig.ToolAliases)
  for _,slot in ipairs(ItemConfig.Slots) do
   if state.Equipment[slot] then Rules.Unequip(state,ItemConfig.Items,ItemConfig.Slots,slot) end
  end

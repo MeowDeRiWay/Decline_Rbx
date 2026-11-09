@@ -984,3 +984,10 @@ including 183 shared PrimaryPart references. See INDUSTRY_SETUP.md.
 - Axe motion no longer runs competing client/server WeaponGrip.C0 tweens. The server announces an accepted swing through ChopStartedAt/ChopDuration/ChopSequence. Each viewer samples a local Motor6D.Transform from server time. The attacker predicts with a request sequence; a matching delayed acknowledgement preserves the predicted phase instead of restarting it.
 - CharacterAnimationDriver computes both hand grips from the current sampled axe frame before physics updates. Active remote chops bypass the normal 30Hz IK calculation budget, including the finishing frame; idle/other-player replay throttling is retained. Interaction/hand actions cancel the swing and restore the grip.
 - Validation: 85 Python/Luau runners pass; all source Luau files compile. Actual rig replay includes 120Hz remote axe motion under per-frame Transform resets, with held-part geometry intentionally left stale. Motion tests cover 40/min tiers, 90-degree lift around rotated authored grips, acknowledgement phase continuity, same-step grip IK, cancellation and unchanged shovel/knife timing. Multiplayer Studio visual testing remains necessary.
+
+## Decline release notes to carry forward
+
+- Before publishing, remind the creator to add the ammunition shop in Studio.
+- The creator plans to shrink and rebuild the map and remove the premade city walls. Keep player construction. The zombie-apocalypse direction is still open.
+- Axe and shovel each have one scrap recipe and one player-facing name. Existing material-specific model names can still resolve to the canonical tools.
+- Character, equipment and position are kept in memory until the same server closes. A living offline body is removed from the world after the existing five-minute exposure window and restored on return. Actual death still creates loot. Logging out on a zombie floor reserves the residential house against new zombie spawns and loot rerolls while the character is offline. Infrastructure can set `LogoutSpawnExempt=true`.

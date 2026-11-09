@@ -3,8 +3,11 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 source=(root/'src/server/Services/ItemPoolService.luau').read_text()
-source=re.sub(r'local (Items|Rules|WorldItems|Activity|ActivityRules|ActivityConfig)=require[^\n]+\n','',source)
+source=re.sub(r'local (ItemConfig|OfflineHouses|Rules|WorldItems|Activity|ActivityRules|ActivityConfig)=require[^\n]+\n','',source)
 setup='''
+local ItemConfig={Items=Items}
+local paused={}
+local OfflineHouses={Blocked=function(marker) return paused[marker]==true end}
 local Activity={Positions=function() return {Vector3.zero} end,IsDormant=function(o) return o:GetAttribute("WorldDormant")==true end}
 local ActivityRules={Near=function() return true end};local ActivityConfig={ActiveRadius=140}
 workspace.DescendantAdded=event()
@@ -56,6 +59,15 @@ foodPoint:SetAttribute("WorldDormant",nil);foodPoint.Parent=workspace
 Service.Update();assert(oldFood.destroyed and #world:GetChildren()==2,"wake rerolls overdue loot once")
 foodPoint:SetAttribute("SpawnChance",0);oldFood=current("Potato")
 clock+=10;Service.Update();assert(oldFood.destroyed and #world:GetChildren()==1,"failed reroll removes uncollected item")
+foodPoint:SetAttribute("SpawnChance",1)
+clock+=10;Service.Update()
+local kept=current("Potato")
+paused[foodPoint]=true
+clock+=10;Service.Update()
+assert(current("Potato")==kept and not kept.destroyed,"offline reservation preserves existing loot")
+paused[foodPoint]=nil
+Service.Update()
+assert(kept.destroyed and current("Potato")~=kept,"loot resumes once the reservation ends")
 local later=make("Folder","Later",authored);make("Part","Chemicals",later)
 clock+=5;Service.Update();assert(current("Chemicals"),"late templates retry")
 foodPoint:Destroy();Service.Update()

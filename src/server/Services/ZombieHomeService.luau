@@ -1,3 +1,4 @@
+local OfflineHouses=require(script.Parent.OfflineHouseService)
 local WorldActivity=require(script.Parent.WorldActivityService)
 local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,7 +18,7 @@ if not creatures then
  creatures.Name,creatures.Parent = "Creatures",workspace
 end
 local function enabled(home)
- return home:IsA("Model") and home:IsDescendantOf(workspace) and home:GetAttribute("Zombie_home") == true
+ return home:IsA("Model") and home:IsDescendantOf(workspace) and home:GetAttribute("Zombie_home") == true and not OfflineHouses.Blocked(home)
 end
 local function template()
  local folder = ServerStorage:FindFirstChild("Creatures")

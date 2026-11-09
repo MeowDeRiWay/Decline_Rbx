@@ -1,6 +1,9 @@
+local OfflineHouses=require(script.Parent.OfflineHouseService)
 local Storage=game:GetService("ServerStorage")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
-local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
+local ItemConfig=require(ReplicatedStorage.Shared.ItemConfig)
+local Items=ItemConfig.Items
+local toolAliases=ItemConfig.ToolAliases or {}
 local Rules=require(ReplicatedStorage.Shared.ItemPoolRules)
 local WorldItems=require(script.Parent.WorldItemService)
 local Activity=require(script.Parent.WorldActivityService)
@@ -27,6 +30,7 @@ local function entries(folder)
    if source:IsA("Folder") then visit(source)
    elseif source:IsA("Model") or source:IsA("BasePart") then
     local id=source:GetAttribute("Item_ID") or source.Name
+    id=toolAliases[id] or id
     local definition=Items[id]
     -- Ammunition pools contain authored boxes, never a single loose round.
     if definition and not definition.Ammo and definition.Lootable~=false and (source:IsA("BasePart") or source:FindFirstChildWhichIsA("BasePart",true)) then
@@ -61,7 +65,7 @@ function Service.Update()
   end
  end
  for marker,state in pairs(states) do
-  if Activity.IsDormant(marker) then continue end
+  if Activity.IsDormant(marker) or OfflineHouses.Blocked(marker) then continue end
   local path=marker:GetAttribute("ItemPool")
   local frame,size
   if marker:IsA("Model") then

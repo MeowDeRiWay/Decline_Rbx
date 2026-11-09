@@ -10,10 +10,10 @@ service=service.replace('require(ReplicatedStorage.Shared.MineGeometry)','(funct
 cases='''
 local world=make("Folder","WorldItems",workspace)
 make("Folder","Items",ServerStorage)
-local fallback=make("Model","IronShowel",ServerStorage.Items);make("Part","Part",fallback)
-assert(Visuals.Template("SteelShovel")==fallback,"steel can reuse legacy iron shovel template")
+local fallback=make("Model","ScrapShowel",ServerStorage.Items);make("Part","Part",fallback)
+assert(Visuals.Template("ScrapShovel")==fallback,"canonical shovel resolves legacy template")
 fallback:Destroy()
-for _,id in ipairs({"SteelAxe","SteelShowel","SteelKnife","ScrapAxe","ScrapShowel","IronAxe","IronShowel","ScrapKnife","IronKnife"}) do
+for _,id in ipairs({"SteelKnife","ScrapAxe","ScrapShovel","ScrapKnife","IronKnife"}) do
  local item=make("Model",id,world,{Quantity=1})
  make("Part","Part",item)
  Visuals.CaptureTemplate(item,id)
@@ -25,13 +25,6 @@ for _,id in ipairs({"SteelAxe","SteelShowel","SteelKnife","ScrapAxe","ScrapShowe
  local another=make("Model",id,world); make("Part","Part",another)
  Visuals.CaptureTemplate(another,id)
  assert(ServerStorage.Items:FindFirstChild(id)==captured,"authored/existing template wins")
-end
-for _,material in ipairs({"Scrap","Iron","Steel"}) do
- assert(Visuals.Validate(material.."Shovel"),"correct ID accepts old template")
- local old=ServerStorage.Items:FindFirstChild(material.."Showel");old:Destroy()
- local new=make("Model",material.."Shovel",ServerStorage.Items);make("Part","Part",new)
- assert(Visuals.Template(material.."Showel")==new,"old ID resolves correct model spelling")
- assert(Visuals.Template(material.."Shovel")==new,"correct ID resolves correct model spelling")
 end
 local stone=make("Model","Stone",world); make("Part","Part",stone)
 Visuals.CaptureTemplate(stone,"Stone")

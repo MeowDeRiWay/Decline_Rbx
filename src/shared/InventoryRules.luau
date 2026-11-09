@@ -157,7 +157,18 @@ function Rules.Unequip(state, definitions, slots, slot)
  return true
 end
 -- Return items from retired slots to inventory without losing their metadata.
-function Rules.ReconcileEquipment(state,definitions,slots)
+function Rules.ReconcileEquipment(state,definitions,slots,aliases)
+ for old,id in pairs(aliases or {}) do
+  local count=state.Items[old]
+  if count and Rules.Add(state,definitions,id,count,state.Conditions[old],state.Weapons and state.Weapons[old]) then
+   state.Items[old]=nil
+   state.Conditions[old]=nil
+   if state.Weapons then state.Weapons[old]=nil end
+  end
+ end
+ for slot,id in pairs(state.Equipment) do
+  if aliases and aliases[id] then state.Equipment[slot]=aliases[id] end
+ end
  for _,id in ipairs({"WoodenPlate","Money","Bill","bill","StoneAxe","StoneShovel","StoneShowel","Knife","Axe","Showel"}) do
   state.Items[id]=nil
   if state.Conditions then state.Conditions[id]=nil end

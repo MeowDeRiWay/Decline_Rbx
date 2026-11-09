@@ -3,7 +3,7 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 s=(root/'src/server/Services/ZombieHomeService.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
-s=re.sub(r'local (Area|Rules|HomeRules|Rig)\s*=\s*require[^\n]+\n','',s)
+s=re.sub(r'local (Area|Rules|HomeRules|Rig|OfflineHouses)\s*=\s*require[^\n]+\n','',s)
 a=s.index('local function spawn(home,valid)');b=s.index('local function clearBuckets',a)
 s=s[:a]+'''local function spawn(home,valid)
  assert(valid());spawned[home]=(spawned[home] or 0)+1
@@ -11,6 +11,8 @@ s=s[:a]+'''local function spawn(home,valid)
 end
 '''+s[b:]
 setup='''
+local paused={}
+local OfflineHouses={Blocked=function(home) return paused[home]==true end}
 local Service
 local randomCalls=0
 local Random={new=function() return {NextNumber=function(_,minimum) randomCalls+=1;return minimum end} end}
@@ -68,6 +70,9 @@ near.Occupied=true;step(1011);local before=spawned[near]
 step(1100);assert(spawned[near]==before,"no spawn inside occupied home")
 near.Occupied=false;step(1101);step(1280);assert(spawned[near]==before,"three-minute post-exit lock retained")
 step(1281);assert(spawned[near]==before+1)
+paused[near]=true;step(1281.25);step(1281.5)
+assert(spawned[near]==before+1,"offline reservation blocks an otherwise due spawn")
+paused[near]=nil
 a.Character.HumanoidRootPart.Position=Vector3.new(10025,1,0)
 local beforeNear=occupiedCalls[near];step(1282)
 assert(occupiedCalls[near]==beforeNear,"sleep transition does not poll occupancy")
