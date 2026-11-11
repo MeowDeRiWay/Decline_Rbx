@@ -4,7 +4,7 @@ import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 def module(path):return '(function()\n'+(root/path).read_text()+'\nend)()'
 s=''
-for name,path in [('Recipes','CraftConfig'),('ItemConfig','ItemConfig'),('CraftRules','CraftRules'),('Stations','CraftStations'),('Categories','CraftCategories')]:s+='\nlocal '+name+'='+module('src/shared/'+path+'.luau')
+for name,path in [('Recipes','CraftConfig'),('ItemConfig','ItemConfig'),('CraftRules','CraftRules'),('Stations','CraftStations'),('Categories','CraftCategories'),('ProgressionConfig','ProgressionConfig')]:s+='\nlocal '+name+'='+module('src/shared/'+path+'.luau')
 s+='''
 local function signal()
  local e={handlers={}}
@@ -72,6 +72,15 @@ local grouped=false
 for _,o in ipairs(objects) do if o.Text and o.Text:find("3 total: Plank or Handle (3 owned)",1,true) then grouped=true end end
 assert(grouped,"UI displays the grouped input instead of an empty material list")
 snapshot.CookingItems={Plank=1,Handle=1};render();assert(not find("Begin work").Active,"incomplete mixed batch is disabled")
+snapshot.CookingStation="Workstation";selectedRecipe="MakePipePistol9mm";render()
+local requirements
+if not requirements then
+ for _,object in ipairs(objects) do
+  if object.Text and object.Text:find("Light weapons - 50;",1,true) then requirements=object;break end
+ end
+end
+assert(requirements and requirements.Size.Y.Offset>=54,"weapon recipe uses a translatable skill name and fits three lines")
+assert(find("Quantity").Position.Y.Offset>=requirements.Position.Y.Offset+requirements.Size.Y.Offset)
 print("PASS: actual queue UI uses chest materials/tools, repeat count and total time, bounded affordability, structured repeat/all requests, automatic results and owner-only cancellation")
 '''
 with tempfile.TemporaryDirectory() as d:

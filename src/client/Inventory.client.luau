@@ -21,6 +21,7 @@ local cookingOpen=false
 local Recipes=require(ReplicatedStorage.Shared.CraftConfig)
 local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local CraftRules=require(ReplicatedStorage.Shared.CraftRules)
+local ProgressionConfig=require(ReplicatedStorage.Shared.ProgressionConfig)
 local Categories=require(ReplicatedStorage.Shared.CraftCategories)
 local craftCategory="All"
 local selectedRecipe=nil
@@ -375,11 +376,16 @@ local function renderRecipes()
   local ingredientsText=text(card,"Requirements:\n"..table.concat(ingredients,"\n"),UDim2.fromOffset(10,104),UDim2.new(1,-20,0,74))
   ingredientsText.TextSize=14; ingredientsText.TextWrapped=true
   local requirements={}
-  for skill,value in pairs(recipe.Requirements and recipe.Requirements.Skills or {}) do table.insert(requirements,string.format("%s - %d;",skill,value)) end
+  for skill,value in pairs(recipe.Requirements and recipe.Requirements.Skills or {}) do
+   table.insert(requirements,string.format("%s - %d;",ProgressionConfig.Names[skill] or skill,value))
+  end
   table.sort(requirements)
   table.insert(requirements,string.format("Time: %g seconds",recipe.Duration/(speed or 1)))
   if recipe.Tool then table.insert(requirements,ItemConfig.Items[recipe.Tool] and ItemConfig.Items[recipe.Tool].Name or recipe.Tool) end
-  text(card,table.concat(requirements,"\n"),UDim2.fromOffset(10,181),UDim2.new(1,-20,0,44)).TextSize=14
+  local requirementHeight=math.max(44,#requirements*18)
+  local extraHeight=requirementHeight-44
+  card.Size=UDim2.new(1,-8,0,(recipe.ManualBatch and 380 or 465)+extraHeight)
+  text(card,table.concat(requirements,"\n"),UDim2.fromOffset(10,181),UDim2.new(1,-20,0,requirementHeight)).TextSize=14
   local busy=(snapshot.CookingEndsAt or 0)>0
   local eligible=not recipe.WorkshopLevel or (snapshot.CookingWorkshopLevel or 0)>=recipe.WorkshopLevel
   for skill,value in pairs(recipe.Requirements and recipe.Requirements.Skills or {}) do if (player:GetAttribute("Skill"..skill) or 0)<value then eligible=false end end
@@ -387,19 +393,19 @@ local function renderRecipes()
    local pending=next(snapshot.CookingReady or {})~=nil
    local plan=CraftRules.QueuePlan(craftItems,recipe,{Batch=1,Repeats=1})
    local enabled=eligible and not busy and not pending and speed~=nil and plan~=nil
-   text(card,"Fixed batch · Collect before starting again.",UDim2.fromOffset(10,229),UDim2.new(1,-20,0,42)).TextSize=14
-   local craft=button(card,"Craft batch",UDim2.fromOffset(10,279),UDim2.new(1,-20,0,32))
+   text(card,"Fixed batch · Collect before starting again.",UDim2.fromOffset(10,229+extraHeight),UDim2.new(1,-20,0,42)).TextSize=14
+   local craft=button(card,"Craft batch",UDim2.fromOffset(10,279+extraHeight),UDim2.new(1,-20,0,32))
    craft.Active=enabled;craft.AutoButtonColor=enabled;craft.TextTransparency=enabled and 0 or .5
    craft.Activated:Connect(function() if enabled then action:FireServer("Cook",id,{Batch=1,Repeats=1}) end end)
-   craftStatuses[id]=text(card,busy and "Station is busy" or pending and "Collect finished products first." or not plan and "Insufficient materials." or "Ready to craft.",UDim2.fromOffset(10,317),UDim2.new(1,-20,0,28))
+   craftStatuses[id]=text(card,busy and "Station is busy" or pending and "Collect finished products first." or not plan and "Insufficient materials." or "Ready to craft.",UDim2.fromOffset(10,317+extraHeight),UDim2.new(1,-20,0,28))
    if busy and snapshot.CookingOwner==player.UserId then
-    button(card,"Cancel process",UDim2.fromOffset(10,347),UDim2.new(1,-20,0,27)).Activated:Connect(function() action:FireServer("CancelCraft") end)
+    button(card,"Cancel process",UDim2.fromOffset(10,347+extraHeight),UDim2.new(1,-20,0,27)).Activated:Connect(function() action:FireServer("CancelCraft") end)
    end
    continue
   end
-  text(card,"Quantity",UDim2.fromOffset(10,229),UDim2.new(1,-20,0,22)).TextSize=14
+  text(card,"Quantity",UDim2.fromOffset(10,229+extraHeight),UDim2.new(1,-20,0,22)).TextSize=14
   local repeats=Instance.new("TextBox")
-  repeats.Position=UDim2.new(.25,4,0,254);repeats.Size=UDim2.new(.5,-8,0,30)
+  repeats.Position=UDim2.new(.25,4,0,254+extraHeight);repeats.Size=UDim2.new(.5,-8,0,30)
   repeats.BackgroundColor3=Theme.Background;repeats.TextColor3=Theme.Text;repeats.Font=Theme.Font;repeats.TextSize=16
   repeats.ClearTextOnFocus=false;repeats.Text=tostring(craftRepeats[id] or 1);repeats.Parent=card
   local function processes()
@@ -408,9 +414,9 @@ local function renderRecipes()
    value=math.clamp(math.floor(value),1,snapshot.CookingMaxQueue or 1000)
    craftRepeats[id]=value;repeats.Text=tostring(value);return value
   end
-  local queueSummary=text(card,"",UDim2.fromOffset(10,291),UDim2.new(1,-20,0,55));queueSummary.TextSize=14
-  local cook=button(card,"Begin work",UDim2.fromOffset(10,350),UDim2.new(.5,-15,0,32))
-  local all=button(card,"Make maximum",UDim2.new(.5,5,0,350),UDim2.new(.5,-15,0,32))
+  local queueSummary=text(card,"",UDim2.fromOffset(10,291+extraHeight),UDim2.new(1,-20,0,55));queueSummary.TextSize=14
+  local cook=button(card,"Begin work",UDim2.fromOffset(10,350+extraHeight),UDim2.new(.5,-15,0,32))
+  local all=button(card,"Make maximum",UDim2.new(.5,5,0,350+extraHeight),UDim2.new(.5,-15,0,32))
   local enabled=false
   local allEnabled=eligible and not busy and available>0 and speed~=nil
   local function controls()
@@ -422,13 +428,13 @@ local function renderRecipes()
    all.Active=allEnabled;all.AutoButtonColor=allEnabled;all.TextTransparency=allEnabled and 0 or .5
   end
   repeats.FocusLost:Connect(controls)
-  button(card,"+",UDim2.fromOffset(10,254),UDim2.new(.25,-14,0,30)).Activated:Connect(function() repeats.Text=tostring(processes()+1);controls() end)
-  button(card,"−",UDim2.new(.75,4,0,254),UDim2.new(.25,-14,0,30)).Activated:Connect(function() repeats.Text=tostring(processes()-1);controls() end)
+  button(card,"+",UDim2.fromOffset(10,254+extraHeight),UDim2.new(.25,-14,0,30)).Activated:Connect(function() repeats.Text=tostring(processes()+1);controls() end)
+  button(card,"−",UDim2.new(.75,4,0,254+extraHeight),UDim2.new(.25,-14,0,30)).Activated:Connect(function() repeats.Text=tostring(processes()-1);controls() end)
   cook.Activated:Connect(function() if enabled then action:FireServer("Cook",id,{Batch=1,Repeats=processes()}) end end)
   all.Activated:Connect(function() if allEnabled then action:FireServer("Cook",id,{Batch=1,Repeats="All"}) end end)
-  craftStatuses[id]=text(card,busy and "Station is busy" or "",UDim2.fromOffset(10,389),UDim2.new(1,-20,0,38))
+  craftStatuses[id]=text(card,busy and "Station is busy" or "",UDim2.fromOffset(10,389+extraHeight),UDim2.new(1,-20,0,38))
   if busy and snapshot.CookingOwner==player.UserId then
-   button(card,"Cancel queue",UDim2.fromOffset(10,433),UDim2.new(1,-20,0,27)).Activated:Connect(function() action:FireServer("CancelCraft") end)
+   button(card,"Cancel queue",UDim2.fromOffset(10,433+extraHeight),UDim2.new(1,-20,0,27)).Activated:Connect(function() action:FireServer("CancelCraft") end)
   end
   controls()
  end
