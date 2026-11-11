@@ -2,7 +2,7 @@
 -- IDs are stable internal keys; Name is the English name shown in the UI.
 local ItemConfig = {}
 ItemConfig.PickupDistance = 2
-ItemConfig.RetiredItems={Rifle308=true,WoodenPlate=true,Money=true,Bill=true,bill=true,StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Axe=true,Showel=true}
+ItemConfig.RetiredItems={Rifle308=true,WoodenPlate=true,Money=true,Bill=true,bill=true,StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Showel=true}
 ItemConfig.Slots = {"Body", "PrimaryWeapon", "SecondaryWeapon", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
  ZombieHand = {
@@ -112,8 +112,9 @@ ItemConfig.Items = {
  -- Metal = {Name = "Metal", Weight = 0.2},
 }
 -- Tier is progression/access; HarvestMultiplier scales damage only to resource nodes.
--- Keep the scrap IDs so existing Studio templates continue to work.
+-- Keep the scrap inventory IDs and accept material-free Studio template names.
 ItemConfig.ToolAliases = {
+ Axe="ScrapAxe", Shovel="ScrapShovel",
  ScrapShowel="ScrapShovel",
  IronAxe="ScrapAxe", SteelAxe="ScrapAxe",
  IronShovel="ScrapShovel", IronShowel="ScrapShovel",
@@ -122,7 +123,7 @@ ItemConfig.ToolAliases = {
 for _,tool in ipairs({"Axe","Shovel"}) do
  local axe=tool=="Axe"
  ItemConfig.Items["Scrap"..tool]={
-  Name=tool, Weight=axe and 1.5 or 2,
+  Name=tool, TemplateID=tool, Weight=axe and 1.5 or 2,
   Slot="Hands", HarvestTool=tool, HarvestTier=1, HarvestMultiplier=1,
   Description=axe and "An axe for chopping trees into logs." or "A shovel for digging resource deposits.",
   Weapon={Damage=5, AttacksPerMinute=40, DamageType=axe and "Slashing" or "Blunt", MaxUses=1000,

@@ -169,7 +169,7 @@ function Rules.ReconcileEquipment(state,definitions,slots,aliases)
  for slot,id in pairs(state.Equipment) do
   if aliases and aliases[id] then state.Equipment[slot]=aliases[id] end
  end
- for _,id in ipairs({"WoodenPlate","Money","Bill","bill","StoneAxe","StoneShovel","StoneShowel","Knife","Axe","Showel"}) do
+ for _,id in ipairs({"WoodenPlate","Money","Bill","bill","StoneAxe","StoneShovel","StoneShowel","Knife","Showel"}) do
   state.Items[id]=nil
   if state.Conditions then state.Conditions[id]=nil end
   if state.Weapons then state.Weapons[id]=nil end

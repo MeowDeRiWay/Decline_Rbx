@@ -286,7 +286,14 @@ ground=false;assert(World.Pickup(rejoined,staleTool) and Service.Snapshot(rejoin
 assert(equipDraw(rejoined,"ScrapShovel"),"scrap shovel equips under its canonical ID")
 assert(Service.ClearHands(rejoined) and Service.Unequip(rejoined,"PrimaryWeapon"))
 ground=true;assert(World.Drop(rejoined,"ScrapShovel",1),"scrap shovel can be dropped again")
-for _,id in ipairs({"Knife","Axe","Showel","WoodenPlate"}) do
+ground=false
+for name,id in pairs({Axe="ScrapAxe",Shovel="ScrapShovel"}) do
+ local tool=make("Model",name,worldFolder,{Item_ID="Showel",Quantity=1});make("Part","Blade",tool)
+ worldFolder.ChildAdded:Fire(tool)
+ assert(tool:GetAttribute("Item_ID")==id and not tool.destroyed)
+ assert(World.Pickup(rejoined,tool),"generic model can be picked up")
+end
+for _,id in ipairs({"Knife","Showel","WoodenPlate"}) do
  assert(not ItemConfig.Items[id] and not Service.Add(rejoined,id,1))
  local retired=make("Model",id,worldFolder,{Item_ID=id,Quantity=1});make("Part","Part",retired)
  worldFolder.ChildAdded:Fire(retired);assert(retired.destroyed,"retired generic world pickups disappear")

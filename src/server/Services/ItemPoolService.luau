@@ -29,7 +29,7 @@ local function entries(folder)
   for _,source in ipairs(current:GetChildren()) do
    if source:IsA("Folder") then visit(source)
    elseif source:IsA("Model") or source:IsA("BasePart") then
-    local id=source:GetAttribute("Item_ID") or source.Name
+    local id=toolAliases[source.Name] or source:GetAttribute("Item_ID") or source.Name
     id=toolAliases[id] or id
     local definition=Items[id]
     -- Ammunition pools contain authored boxes, never a single loose round.

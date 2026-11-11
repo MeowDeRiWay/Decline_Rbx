@@ -26,6 +26,11 @@ for _,id in ipairs({"SteelKnife","ScrapAxe","ScrapShovel","ScrapKnife","IronKnif
  Visuals.CaptureTemplate(another,id)
  assert(ServerStorage.Items:FindFirstChild(id)==captured,"authored/existing template wins")
 end
+for name,id in pairs({Axe="ScrapAxe",Shovel="ScrapShovel"}) do
+ ServerStorage.Items:FindFirstChild(id):Destroy()
+ local template=make("Model",name,ServerStorage.Items);make("Part","Blade",template)
+ assert(Visuals.Template(id)==template and Visuals.Validate(id),"generic template equips via the existing item ID")
+end
 local stone=make("Model","Stone",world); make("Part","Part",stone)
 Visuals.CaptureTemplate(stone,"Stone")
 assert(not ServerStorage.Items:FindFirstChild("Stone"),"ordinary loot is not equipment")
