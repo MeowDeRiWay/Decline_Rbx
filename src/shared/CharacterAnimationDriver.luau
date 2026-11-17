@@ -170,11 +170,17 @@ RunService.PreSimulation:Connect(function(dt)
   if neutral.Left and neutral.Right then
    local feet
    r.Feet,feet=Foot.Step(r.Feet,neutral,speed>.025 and velocity or Vector3.zero,elapsed,running,legLength)
-   local crouch=legLength*.045
-   m.RootJoint.Transform=CFrame.new(0,-crouch,0)
+   r.Phase=r.Feet.Phase or r.Phase
+   local moving=math.clamp(r.Amount/.18,0,1)
+   local runWeight=running and moving or 0
+   local crouch=legLength*(.004+.012*moving+.018*runWeight)
+   local bounce=legLength*(running and .035 or .012)*moving*(1-math.cos(r.Phase*2))
+   local sway=legLength*.012*moving*math.sin(r.Phase)
+   local bodyOffset=Vector3.new(sway,-crouch+bounce,0)
+   m.RootJoint.Transform=CFrame.new(bodyOffset)
    for _,side in ipairs({"Left","Right"}) do
     local hip,knee=m[side.."Hip"],m[side.."Knee"]
-    local anchor=hip:GetAttribute("RootAnchor")+Vector3.new(0,-crouch,0)
+    local anchor=hip:GetAttribute("RootAnchor")+bodyOffset
     local delta=root.CFrame:VectorToObjectSpace(feet[side]-root.CFrame:PointToWorldSpace(anchor))
     local a,b=Pose.Arm(hip:GetAttribute("UpperVector"),hip:GetAttribute("LowerVector"),delta,Vector3.new(0,0,-1))
     hip.Transform=a;knee.Transform=b
@@ -193,11 +199,18 @@ RunService.PreSimulation:Connect(function(dt)
   local punching=typeof(punchStarted)=="number" and now>=punchStarted and now-punchStarted<1.5
   local breathBlocked=punching or reloadFrame~=nil or c:GetAttribute("Reloading") or c:GetAttribute("HandAction") or c:GetAttribute("CarryingUserId") or hp.Sit or hp.PlatformStand or (equipped and not definition.Firearm)
   local breath=Pose.Breath(now,(player.UserId or 0)%97,root.Size.Y,speed,breathBlocked)
-  m.Waist.Transform=CFrame.new(breath)
+  local locomotion=math.clamp(r.Amount/.18,0,1)
+  local lean=locomotion*(running and .085 or .018)
+  local twist=math.sin(r.Phase)*locomotion*(running and .035 or .018)
+  m.Waist.Transform=CFrame.new(breath)*CFrame.Angles(lean*direction.Z,twist,-lean*direction.X)
+  m.Neck.Transform=CFrame.Angles(-lean*direction.Z*.5,-twist*.5,lean*direction.X*.5)
   -- Predict the same-step chest position for IK instead of reading its previous
   -- physics frame. Hands and chest must rise together without feedback jitter.
   local waist=m.Waist
-  local chestFrame=waist.Part0.CFrame*waist.C0*waist.Transform*(waist.C1 or CFrame.identity):Inverse()
+  local rootJoint=m.RootJoint
+  local lowerFrame=rootJoint.Part0.CFrame*rootJoint.C0*rootJoint.Transform*(rootJoint.C1 or CFrame.identity):Inverse()
+  local waistParent=waist.Part0==rootJoint.Part1 and lowerFrame or waist.Part0.CFrame
+  local chestFrame=waistParent*waist.C0*waist.Transform*(waist.C1 or CFrame.identity):Inverse()
   if equipped and definition.Firearm and motor and not reloadFrame and not c:GetAttribute("HandAction") then
    local untilTime=c:GetAttribute("WeaponCombatUntil") or 0
    local relaxed=now>=untilTime
@@ -306,7 +319,8 @@ RunService.PreSimulation:Connect(function(dt)
    else
     local swing=math.sin(r.Phase)*(side=="Left" and -1 or 1)*r.Amount*.6
     shoulder.Transform=standing:Inverse()*CFrame.Angles(swing,0,0)*standing
-    elbow.Transform=CFrame.identity
+    local bend=speed>.025 and math.clamp(r.Amount/.18,0,1)*(running and .65 or .12) or 0
+    elbow.Transform=bend>0 and CFrame.Angles(0,(side=="Left" and -1 or 1)*bend,0) or CFrame.identity
    end
   end
   HandPose.Apply(c,root,m,workspace:GetServerTimeNow())
