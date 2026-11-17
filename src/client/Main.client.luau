@@ -12,7 +12,7 @@ local currentHeight=targetHeight
 local activityView
 local nextViewReport=0
 local player = Players.LocalPlayer
-local yaw=0
+local yaw=Config.CameraStartYaw
 local orbiting=false
 local previousMouseBehavior
 local function blocked()
