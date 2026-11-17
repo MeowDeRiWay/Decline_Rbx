@@ -16,7 +16,7 @@ local function bounds(model,frame,markedOnly)
  local low,high
  local parts=model:IsA("BasePart") and {model} or model:GetDescendants()
  for _,part in ipairs(parts) do
-  if part:IsA("BasePart") and (not markedOnly or markedBackpack(part,model)) then
+  if part:IsA("BasePart") and (part.Transparency or 0)<.95 and (not markedOnly or markedBackpack(part,model)) then
    local cf=frame:ToObjectSpace(part.CFrame)
    local s=part.Size/2
    local r,u,l=cf.RightVector,cf.UpVector,cf.LookVector
@@ -35,7 +35,7 @@ function Pose.StorageFrame(c,root,slot,weapon)
  local attachment=torso:FindFirstChild(slot.."Holster")
  if attachment and attachment:IsA("Attachment") then return attachment.WorldCFrame end
  if slot=="PrimaryWeapon" then
-  local rotation=CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.rad(95),0,math.pi)*CFrame.Angles(0,0,-math.pi/2)
+  local rotation=CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.pi/2,0,math.pi)*CFrame.Angles(0,0,-math.pi/2)
   weapon=weapon or c:FindFirstChild("HolsteredPrimaryWeapon") or c:FindFirstChild("HeldItem")
   local minimum
   if weapon then
@@ -49,9 +49,9 @@ function Pose.StorageFrame(c,root,slot,weapon)
   if not packLow then packLow,packHigh=bounds(armor,torso.CFrame,true) end
   local _,shellHigh=bounds(armor and armor:FindFirstChild("UpperTorso"),torso.CFrame)
   local backSurface=math.max(torso.Size.Z/2,shellHigh and shellHigh.Z or 0)
-  local x,z=torso.Size.X*.42,backSurface+.015-(minimum and minimum.Z or 0)
+  local x,z=torso.Size.X*.18,backSurface+.003-(minimum and minimum.Z or 0)
   if packLow then
-   x=packHigh.X+.015-(minimum and minimum.X or 0)
+   x=packHigh.X+.003-(minimum and minimum.X or 0)
    z=(packLow.Z+packHigh.Z)/2
   end
   return torso.CFrame*CFrame.new(x,-torso.Size.Y*.45,z)*rotation
