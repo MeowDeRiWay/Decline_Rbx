@@ -6,9 +6,9 @@ function Foot.Step(state,neutral,velocity,dt,running,length,right)
  dt=math.min(dt,.1)
  local speed=horizontal(velocity).Magnitude
  local moving=speed>.025
- local cadence=running and math.clamp(speed/math.max(length*1.1,.01),1.4,2.8)
+ local cadence=running and math.clamp(speed/math.max(length*1.6,.01),1.2,2.2)
   or math.clamp(speed/math.max(length*.85,.01),.5,1.8)
- local stance=running and .4 or .62
+ local stance=running and .46 or .62
  local stride=horizontal(velocity)*(stance/(2*cadence))
  local limit=length*(running and .38 or .28)
  if stride.Magnitude>limit then stride=stride.Unit*limit end
@@ -29,8 +29,11 @@ function Foot.Step(state,neutral,velocity,dt,running,length,right)
    lift=0
   else
    local t=(phase-stance)/(1-stance)
-   travel=-math.cos(t*math.pi)
-   lift=math.sin(t*math.pi)*length*(running and .24 or .11)*state.Weight
+   local recovery=running and t*t*(3-2*t) or t
+   travel=-math.cos(recovery*math.pi)
+   -- Recover the heel behind the body, then swing through with lower clearance.
+   local clearance=running and .18*(1-.5*t) or .11
+   lift=math.sin(t*math.pi)*length*clearance*state.Weight
   end
   local offset=state.Stride*travel
   -- Lateral steps retain separate lanes instead of crossing through the other leg.
