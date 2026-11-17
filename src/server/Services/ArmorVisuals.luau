@@ -8,6 +8,14 @@
 local Armor={}
 local names={"Head","UpperTorso","LowerTorso","LeftUpperArm","LeftLowerArm","RightUpperArm","RightLowerArm","LeftUpperLeg","LeftLowerLeg","RightUpperLeg","RightLowerLeg"}
 local function rotation(cf) return CFrame.new(-cf.Position)*cf end
+local function backpackPart(part,template)
+ local object=part
+ while object and object~=template do
+  if object:GetAttribute("Backpack")==true then return true end
+  object=object.Parent
+ end
+ return false
+end
 local function authoredFrames(character,root)
  local frames={[root]=CFrame.identity}
  local joints={}
@@ -63,6 +71,15 @@ function Armor.Apply(character,id,template)
  local authored=authoredFrames(character,root)
  local axes=rotation(template:GetPivot())
  local model=Instance.new("Model");model.Name="EquippedArmor";model:SetAttribute("Item_ID",id)
+ -- A backpack marker may be nested in a body section or placed at armor root.
+ local looseBackpack={}
+ for _,part in ipairs(template:GetDescendants()) do
+  if part:IsA("BasePart") and backpackPart(part,template) then
+   local parent=part.Parent
+   while parent and parent~=template and parent.Parent~=template do parent=parent.Parent end
+   if parent and (parent==template or not table.find(names,parent.Name)) then table.insert(looseBackpack,part) end
+  end
+ end
  local count=0
  for _,name in ipairs(names) do
   local body=character:FindFirstChild(name)
@@ -88,8 +105,12 @@ function Armor.Apply(character,id,template)
     end
     local section=Instance.new("Model",model);section.Name=name
     section.WorldPivot=destination
+    if name=="UpperTorso" then
+     for _,part in ipairs(looseBackpack) do table.insert(parts,part) end
+    end
     for _,p in ipairs(parts) do
      local copy=p:Clone()
+     if backpackPart(p,template) then copy:SetAttribute("Backpack",true) end
      for _,child in ipairs(copy:GetDescendants()) do
       if child:IsA("BasePart") or child:IsA("JointInstance") or child:IsA("WeldConstraint") or child:IsA("LuaSourceContainer") then child:Destroy() end
      end

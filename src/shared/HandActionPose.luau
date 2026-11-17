@@ -2,12 +2,59 @@
 local IK=require(script.Parent.CharacterPose)
 local Pose={StowDuration=.5,StowContact=.36,DrawDuration=.55,DrawContact=.18,TreatDuration=2.2,TreatContact=1.6}
 local function smooth(t) t=math.clamp(t,0,1);return t*t*(3-2*t) end
-function Pose.StorageFrame(c,root,slot)
+local function markedBackpack(part,container)
+ local object=part
+ while object and object~=container do
+  if object:GetAttribute("Backpack")==true then return true end
+  object=object.Parent
+ end
+ return container:GetAttribute("Backpack")==true
+end
+-- Measure geometry in torso axes, independent of model pivots and part rotations.
+local function bounds(model,frame,markedOnly)
+ if not model then return nil end
+ local low,high
+ local parts=model:IsA("BasePart") and {model} or model:GetDescendants()
+ for _,part in ipairs(parts) do
+  if part:IsA("BasePart") and (not markedOnly or markedBackpack(part,model)) then
+   local cf=frame:ToObjectSpace(part.CFrame)
+   local s=part.Size/2
+   local r,u,l=cf.RightVector,cf.UpVector,cf.LookVector
+   local half=Vector3.new(math.abs(r.X)*s.X+math.abs(u.X)*s.Y+math.abs(l.X)*s.Z,
+    math.abs(r.Y)*s.X+math.abs(u.Y)*s.Y+math.abs(l.Y)*s.Z,
+    math.abs(r.Z)*s.X+math.abs(u.Z)*s.Y+math.abs(l.Z)*s.Z)
+   local a,b=cf.Position-half,cf.Position+half
+   low=low and Vector3.new(math.min(low.X,a.X),math.min(low.Y,a.Y),math.min(low.Z,a.Z)) or a
+   high=high and Vector3.new(math.max(high.X,b.X),math.max(high.Y,b.Y),math.max(high.Z,b.Z)) or b
+  end
+ end
+ return low,high
+end
+function Pose.StorageFrame(c,root,slot,weapon)
  local torso=c:FindFirstChild(slot=="SecondaryWeapon" and "LowerTorso" or "UpperTorso") or root
  local attachment=torso:FindFirstChild(slot.."Holster")
  if attachment and attachment:IsA("Attachment") then return attachment.WorldCFrame end
  if slot=="PrimaryWeapon" then
-  return torso.CFrame*CFrame.new(torso.Size.X*.42,torso.Size.Y*.15,torso.Size.Z/2+.16)*CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.rad(95),0,math.pi)
+  local rotation=CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.rad(95),0,math.pi)
+  weapon=weapon or c:FindFirstChild("HolsteredPrimaryWeapon") or c:FindFirstChild("HeldItem")
+  local minimum
+  if weapon then
+   local pivot=weapon:GetPivot()
+   local offset=weapon:GetAttribute("HolsterPivotOffset")
+   if offset and weapon.PrimaryPart then pivot=weapon.PrimaryPart.CFrame*offset end
+   minimum=bounds(weapon,pivot*rotation:Inverse())
+  end
+  local armor=c:FindFirstChild("EquippedArmor")
+  local packLow,packHigh=bounds(c:FindFirstChild("EquippedBack"),torso.CFrame)
+  if not packLow then packLow,packHigh=bounds(armor,torso.CFrame,true) end
+  local _,shellHigh=bounds(armor and armor:FindFirstChild("UpperTorso"),torso.CFrame)
+  local backSurface=math.max(torso.Size.Z/2,shellHigh and shellHigh.Z or 0)
+  local x,z=torso.Size.X*.42,backSurface+.015-(minimum and minimum.Z or 0)
+  if packLow then
+   x=packHigh.X+.015-(minimum and minimum.X or 0)
+   z=(packLow.Z+packHigh.Z)/2
+  end
+  return torso.CFrame*CFrame.new(x,torso.Size.Y*.15,z)*rotation
  elseif slot=="SecondaryWeapon" then
   return torso.CFrame*CFrame.new(torso.Size.X/2+.13,-torso.Size.Y*.5,.02)*CFrame.Angles(math.rad(-90),0,0)
  end
