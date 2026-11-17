@@ -1,4 +1,11 @@
 local Rules={}
+-- Allow forward diagonals within 45 degrees of the character's facing.
+function Rules.IsForward(move,forward)
+ local moveLength=math.sqrt(move.X*move.X+move.Z*move.Z)
+ local facingLength=math.sqrt(forward.X*forward.X+forward.Z*forward.Z)
+ if moveLength<=.01 or facingLength<=.01 then return false end
+ return (move.X*forward.X+move.Z*forward.Z)/(moveLength*facingLength)>=math.sqrt(.5)-.00001
+end
 function Rules.Maximum(agility) return 10+math.max(0,agility or 0) end
 function Rules.Step(value,maximum,exhausted,wantsRun,moving,allowed,dt,costMultiplier)
  value=math.clamp(value,0,maximum)

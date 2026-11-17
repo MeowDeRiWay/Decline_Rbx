@@ -1,4 +1,13 @@
 local Rules=require("../src/shared/SprintRules")
+local facing={X=0,Z=-1}
+assert(Rules.IsForward({X=0,Z=-1},facing))
+assert(Rules.IsForward({X=1,Z=-1},facing),"forward diagonals can sprint")
+assert(not Rules.IsForward({X=1,Z=0},facing),"sideways movement only walks")
+assert(not Rules.IsForward({X=0,Z=1},facing),"backward movement only walks")
+assert(not Rules.IsForward({X=-1,Z=1},facing))
+assert(not Rules.IsForward({X=0,Z=0},facing),"standing does not sprint")
+assert(Rules.IsForward({X=1,Z=0},{X=1,Z=0}),"sprint follows character facing")
+assert(not Rules.IsForward({X=0,Z=-1},{X=1,Z=0}),"turning sideways ends sprint")
 assert(Rules.Maximum(0)==10 and Rules.Maximum(7)==17 and Rules.Maximum(10)==20)
 local value,exhausted,running=20,false,false
 for _=1,199 do value,exhausted,running=Rules.Step(value,20,exhausted,true,true,true,.1) end

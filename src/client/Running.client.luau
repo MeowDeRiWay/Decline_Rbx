@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Input = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local Sprint = require(ReplicatedStorage.Shared.SprintRules)
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("SetRunning")
 local focused,last = true,false
@@ -18,5 +19,7 @@ RunService.RenderStepped:Connect(function()
  local character = player.Character
  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
  local allowed = focused and humanoid ~= nil and humanoid.Health > 0 and not humanoid.Sit and not humanoid.PlatformStand and not (character:GetAttribute("Knockout") or (character:GetAttribute("InteractionLocked") or character:GetAttribute("MedicalTreating"))) and not ((((player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or player:GetAttribute("AdminOpen")) or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or (player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen"))) and not GuiService.MenuIsOpen and Input:GetFocusedTextBox() == nil
+ local root=character and character:FindFirstChild("HumanoidRootPart")
+ allowed=allowed and root~=nil and Sprint.IsForward(humanoid.MoveDirection,root.CFrame.LookVector)
  send(allowed and (Input:IsKeyDown(Enum.KeyCode.LeftShift) or Input:IsKeyDown(Enum.KeyCode.RightShift)))
 end)

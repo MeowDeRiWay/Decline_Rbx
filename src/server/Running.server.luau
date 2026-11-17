@@ -30,7 +30,12 @@ RunService.Heartbeat:Connect(function(dt)
   local maximum=Sprint.Maximum(player:GetAttribute("Agility"))
   local reserve=reserves[player]
   if not reserve or reserve.Character~=character then reserve={Character=character,Value=maximum,Exhausted=false};reserves[player]=reserve end
-  local moving=humanoid.MoveDirection.Magnitude>.01
+  local root=character:FindFirstChild("HumanoidRootPart")
+  local movement=humanoid.MoveDirection
+  -- Remote characters may not expose MoveDirection on the server.
+  if movement.Magnitude<=.01 and root then movement=root.AssemblyLinearVelocity end
+  local moving=root~=nil and Sprint.IsForward(movement,root.CFrame.LookVector)
+  allowed=allowed and moving
   local running
   reserve.Value,reserve.Exhausted,running=Sprint.Step(reserve.Value,maximum,reserve.Exhausted,wantsRun,moving,allowed,dt,character:GetAttribute("CarryingUserId") and 2 or 1)
   local value=math.floor(reserve.Value*10)/10
