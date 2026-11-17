@@ -13,7 +13,8 @@ GameConfig.FootstepMaxDistance = 5
 GameConfig.RunFootstepMaxDistance = 10
 -- Almost overhead, slightly tilted. Distances are in studs.
 GameConfig.CameraHeight = 30
-GameConfig.CameraBack = 5
+GameConfig.CameraBack = 43
+GameConfig.CameraStartYaw = math.rad(45)
 GameConfig.CameraFieldOfView = 40
 GameConfig.CameraOrbitSensitivity = 0.006 -- Radians per horizontal mouse pixel.
 -- Horizontal creature visibility, centered on the character facing direction.
