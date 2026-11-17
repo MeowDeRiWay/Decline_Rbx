@@ -1,54 +1,44 @@
--- Alternating strides: plant during support, then lift and swing to the next step.
+-- Body-relative stride paths keep both feet within reach as the player turns.
 local Foot={}
 local function horizontal(v) return Vector3.new(v.X,0,v.Z) end
-function Foot.Step(state,neutral,velocity,dt,running,length)
- if not state then state={Left=neutral.Left,Right=neutral.Right,Next="Left",Phase=0,Pause=0} end
+function Foot.Step(state,neutral,velocity,dt,running,length,right)
+ if not state then state={Phase=math.pi*1.24,Stride=Vector3.zero,Weight=0} end
  dt=math.min(dt,.1)
  local speed=horizontal(velocity).Magnitude
  local moving=speed>.025
- local cadence=running and math.clamp(speed/math.max(length*1.5,.01),1.3,2.4)
-  or math.clamp(speed/math.max(length*1.2,.01),.55,1.35)
- local halfCycle=.5/cadence
- local swingFraction=running and 1 or .8
- state.Pause=math.max(0,(state.Pause or 0)-dt)
- if not state.Swing and state.Pause<=0 then
-  local side=state.Next
-  local distance=horizontal(neutral[side]-state[side]).Magnitude
-  if moving or distance>length*.035 then
-   local duration=moving and halfCycle*swingFraction or .2
-   local lead=moving and horizontal(velocity)*halfCycle*.5 or Vector3.zero
-   if lead.Magnitude>length*.4 then lead=lead.Unit*length*.4 end
-   state.Swing={Side=side,From=state[side],Goal=neutral[side]+lead,Time=0,Duration=duration,Pause=moving and halfCycle*(1-swingFraction) or 0}
-  elseif not moving then state.Next=side=="Left" and "Right" or "Left" end
+ local cadence=running and math.clamp(speed/math.max(length*1.1,.01),1.4,2.8)
+  or math.clamp(speed/math.max(length*.85,.01),.5,1.8)
+ local stance=running and .4 or .62
+ local stride=horizontal(velocity)*(stance/(2*cadence))
+ local limit=length*(running and .38 or .28)
+ if stride.Magnitude>limit then stride=stride.Unit*limit end
+ local blend=1-math.exp(-16*dt)
+ state.Stride+=(stride-state.Stride)*blend
+ state.Weight+=((moving and 1 or 0)-state.Weight)*blend
+ if not moving and state.Weight<.001 then state.Weight=0;state.Stride=Vector3.zero end
+ if moving then state.Phase=(state.Phase+cadence*dt*2*math.pi)%(2*math.pi) end
+ right=right or horizontal(neutral.Right-neutral.Left).Unit
+ local gap=math.max(.001,horizontal(neutral.Right-neutral.Left):Dot(right))
+ local targets={}
+ for _,side in ipairs({"Left","Right"}) do
+  local phase=(state.Phase/(2*math.pi)+(side=="Right" and .5 or 0))%1
+  local travel,lift
+  if phase<stance then
+   -- The support foot travels from heel strike to toe-off relative to the hip.
+   travel=1-2*phase/stance
+   lift=0
+  else
+   local t=(phase-stance)/(1-stance)
+   travel=-math.cos(t*math.pi)
+   lift=math.sin(t*math.pi)*length*(running and .24 or .11)*state.Weight
+  end
+  local offset=state.Stride*travel
+  -- Lateral steps retain separate lanes instead of crossing through the other leg.
+  local lateral=offset:Dot(right)
+  local bounded=side=="Left" and math.min(lateral,gap*.3) or math.max(lateral,-gap*.3)
+  offset+=right*(bounded-lateral)
+  targets[side]=neutral[side]+offset+Vector3.new(0,lift,0)
  end
- local swing=state.Swing
- local left,right=state.Left,state.Right
- if swing then
-  if not moving then
-   swing.Duration=math.min(swing.Duration,swing.Time+.12)
-   swing.Goal=neutral[swing.Side]
-   swing.Pause=0
-  end
-  swing.Time+=dt
-  local t=math.clamp(swing.Time/swing.Duration,0,1)
-  local smooth=t*t*(3-2*t)
-  local lift=math.sin(t*math.pi)*length*(running and .3 or .09)
-  local p=swing.From+(swing.Goal-swing.From)*smooth+Vector3.new(0,lift,0)
-  if t>=1 then p=swing.Goal end
-  state.Phase=(swing.Side=="Left" and 0 or math.pi)+t*math.pi
-  if swing.Side=="Left" then left=p else right=p end
-  if running and moving then
-   -- Late push-off gives running a short flight phase.
-   local push=math.max(0,(t-.75)/.25)*length*.08*math.sin(t*math.pi)
-   if swing.Side=="Left" then right+=Vector3.new(0,push,0) else left+=Vector3.new(0,push,0) end
-  end
-  if t>=1 then
-   state[swing.Side]=swing.Goal
-   state.Next=swing.Side=="Left" and "Right" or "Left"
-   state.Pause=swing.Pause
-   state.Swing=nil
-  end
- end
- return state,{Left=left,Right=right}
+ return state,targets
 end
 return Foot

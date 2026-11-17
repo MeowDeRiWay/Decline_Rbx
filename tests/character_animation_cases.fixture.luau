@@ -15,6 +15,44 @@ assert(hip.Transform)
 root.CFrame=CFrame.new(.01,0,0)*root.CFrame
 RunService.PreSimulation:Fire(1/30)
 assert(math.abs(hip.Transform.R[3])+math.abs(hip.Transform.R[6])+math.abs(hip.Transform.R[2])>0,"actual movement poses hips")
+-- Check the final two-link leg chain, including pelvis offset and IK transforms.
+local savedRoot=root.CFrame
+for _,fps in ipairs({30,60,144}) do
+ for _,running in ipairs({false,true}) do
+  c:SetAttribute("Running",running)
+  for _,direction in ipairs({Vector3.new(0,0,-1),Vector3.new(0,0,1),Vector3.xAxis,-Vector3.xAxis}) do
+   local maxLift={Left=0,Right=0}
+   for frame=1,fps do
+    root.CFrame=root.CFrame+direction*(running and 3 or 1)/fps
+    serverTime+=1/fps
+    RunService.PreSimulation:Fire(1/fps)
+    local body=c:FindFirstChild("RootJoint",true).Transform.Position
+    for _,side in ipairs({"Left","Right"}) do
+     local hip=c:FindFirstChild(side.."Hip",true)
+     local knee=c:FindFirstChild(side.."Knee",true)
+     local upper,lower=hip:GetAttribute("UpperVector"),hip:GetAttribute("LowerVector")
+     local anchor=hip:GetAttribute("RootAnchor")+body
+     local upperPoint=hip.Transform:VectorToWorldSpace(upper)
+     local endpoint=anchor+upperPoint+(hip.Transform*knee.Transform):VectorToWorldSpace(lower)
+     local rest=hip:GetAttribute("FootPosition")
+     assert((endpoint-anchor).Magnitude<upper.Magnitude+lower.Magnitude-.00015,"walking never locks a leg at maximum reach")
+     assert(endpoint.Y>=rest.Y-.001,"the solved leg reaches its foot path above ground")
+     maxLift[side]=math.max(maxLift[side],endpoint.Y-rest.Y)
+    end
+   end
+   assert(maxLift.Left>.035 and maxLift.Right>.035,"actual rig lifts both feet in forward and sideways movement")
+  end
+ end
+end
+c:SetAttribute("Running",false)
+root.CFrame=savedRoot
+for _=1,90 do RunService.PreSimulation:Fire(1/60) end
+for _,side in ipairs({"Left","Right"}) do
+ local elbow=c:FindFirstChild(side.."Elbow",true)
+ local expected=CFrame.Angles(0,(side=="Left" and -1 or 1)*.14,0)
+ assert(elbow.Transform.LookVector:Dot(expected.LookVector)>.999,"unarmed idle retains a soft elbow bend")
+end
+print("PASS: final walking/running leg chains stay within reach and lift both feet at30/60/144Hz, idle elbows remain bent")
 local held=Instance.new("Part",c);held.Name="HeldItem";held.CFrame=root.CFrame*CFrame.new(.3,.2,-.3)
 c:SetAttribute("HandsItem","Gun")
 c.DescendantAdded:Fire(held);flush();RunService.PreSimulation:Fire(1/30)
@@ -103,7 +141,7 @@ c:SetAttribute("Reloading",false)
 serverTime+=5
 for _=1,60 do RunService.PreSimulation:Fire(1/60) end
 assert(reloadMotor.Transform.Position.Magnitude<1e-7,"launcher remains on shoulder after combat expires")
-assert(c:FindFirstChild("LeftElbow",true).Transform==CFrame.identity,"relaxed launcher frees left arm")
+assert(c:FindFirstChild("LeftElbow",true).Transform.LookVector:Dot(CFrame.Angles(0,-.14,0).LookVector)>.999,"relaxed launcher frees left arm with a soft elbow bend")
 c:SetAttribute("WeaponCombatUntil",serverTime+4)
 for _=1,60 do RunService.PreSimulation:Fire(1/60) end
 assert(reloadMotor.Transform.Position.Magnitude<.001,"combat returns weapon to ready")
@@ -116,7 +154,7 @@ local upper,lower=rightShoulder:GetAttribute("UpperVector"),rightShoulder:GetAtt
 local arm=standing*rightShoulder.Transform
 local hand=arm:VectorToWorldSpace(upper)+(arm*rightElbow.Transform):VectorToWorldSpace(lower)
 assert(hand.Unit:Dot(standing:VectorToWorldSpace(upper+lower).Unit)>.999,"resting pistol hand hangs straight down")
-assert(c:FindFirstChild("LeftElbow",true).Transform==CFrame.identity,"pistol support hand stays free")
+assert(c:FindFirstChild("LeftElbow",true).Transform.LookVector:Dot(CFrame.Angles(0,-.14,0).LookVector)>.999,"pistol support hand hangs with a soft elbow bend")
 reloadMotor.Parent=nil;held:SetAttribute("AnimationSet",nil)
 print("PASS: real viewer reload lowers launcher, cancellation and expiry restore held motor")
 otherRoot.CFrame=CFrame.new(300,0,0)*otherRoot.CFrame
@@ -181,5 +219,5 @@ local right=c:FindFirstChild("RightShoulder",true)
 local left=c:FindFirstChild("LeftShoulder",true)
 local leftElbow=c:FindFirstChild("LeftElbow",true)
 assert(right.Transform~=CFrame.identity,"utility tool engages right-hand IK without a Weapon definition")
-assert(leftElbow.Transform==CFrame.identity,"tool free hand does not enter a two-hand support pose")
+assert(leftElbow.Transform.LookVector:Dot(CFrame.Angles(0,-.14,0).LookVector)>.999,"tool free hand hangs with a soft elbow bend")
 print("PASS: utility tool grip IK and free left hand in the shared viewer/server driver")

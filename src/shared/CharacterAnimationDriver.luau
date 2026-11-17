@@ -169,20 +169,29 @@ RunService.PreSimulation:Connect(function(dt)
   end
   if neutral.Left and neutral.Right then
    local feet
-   r.Feet,feet=Foot.Step(r.Feet,neutral,speed>.025 and velocity or Vector3.zero,elapsed,running,legLength)
+   r.Feet,feet=Foot.Step(r.Feet,neutral,speed>.025 and velocity or Vector3.zero,elapsed,running,legLength,root.CFrame.RightVector)
    r.Phase=r.Feet.Phase or r.Phase
    local moving=math.clamp(r.Amount/.18,0,1)
    local runWeight=running and moving or 0
-   local crouch=legLength*(.004+.012*moving+.018*runWeight)
-   local bounce=legLength*(running and .035 or .012)*moving*(1-math.cos(r.Phase*2))
-   local sway=legLength*.012*moving*math.sin(r.Phase)
-   local bodyOffset=Vector3.new(sway,-crouch+bounce,0)
+   local sway=legLength*.008*moving*math.sin(r.Phase)
+   local crouch=legLength*(.006+.012*moving+.018*runWeight)
+   -- Lower the pelvis enough to reach the ground without straightening a knee
+   -- to the IK limit. The old fixed pelvis height left long strides unreachable.
+   for _,side in ipairs({"Left","Right"}) do
+    local hip=m[side.."Hip"]
+    local anchor=hip:GetAttribute("RootAnchor")+Vector3.new(sway,0,0)
+    local delta=root.CFrame:PointToObjectSpace(feet[side])-anchor
+    local reach=hip:GetAttribute("UpperVector").Magnitude+hip:GetAttribute("LowerVector").Magnitude
+    local vertical=math.sqrt(math.max(.001, (reach*.995)^2-delta.X^2-delta.Z^2))
+    crouch=math.max(crouch,-delta.Y-vertical)
+   end
+   local bodyOffset=Vector3.new(sway,-crouch,0)
    m.RootJoint.Transform=CFrame.new(bodyOffset)
    for _,side in ipairs({"Left","Right"}) do
     local hip,knee=m[side.."Hip"],m[side.."Knee"]
     local anchor=hip:GetAttribute("RootAnchor")+bodyOffset
     local delta=root.CFrame:VectorToObjectSpace(feet[side]-root.CFrame:PointToWorldSpace(anchor))
-    local a,b=Pose.Arm(hip:GetAttribute("UpperVector"),hip:GetAttribute("LowerVector"),delta,Vector3.new(0,0,-1))
+    local a,b=Pose.Arm(hip:GetAttribute("UpperVector"),hip:GetAttribute("LowerVector"),delta,Vector3.new(0,0,-1),1)
     hip.Transform=a;knee.Transform=b
    end
   else
@@ -319,7 +328,7 @@ RunService.PreSimulation:Connect(function(dt)
    else
     local swing=math.sin(r.Phase)*(side=="Left" and -1 or 1)*r.Amount*.6
     shoulder.Transform=standing:Inverse()*CFrame.Angles(swing,0,0)*standing
-    local bend=speed>.025 and math.clamp(r.Amount/.18,0,1)*(running and .65 or .12) or 0
+    local bend=.14+math.clamp(r.Amount/.18,0,1)*(running and .5 or .1)
     elbow.Transform=bend>0 and CFrame.Angles(0,(side=="Left" and -1 or 1)*bend,0) or CFrame.identity
    end
   end

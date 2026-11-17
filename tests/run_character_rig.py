@@ -68,14 +68,39 @@ local function test(frame)
  end
  local neutral={Left=Vector3.new(-.1,0,0),Right=Vector3.new(.1,0,0)}
  local feet,targets=Foot.Step(nil,neutral,Vector3.zero,.03,false,.9)
- feet.Next="Left"
- local planted=targets.Right
  neutral={Left=neutral.Left+Vector3.new(0,0,-.2),Right=neutral.Right+Vector3.new(0,0,-.2)}
  feet,targets=Foot.Step(feet,neutral,Vector3.new(0,0,-1),.03,false,.9)
- near(targets.Right,planted)
- assert(targets.Left.Y>0,"swing foot lifts while support foot stays in world")
- for step=1,20 do feet,targets=Foot.Step(feet,neutral,Vector3.zero,.03,false,.9) end
+ assert(targets.Left.Y>0,"swing foot lifts from toe-off")
+ for step=1,40 do feet,targets=Foot.Step(feet,neutral,Vector3.zero,.03,false,.9) end
  assert(targets.Left.Y==0 and targets.Right.Y==0,"stopping settles both feet")
+ near(targets.Left,neutral.Left);near(targets.Right,neutral.Right)
+ for _,fps in ipairs({30,60,144}) do
+  for _,running in ipairs({false,true}) do
+   for _,heading in ipairs({Vector3.new(0,0,-1),Vector3.new(0,0,1),Vector3.xAxis,-Vector3.xAxis,Vector3.new(1,0,-1).Unit}) do
+    local state
+    local previous
+    local lifts={Left=0,Right=0}
+    for frame=1,fps*3 do
+     local center=heading*(running and 3 or 1)*frame/fps
+     local neutral={Left=center+Vector3.new(-.13,0,0),Right=center+Vector3.new(.13,0,0)}
+     local targets
+     state,targets=Foot.Step(state,neutral,heading*(running and 3 or 1),1/fps,running,.9,Vector3.xAxis)
+     assert(targets.Left.X<center.X and targets.Right.X>center.X,"strafe feet keep separate lanes")
+     for _,side in ipairs({"Left","Right"}) do
+      local offset=targets[side]-neutral[side]
+      assert(offset.Magnitude<.9*.5,"feet remain below the body within a bounded stride")
+      lifts[side]=math.max(lifts[side],offset.Y)
+      if previous then
+       local travel=(targets[side]-previous[side]-heading*(running and 3 or 1)/fps).Magnitude
+       assert(travel<.9*8/fps,"stride crosses support/swing boundaries without jumps")
+      end
+     end
+     previous=targets
+    end
+    assert(lifts.Left>.04 and lifts.Right>.04,"both legs visibly clear the ground")
+   end
+  end
+ end
  local walkAngle,walkHz=Pose.Gait(8,false)
  local runAngle,runHz=Pose.Gait(8,true)
  assert(walkHz<=1.05 and runHz>walkHz and walkAngle<runAngle*.5,"walking is capped and visibly gentler than running")
