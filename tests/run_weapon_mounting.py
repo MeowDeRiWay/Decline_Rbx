@@ -61,6 +61,9 @@ for _,rotation in ipairs({CFrame.identity,CFrame.Angles(.2,1.3,-.1)}) do
  local function template() return weapon end
  assert(Holsters.Apply(c,"PrimaryWeapon","Rifle",template))
  local worn=c:FindFirstChild("HolsteredPrimaryWeapon")
+ local mount=frame:ToObjectSpace(Pose.StorageFrame(c,root,"PrimaryWeapon",weapon))
+ assert(math.abs(mount.Position.Y+torso.Size.Y*.45)<.0001,"rifle sits lower along the back")
+ assert(mount:VectorToWorldSpace(Vector3.new(0,-1,0)).X>.95,"magazine faces the character's right")
  local low=extents(worn,frame)
  assert(math.abs(low.Z-(torso.Size.Z/2+.015))<.0001,"rifle rests against the bare back with only a small clearance")
  near(Pose.StorageFrame(c,root,"PrimaryWeapon").Position,(frame*worn:GetAttribute("StorageOffset")).Position)

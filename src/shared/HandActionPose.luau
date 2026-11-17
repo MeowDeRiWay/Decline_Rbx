@@ -35,7 +35,7 @@ function Pose.StorageFrame(c,root,slot,weapon)
  local attachment=torso:FindFirstChild(slot.."Holster")
  if attachment and attachment:IsA("Attachment") then return attachment.WorldCFrame end
  if slot=="PrimaryWeapon" then
-  local rotation=CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.rad(95),0,math.pi)
+  local rotation=CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.rad(95),0,math.pi)*CFrame.Angles(0,0,-math.pi/2)
   weapon=weapon or c:FindFirstChild("HolsteredPrimaryWeapon") or c:FindFirstChild("HeldItem")
   local minimum
   if weapon then
@@ -54,7 +54,7 @@ function Pose.StorageFrame(c,root,slot,weapon)
    x=packHigh.X+.015-(minimum and minimum.X or 0)
    z=(packLow.Z+packHigh.Z)/2
   end
-  return torso.CFrame*CFrame.new(x,torso.Size.Y*.15,z)*rotation
+  return torso.CFrame*CFrame.new(x,-torso.Size.Y*.45,z)*rotation
  elseif slot=="SecondaryWeapon" then
   return torso.CFrame*CFrame.new(torso.Size.X/2+.13,-torso.Size.Y*.5,.02)*CFrame.Angles(math.rad(-90),0,0)
  end
