@@ -15,9 +15,10 @@ local function restore()
  elapsed=interval
 end
 
-local function isCreaturePart(part)
- local ancestor=part.Parent
+local function excludedFromFade(part)
+ local ancestor=part
  while ancestor and ancestor~=workspace do
+  if ancestor:GetAttribute("Road")==true then return true end
   if ancestor:IsA("Model") and (ancestor.Name=="Mannikin" or ancestor:FindFirstChildOfClass("Humanoid")) then return true end
   ancestor=ancestor.Parent
  end
@@ -36,7 +37,7 @@ local function findObstructions(character,root,camera)
  table.insert(points,root.Position-margin)
  for _,record in pairs(faded) do record.Blocking=false end
  for _,part in ipairs(camera:GetPartsObscuringTarget(points,{character})) do
-  if part:IsA("BasePart") and part.Transparency<.95 and not isCreaturePart(part) then
+  if part:IsA("BasePart") and part.Transparency<.95 and not excludedFromFade(part) then
    local record=faded[part]
    if not record then
     record={Original=part.LocalTransparencyModifier,Value=part.LocalTransparencyModifier}

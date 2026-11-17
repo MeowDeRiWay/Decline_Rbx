@@ -13,6 +13,7 @@ local function signal()
 end
 local function object(kind,parent)
  local o={ClassName=kind,Parent=parent,Name=kind,Children={}}
+ function o:GetAttribute(name) return self.Attributes and self.Attributes[name] end
  function o:IsA(name) return name==self.ClassName or name=="BasePart" and self.ClassName=="Part" end
  function o:FindFirstChild(name) for _,child in ipairs(self.Children) do if child.Name==name then return child end end end
  function o:FindFirstChildOfClass(kind) for _,child in ipairs(self.Children) do if child.ClassName==kind then return child end end end
@@ -55,6 +56,11 @@ local npc=object("Model",workspace);object("Humanoid",npc)
 local npcPart=wall(1,npc)
 local mannequin=object("Model",workspace);mannequin.Name="Mannikin"
 local mannequinPart=wall(1,mannequin)
+local roadModel=object("Model",workspace);roadModel.Attributes={Road=true}
+local road=wall(0,roadModel)
+local roadPart=wall(.1);roadPart.Attributes={Road=true}
+local nestedModel=object("Model",roadModel)
+local nestedRoad=wall(0,nestedModel)
 local collision,transparency=front.CanCollide,front.Transparency
 '''
 source += "\nlocal controller=(function()\n" + (root / "src/client/CameraOcclusion.client.luau").read_text() + "\nend)()\n"
@@ -64,10 +70,11 @@ local function frames(fps,seconds)
  for _=1,math.ceil(fps*seconds) do callback(1/fps) end
 end
 for _,fps in ipairs({30,60,144}) do
- sceneHits={front,rear,glass,npcPart,mannequinPart}
+ sceneHits={front,rear,glass,npcPart,mannequinPart,road,roadPart,nestedRoad}
  local before=calls
  frames(fps,1)
  assert(front.LocalTransparencyModifier>.84 and rear.LocalTransparencyModifier>.84,"all blocking layers fade")
+ assert(road.LocalTransparencyModifier==0 and roadPart.LocalTransparencyModifier==.1 and nestedRoad.LocalTransparencyModifier==0,"Road attributes on parts or ancestors exclude all road geometry")
  assert(glass.LocalTransparencyModifier==0,"authored transparent geometry stays unchanged")
  assert(npcPart.LocalTransparencyModifier==1 and mannequinPart.LocalTransparencyModifier==1,"creature visibility retains ownership")
  assert(front.Transparency==transparency and front.CanCollide==collision,"occlusion changes presentation only")
