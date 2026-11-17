@@ -45,9 +45,24 @@ end
 local function minimumHeight()
  return player:GetAttribute("AdminAccess")==true and .65 or 18
 end
-local function maximumHeight()
- local _,maximum=ProgressionRules.ZoomBounds(player:GetAttribute("ViewRange") or 25,Config.CameraHeight,Config.CameraFieldOfView)
- return maximum
+local cameraDistance = math.sqrt(Config.CameraHeight^2 + Config.CameraBack^2)
+local forwardDepthScale = Config.CameraBack / cameraDistance
+local verticalSlope = math.tan(math.rad(Config.CameraFieldOfView / 2))
+
+local function zoomBounds(camera)
+ local range = player:GetAttribute("ViewRange") or (10 + 3 * (player:GetAttribute("Attention") or 5))
+ local _, maximum = ProgressionRules.ZoomBounds(range, Config.CameraHeight, Config.CameraFieldOfView)
+ local viewport = camera and camera.ViewportSize
+ if viewport and viewport.X > 0 and viewport.Y > 0 then
+  local halfAngle = math.rad(Config.CreatureViewAngle * (player:GetAttribute("ViewAngleMultiplier") or 1) / 2)
+  local horizontalSlope = verticalSlope * viewport.X / viewport.Y
+  -- Fit the unobstructed cone facing screen-forward, so aiming never changes zoom.
+  local side = range * math.sin(halfAngle)
+  local depth = range * math.cos(halfAngle) * forwardDepthScale
+  local fitHeight = (side / horizontalSlope - depth) * Config.CameraHeight / cameraDistance
+  maximum = math.min(maximum, math.max(.65, fitHeight))
+ end
+ return math.min(minimumHeight(), maximum), maximum
 end
 Input.InputChanged:Connect(function(input,processed)
  if blocked() then stopOrbit();return end
@@ -56,7 +71,8 @@ Input.InputChanged:Connect(function(input,processed)
   return
  end
  if processed or input.UserInputType~=Enum.UserInputType.MouseWheel then return end
- targetHeight=math.clamp(targetHeight-input.Position.Z*math.max(.08,math.min(2,targetHeight*.15)),minimumHeight(),maximumHeight())
+ local minimum, maximum = zoomBounds(workspace.CurrentCamera)
+ targetHeight=math.clamp(targetHeight-input.Position.Z*math.max(.08,math.min(2,targetHeight*.15)),minimum,maximum)
 end)
 -- Default Roblox controls handle walking relative to the camera.
 ContextActionService:BindActionAtPriority("DeclineNoJump", function()
@@ -88,8 +104,9 @@ RunService:BindToRenderStep("DeclineCamera", Enum.RenderPriority.Camera.Value + 
  camera.CameraType = Enum.CameraType.Scriptable
  camera.FieldOfView = Config.CameraFieldOfView
  local target = root.Position
- targetHeight=math.clamp(targetHeight,minimumHeight(),maximumHeight())
- currentHeight+=(targetHeight-currentHeight)*(1-math.exp(-12*dt))
+ local minimum, maximum = zoomBounds(camera)
+ targetHeight=math.clamp(targetHeight,minimum,maximum)
+ currentHeight=math.min(maximum,currentHeight+(targetHeight-currentHeight)*(1-math.exp(-12*dt)))
  local sine,cosine=math.sin(yaw),math.cos(yaw)
  local back=Config.CameraBack*currentHeight/Config.CameraHeight
  local position=target+Vector3.new(sine*back,currentHeight,cosine*back)
