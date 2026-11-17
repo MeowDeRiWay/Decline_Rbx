@@ -50,7 +50,7 @@ local function update(player)
  player:SetAttribute("ArmorExplosiveResistance",armor and armor.ExplosiveResistance or 0)
  player:SetAttribute("HandsEquipped",handItem or "");player:SetAttribute("ArmorAbsorption",absorption);player:SetAttribute("ArmorResistance",math.clamp(resistance,0,.9))
  local back=state.Equipment.Back and ItemConfig.Items[state.Equipment.Back]
- local carryBonus=back and back.CarryBonusKg or 0
+ local carryBonus=(back and back.CarryBonusKg or 0)+(body and body.CarryBonusKg or 0)
  local baseCarry=player:GetAttribute("BaseCarryLimitKg")
  if baseCarry==nil then baseCarry=player:GetAttribute("CarryLimitKg") or 20;player:SetAttribute("BaseCarryLimitKg",baseCarry) end
  player:SetAttribute("EquipmentCarryBonusKg",carryBonus)
