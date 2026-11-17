@@ -77,6 +77,9 @@ for _,rotation in ipairs({CFrame.identity,CFrame.Angles(.2,1.3,-.1)}) do
  local side=c:FindFirstChild("HolsteredPrimaryWeapon")
  low=extents(side,frame)
  assert(side~=worn and math.abs(low.X-packHigh.X-.003)<.0001,"wearing a backpack remounts the same rifle at its right side")
+ local packMount=frame:ToObjectSpace(Pose.StorageFrame(c,root,"PrimaryWeapon",weapon))
+ assert(packMount:VectorToWorldSpace(Vector3.new(0,-1,0)).Z>.999,"backpack magazine points aft away from the character")
+ assert(math.abs(packMount:VectorToWorldSpace(Vector3.xAxis).X)>.999,"rifle broad side lies flat against the backpack side")
  near(Pose.StorageFrame(c,root,"PrimaryWeapon").Position,(frame*side:GetAttribute("StorageOffset")).Position)
  backpack:Destroy()
  assert(Holsters.Apply(c,"PrimaryWeapon","Rifle",template))
@@ -152,6 +155,9 @@ for name,parts in pairs(measured.Weapons) do
   if #backpack:GetDescendants()>0 then
    local _,high=extents(backpack,CFrame.identity)
    assert(math.abs(low.X-high.X-.003)<.0001,"measured armor backpack clearance: "..armorName.." / "..name)
+   local packMount=Pose.StorageFrame(c,root,"PrimaryWeapon",template)
+   assert(packMount:VectorToWorldSpace(Vector3.new(0,-1,0)).Z>.999,"integrated backpack magazine points away from the character")
+   assert(math.abs(packMount:VectorToWorldSpace(Vector3.xAxis).X)>.999,"integrated backpack weapon lies broadside against the bag")
   else
    local _,high=extents(armor,CFrame.identity)
    assert(math.abs(low.Z-math.max(torso.Size.Z/2,high.Z)-.003)<.0001,"measured jacket back clearance: "..armorName.." / "..name)

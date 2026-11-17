@@ -35,7 +35,16 @@ function Pose.StorageFrame(c,root,slot,weapon)
  local attachment=torso:FindFirstChild(slot.."Holster")
  if attachment and attachment:IsA("Attachment") then return attachment.WorldCFrame end
  if slot=="PrimaryWeapon" then
-  local rotation=CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.pi/2,0,math.pi)*CFrame.Angles(0,0,-math.pi/2)
+  local armor=c:FindFirstChild("EquippedArmor")
+  local packLow,packHigh=bounds(c:FindFirstChild("EquippedBack"),torso.CFrame)
+  if not packLow then packLow,packHigh=bounds(armor,torso.CFrame,true) end
+  local rotation
+  if packLow then
+   -- Lay the rifle's broad side against the pack; its magazine points aft.
+   rotation=CFrame.Angles(math.pi/2,0,math.pi)
+  else
+   rotation=CFrame.Angles(0,0,math.rad(-10))*CFrame.Angles(math.pi/2,0,math.pi)*CFrame.Angles(0,0,-math.pi/2)
+  end
   weapon=weapon or c:FindFirstChild("HolsteredPrimaryWeapon") or c:FindFirstChild("HeldItem")
   local minimum
   if weapon then
@@ -44,9 +53,6 @@ function Pose.StorageFrame(c,root,slot,weapon)
    if offset and weapon.PrimaryPart then pivot=weapon.PrimaryPart.CFrame*offset end
    minimum=bounds(weapon,pivot*rotation:Inverse())
   end
-  local armor=c:FindFirstChild("EquippedArmor")
-  local packLow,packHigh=bounds(c:FindFirstChild("EquippedBack"),torso.CFrame)
-  if not packLow then packLow,packHigh=bounds(armor,torso.CFrame,true) end
   local _,shellHigh=bounds(armor and armor:FindFirstChild("UpperTorso"),torso.CFrame)
   local backSurface=math.max(torso.Size.Z/2,shellHigh and shellHigh.Z or 0)
   local x,z=torso.Size.X*.18,backSurface+.003-(minimum and minimum.Z or 0)
