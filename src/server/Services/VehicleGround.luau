@@ -1,5 +1,13 @@
--- Query-only road support does not change character collision or road materials.
+-- Road surfaces support both characters and the scripted vehicle suspension.
 local Ground={}
+local function roadSurface(part)
+ local object=part
+ while object and object~=workspace do
+  if object:GetAttribute("Road")==true or object.Name:lower()=="roads" then return true end
+  object=object.Parent
+ end
+ return false
+end
 function Ground.Marked(part)
  local object=part
  while object and object~=workspace do
@@ -69,7 +77,9 @@ function Ground.Start()
  if Ground.Started then return end
  Ground.Started=true
  local function prepare(object)
-  if object:IsA("BasePart") and object.Transparency<.95 and Ground.Marked(object) and not object.CanQuery then object.CanQuery=true end
+  if not object:IsA("BasePart") or object.Transparency>=.95 then return end
+  if Ground.Marked(object) then object.CanQuery=true end
+  if roadSurface(object) and Ground.Supports(object) then object.CanCollide=true end
  end
  for _,object in ipairs(workspace:GetDescendants()) do prepare(object) end
  workspace.DescendantAdded:Connect(function(object) task.defer(function() prepare(object) end) end)

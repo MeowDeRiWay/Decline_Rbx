@@ -502,7 +502,15 @@ source += r'''
 local road=create("Part",workspace);road.Name="Road";road:SetAttribute("Road",true)
 road.CanCollide=false;road.CanQuery=false
 workspace.DescendantAdded:Fire(road);tick(.01)
-assert(road.CanQuery and not road.CanCollide,"road support enables vehicle queries without changing character collision")
+assert(road.CanQuery and road.CanCollide,"new road surfaces support character collision and vehicle probes")
+local roads=create("Folder",workspace);roads.Name="Roads"
+local asphalt=create("Part",roads);asphalt.CanCollide=false;asphalt.CanQuery=false
+workspace.DescendantAdded:Fire(asphalt);tick(.01)
+assert(asphalt.CanCollide and asphalt.CanQuery,"road folder descendants gain collision")
+local roadMarker=create("Part",roads);roadMarker.Transparency=1;roadMarker.CanCollide=false;roadMarker.CanQuery=false
+workspace.DescendantAdded:Fire(roadMarker);tick(.01)
+assert(not roadMarker.CanCollide and not roadMarker.CanQuery,"invisible road markers remain nonphysical")
+roads:Destroy()
 local sample=assert(Assembly.Build(template,details));sample.Config=table.clone(VehicleConfig)
 local base=sample.Root.CFrame
 local oldRay=workspace.Raycast
