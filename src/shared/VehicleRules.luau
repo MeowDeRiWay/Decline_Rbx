@@ -38,6 +38,7 @@ end
 function Rules.RPM(speed,throttle,gear,engineOn,config)
  if not engineOn then return 0 end
  local moving=math.abs(speed)
+ if (gear==1 or gear==-1) and moving<.001 then return config.IdleRPM end
  if gear==0 then return config.IdleRPM+math.max(0,throttle)*(config.RedlineRPM-config.IdleRPM) end
  local top=math.abs(Rules.GearSpeed(gear,config))
  local low=gear>0 and config.GearMinimums[gear] or 0
@@ -53,10 +54,10 @@ function Rules.SpeedFromRPM(rpm,gear,config)
  return (low+(top-low)*fraction)*(gear==-1 and -1 or 1)
 end
 function Rules.AdvanceRPM(rpm,gear,dt,config)
- local times=config.GearRPMTimes[math.max(1,gear)] or config.GearRPMTimes[1]
- local edges={config.GearIdleRPM,4000,5000,config.RedlineRPM}
- rpm=math.clamp(rpm,config.GearIdleRPM,config.RedlineRPM)
- for band=1,3 do
+ local times=config.RPMBandTimes
+ local edges=config.RPMBands
+ rpm=math.clamp(rpm,edges[1],config.RedlineRPM)
+ for band=1,#times do
   if rpm<edges[band+1] and dt>0 then
    local rate=(edges[band+1]-edges[band])/times[band]
    local used=math.min(dt,(edges[band+1]-rpm)/rate)
@@ -101,7 +102,7 @@ function Rules.Drive(speed,rpm,throttle,gear,engineOn,power,wheels,dt,config,shi
   speed=approach(speed,0,(braking and config.BrakeDeceleration or config.RollingDeceleration)*dt)
   if not engineOn then rpm=0
   elseif shifting and gear~=0 then rpm=Rules.RPM(speed,0,gear,true,config)
-  elseif throttle>0 then rpm=math.min(config.RedlineRPM,math.max(config.IdleRPM,rpm)+config.NeutralRPMRise*throttle*dt)
+  elseif throttle>0 then rpm=Rules.AdvanceRPM(rpm,0,throttle*dt,config)
   else rpm=approach(rpm,config.IdleRPM,config.NeutralRPMFall*dt) end
   return speed,rpm,false
  end

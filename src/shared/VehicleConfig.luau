@@ -15,13 +15,13 @@ return {
  IdleRPM=800,
  RedlineRPM=6000,
  ShiftDuration=.35,
- GearSpeeds={20/3.6,40/3.6,70/3.6,120/3.6,200/3.6},
- GearMinimums={0,10/3.6,20/3.6,30/3.6,50/3.6},
+ GearSpeeds={20/3.6,30/3.6,60/3.6,100/3.6,170/3.6},
+ GearMinimums={0,10/3.6,20/3.6,40/3.6,80/3.6},
  GearIdleRPM=1000,
  StallRPM=800,
- -- Seconds for 1000–4000, 4000–5000 and 5000–6000 RPM.
- GearRPMTimes={{3,2,3},{4,3,3},{4,3,3},{6,4,3},{10,5,3}},
- NeutralRPMRise=3000,
+ -- Shared by every gear. The unlisted 2000–3000 band uses two seconds.
+ RPMBands={800,1000,2000,3000,4000,5000,6000},
+ RPMBandTimes={1,2,2,1,4,10},
  NeutralRPMFall=2500,
  CreepAcceleration=1.5,
  EngineBrakeRPM=5000,

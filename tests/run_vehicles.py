@@ -83,7 +83,7 @@ for gear=2,5 do
  assert(math.abs(VehicleRules.RPM(top,1,gear,true,VehicleConfig)-6000)<.001)
  if gear>=3 then assert(VehicleRules.Stalls(0,gear,VehicleConfig) and not VehicleRules.Stalls(low,gear,VehicleConfig)) end
 end
-assert(math.abs(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)-(1000+5000*100/150))<.001)
+assert(math.abs(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)-(1000+5000*70/90))<.001)
 assert(VehicleRules.RPM(-15/3.6,1,-1,true,VehicleConfig)==4750)
 assert(VehicleRules.RPM(20/3.6,1,1,true,VehicleConfig)==6000)
 assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
@@ -92,29 +92,28 @@ assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1 and VehicleRules.Reve
 assert(VehicleRules.ReverseDamage(-20/3.6,VehicleConfig)==0)
 assert(VehicleRules.RPM(0,1,0,true,VehicleConfig)==6000)
 assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
-local wanted={{3,2,3},{4,3,3},{4,3,3},{6,4,3},{10,5,3}}
-for gear=1,5 do
- local times=VehicleConfig.GearRPMTimes[gear]
- for band=1,3 do assert(times[band]==wanted[gear][band],"authored RPM ramp duration") end
+local wanted={1,2,2,1,4,10}
+for gear=-1,5 do
+ local times=VehicleConfig.RPMBandTimes
+ for band=1,#wanted do assert(times[band]==wanted[band],"authored RPM ramp duration") end
  for _,fps in ipairs({20,30,60,144}) do
-  local rpm=1000
-  for band=1,3 do
+  local rpm=800
+  for band=1,#times do
    local duration=times[band]
    for _=1,duration*fps do rpm=VehicleRules.AdvanceRPM(rpm,gear,1/fps,VehicleConfig) end
-   local expected=({4000,5000,6000})[band]
-   assert(math.abs(rpm-expected)<.001,"every gear follows each timed RPM band at every frame rate")
+   assert(math.abs(rpm-VehicleConfig.RPMBands[band+1])<.001,"all gear RPM bands follow the same clock at every frame rate")
   end
  end
 end
 for gear=1,5 do
  local speed,rpm=0,1000
  for _=1,200 do speed,rpm=VehicleRules.Drive(speed,rpm,1,gear,true,1,1,.1,VehicleConfig,false,false) end
- local expectedRPM=gear==5 and (1000+5000*100/150) or 6000
+ local expectedRPM=gear==5 and (1000+5000*70/90) or 6000
  assert(math.abs(rpm-expectedRPM)<.001,"first reaches the redline; fifth respects the car speed limit")
  assert(math.abs(speed-math.min(VehicleConfig.GearSpeeds[gear],VehicleConfig.MaxSpeed))<.001)
 end
 assert(math.abs(VehicleRules.SpeedFromRPM(1000,3,VehicleConfig)-20/3.6)<.001)
-assert(math.abs(VehicleRules.SpeedFromRPM(6000,3,VehicleConfig)-70/3.6)<.001)
+assert(math.abs(VehicleRules.SpeedFromRPM(6000,3,VehicleConfig)-60/3.6)<.001)
 local reverse,reverseRPM=0,1000
 for _=1,200 do reverse,reverseRPM=VehicleRules.Drive(reverse,reverseRPM,1,-1,true,1,1,.1,VehicleConfig,false,false) end
 assert(math.abs(reverse+15/3.6)<.001 and reverseRPM==4750,"reverse ratio spans twenty km/h but is limited to fifteen")
@@ -286,7 +285,7 @@ for _=1,22 do tick(.1) end
 assert(vehicle:GetAttribute("EngineOn"),"charged correctly sized battery starts engine")
 assert(vehicle:GetAttribute("Gear")==0,"starts in neutral")
 local originalEngineHP=engineModel:GetAttribute("HP")
-for _=1,20 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+for _=1,201 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 originalEngineHP=engineModel:GetAttribute("HP")
 for _=1,10 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 assert(math.abs(engineModel:GetAttribute("HP")-(originalEngineHP-1))<.001,"actual engine loses exactly one percent in one second at high RPM")
@@ -311,7 +310,7 @@ assert(engineAudio.EngineLoop.PlaybackSpeed<1,"idle engine pitch reflects low RP
 local initialFuel=tankModel:GetAttribute("Fuel")
 local initialCharge=batteryModel:GetAttribute("Charge")
 local initialPosition=vehicle.PrimaryPart.Position
-for _=1,30 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+for _=1,60 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 assert(vehicle:GetAttribute("Speed")>1 and (vehicle.PrimaryPart.Position-initialPosition).Magnitude>1,"authorized throttle moves the assembled car")
 assert(tankModel:GetAttribute("Fuel")<initialFuel and batteryModel:GetAttribute("Charge")>initialCharge,"running engine consumes fuel and charges battery")
 local beforeReverse=engineModel:GetAttribute("HP")
@@ -327,7 +326,7 @@ if not vehicle:GetAttribute("EngineOn") then
  for _=1,22 do tick(.1) end
 end
 remote.Action.OnServerEvent:Fire(player,"Gear",1);tick(.4)
-for _=1,30 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+for _=1,60 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 
 remote.Input.OnServerEvent:Fire(player,0/0,math.huge);tick(.1)
 for _=1,10 do tick(.1) end
