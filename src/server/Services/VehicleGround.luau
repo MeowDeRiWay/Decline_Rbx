@@ -55,11 +55,44 @@ function Ground.Blocks(part,groundY,maxStep)
  if Ground.Supports(part) and top(part)<=groundY+maxStep then return false end
  return part.CanCollide or part.Transparency<.95
 end
-function Ground.Overlap(frame,size,excluded,groundY,maxStep)
+-- Bounds queries are broad phase: rotated cars need an oriented-box test.
+-- Return the shallowest separating direction, pointing out of the obstacle.
+function Ground.Penetration(frame,size,part)
+ local a={frame.RightVector,frame.UpVector,frame.LookVector}
+ local b={part.CFrame.RightVector,part.CFrame.UpVector,part.CFrame.LookVector}
+ local ah={size.X/2,size.Y/2,size.Z/2}
+ local bh={part.Size.X/2,part.Size.Y/2,part.Size.Z/2}
+ local axes={a[1],a[2],a[3],b[1],b[2],b[3]}
+ for _,u in ipairs(a) do for _,v in ipairs(b) do
+  local cross=u:Cross(v)
+  if cross.Magnitude>.00001 then table.insert(axes,cross.Unit) end
+ end end
+ local delta=frame.Position-part.Position
+ local depth,normal=math.huge,nil
+ for _,axis in ipairs(axes) do
+  local radius=0
+  for i=1,3 do radius+=math.abs(axis:Dot(a[i]))*ah[i]+math.abs(axis:Dot(b[i]))*bh[i] end
+  local distance=delta:Dot(axis)
+  local overlap=radius-math.abs(distance)
+  if overlap<=.00001 then return 0 end
+  if overlap<depth then depth=overlap;normal=distance>=0 and axis or -axis end
+ end
+ return depth,normal
+end
+local function escaping(current,target,size,part)
+ if not current or current.UpVector:Dot(target.UpVector)<.99999
+  or current.LookVector:Dot(target.LookVector)<.99999 then return false end
+ local before,normal=Ground.Penetration(current,size,part)
+ if before<=0 then return false end
+ local after=Ground.Penetration(target,size,part)
+ return after<before-.000001 and (target.Position-current.Position):Dot(normal)>.000001
+end
+function Ground.Overlap(frame,size,excluded,groundY,maxStep,current)
  local query=OverlapParams.new();query.FilterType=Enum.RaycastFilterType.Exclude
  query.FilterDescendantsInstances=excluded;query.RespectCanCollide=false
  for _,part in ipairs(workspace:GetPartBoundsInBox(frame,size,query)) do
-  if Ground.Blocks(part,groundY,maxStep) then return part end
+  if Ground.Blocks(part,groundY,maxStep) and Ground.Penetration(frame,size,part)>0
+   and not escaping(current,frame,size,part) then return part end
  end
 end
 function Ground.Sweep(frame,size,direction,excluded,groundY,maxStep)
@@ -68,7 +101,7 @@ function Ground.Sweep(frame,size,direction,excluded,groundY,maxStep)
   local hit=workspace:Blockcast(frame,size,direction,params(ignored,false))
   if not hit then return end
   local surface=Ground.Supports(hit.Instance)
-  if not Ground.Blocks(hit.Instance,groundY,maxStep) or surface and hit.Normal.Y>.55 and hit.Position.Y<=groundY+maxStep then
+  if escaping(frame,frame+direction,size,hit.Instance) or not Ground.Blocks(hit.Instance,groundY,maxStep) or surface and hit.Normal.Y>.55 and hit.Position.Y<=groundY+maxStep then
    table.insert(ignored,hit.Instance)
   else return hit end
  end

@@ -408,7 +408,7 @@ local function drive(data,dt)
  local ignored=filters(data)
  -- Test every proposed pose: shapecasts do not report initial overlaps.
  -- Do not exclude wheel supports wholesale; a support may be part of a wall.
- if Ground.Overlap(target*data.CollisionOffset,data.CollisionSize,ignored,current.Position.Y-data.GroundOffset,Config.MaximumGroundStep) then
+ if Ground.Overlap(target*data.CollisionOffset,data.CollisionSize,ignored,current.Position.Y-data.GroundOffset,Config.MaximumGroundStep,current*data.CollisionOffset) then
   clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config)
   data.Suspension=suspensionBefore
   data.Model:PivotTo(current);return

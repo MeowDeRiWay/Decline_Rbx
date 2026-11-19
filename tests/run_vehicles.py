@@ -624,6 +624,30 @@ assert(not Ground.Overlap(base,Vector3.new(2,1,5),{},groundY,.5),"road contact d
 obstacle:SetAttribute("Road",nil)
 obstacle.CanCollide=true;obstacle.Size=Vector3.new(1,4,1)
 assert(Ground.Overlap(base,Vector3.new(2,1,5),{},groundY,.5)==obstacle,"tall support is still a wall")
+local contact=create("Part",workspace);contact.Size=Vector3.new(4,3,1);contact.CFrame=CFrame.new(0,1,0)
+local carSize=Vector3.new(2,1,2)
+local touching=CFrame.new(0,1,1.45)
+local outward=CFrame.new(0,1,1.46)
+local inward=CFrame.new(0,1,1.44)
+function workspace:GetPartBoundsInBox() return {contact} end
+assert(Ground.Overlap(outward,carSize,{},0,.5,touching)==nil,"reverse movement reducing existing overlap is permitted")
+assert(Ground.Overlap(inward,carSize,{},0,.5,touching)==contact,"gas pushing deeper into the wall stays blocked")
+assert(Ground.Overlap(outward,carSize,{},0,.5)==contact,"new overlap without a previous contact stays blocked")
+local blocker=create("Part",workspace);blocker.Size=Vector3.new(4,3,.2);blocker.CFrame=CFrame.new(0,1,2.55)
+function workspace:GetPartBoundsInBox() return {contact,blocker} end
+assert(Ground.Overlap(outward,carSize,{},0,.5,touching)==blocker,"escaping one wall cannot push further into another")
+function workspace:Blockcast(frame,size,direction,params)
+ if not table.find(params.FilterDescendantsInstances,contact) then
+  return {Instance=contact,Position=Vector3.new(0,1,.5),Normal=Vector3.zAxis,Distance=0}
+ end
+ return nil
+end
+assert(not Ground.Sweep(touching,carSize,Vector3.new(0,0,.01),{},0,.5),"sweep ignores an existing contact only while separating")
+assert(Ground.Sweep(touching,carSize,Vector3.new(0,0,-.01),{},0,.5).Instance==contact,"sweep still blocks motion into existing contact")
+local angle=CFrame.new(0,1,0)*CFrame.Angles(0,math.pi/4,0)
+contact.Size=Vector3.new(.1,3,.1);contact.CFrame=CFrame.new(1.9,1,1.9)
+assert(Ground.Penetration(angle,Vector3.new(2,1,4),contact)==0,"empty corners of rotated broad-phase bounds do not trap the car")
+contact:Destroy();blocker:Destroy()
 workspace.Blockcast=oldSweep;workspace.GetPartBoundsInBox=savedBounds
 obstacle:Destroy()
 sample.Model:Destroy();road:Destroy()
