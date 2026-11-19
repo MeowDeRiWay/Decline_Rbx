@@ -24,11 +24,26 @@ local occupants={}
 local requests={}
 local remotes
 local function notice(player,text) Journal.Send(player,text) end
-local function owns(player,data)
- return player~=nil and data.Model:GetAttribute("OwnerID")==player.UserId
+local function hasAccess(player,data)
+ return player~=nil and (data.Model:GetAttribute("PublicAccess")==true or data.Model:GetAttribute("OwnerID")==player.UserId)
+end
+local function ownershipStep(data,present,now)
+ local owner=data.Model:GetAttribute("OwnerID")
+ if typeof(owner)~="number" or owner<=0 then data.AbsentOwner=nil;data.OwnerAbsentSince=nil;return end
+ if data.LastOwner~=owner then
+  data.LastOwner=owner;data.AbsentOwner=nil;data.OwnerAbsentSince=nil
+  data.Model:SetAttribute("PublicAccess",false)
+ end
+ if present[owner] then data.AbsentOwner=nil;data.OwnerAbsentSince=nil;return end
+ if data.AbsentOwner~=owner then data.AbsentOwner=owner;data.OwnerAbsentSince=now end
+ if now-data.OwnerAbsentSince>=Config.OwnerAbsenceTimeout then
+  data.Model:SetAttribute("PublicAccess",true)
+  data.Model:SetAttribute("OwnerID",nil)
+  data.AbsentOwner=nil;data.OwnerAbsentSince=nil;data.LastOwner=nil
+ end
 end
 local function seatAllowed(player,data,record)
- return record.Kind~="DriverSeat" or owns(player,data)
+ return record.Kind~="DriverSeat" or hasAccess(player,data)
 end
 local function component(data,kind)
  for _,record in ipairs(data.Components) do if record.Kind==kind then return record end end
@@ -446,7 +461,7 @@ function Service.Spawn(id,frame)
   if record.Seat then
    table.insert(data.Links,record.Seat:GetPropertyChangedSignal("Occupant"):Connect(function()
     local hp=record.Seat.Occupant
-    if hp and record.Kind=="DriverSeat" and not owns(Players:GetPlayerFromCharacter(hp.Parent),data) then
+    if hp and record.Kind=="DriverSeat" and not hasAccess(Players:GetPlayerFromCharacter(hp.Parent),data) then
      local weld=record.Seat:FindFirstChild("SeatWeld")
      if weld then weld:Destroy() end
      hp.Sit=false
@@ -484,11 +499,11 @@ local function interact(player,target)
  if BulletCast.Raycast(head and head.Position or root.Position,point-(head and head.Position or root.Position),{c,vehicle}) then return end
  if record.Seat then enter(player,data,record)
  elseif record.Kind=="Door" or record.Kind=="Hood" or record.Kind=="Trunk" then
-  if not owns(player,data) then notice(player,"Only the vehicle owner can do this.");return end
+  if not hasAccess(player,data) then notice(player,"Only the vehicle owner can do this.");return end
   if math.abs(data.Speed)>Config.ExitMaximumSpeed then return end
   for _,seatRecord in ipairs(data.Components) do if seatRecord.Door==record and seatRecord.Reserved then return end end
   Interact.Reach(player,model,Config.InteractionDistance,function()
-   if owns(player,data) and vehicles[vehicle] and player.Character==c and not c:GetAttribute("Knockout") then openPart(record,not model:GetAttribute("Open")) end
+   if hasAccess(player,data) and vehicles[vehicle] and player.Character==c and not c:GetAttribute("Knockout") then openPart(record,not model:GetAttribute("Open")) end
   end)
  end
 end
@@ -509,7 +524,7 @@ function Service.Start()
   if not occupant then return end
   if command=="Exit" then
    if release(player,true,false) and occupant.Record.Door then openPart(occupant.Record.Door,true) end
-  elseif occupant.Record.Kind=="DriverSeat" and owns(player,occupant.Data) then
+  elseif occupant.Record.Kind=="DriverSeat" and hasAccess(player,occupant.Data) then
    if command=="Honk" then
     local data=occupant.Data
     local battery=component(data,"Battery")
@@ -545,7 +560,7 @@ function Service.Start()
  end)
  remotes.Input.OnServerEvent:Connect(function(player,throttle,steer)
   local occupant=occupants[player]
-  if not occupant or occupant.Record.Kind~="DriverSeat" or not owns(player,occupant.Data) then return end
+  if not occupant or occupant.Record.Kind~="DriverSeat" or not hasAccess(player,occupant.Data) then return end
   local data=occupant.Data;local now=workspace:GetServerTimeNow()
   if now-(data.LastPacket or 0)<1/30 then return end
   data.LastPacket=now
@@ -554,12 +569,27 @@ function Service.Start()
   data.InputSteer=Rules.Number(steer,0,-1,1);data.LastInput=now
  end)
  local function watchPlayer(player)
+  for _,data in pairs(vehicles) do
+   if data.Model:GetAttribute("OwnerID")==player.UserId then data.AbsentOwner=nil;data.OwnerAbsentSince=nil end
+  end
   player.CharacterRemoving:Connect(function() release(player,false,true) end)
  end
  Players.PlayerAdded:Connect(watchPlayer)
  for _,player in ipairs(Players:GetPlayers()) do watchPlayer(player) end
- Players.PlayerRemoving:Connect(function(player) release(player,false,true);requests[player]=nil end)
+ Players.PlayerRemoving:Connect(function(player)
+  release(player,false,true);requests[player]=nil
+  for _,data in pairs(vehicles) do
+   if data.Model:GetAttribute("OwnerID")==player.UserId then
+    data.LastOwner=player.UserId;data.AbsentOwner=player.UserId
+    data.OwnerAbsentSince=workspace:GetServerTimeNow()
+   end
+  end
+ end)
  RunService.Heartbeat:Connect(function(dt)
+  local present={}
+  for _,player in ipairs(Players:GetPlayers()) do present[player.UserId]=true end
+  local now=workspace:GetServerTimeNow()
+  for _,data in pairs(vehicles) do ownershipStep(data,present,now) end
   for player,occupant in pairs(occupants) do
    if not seatAllowed(player,occupant.Data,occupant.Record) or player.Character~=occupant.Character or not occupant.Character.Parent or not occupant.Data.Model:IsDescendantOf(workspace) then release(player,false,true) end
   end

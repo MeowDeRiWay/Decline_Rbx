@@ -250,8 +250,9 @@ assert(not VehicleInput.IsDriver(character),"leaving restores digit actions")
 source += "\nlocal Service=" + module("src/server/Services/VehicleService.luau", "local Config=VehicleConfig\nlocal Rules=VehicleRules")
 source += r'''
 Service.Start()
-local vehicle=workspace.Vehicles:FindFirstChild("Car_1")
-assert(vehicle and vehicle.PrimaryPart.Name=="Chassis","startup assembles Car_1 from ServerStorage at the authored position")
+assert(not workspace:FindFirstChild("Vehicles") or #workspace.Vehicles:GetChildren()==0,"startup no longer spawns the test car")
+local vehicle=assert(Service.Spawn("Car_1"))
+assert(vehicle.PrimaryPart.Name=="Chassis","explicit spawning still assembles Car_1")
 near(vehicle.PrimaryPart.Position,referenceRoot.Position)
 vehicle:SetAttribute("OwnerID",player.UserId)
 local remote=ReplicatedStorage.VehicleRemotes
@@ -507,6 +508,31 @@ assert(not Garage.CanCraft(carStation,"Car_1"),"missing spawn marker prevents cr
 print("PASS: garage marker, real assembly/spawn, clearance checks, orientation, floor offset and ownership")
 '''
 source += r'''
+local publicCar=assert(Service.Spawn("Car_1"))
+publicCar:SetAttribute("OwnerID",player.UserId);tick(.1)
+assert(not publicCar:GetAttribute("PublicAccess"),"online owner's car stays private")
+Players.PlayerRemoving:Fire(player);player.Parent=nil
+tick(599)
+assert(publicCar:GetAttribute("OwnerID")==player.UserId and not publicCar:GetAttribute("PublicAccess"),"599 seconds of absence preserves ownership")
+player.Parent=Players;Players.PlayerAdded:Fire(player);tick(.1)
+tick(2)
+assert(publicCar:GetAttribute("OwnerID")==player.UserId,"return cancels absence timer")
+Players.PlayerRemoving:Fire(player);player.Parent=nil
+tick(599);assert(not publicCar:GetAttribute("PublicAccess"),"new departure starts a fresh timer")
+tick(1)
+assert(publicCar:GetAttribute("PublicAccess") and publicCar:GetAttribute("OwnerID")==nil,"600 seconds makes car public and releases owner")
+player.Parent=Players;Players.PlayerAdded:Fire(player);tick(.1)
+assert(publicCar:GetAttribute("PublicAccess"),"old owner returning does not relock a public car")
+local publicDoor=componentModel(publicCar,"Door")
+root.CFrame=publicDoor.PrimaryPart.CFrame;head.CFrame=root.CFrame*CFrame.new(0,.5,0);physics()
+remote.Action.OnServerEvent:Fire(player,"Interact",publicDoor);tick(.8)
+assert(publicDoor:GetAttribute("Open"),"public vehicle permits door interaction")
+local publicSeat=componentModel(publicCar,"DriverSeat")
+publicSeat.EntryDoor.Value:SetAttribute("Open",true)
+root.CFrame=publicSeat.PrimaryPart.CFrame;head.CFrame=root.CFrame*CFrame.new(0,.5,0);physics()
+remote.Action.OnServerEvent:Fire(player,"Interact",publicSeat);tick(.8)
+assert(character:GetAttribute("VehicleDriver") and character:GetAttribute("VehicleSeated"),"public vehicle allows a player without OwnerID to take the driver seat")
+publicCar:Destroy();tick(.2)
 local road=create("Part",workspace);road.Name="Road";road:SetAttribute("Road",true)
 road.CanCollide=false;road.CanQuery=false
 workspace.DescendantAdded:Fire(road);tick(.01)

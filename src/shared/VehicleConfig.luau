@@ -1,6 +1,7 @@
 -- Distances are studs/metres and speeds are studs per second.
 return {
- AutoSpawn=true,
+ AutoSpawn=false,
+ OwnerAbsenceTimeout=600,
  InteractionDistance=2,
  MaxSpeed=200/3.6,
  ReverseSpeed=15/3.6,
