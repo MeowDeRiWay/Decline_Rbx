@@ -1,4 +1,5 @@
 return {
+ {"Only the vehicle owner can do this.","Це може зробити лише власник авто.","Это может сделать только владелец авто."},
  {"Cruise ON","Круїз УВІМК.","Круиз ВКЛ."},
  {"WASD · Drive   1–%d · Gear   N · Neutral   R · Reverse   E · Cruise   V · Engine   L · Lights   X · Exit","WASD · Рух   1–%d · Передача   N · Нейтраль   R · Задня   E · Круїз   V · Двигун   L · Фари   X · Вихід","WASD · Езда   1–%d · Передача   N · Нейтраль   R · Задняя   E · Круиз   V · Двигатель   L · Фары   X · Выход"},
  {"%s · HP %g / %g","%s · Міцність %g / %g","%s · Прочность %g / %g"},
