@@ -54,9 +54,4 @@ return {
  MaximumGroundStep=.35,
  DoorDuration=.35,
  ExitMaximumSpeed=1,
- DefaultMaxHP={
-  Body=500,Wheel=100,Engine=100,Battery=100,FuelTank=100,
-  Door=150,Hood=150,Trunk=150,Headlight=30,Taillight=30,
-  DriverSeat=100,PassengerSeat=100,SteeringWheel=100,
- },
 }

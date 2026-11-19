@@ -1,5 +1,4 @@
 local Shared=game:GetService("ReplicatedStorage").Shared
-local Config=require(Shared.VehicleConfig)
 local Rules=require(Shared.VehicleRules)
 local Assembly={}
 local function parts(model)
@@ -18,8 +17,8 @@ local function kindOf(name)
  return name:match("^Door") and "Door" or name
 end
 local function setupHealth(model,kind)
- local maximum=Rules.Number(model:GetAttribute("MaxHP"),Config.DefaultMaxHP[kind] or 100,.001,1000000)
- model:SetAttribute("MaxHP",maximum);model:SetAttribute("HP",maximum)
+ local maximum=Rules.MaxHealth(model)
+ model:SetAttribute("HP",maximum)
  if kind=="Battery" then
   local capacity=Rules.Number(model:GetAttribute("MaxCharge"),14,.001,10000)
   model:SetAttribute("MaxCharge",capacity);model:SetAttribute("Charge",capacity)

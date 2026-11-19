@@ -25,7 +25,8 @@ function Service.Apply(component,amount,kind,attacker)
  local entry=vehicle and registered[vehicle]
  if not entry or not component or not component.Parent then return 0 end
  amount=Rules.Number(amount,0,0,1000000)
- local maximum=component:GetAttribute("MaxHP") or 100
+ local maximum=Rules.MaxHealth(component)
+ if not maximum then return 0 end
  local previous=Rules.Number(component:GetAttribute("HP"),maximum,0,maximum)
  local hp=math.max(0,previous-((kind=="Fire" or kind=="Overrev") and amount or math.ceil(amount)))
  if hp==previous then return 0 end
@@ -45,7 +46,7 @@ function Service.Explosion(point,settings,attacker,baseDamage)
  for vehicle,entry in pairs(registered) do
   if not vehicle:IsDescendantOf(workspace) then continue end
   for _,component in ipairs(entry.Components) do
-   if not component.Parent then continue end
+   if not component.Parent or not Rules.MaxHealth(component) then continue end
    local target=Interaction.NearestPoint(component,point)
    local amount=Blast.Sample((target-point).Magnitude,settings,baseDamage)
    if amount>0 then

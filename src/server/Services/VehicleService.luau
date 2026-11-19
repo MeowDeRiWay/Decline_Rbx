@@ -256,7 +256,7 @@ local function resourceStep(data,dt)
   data.Starting=nil;set(data.Model,"EngineStarting",false)
  end
  if Rules.Health(engine.Model)<=Config.EngineStopRatio or Rules.Health(tank.Model)<=0 or (tank.Model:GetAttribute("Fuel") or 0)<=0 then stop(data) end
- local maximum=tank.Model:GetAttribute("MaxHP") or 100
+ local maximum=Rules.MaxHealth(tank.Model) or 0
  local fuel,charge,hp,burning=Rules.Resources({
   Fuel=tank.Model:GetAttribute("Fuel") or 0,Charge=battery.Model:GetAttribute("Charge") or 0,
   MaxCharge=battery.Model:GetAttribute("MaxCharge") or 14,TankHP=tank.Model:GetAttribute("HP") or 0,
@@ -335,7 +335,7 @@ local function drive(data,dt)
  local shifting=workspace:GetServerTimeNow()<(data.ShiftUntil or 0)
  data.Speed,data.RPM,data.EngineBraking=Rules.Drive(data.Speed,data.RPM,data.Throttle,data.Gear,data.EngineOn,power,wheels,dt,data.Config,shifting,data.EngineBraking)
  if engine and data.EngineOn and not shifting then
-  local wear=Rules.OverrevDamage(data.RPM,dt,engine.Model:GetAttribute("MaxHP") or 100,data.Config)
+  local wear=Rules.OverrevDamage(data.RPM,dt,Rules.MaxHealth(engine.Model) or 0,data.Config)
   if wear>0 then VehicleDamage.Apply(engine.Model,wear,"Overrev") end
  end
  data.Steering=Rules.Steer(data.Steering,data.InputSteer,data.Speed,dt,Config)
@@ -481,8 +481,8 @@ function Service.Start()
     if nextGear==-1 then
      local engine=component(data,"Engine")
      local fraction=Rules.ReverseDamage(data.Speed,data.Config)
-     if engine and fraction>0 then
-      VehicleDamage.Apply(engine.Model,(engine.Model:GetAttribute("MaxHP") or 100)*fraction,"Mechanical",player)
+     if engine and Rules.MaxHealth(engine.Model) and fraction>0 then
+      VehicleDamage.Apply(engine.Model,(Rules.MaxHealth(engine.Model) or 0)*fraction,"Mechanical",player)
       notice(player,"Reverse engaged while moving: engine damaged.")
      end
     end

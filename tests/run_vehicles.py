@@ -44,7 +44,16 @@ for _,record in ipairs(built.Components) do
 end
 assert(wheels==4 and steering==2 and seats==1,"one wheel template becomes four wheels, two steerable; passenger remains optional")
 assert(built.Wheelbase>3 and built.Wheelbase<3.1)
-local inspected=built.Components[1].Model
+assert(built.Body:GetAttribute("HP")==nil and built.Body:GetAttribute("MaxHP")==nil,"body without authored MaxHP has no health")
+local inspected
+for _,record in ipairs(built.Components) do
+ local source=details:FindFirstChild(record.Model:GetAttribute("Detail"))
+ local expected=source:GetAttribute("MaxHP")
+ assert(record.Model:GetAttribute("MaxHP")==expected,"assembly never invents MaxHP")
+ if expected then assert(record.Model:GetAttribute("HP")==expected);inspected=record.Model
+ else assert(record.Model:GetAttribute("HP")==nil and VehicleRules.Health(record.Model)==1,"unconfigured parts remain functional without health") end
+end
+assert(inspected)
 local hpInfo=Inspection.Read(inspected.PrimaryPart)
 assert(hpInfo and hpInfo.Model==inspected and hpInfo.HP==hpInfo.MaxHP,"hovering child geometry resolves component health")
 inspected:SetAttribute("HP",0)
@@ -234,6 +243,7 @@ local vehicle=workspace.Vehicles:FindFirstChild("Car_1")
 assert(vehicle and vehicle.PrimaryPart.Name=="Chassis","startup assembles Car_1 from ServerStorage at the authored position")
 near(vehicle.PrimaryPart.Position,referenceRoot.Position)
 local remote=ReplicatedStorage.VehicleRemotes
+assert(VehicleDamage.Apply(vehicle.Body,1000,"Bullet",player)==0 and vehicle.Body:GetAttribute("HP")==nil,"direct damage cannot create HP on the body")
 local seatModel=componentModel(vehicle,"DriverSeat")
 local seat=seatModel:FindFirstChildOfClass("VehicleSeat")
 local door=seatModel.EntryDoor.Value
@@ -382,7 +392,9 @@ assert(not workspace.Vehicles:FindFirstChild("Car_1"),"vehicle destruction clean
 local second=assert(Service.Spawn("Car_1"))
 physics()
 VehicleDamage.Explosion(second.PrimaryPart.Position,{KillRadius=0,BlastRadius=8},player,10)
-assert(second.Body:GetAttribute("HP")<second.Body:GetAttribute("MaxHP"),"blast damage reaches live registered components")
+assert(second.Body:GetAttribute("HP")==nil,"blast cannot add health to the unconfigured body")
+local blastedEngine=componentModel(second,"Engine")
+assert(blastedEngine:GetAttribute("HP")<blastedEngine:GetAttribute("MaxHP"),"blast damages components with authored MaxHP")
 local tank2=componentModel(second,"FuelTank")
 VehicleDamage.Apply(tank2,70,"Bullet",player)
 for _=1,301 do tick(.1) end

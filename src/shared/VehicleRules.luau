@@ -3,9 +3,16 @@ function Rules.Number(value,fallback,minimum,maximum)
  if typeof(value)~="number" or value~=value or math.abs(value)==math.huge then return fallback end
  return math.clamp(value,minimum or -math.huge,maximum or math.huge)
 end
+function Rules.MaxHealth(component)
+ local maximum=component and component:GetAttribute("MaxHP")
+ if typeof(maximum)~="number" or maximum~=maximum or maximum<=0 or maximum==math.huge then return nil end
+ return maximum
+end
 function Rules.Health(component)
  if not component then return 0 end
- local maximum=Rules.Number(component:GetAttribute("MaxHP"),100,.001,1000000)
+ local maximum=Rules.MaxHealth(component)
+ -- Unconfigured parts work normally and have no damage/durability state.
+ if not maximum then return 1 end
  return Rules.Number(component:GetAttribute("HP"),0,0,maximum)/maximum
 end
 function Rules.Power(health,stopRatio)
