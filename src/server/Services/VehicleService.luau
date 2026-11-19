@@ -340,12 +340,7 @@ local function drive(data,dt)
  end
  local shifting=workspace:GetServerTimeNow()<(data.ShiftUntil or 0)
  if data.Throttle<0 or not data.EngineOn or shifting or data.Gear<=0 then clearCruise(data) end
- if data.CruiseSpeed then
-  data.Speed,data.RPM=Rules.Cruise(data.CruiseSpeed,data.Gear,power,wheels,data.Config)
-  data.EngineBraking=false
- else
-  data.Speed,data.RPM,data.EngineBraking=Rules.Drive(data.Speed,data.RPM,data.Throttle,data.Gear,data.EngineOn,power,wheels,dt,data.Config,shifting,data.EngineBraking)
- end
+ data.Speed,data.RPM,data.EngineBraking=Rules.Drive(data.Speed,data.RPM,data.Throttle,data.Gear,data.EngineOn,power,wheels,dt,data.Config,shifting,data.EngineBraking,data.CruiseSpeed)
  if engine and data.EngineOn and not shifting then
   local wear=Rules.OverrevDamage(data.RPM,dt,Rules.MaxHealth(engine.Model) or 0,data.Config)
   if wear>0 then VehicleDamage.Apply(engine.Model,wear,"Overrev") end
@@ -422,9 +417,14 @@ function Service.Spawn(id,frame)
   data.StartSound=audio("EngineStart",Config.EngineStartId,false)
  end
  data.EngineOn=false;data.LightsOn=false;data.Config=table.clone(Config);data.Links={}
- for _,key in ipairs({"MaxSpeed","ReverseSpeed","Acceleration","BrakeDeceleration"}) do
-  data.Config[key]=Rules.Number(template:GetAttribute(key),Config[key],.01,100)
+ for _,key in ipairs({"MaxSpeed","ReverseSpeed","BrakeDeceleration","MassKg","MaxTorqueNm","FinalDrive","DragArea"}) do
+  data.Config[key]=Rules.Number(template:GetAttribute(key),Config[key],.01,100000)
  end
+ if engine then data.Config.MaxTorqueNm=Rules.Number(engine.Model:GetAttribute("MaxTorqueNm"),data.Config.MaxTorqueNm,1,100000) end
+ local radius,count=0,0
+ for _,record in ipairs(data.Components) do if record.Kind=="Wheel" then radius+=record.Radius;count+=1 end end
+ if count>0 then data.Config.WheelRadius=math.max(.05,radius/count) end
+ data.Model:SetAttribute("GearCount",#data.Config.GearRatios)
  local damageable={data.Body}
  for _,record in ipairs(data.Components) do
   record.Data=data;table.insert(damageable,record.Model)
@@ -506,7 +506,6 @@ function Service.Start()
     end
     clearCruise(data)
     data.Gear=nextGear;data.ShiftUntil=now+Config.ShiftDuration
-    if nextGear~=0 then data.RPM=Rules.RPM(data.Speed,0,nextGear,data.EngineOn,data.Config) end
     data.EngineBraking=false;set(data.Model,"Gear",nextGear)
    end
   end

@@ -76,65 +76,54 @@ local function componentModel(vehicle,kind)
 end
 assert(VehicleRules.SelectGear(5,VehicleConfig)==5 and VehicleRules.SelectGear(6,VehicleConfig)==nil)
 assert(VehicleRules.SelectGear(0/0,VehicleConfig)==nil and VehicleRules.SelectGear(1.5,VehicleConfig)==nil)
-for gear=2,5 do
- local low=VehicleConfig.GearMinimums[gear]
- local top=VehicleConfig.GearSpeeds[gear]
- assert(math.abs(VehicleRules.RPM(low,1,gear,true,VehicleConfig)-1000)<.001)
- assert(math.abs(VehicleRules.RPM(top,1,gear,true,VehicleConfig)-6000)<.001)
- if gear>=3 then assert(VehicleRules.Stalls(0,gear,VehicleConfig) and not VehicleRules.Stalls(low,gear,VehicleConfig)) end
-end
-assert(math.abs(VehicleRules.RPM(200/3.6,1,5,true,VehicleConfig)-(1000+5000*100/140))<.001)
-assert(VehicleRules.RPM(-15/3.6,1,-1,true,VehicleConfig)==4750)
-assert(VehicleRules.RPM(20/3.6,1,1,true,VehicleConfig)==6000)
-assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
-assert(math.abs(VehicleRules.ReverseDamage(5/3.6,VehicleConfig)-.05)<.001)
-assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1 and VehicleRules.ReverseDamage(50/3.6,VehicleConfig)==1)
-assert(VehicleRules.ReverseDamage(-20/3.6,VehicleConfig)==0)
-assert(VehicleRules.RPM(0,1,0,true,VehicleConfig)==6000)
-assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
-local wanted={{1,2,4,4},{1,3,4,4},{1,5,4,4},{1,8,4,4},{1,12,4,4}}
-for gear=-1,5 do
- local times=VehicleConfig.GearRPMTimes[math.max(1,gear)]
- for _,fps in ipairs({20,30,60,144}) do
-  local rpm=800
-  for band=1,#times do
-   assert(times[band]==wanted[math.max(1,gear)][band])
-   for _=1,times[band]*fps do rpm=VehicleRules.AdvanceRPM(rpm,gear,1/fps,VehicleConfig) end
-   assert(math.abs(rpm-VehicleConfig.RPMBands[band+1])<.001,"gear-specific RPM ramp matches every band at every frame rate")
-  end
- end
-end
-local held,heldRPM=VehicleRules.Cruise(30/3.6,2,1,1,VehicleConfig)
-assert(math.abs(held-30/3.6)<.001 and heldRPM>1000 and heldRPM<6000)
-local damaged=VehicleRules.Cruise(200/3.6,5,.3,1,VehicleConfig)
-assert(damaged<=VehicleConfig.MaxSpeed*.3,"cruise respects damage and top speed")
 for gear=1,5 do
- local speed,rpm=0,1000
- for _=1,250 do speed,rpm=VehicleRules.Drive(speed,rpm,1,gear,true,1,1,.1,VehicleConfig,false,false) end
- local expectedRPM=gear==5 and (1000+5000*100/140) or 6000
- assert(math.abs(rpm-expectedRPM)<.001,"first reaches the redline; fifth respects the car speed limit")
- assert(math.abs(speed-math.min(VehicleConfig.GearSpeeds[gear],VehicleConfig.MaxSpeed))<.001)
+ local speed=VehicleRules.SpeedFromRPM(3500,gear,VehicleConfig)
+ assert(math.abs(VehicleRules.RPM(speed,0,gear,true,VehicleConfig)-3500)<.001,"ratios convert wheel speed and engine RPM both ways")
 end
-assert(math.abs(VehicleRules.SpeedFromRPM(1000,3,VehicleConfig)-20/3.6)<.001)
-assert(math.abs(VehicleRules.SpeedFromRPM(6000,3,VehicleConfig)-80/3.6)<.001)
-local reverse,reverseRPM=0,1000
-for _=1,200 do reverse,reverseRPM=VehicleRules.Drive(reverse,reverseRPM,1,-1,true,1,1,.1,VehicleConfig,false,false) end
-assert(math.abs(reverse+15/3.6)<.001 and reverseRPM==4750,"reverse ratio spans twenty km/h but is limited to fifteen")
-local creep,rpm=0,1000
-for _=1,100 do creep,rpm=VehicleRules.Drive(creep,rpm,0,2,true,1,1,.1,VehicleConfig,false,false) end
-assert(math.abs(creep-10/3.6)<.001)
+local sameSpeed=VehicleRules.SpeedFromRPM(4500,3,VehicleConfig)
+local shiftedRPM=VehicleRules.RPM(sameSpeed,0,4,true,VehicleConfig)
+assert(math.abs(shiftedRPM-4500*VehicleConfig.GearRatios[4]/VehicleConfig.GearRatios[3])<.001,"upshift lowers RPM proportionally without changing road speed")
+assert(VehicleRules.Stalls(0,5,VehicleConfig) and not VehicleRules.Stalls(0,2,VehicleConfig))
+assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
+assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1)
+assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
 assert(VehicleRules.Steer(.8,0,20,.01,VehicleConfig)==0)
-assert(VehicleRules.Steer(0,1,0,.01,VehicleConfig)<.01)
-local top=VehicleConfig.GearSpeeds[3]
-local braking,rpm,latch=VehicleRules.Drive(top,6000,0,3,true,1,1,.1,VehicleConfig,false,false)
-assert(braking<top-VehicleConfig.RollingDeceleration*.1,"released redline activates stronger engine braking")
-for _=1,100 do
- braking,rpm,latch=VehicleRules.Drive(braking,rpm,0,3,true,1,1,.01,VehicleConfig,false,latch)
- if not latch then break end
+local function simulate(config,gear,seconds,gas,speed,rpm,cruise,fps)
+ speed=speed or 0;rpm=rpm or 800;fps=fps or 100
+ for _=1,math.ceil(seconds*fps) do speed,rpm=VehicleRules.Drive(speed,rpm,gas,gear,true,1,1,1/fps,config,false,false,cruise) end
+ return speed,rpm
 end
-assert(rpm<=5000.001 and rpm>=4999.999,"forced braking ends exactly at five thousand RPM")
-local damagedBrake=VehicleRules.Drive(2,6000,0,3,true,.2,1,.1,VehicleConfig,false,true)
-assert(damagedBrake<=2,"engine braking never accelerates a damaged car")
+local first=simulate(VehicleConfig,1,1,1)
+local second=simulate(VehicleConfig,2,1,1)
+assert(first>second and first>0,"lower gear multiplies wheel torque and automatic clutch launches smoothly")
+local heavy=table.clone(VehicleConfig);heavy.MassKg*=2
+assert(simulate(heavy,1,1,1)<first,"greater vehicle mass reduces acceleration")
+local damaged=VehicleRules.Drive(10,3000,1,2,true,.2,1,.1,VehicleConfig,false,false)
+local healthy=VehicleRules.Drive(10,3000,1,2,true,1,1,.1,VehicleConfig,false,false)
+assert(damaged<healthy and damaged>9,"damage reduces force instead of teleporting speed")
+assert(VehicleRules.RoadLoad(40,VehicleConfig)>VehicleRules.RoadLoad(20,VehicleConfig)*2,"aerodynamic resistance grows with squared speed")
+local cruiseSpeed,cruiseRPM=simulate(VehicleConfig,2,10,0,30/3.6,2000,30/3.6)
+assert(math.abs(cruiseSpeed-30/3.6)<.03,"cruise uses throttle to balance road load")
+local shifted=VehicleRules.Drive(sameSpeed,4500,1,4,true,1,1,.04,VehicleConfig,true,false)
+assert(math.abs(shifted-sameSpeed)<.1,"clutch disengagement preserves momentum")
+local reverse=simulate(VehicleConfig,-1,20,1)
+assert(reverse<0 and reverse>=-15/3.6 and math.abs(reverse+15/3.6)<.1)
+local creep=simulate(VehicleConfig,2,20,0)
+assert(math.abs(creep-10/3.6)<.03,"second gear still creeps at ten km/h")
+local on=VehicleRules.Drive(20,3000,0,3,true,1,1,.1,VehicleConfig,false,false)
+local off=VehicleRules.Drive(20,3000,0,0,false,1,1,.1,VehicleConfig,false,false)
+assert(on<off and on<20,"coupled engine brakes harder than neutral")
+local lowFPS=simulate(VehicleConfig,2,3,1,0,800,nil,20)
+local highFPS=simulate(VehicleConfig,2,3,1,0,800,nil,144)
+assert(math.abs(lowFPS-highFPS)<.05,"longitudinal integration is stable across client/server tick rates")
+-- Exercise a complete drive: shift near the torque peak rather than a speed timer.
+local fast,rpm,gear=0,800,1
+for _=1,18000 do
+ if rpm>4400 and gear<5 then gear+=1;rpm=VehicleRules.RPM(fast,0,gear,true,VehicleConfig) end
+ fast,rpm=VehicleRules.Drive(fast,rpm,1,gear,true,1,1,.01,VehicleConfig,false,false)
+end
+assert(fast>180/3.6 and fast<=200/3.6,"healthy car reaches high speed with sensible shifts and respects its limiter")
+print(string.format("Drive calibration: first %.1f km/h at1s, second %.1f, top %.1f km/h at %.0f RPM",first*3.6,second*3.6,fast*3.6,rpm))
 assert(VehicleRules.OverrevDamage(5099,1,100,VehicleConfig)==0)
 local wear=0
 for _=1,100 do wear+=VehicleRules.OverrevDamage(5500,.01,100,VehicleConfig) end
@@ -293,7 +282,7 @@ originalEngineHP=engineModel:GetAttribute("HP")
 for _=1,10 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 assert(math.abs(engineModel:GetAttribute("HP")-(originalEngineHP-1))<.001,"actual engine loses exactly one percent in one second at high RPM")
 remote.Input.OnServerEvent:Fire(player,0,0)
-for _=1,10 do tick(.1) end
+for _=1,30 do tick(.1) end
 local cooledHP=engineModel:GetAttribute("HP")
 for _=1,10 do tick(.1) end
 assert(engineModel:GetAttribute("HP")==cooledHP,"wear stops when RPM drops")

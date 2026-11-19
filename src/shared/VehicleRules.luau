@@ -31,45 +31,54 @@ local function approach(value,target,amount)
  if value<target then return math.min(target,value+amount) end
  return math.max(target,value-amount)
 end
+function Rules.Ratio(gear,config)
+ local ratio=gear==-1 and config.ReverseGearRatio or config.GearRatios[gear] or 0
+ return ratio*config.FinalDrive
+end
+function Rules.WheelRPM(speed,gear,config)
+ return math.abs(speed)*Rules.Ratio(gear,config)*60/(2*math.pi*config.WheelRadius)
+end
 function Rules.GearSpeed(gear,config)
- if gear==-1 then return -config.ReverseGearSpeed end
- return config.GearSpeeds[gear] or 0
+ return Rules.SpeedFromRPM(config.RedlineRPM,gear,config)
 end
 function Rules.RPM(speed,throttle,gear,engineOn,config)
  if not engineOn then return 0 end
- local moving=math.abs(speed)
- if (gear==1 or gear==-1) and moving<.001 then return config.IdleRPM end
- if gear==0 then return config.IdleRPM+math.max(0,throttle)*(config.RedlineRPM-config.IdleRPM) end
- local top=math.abs(Rules.GearSpeed(gear,config))
- local low=gear>0 and config.GearMinimums[gear] or 0
- local rpm=config.GearIdleRPM+(moving-low)/(top-low)*(config.RedlineRPM-config.GearIdleRPM)
- if gear>0 and speed<0 or gear==-1 and speed>0 then rpm=0 end
- return math.clamp(rpm,(gear<=2) and config.GearIdleRPM or 0,config.RedlineRPM)
+ if gear==0 then return config.IdleRPM end
+ local rpm=Rules.WheelRPM(speed,gear,config)
+ if gear<=2 then rpm=math.max(config.IdleRPM,rpm) end
+ return math.min(config.RedlineRPM*1.5,rpm)
 end
 function Rules.SpeedFromRPM(rpm,gear,config)
- if gear==0 then return 0 end
- local low=gear>0 and config.GearMinimums[gear] or 0
- local top=math.abs(Rules.GearSpeed(gear,config))
- local fraction=math.clamp((rpm-config.GearIdleRPM)/(config.RedlineRPM-config.GearIdleRPM),0,1)
- return (low+(top-low)*fraction)*(gear==-1 and -1 or 1)
+ local ratio=Rules.Ratio(gear,config)
+ if ratio==0 then return 0 end
+ return rpm/60*2*math.pi*config.WheelRadius/ratio*(gear==-1 and -1 or 1)
 end
-function Rules.AdvanceRPM(rpm,gear,dt,config)
- local times=config.GearRPMTimes[math.max(1,gear)] or config.GearRPMTimes[1]
- local edges=config.RPMBands
- rpm=math.clamp(rpm,edges[1],config.RedlineRPM)
- for band=1,#times do
-  if rpm<edges[band+1] and dt>0 then
-   local rate=(edges[band+1]-edges[band])/times[band]
-   local used=math.min(dt,(edges[band+1]-rpm)/rate)
-   rpm=math.min(edges[band+1],rpm+rate*used);dt-=used
+function Rules.Torque(rpm,config)
+ local curve=config.TorqueCurve
+ if rpm<=curve[1][1] then return config.MaxTorqueNm*curve[1][2] end
+ for i=2,#curve do
+  if rpm<=curve[i][1] then
+   local before,after=curve[i-1],curve[i]
+   local alpha=(rpm-before[1])/(after[1]-before[1])
+   return config.MaxTorqueNm*(before[2]+(after[2]-before[2])*alpha)
   end
  end
- return rpm
+ return config.MaxTorqueNm*curve[#curve][2]
+end
+function Rules.RoadLoad(speed,config)
+ if math.abs(speed)<.001 then return 0 end
+ return config.RollingResistance*config.MassKg*9.81+.5*config.AirDensity*config.DragArea*speed*speed
+end
+local function freeRPM(rpm,throttle,dt,config)
+ rpm=math.max(config.IdleRPM,rpm)
+ local friction=config.EngineFrictionNm+config.EngineFrictionPerRPM*rpm
+ local torque=Rules.Torque(rpm,config)*throttle-friction
+ return math.clamp(rpm+torque/config.EngineInertia*60/(2*math.pi)*dt,config.IdleRPM,config.RedlineRPM)
 end
 
 function Rules.SelectGear(value,config)
  if typeof(value)~="number" or value~=value or value%1~=0 then return nil end
- if value < -1 or value > #config.GearSpeeds then return nil end
+ if value < -1 or value > #config.GearRatios then return nil end
  return value
 end
 function Rules.Stalls(speed,gear,config)
@@ -89,58 +98,58 @@ function Rules.Steer(current,input,speed,dt,config)
  local target=Rules.WheelSteer(speed,input,config)
  return current+math.clamp((target-current)*(1-math.exp(-config.SteeringResponse*dt)),-config.SteeringRate*dt,config.SteeringRate*dt)
 end
-function Rules.BrakeSpeed(gear,config)
- return math.abs(Rules.SpeedFromRPM(config.EngineBrakeRPM,gear,config))
-end
 function Rules.OverrevDamage(rpm,dt,maximum,config)
  return rpm>=config.OverrevRPM and maximum*config.OverrevDamagePerSecond*dt or 0
 end
-function Rules.Cruise(target,gear,power,wheels,config)
- local factor=math.clamp(power*wheels,0,1)
- if gear<=0 or factor<=0 then return 0,0 end
- local speed=math.min(target,Rules.GearSpeed(gear,config)*factor,config.MaxSpeed*factor)
- return speed,Rules.RPM(speed/factor,0,gear,true,config)
-end
--- RPM is integrated first; the selected ratio converts it into road speed.
-function Rules.Drive(speed,rpm,throttle,gear,engineOn,power,wheels,dt,config,shifting,engineBraking)
- local braking=throttle<0
- if not engineOn or shifting or gear==0 then
-  speed=approach(speed,0,(braking and config.BrakeDeceleration or config.RollingDeceleration)*dt)
-  if not engineOn then rpm=0
-  elseif shifting and gear~=0 then rpm=Rules.RPM(speed,0,gear,true,config)
-  elseif throttle>0 then rpm=Rules.AdvanceRPM(rpm,0,throttle*dt,config)
-  else rpm=approach(rpm,config.IdleRPM,config.NeutralRPMFall*dt) end
-  return speed,rpm,false
- end
+-- Force at the tyres accelerates mass; speed feeds back through the gearbox to RPM.
+local function driveStep(speed,rpm,throttle,gear,engineOn,power,wheels,dt,config,shifting,cruise)
  local direction=gear==-1 and -1 or 1
- if braking or speed*direction<0 then
-  speed=approach(speed,0,config.BrakeDeceleration*dt)
-  return speed,Rules.RPM(speed,0,gear,true,config),false
+ local ratio=Rules.Ratio(gear,config)
+ local wheelRPM=Rules.WheelRPM(speed,gear,config)
+ local linked=engineOn and not shifting and gear~=0 and speed*direction>=0
+ local slipping=linked and gear<=2 and wheelRPM<config.ClutchLockRPM
+ local gas=math.max(0,throttle)
+ local factor=math.clamp(power*wheels,0,1)
+ local load=Rules.RoadLoad(speed,config)
+ if not engineOn then rpm=0
+ elseif not linked then rpm=freeRPM(rpm,shifting and 0 or gas,dt,config)
+ elseif slipping then
+  local target=gear==2 and gas==0 and 1000 or config.IdleRPM+gas*(config.LaunchRPM-config.IdleRPM)
+  if gas==0 then rpm=target
+  elseif rpm<target then rpm=math.min(target,freeRPM(rpm,gas,dt,config))
+  else rpm=math.max(target,freeRPM(rpm,0,dt,config)) end
+ else rpm=math.min(wheelRPM,config.RedlineRPM*1.5) end
+ local available=Rules.Torque(rpm,config)*ratio*config.DrivetrainEfficiency/config.WheelRadius*factor
+ if cruise and linked and gear>0 and available>0 then
+  -- Feed forward road resistance, then correct any speed error with real throttle.
+  gas=math.clamp((load+(cruise-speed)*config.MassKg*config.CruiseGain)/available,0,1)
  end
- if throttle>0 then
-  rpm=Rules.AdvanceRPM(rpm,gear,dt*throttle,config)
-  if gear>0 and Rules.GearSpeed(gear,config)>config.MaxSpeed then
-   rpm=math.min(rpm,Rules.RPM(config.MaxSpeed,0,gear,true,config))
+ local force=0
+ if linked and available>0 then
+  if gas>0 and rpm<config.RedlineRPM then force=available*gas
+  elseif slipping and gear==2 and throttle>=0 then
+   force=math.clamp(load+(config.CreepSpeed-speed)*config.MassKg*.8,0,available)
   end
-  if gear==-1 then rpm=math.min(rpm,Rules.RPM(-config.ReverseSpeed,0,gear,true,config)) end
-  local target=Rules.SpeedFromRPM(rpm,gear,config)*power*wheels
-  target=math.clamp(target,-config.ReverseSpeed,config.MaxSpeed*power*wheels)
-  if gear==2 and speed<config.GearMinimums[2] then speed=approach(speed,target,config.CreepAcceleration*dt)
-  else speed=target end
-  return speed,rpm,false
  end
- if rpm>=config.RedlineRPM-.001 then engineBraking=true end
- local magnitude=math.abs(speed)
- if engineBraking and rpm>config.EngineBrakeRPM then
-  local target=Rules.BrakeSpeed(gear,config)
-  if magnitude>target then magnitude=approach(magnitude,target,config.EngineBrakeDeceleration*dt) end
+ force=math.min(force,config.MassKg*config.MaxTractionAcceleration*math.clamp(wheels,0,1))
+ local engineBrake=linked and not slipping and gas<.001
+ if engineBrake then load+=config.EngineBrakeTorqueNm*(.2+rpm/config.RedlineRPM)*ratio*config.DrivetrainEfficiency/config.WheelRadius end
+ if throttle<0 then speed=approach(speed,0,config.BrakeDeceleration*dt)
  else
-  local creep=gear==2 and config.GearMinimums[2]*power*wheels or 0
-  magnitude=approach(magnitude,creep,(magnitude<creep and config.CreepAcceleration or config.RollingDeceleration)*dt)
+  local sign=speed>0 and 1 or speed<0 and -1 or direction
+  local nextSpeed=speed+(force*direction-sign*load)/config.MassKg*dt
+  if speed*nextSpeed<0 and (force==0 or sign==direction) then nextSpeed=0 end
+  speed=math.clamp(nextSpeed,-config.ReverseSpeed,config.MaxSpeed)
  end
- speed=magnitude*direction
- rpm=Rules.RPM(speed,0,gear,true,config)
- return speed,rpm,engineBraking and rpm>config.EngineBrakeRPM+.001
+ if linked and not slipping then rpm=Rules.RPM(speed,0,gear,true,config) end
+ return speed,rpm,engineBrake
+end
+function Rules.Drive(speed,rpm,throttle,gear,engineOn,power,wheels,dt,config,shifting,engineBraking,cruise)
+ local steps=math.max(1,math.ceil(dt/.01))
+ for _=1,steps do
+  speed,rpm,engineBraking=driveStep(speed,rpm,throttle,gear,engineOn,power,wheels,dt/steps,config,shifting,cruise)
+ end
+ return speed,rpm,engineBraking
 end
 
 function Rules.Resources(state,dt,config)
