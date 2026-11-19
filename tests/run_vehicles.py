@@ -88,6 +88,15 @@ assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
 assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1)
 assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
 assert(VehicleRules.Steer(.8,0,20,.01,VehicleConfig)==0)
+assert(VehicleRules.WheelSteer(20/3.6,1,VehicleConfig)==1,"low-speed manoeuvres retain full wheel lock")
+local lowTurn=VehicleRules.Steering(10/3.6,1,3,.1,VehicleConfig)
+local radius=(10/3.6)*.1/math.abs(lowTurn)
+assert(radius<4,"parking-speed turning radius is under four metres for a three-metre wheelbase")
+local wheel=0
+for _=1,60 do wheel=VehicleRules.Steer(wheel,1,10/3.6,1/60,VehicleConfig) end
+assert(wheel>.9 and wheel<=1,"steering reaches near-full lock in one second without snapping")
+assert(VehicleRules.WheelSteer(200/3.6,1,VehicleConfig)<.03,"high-speed steering remains limited")
+assert(VehicleRules.Steering(10,1,3,.1,VehicleConfig)*VehicleRules.Steering(-10,1,3,.1,VehicleConfig)<0,"reverse steering retains correct turn direction")
 local function simulate(config,gear,seconds,gas,speed,rpm,cruise,fps)
  speed=speed or 0;rpm=rpm or 800;fps=fps or 100
  for _=1,math.ceil(seconds*fps) do speed,rpm=VehicleRules.Drive(speed,rpm,gas,gear,true,1,1,1/fps,config,false,false,cruise) end

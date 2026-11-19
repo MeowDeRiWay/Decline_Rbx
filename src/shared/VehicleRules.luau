@@ -91,7 +91,8 @@ function Rules.ReverseDamage(speed,config)
  return config.ReverseMinimumDamage+(1-config.ReverseMinimumDamage)*fraction
 end
 function Rules.WheelSteer(speed,steer,config)
- return steer/(1+(math.abs(speed)/config.SteeringSpeedScale)^2)
+ local excess=math.max(0,math.abs(speed)-config.SteeringFullSpeed)
+ return steer/(1+(excess/config.SteeringSpeedScale)^2)
 end
 function Rules.Steer(current,input,speed,dt,config)
  if input==0 then return 0 end
