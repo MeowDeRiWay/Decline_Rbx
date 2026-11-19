@@ -92,7 +92,7 @@ assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1 and VehicleRules.Reve
 assert(VehicleRules.ReverseDamage(-20/3.6,VehicleConfig)==0)
 assert(VehicleRules.RPM(0,1,0,true,VehicleConfig)==6000)
 assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
-local wanted={{3,2,3},{4,3,3},{4,3,3},{4,4,3},{4,5,3}}
+local wanted={{3,2,3},{4,3,3},{4,3,3},{6,4,3},{10,5,3}}
 for gear=1,5 do
  local times=VehicleConfig.GearRPMTimes[gear]
  for band=1,3 do assert(times[band]==wanted[gear][band],"authored RPM ramp duration") end

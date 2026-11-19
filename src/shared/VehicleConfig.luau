@@ -20,7 +20,7 @@ return {
  GearIdleRPM=1000,
  StallRPM=800,
  -- Seconds for 1000–4000, 4000–5000 and 5000–6000 RPM.
- GearRPMTimes={{3,2,3},{4,3,3},{4,3,3},{4,4,3},{4,5,3}},
+ GearRPMTimes={{3,2,3},{4,3,3},{4,3,3},{6,4,3},{10,5,3}},
  NeutralRPMRise=3000,
  NeutralRPMFall=2500,
  CreepAcceleration=1.5,
