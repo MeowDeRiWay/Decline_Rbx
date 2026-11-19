@@ -413,6 +413,27 @@ for _=1,301 do tick(.1) end
 assert(second:GetAttribute("Exploded") and #explosions==2,"burning tank eventually detonates once")
 print("PASS: real125-instance assembly, marker axes, optional passenger, safe startup, doors/seating/exit, authorized driving, invalid inputs, collision, charge/fuel, component hits, exact fire rate, explosions and cleanup")
 '''
+source += "\nlocal Garage=" + module("src/server/Services/GarageService.luau", "local Vehicles=Service")
+source += r'''
+local garage=create("Model",workspace);garage.Name="Garage (T1)";garage:SetAttribute("TownID",9);garage:SetAttribute("TeamID",2)
+local carStation=create("Model",garage);carStation.Name="CarStation"
+local marker=create("Model",garage);marker.Name="CarSpawn"
+local pad=create("Part",marker);pad.Size=Vector3.new(4.236694,.1,8.200651)
+pad.CFrame=CFrame.new(542.118225,-7.450012,-38.550003);pad.PivotOffset=CFrame.Angles(0,math.pi,0);marker.PrimaryPart=pad
+Garage.Start()
+assert(not pad.CanCollide and not pad.CanQuery and pad.Transparency==1,"CarSpawn remains an invisible nonphysical placement marker")
+blockExit=true
+assert(not Garage.CanCraft(carStation,"Car_1"),"real garage placement rejects an occupied bay")
+blockExit=false
+local made,message=Garage.Craft(carStation,"Car_1",player)
+assert(made,message)
+near(made.PrimaryPart.CFrame.LookVector,pad:GetPivot().LookVector,"garage uses authored CarSpawn correction pivot for facing")
+assert(math.abs((made.PrimaryPart.Position.Y-(pad.Position.Y+.05))-built.GroundOffset)<.001,"vehicle wheels sit on the spawn surface rather than its root sinking into the floor")
+assert(made:GetAttribute("OwnerID")==player.UserId and made:GetAttribute("TownID")==9,"crafted car belongs to the requesting player and garage town")
+marker:Destroy()
+assert(not Garage.CanCraft(carStation,"Car_1"),"missing spawn marker prevents crafting")
+print("PASS: garage marker, real assembly/spawn, clearance checks, orientation, floor offset and ownership")
+'''
 with tempfile.TemporaryDirectory() as directory:
     path = Path(directory) / "vehicles.luau"
     path.write_text(source)

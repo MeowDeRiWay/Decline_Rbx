@@ -29,7 +29,7 @@ function Rules.Available(items,recipe)
   for _,variant in ipairs(recipe.Variants) do total+=items[variant.Ingredient] or 0 end
   available=math.min(available,total)
  end
- return available==math.huge and 0 or available
+ return available==math.huge and (recipe.VehicleOutput and 1 or 0) or available
 end
 function Rules.Plan(items,recipe,count)
  if not Rules.Batch(Rules.Available(items,recipe),count,recipe.MaxBatch) then return nil end
@@ -58,7 +58,7 @@ function Rules.Plan(items,recipe,count)
    end
    remaining-=used
   end
- else outputs[recipe.Output]=count*(recipe.OutputCount or 1) end
+ elseif recipe.Output then outputs[recipe.Output]=count*(recipe.OutputCount or 1) end
  for id,amount in pairs(recipe.Byproducts or {}) do outputs[id]=(outputs[id] or 0)+amount*count end
  for id,amount in pairs(recipe.FuelByproducts or {}) do outputs[id]=(outputs[id] or 0)+amount end
  return {Ingredients=inputs,Outputs=outputs}
@@ -68,7 +68,8 @@ function Rules.QueuePlan(items,recipe,requested,limit)
  limit=limit or Rules.MaxQueue
  local batch,repeats= requested,1
  if typeof(requested)=="table" then batch=requested.Batch;repeats=requested.Repeats end
- if recipe.ManualBatch and repeats~=1 then return nil end
+ if recipe.VehicleOutput and repeats=="All" then repeats=1 end
+ if (recipe.ManualBatch or recipe.VehicleOutput) and repeats~=1 then return nil end
  local all=repeats=="All"
  if not all and (typeof(repeats)~="number" or repeats~=repeats or repeats%1~=0 or repeats<1 or repeats>limit) then return nil end
  local stock=table.clone(items)
@@ -89,7 +90,7 @@ end
 function Rules.Outputs(recipe)
  local result={}
  if recipe.Variants then for _,variant in ipairs(recipe.Variants) do table.insert(result,variant.Output) end
- else table.insert(result,recipe.Output) end
+ elseif recipe.Output then table.insert(result,recipe.Output) end
  if recipe.Food then for index=#result,1,-1 do table.insert(result,"Ramsay_"..result[index]) end end
  local found={};for id in pairs(recipe.Byproducts or {}) do found[id]=true end
  for id in pairs(recipe.FuelByproducts or {}) do found[id]=true end
@@ -102,3 +103,4 @@ function Rules.Speed(tools,recipe)
  return tools[recipe.Tool]
 end
 return Rules
+

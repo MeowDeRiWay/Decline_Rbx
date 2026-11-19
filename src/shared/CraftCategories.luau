@@ -1,5 +1,5 @@
 -- Stable category IDs; only relevant categories appear on the current station.
-local Categories={Order={"All","Armor","Weapons","Ammunition","Tools","Materials","Medicine","Equipment","Food"}}
+local Categories={Order={"All","Vehicles","Armor","Weapons","Ammunition","Tools","Materials","Medicine","Equipment","Food"}}
 Categories.Labels={Food="Food recipes"}
 function Categories.Kind(recipe,items)
  if recipe.Category then return recipe.Category end
@@ -28,3 +28,4 @@ function Categories.Matches(recipe,items,category)
  return category=="All" or Categories.Kind(recipe,items)==category
 end
 return Categories
+

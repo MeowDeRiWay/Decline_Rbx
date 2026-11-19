@@ -13,6 +13,7 @@ local Progression=require(script.Parent.ProgressionService)
 local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local Chests=require(script.Parent.ChestService)
 local Supply=require(ReplicatedStorage.Shared.CraftSupply)
+local Garage=require(script.Parent.GarageService)
 local Service={}
 local states=setmetatable({},{__mode="k"})
 local sessions={}
@@ -99,7 +100,7 @@ function Service.Snapshot(player)
   CookingReady=state and table.clone(state.Ready) or {},CookingEndsAt=job and job.EndsAt or 0,CookingRecipe=job and job.Recipe or nil,
   CookingRequiresPresence=job and job.RequiresPresence or false,CookingCount=job and job.Cycles[job.Index].Count or 0,
   CookingQueueTotal=job and #job.Cycles or 0,CookingCompleted=job and job.Index-1 or 0,CookingOwner=job and job.Player.UserId or nil,
-  CookingItems=items,CookingTools=tools,CookingNearbyChests=math.max(0,#sources-1),CookingMaxQueue=stove and Stations.Kind(stove)=="Stove" and 2 or Rules.MaxQueue}
+  CookingItems=items,CookingTools=tools,CookingNearbyChests=math.max(0,#sources-1),CookingMaxQueue=stove and Stations.Kind(stove)=="Garage" and 1 or stove and Stations.Kind(stove)=="Stove" and 2 or Rules.MaxQueue}
 end
 local function valid(player,stove,job)
  local character=player.Character
@@ -122,13 +123,17 @@ function Service.Cook(player,id,requested)
  local state=states[stove]
  if recipe and (not Stations.Allowed(stove,recipe) or (recipe.Requirements and not Progression.Meets(player,recipe.Requirements))) then return false end
  if not recipe or not Stations.Matches(recipe,Stations.Kind(stove)) or state.Job or not Progression.CanStation(player,Stations.Kind(stove)) then return false end
+ if recipe.VehicleOutput then
+  local ok,message=Garage.CanCraft(stove,recipe.VehicleOutput)
+  if not ok then Journal.Send(player,message);return false end
+ end
  if recipe.ManualBatch and next(state.Ready)~=nil then return false end
  recipe=Rules.Discount(recipe,player:GetAttribute("CraftCostMultiplier"))
  local items,tools,sources,own=supplies(player,stove)
  if not own then return false end
  local speed=Rules.Speed(tools,recipe)
  if not speed or speed<=0 then return false end
- local cycles=Rules.QueuePlan(items,recipe,requested,Stations.Kind(stove)=="Stove" and 2 or Rules.MaxQueue)
+ local cycles=Rules.QueuePlan(items,recipe,requested,Stations.Kind(stove)=="Garage" and 1 or Stations.Kind(stove)=="Stove" and 2 or Rules.MaxQueue)
  if not cycles then return false end
  local duration=0
  for _,cycle in ipairs(cycles) do
@@ -151,6 +156,10 @@ function Service.Cook(player,id,requested)
   task.delay(cycle.Duration,function()
    if state.Job~=job or job.Index~=index then return end
    if not valid(player,stove,job) then cancel(stove,job);return end
+   if recipe.VehicleOutput then
+    local model,message=Garage.Craft(stove,recipe.VehicleOutput,player)
+    if not model then Journal.Send(player,message);cancel(stove,job);return end
+   end
    local outputs=Progression.Loot(player,ProgressionRules.CraftOutputs(cycle.Outputs,recipe,cycle.Effects))
    -- Detach spent receipts before publishing inventory changes or granting XP.
    cycle.Receipts=nil
@@ -162,7 +171,9 @@ function Service.Cook(player,id,requested)
     end
     table.insert(completed,string.format("%d × %s",amount,Items.Items[output].Name or output))
    end
-   table.sort(completed);Journal.Send(player,"You crafted "..table.concat(completed,", ")..".")
+   table.sort(completed)
+   if recipe.VehicleOutput then Journal.Send(player,"Vehicle assembled in the garage.")
+   else Journal.Send(player,"You crafted "..table.concat(completed,", ")..".") end
    Progression.CraftXP(player,recipe,cycle.Count)
    if index==#cycles then
     state.Job=nil;unlock(job);refresh(player,sources);notify(stove)
@@ -233,3 +244,4 @@ function Service.ValidateSessions()
 end
 Players.PlayerRemoving:Connect(function(player) Service.CancelPlayer(player) end)
 return Service
+

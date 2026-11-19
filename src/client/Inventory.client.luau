@@ -369,6 +369,7 @@ local function renderRecipes()
    end
    table.insert(ingredients,"1 "..table.concat(names," or ").." ("..total.." owned)")
   end
+  if recipe.VehicleOutput and #ingredients==0 then table.insert(ingredients,"No materials required yet.") end
   table.sort(ingredients)
   local extras=""
   for output,count in pairs(recipe.Byproducts or {}) do extras..=string.format(" + %d %s",count,ItemConfig.Items[output].Name) end

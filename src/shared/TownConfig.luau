@@ -6,6 +6,7 @@ return {
  ApprovalDuration = 60,
  Relations = {"Neutral", "Ally", "War"},
  Buildings = {
+  Garage = {Name="Garage",Levels={"Garage (T1)"},Costs={{}}},
   Market = {Name = "Market", Levels = {"Market (T1)"}, Costs = {{}}},
   Greenhouse = {Name = "Greenhouse", Levels = {"Greenhouse (T1)", "Greenhouse (T2)"}, Costs = {{TreeLog = 2, Scrap = 2, Stone = 4}, {Plank = 10, Cloth = 5, TreeLog = 1, Scrap = 1}}},
   Hospital = {Name = "Hospital", Levels = {"Hospital (T1)", "Hospital (T2)"}, Costs = {{TreeLog = 4, Rags = 5}, {TreeLog = 5, Plank = 10, Cloth = 5, Rags = 5, Scrap = 2}}},
@@ -13,3 +14,4 @@ return {
   Kitchen = {Name = "Kitchen", Levels = {"Kitchen (T1)", "Kitchen (T2)"}, Costs = {{TreeLog = 5, Scrap = 3}, {TreeLog = 3, Plank = 10, Cloth = 5, Scrap = 4}}},
  },
 }
+

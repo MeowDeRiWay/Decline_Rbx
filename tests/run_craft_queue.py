@@ -26,7 +26,8 @@ local own={[a]=Amounts.New(),[b]=Amounts.New()}
 local Inventory={Export=function(p) return own[p] end,Refresh=function() end}
 function Inventory.Add(p,id,count,conditions,data) return Amounts.Add(own[p],Items.Items,id,count,conditions,data) end
 local xp={[a]=0,[b]=0}
-local Progression={CanStation=function() return true end,Meets=function() return true end,
+local denyRequirements=false
+local Progression={CanStation=function() return true end,Meets=function() return not denyRequirements end,
  CraftEffects=function() return {DurationMultiplier=1} end,Loot=function(_,out) return out end,
  CraftXP=function(p,recipe,count) xp[p]+=ProgressionRules.CraftExperience(recipe,count) end}
 local Interaction={NearestPoint=function(object) return object:GetPivot().Position end,ClosestPoints=function(a,b) local p,q=a:GetPivot().Position,b:GetPivot().Position;return p,q,(p-q).Magnitude end}
@@ -45,7 +46,8 @@ chests=(root/'src/server/Services/ChestService.luau').read_text()
 chests=re.sub(r'local (Inventory|Rules|Items|Interaction|Animation)\s*=\s*require[^\n]+\n','',chests).replace('Rules.','Amounts.')
 source+='\nlocal Chests=(function()\n'+chests+'\nend)()'
 craft=(root/'src/server/Services/CraftingService.luau').read_text()
-craft=re.sub(r'local (Inventory|Items|Recipes|Rules|Amounts|Interaction|Progression|ProgressionRules|Stations|Supply|Chests|Journal|WorldActivity)\s*=\s*require[^\n]+\n','',craft)
+craft=re.sub(r'local (Inventory|Items|Recipes|Rules|Amounts|Interaction|Progression|ProgressionRules|Stations|Supply|Chests|Journal|WorldActivity|Garage)\s*=\s*require[^\n]+\n','',craft)
+source+='\nlocal bayBlocked=false;local garageMade=0;local Garage={CanCraft=function() return not bayBlocked,\"bay blocked\" end,Craft=function() if bayBlocked then return nil,\"bay blocked\" end;garageMade+=1;return {} end}'
 source+='\nlocal Service=(function()\n'+craft+'\nend)()'
 source+='''
 local bench=model("Bench",0,{Workstation=true})
@@ -148,7 +150,29 @@ local original=Amounts.New();Amounts.Add(original,Items.Items,"IronKnife",1,{321
 local cycles={{Ingredients={IronKnife=1}},{Ingredients={TreeLog=1}}}
 assert(not Supply.Reserve(cycles,{{State=original}},Items.Items))
 assert(original.Items.IronKnife==1 and original.Conditions.IronKnife[1]==321 and original.Weapons.IronKnife[1].UID==909)
+-- Vehicle output uses the same stock reservation and cancellation path as item crafting.
+local garage=model("Garage (T1)",0)
+local carStation=model("CarStation",0,{Workstation=true});carStation.Parent=garage
+assert(Stations.Kind(carStation)=="Garage","authored CarStation overrides its generic Workstation attribute")
+assert(Recipes.MakeCar1.Requirements.Skills.Repair==100 and next(Recipes.MakeCar1.Ingredients)==nil)
+assert(Service.Open(a,carStation) and Service.Snapshot(a).CookingMaxQueue==1)
+denyRequirements=true
+assert(not Service.Cook(a,"MakeCar1",1),"repair requirement is enforced before starting")
+denyRequirements=false;bayBlocked=true
+assert(not Service.Cook(a,"MakeCar1",1),"occupied bay rejects startup")
+bayBlocked=false
+local beforeVehicleXP=xp[a]
+assert(Service.Cook(a,"MakeCar1",{Batch=1,Repeats="All"}),"free recipe creates one bounded vehicle job")
+local finish=callbacks[#callbacks];finish();finish()
+assert(garageMade==1 and xp[a]==beforeVehicleXP,"vehicle spawns once and free crafting does not farm XP")
+Recipes.MakeCar1.Ingredients={Scrap=3}
+Amounts.Add(own[a],Items.Items,"Scrap",3)
+assert(Service.Cook(a,"MakeCar1",1) and not own[a].Items.Scrap,"future ingredient price is reserved normally")
+bayBlocked=true;callbacks[#callbacks]()
+assert(garageMade==1 and own[a].Items.Scrap==3 and not a.Character.HumanoidRootPart.Anchored,"blocked completion refunds the exact future resource price")
+bayBlocked=false;Recipes.MakeCar1.Ingredients={}
 print("PASS: sequential queues, bounded requests, atomic pooled chest reservation, per-cycle auto delivery/XP/fuel, shared stock, reused tools, exact refunds, station/source destruction, disconnect and stale timers")
 '''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'queue.luau';p.write_text(source);subprocess.run([sys.argv[1],str(p)],check=True)
+

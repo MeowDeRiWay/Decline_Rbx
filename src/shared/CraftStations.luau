@@ -1,9 +1,16 @@
 local Stations={}
-local supported={Stove=true,CuttingBoard=true,Workstation=true,MedStation=true,ArmorStation=true,ChemistryStation=true,ArmsBench=true,Furnace=true}
+local supported={Garage=true,Stove=true,CuttingBoard=true,Workstation=true,MedStation=true,ArmorStation=true,ChemistryStation=true,ArmsBench=true,Furnace=true}
 local attributes={"MedStation","ArmorStation","WeaponStation","ChemistryStation","Workstation","Stove","CuttingBoard","Furnace"}
 local function canonical(kind) return kind=="WeaponStation" and "ArmsBench" or kind end
 function Stations.Kind(model)
  if not model or not model:IsA("Model") then return nil end
+ if model.Name=="CarStation" then
+  local ancestor=model.Parent
+  while ancestor do
+   if ancestor:GetAttribute("BuildingID")=="Garage" or ancestor.Name=="Garage (T1)" then return "Garage" end
+   ancestor=ancestor.Parent
+  end
+ end
  for _,attribute in ipairs(attributes) do
   if model:GetAttribute(attribute)==true then return canonical(attribute) end
  end
@@ -13,7 +20,7 @@ function Stations.Kind(model)
 end
 function Stations.Label(model)
  local kind=Stations.Kind(model)
- local names={ArmsBench="Weapons station",MedStation="Medical station",ArmorStation="Armor station",ChemistryStation="Chemistry station"}
+ local names={Garage="Garage",ArmsBench="Weapons station",MedStation="Medical station",ArmorStation="Armor station",ChemistryStation="Chemistry station"}
  return names[kind] or kind or model.Name
 end
 function Stations.Matches(recipe,kind)
@@ -32,3 +39,4 @@ function Stations.Allowed(model,recipe)
  return not recipe.WorkshopLevel or Stations.WorkshopLevel(model)>=recipe.WorkshopLevel
 end
 return Stations
+

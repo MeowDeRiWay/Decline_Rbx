@@ -81,7 +81,17 @@ if not requirements then
 end
 assert(requirements and requirements.Size.Y.Offset>=54,"weapon recipe uses a translatable skill name and fits three lines")
 assert(find("Quantity").Position.Y.Offset>=requirements.Position.Y.Offset+requirements.Size.Y.Offset)
+snapshot.CookingStation="Garage";snapshot.CookingItems={};snapshot.CookingTools={};snapshot.CookingMaxQueue=1
+selectedRecipe="MakeCar1";craftCategory="All";render()
+assert(find("Assemble Interceptor") and find("Begin work").Active,"garage renders a free vehicle output without an ItemConfig entry")
+local freeHint=false
+for _,object in ipairs(objects) do if object.Text and object.Text:find("No materials required yet.",1,true) then freeHint=true end end
+assert(freeHint,"free vehicle recipe clearly states that no materials are required")
+input(254).Text="99";input(254).FocusLost:Fire();assert(input(254).Text=="1","garage limits work to one car")
+find("Begin work").Activated:Fire()
+assert(sent[#sent][2]=="MakeCar1" and sent[#sent][3].Repeats==1)
 print("PASS: actual queue UI uses chest materials/tools, repeat count and total time, bounded affordability, structured repeat/all requests, automatic results and owner-only cancellation")
 '''
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'ui.luau';p.write_text(s);subprocess.run([sys.argv[1],str(p)],check=True)
+
