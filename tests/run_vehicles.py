@@ -62,9 +62,9 @@ for gear=2,5 do
  assert(math.abs(VehicleRules.RPM(top,1,gear,true,VehicleConfig)-6000)<.001)
  if gear>=3 then assert(VehicleRules.Stalls(0,gear,VehicleConfig) and not VehicleRules.Stalls(low,gear,VehicleConfig)) end
 end
-assert(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)>4800 and VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)<4900)
-assert(VehicleRules.RPM(10/3.6,1,-1,true,VehicleConfig)==VehicleConfig.GentleRPM)
-assert(VehicleRules.RPM(15/3.6,1,1,true,VehicleConfig)==VehicleConfig.GentleRPM)
+assert(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)==4750)
+assert(VehicleRules.RPM(15/3.6,1,-1,true,VehicleConfig)==VehicleConfig.GentleRPM)
+assert(VehicleRules.RPM(20/3.6,1,1,true,VehicleConfig)==VehicleConfig.GentleRPM)
 assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
 assert(math.abs(VehicleRules.ReverseDamage(5/3.6,VehicleConfig)-.05)<.001)
 assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1 and VehicleRules.ReverseDamage(50/3.6,VehicleConfig)==1)
@@ -80,6 +80,22 @@ assert(math.abs(creep-10/3.6)<.001,"second gear creeps at ten km/h without throt
 local fast=0
 for _=1,1000 do fast=VehicleRules.Speed(fast,1,true,1,1,.1,VehicleConfig,5,false) end
 assert(math.abs(fast-150/3.6)<.001,"fifth gear never exceeds vehicle speed cap")
+assert(VehicleRules.AccelerationFactor(2000,VehicleConfig)==1)
+assert(VehicleRules.AccelerationFactor(4000,VehicleConfig)<VehicleRules.AccelerationFactor(2000,VehicleConfig))
+assert(VehicleRules.AccelerationFactor(5000,VehicleConfig)==.5)
+assert(VehicleRules.Steer(.8,0,20,.01,VehicleConfig)==0,"releasing steering instantly centers wheels")
+assert(VehicleRules.Steer(0,1,0,.01,VehicleConfig)>0 and VehicleRules.Steer(0,1,0,.01,VehicleConfig)<.01,"turning into a corner remains gradual")
+local top=VehicleConfig.GearSpeeds[3]
+local braking=VehicleRules.Speed(top,0,true,1,1,.1,VehicleConfig,3,false,true)
+local coasting=VehicleRules.Speed(top,0,true,1,1,.1,VehicleConfig,3,false,false)
+assert(braking<coasting,"engine braking is stronger than passive coasting")
+local target=VehicleRules.BrakeSpeed(3,VehicleConfig)
+assert(math.abs(VehicleRules.RPM(target,0,3,true,VehicleConfig)-5000)<.001)
+assert(VehicleRules.Speed(target+.01,0,true,1,1,.1,VehicleConfig,3,false,true)==target,"forced braking never overshoots five thousand RPM")
+assert(VehicleRules.OverrevDamage(5099,1,100,VehicleConfig)==0)
+local wear=0
+for _=1,100 do wear+=VehicleRules.OverrevDamage(5500,.01,100,VehicleConfig) end
+assert(math.abs(wear-1)<.00001,"overrev damage is one percent per second at any simulation rate")
 local starter=VehicleRules.Power
 assert(starter(1,.2)==1 and starter(.2,.2)==0 and starter(0,.2)==0)
 local function charged(attributes)
@@ -176,6 +192,15 @@ assert(engineAudio.EngineStart.IsPlaying and engineAudio.EngineStart.SoundId==Ve
 for _=1,22 do tick(.1) end
 assert(vehicle:GetAttribute("EngineOn"),"charged correctly sized battery starts engine")
 assert(vehicle:GetAttribute("Gear")==0,"starts in neutral")
+local originalEngineHP=engineModel:GetAttribute("HP")
+for _=1,10 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+assert(math.abs(engineModel:GetAttribute("HP")-(originalEngineHP-1))<.001,"actual engine loses exactly one percent in one second at high RPM")
+remote.Input.OnServerEvent:Fire(player,0,0);tick(.1)
+local cooledHP=engineModel:GetAttribute("HP")
+for _=1,10 do tick(.1) end
+assert(engineModel:GetAttribute("HP")==cooledHP,"wear stops when RPM drops")
+engineModel:SetAttribute("HP",100)
+
 remote.Action.OnServerEvent:Fire(player,"Gear",1);tick(.4)
 assert(vehicle:GetAttribute("Gear")==1,"driver selects first gear")
 remote.Action.OnServerEvent:Fire(player,"Gear",5);tick(.4)
@@ -200,6 +225,11 @@ local afterReverse=engineModel:GetAttribute("HP");tick(.4)
 remote.Action.OnServerEvent:Fire(player,"Gear",-1);tick(.2)
 assert(engineModel:GetAttribute("HP")==afterReverse,"repeated reverse packets do not multiply damage")
 engineModel:SetAttribute("HP",100)
+remote.Action.OnServerEvent:Fire(player,"Gear",0);tick(.4)
+if not vehicle:GetAttribute("EngineOn") then
+ remote.Action.OnServerEvent:Fire(player,"Engine")
+ for _=1,22 do tick(.1) end
+end
 remote.Action.OnServerEvent:Fire(player,"Gear",1);tick(.4)
 for _=1,12 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 

@@ -326,10 +326,18 @@ local function drive(data,dt)
   stop(data)
   if occupant then notice(occupant.Record.Player,"Engine stalled: select a lower gear and restart.") end
  end
- data.Speed=Rules.Speed(data.Speed,data.Throttle,data.EngineOn,power,wheels,dt,data.Config,data.Gear,workspace:GetServerTimeNow()<(data.ShiftUntil or 0))
+ local shifting=workspace:GetServerTimeNow()<(data.ShiftUntil or 0)
+ local beforeRPM=Rules.RPM(data.Speed,data.Throttle,data.Gear,data.EngineOn,data.Config)
+ if not data.EngineOn or shifting or data.Gear<2 or data.Throttle~=0 then data.EngineBraking=false
+ elseif beforeRPM>=Config.RedlineRPM then data.EngineBraking=true end
+ data.Speed=Rules.Speed(data.Speed,data.Throttle,data.EngineOn,power,wheels,dt,data.Config,data.Gear,shifting,data.EngineBraking)
  data.RPM=Rules.RPM(data.Speed,data.Throttle,data.Gear,data.EngineOn,data.Config)
- local wheelTarget=Rules.WheelSteer(data.Speed,data.InputSteer,Config)
- data.Steering+=math.clamp((wheelTarget-data.Steering)*(1-math.exp(-Config.SteeringResponse*dt)),-Config.SteeringRate*dt,Config.SteeringRate*dt)
+ if data.RPM<=Config.EngineBrakeRPM then data.EngineBraking=false end
+ if engine and data.EngineOn and not shifting then
+  local wear=Rules.OverrevDamage(data.RPM,dt,engine.Model:GetAttribute("MaxHP") or 100,data.Config)
+  if wear>0 then VehicleDamage.Apply(engine.Model,wear,"Overrev") end
+ end
+ data.Steering=Rules.Steer(data.Steering,data.InputSteer,data.Speed,dt,Config)
  local current=data.Root.CFrame
  local turn=Rules.Steering(data.Speed,data.Steering,data.Wheelbase,dt,Config)
  local proposed=current*CFrame.Angles(0,turn,0)

@@ -27,7 +27,7 @@ function Service.Apply(component,amount,kind,attacker)
  amount=Rules.Number(amount,0,0,1000000)
  local maximum=component:GetAttribute("MaxHP") or 100
  local previous=Rules.Number(component:GetAttribute("HP"),maximum,0,maximum)
- local hp=math.max(0,previous-(kind=="Fire" and amount or math.ceil(amount)))
+ local hp=math.max(0,previous-((kind=="Fire" or kind=="Overrev") and amount or math.ceil(amount)))
  if hp==previous then return 0 end
  component:SetAttribute("HP",hp)
  if attacker then component:SetAttribute("LastDamagerID",attacker.UserId) end

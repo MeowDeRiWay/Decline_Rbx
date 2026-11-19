@@ -58,10 +58,31 @@ end
 function Rules.WheelSteer(speed,steer,config)
  return steer/(1+(math.abs(speed)/config.SteeringSpeedScale)^2)
 end
-function Rules.Speed(speed,throttle,engineOn,power,wheelFactor,dt,config,gear,shifting)
+function Rules.Steer(current,input,speed,dt,config)
+ if input==0 then return 0 end
+ local target=Rules.WheelSteer(speed,input,config)
+ return current+math.clamp((target-current)*(1-math.exp(-config.SteeringResponse*dt)),-config.SteeringRate*dt,config.SteeringRate*dt)
+end
+function Rules.AccelerationFactor(rpm,config)
+ local fraction=math.clamp((rpm-config.AccelerationRPMStart)/(config.AccelerationRPMEnd-config.AccelerationRPMStart),0,1)
+ return 1-fraction*(1-config.HighRPMAccelerationFactor)
+end
+function Rules.BrakeSpeed(gear,config)
+ if gear<2 then return math.abs(Rules.GearSpeed(gear,config)) end
+ local low=config.GearMinimums[gear]
+ return low+(config.EngineBrakeRPM-config.GearIdleRPM)/(config.RedlineRPM-config.GearIdleRPM)*(Rules.GearSpeed(gear,config)-low)
+end
+function Rules.OverrevDamage(rpm,dt,maximum,config)
+ return rpm>=config.OverrevRPM and maximum*config.OverrevDamagePerSecond*dt or 0
+end
+function Rules.Speed(speed,throttle,engineOn,power,wheelFactor,dt,config,gear,shifting,engineBraking)
  gear=gear or 0
  if throttle<0 then return approach(speed,0,config.BrakeDeceleration*dt) end
  if not engineOn or shifting or gear==0 then return approach(speed,0,config.RollingDeceleration*dt) end
+ if engineBraking and throttle==0 and gear>=2 then
+  local target=Rules.BrakeSpeed(gear,config)
+  if speed>target then return approach(speed,target,config.EngineBrakeDeceleration*dt) end
+ end
  local target=0
  if throttle>0 then
   local top=math.min(math.abs(Rules.GearSpeed(gear,config)),config.MaxSpeed)
@@ -70,6 +91,7 @@ function Rules.Speed(speed,throttle,engineOn,power,wheelFactor,dt,config,gear,sh
   target=config.GearMinimums[2]*power*wheelFactor
  end
  local rate=config.Acceleration*(gear>0 and math.max(.35,1-(gear-1)*.14) or .6)
+ rate*=Rules.AccelerationFactor(Rules.RPM(speed,throttle,gear,true,config),config)
  if speed*target<0 then return approach(speed,0,config.BrakeDeceleration*dt) end
  if math.abs(target)<math.abs(speed) then rate=config.RollingDeceleration end
  return approach(speed,target,rate*dt)

@@ -202,6 +202,9 @@ RunService.PreSimulation:Connect(function(dt)
   if not vehicle.Parent or (vehicle:GetPivot().Position-root.Position).Magnitude>200 then continue end
   local speed=vehicle:GetAttribute("Speed") or 0
   local steer=vehicle:GetAttribute("Steering") or 0
+  -- Center the owner's wheels on key release without waiting for a server round trip.
+  local driven=seatContext()
+  if driven==vehicle and not Input:IsKeyDown(Enum.KeyCode.A) and not Input:IsKeyDown(Enum.KeyCode.D) then steer=0 end
   for model,record in pairs(data.Components) do
    if not model:IsDescendantOf(vehicle) then data.Components[model]=nil;continue end
    if record.Kind~="Wheel" and record.Kind~="SteeringWheel" then continue end
