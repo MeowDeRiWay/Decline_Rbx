@@ -1,44 +1,59 @@
-"""Exercise anti-step clearance, wall sliding and incapacitation with the actual controller."""
+"""Exercise the actual curb step-up controller with blocked/clear probe paths."""
 from pathlib import Path
 import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-mock='''
-local callback,obstacle,casts,lastSize,lastFrame
-local c={attrs={}}
-local root={Size=Vector3.new(.4,.7,.315),Position=Vector3.new(0,1,0),CFrame=CFrame.new(),AssemblyLinearVelocity=Vector3.new(2,-1,1)}
-root.CFrame.Rotation=CFrame.new()
-local hp={Health=100,WalkSpeed=2,HipHeight=.65,FloorMaterial="Grass",MoveDirection=Vector3.xAxis}
-function hp:Move(value) self.MoveDirection=value end
-function c:FindFirstChild() return root end
-function c:FindFirstChildOfClass() return hp end
-function c:GetAttribute(k) return self.attrs[k] end
-local Players={LocalPlayer={Character=c}}
-game={GetService=function(_,name) if name=="Players" then return Players else return {PreSimulation={Connect=function(_,fn) callback=fn end}} end end}
-Enum={Material={Air="Air"},RaycastFilterType={Exclude=1}}
+mock=r"""
+workspace={}
+local callback
+local part={Name="Curb",GetAttribute=function(_,key) return key=="Road" and true or nil end}
+local root={Size=Vector3.new(.4,.6,.3),CFrame=CFrame.new(0,1,0),AssemblyLinearVelocity=Vector3.new(0,0,-2)}
+local move=Vector3.new(0,0,-1)
+local hp={Health=100,HipHeight=.7,FloorMaterial="Ground",MoveDirection=move,WalkSpeed=2}
+local slid
+function hp:Move(value) slid=value end
+local character={GetAttribute=function() return nil end,FindFirstChild=function(_,name) return name=="HumanoidRootPart" and root end,FindFirstChildOfClass=function() return hp end}
+local player={Character=character}
+game={GetService=function(_,name)
+ if name=="Players" then return {LocalPlayer=player} end
+ return {PreSimulation={Connect=function(_,fn) callback=fn end}}
+end}
+Enum={RaycastFilterType={Exclude=1},Material={Air="Air"}}
 RaycastParams={new=function() return {} end}
-local workspace={}
+local rise=.2
+local blocked=false
+local casts=0
 function workspace:Blockcast(frame,size,direction,params)
- casts=(casts or 0)+1;lastFrame=frame;lastSize=size
- assert(params.RespectCanCollide and params.FilterDescendantsInstances[1]==c)
- if not obstacle or obstacle.Top<=frame.Position.Y-size.Y/2 then return nil end
- if obstacle.Left>frame.Position.X+size.X/2+direction.X then return nil end
- return {Normal=obstacle.Normal or -Vector3.xAxis}
+ casts+=1
+ if casts==1 or blocked then return {Instance=part,Normal=Vector3.new(0,0,1)} end
+ return nil
 end
-'''
-cases='''
-obstacle={Top=.6,Left=.24};callback(1/60)
-assert(hp.MoveDirection.Magnitude==0 and root.AssemblyLinearVelocity.X==0 and root.AssemblyLinearVelocity.Z==1 and root.AssemblyLinearVelocity.Y==-1,"cabinet blocks climbing, retains wall slide and gravity")
-assert(math.abs(lastFrame.Position.Y-lastSize.Y/2-.15)<1e-9,"sweep reaches feet plus shallow-step clearance")
-hp.MoveDirection=Vector3.xAxis;obstacle.Top=.1;callback(1/60);assert(hp.MoveDirection.X==1,"shallow steps remain traversable")
-obstacle.Top=.6;obstacle.Normal=Vector3.new(-.1,.9,0);callback(1/60);assert(hp.MoveDirection.X==1,"walkable slopes remain traversable")
-obstacle.Normal=nil;obstacle.Left=10;callback(1/60);assert(hp.MoveDirection.X==1,"distant furniture does not block")
-for _,state in ipairs({"air","knockout","dead","sit","platform","anchored"}) do
- hp.MoveDirection=Vector3.xAxis;hp.Health=state=="dead" and 0 or 100;hp.Sit=state=="sit";hp.PlatformStand=state=="platform";root.Anchored=state=="anchored"
- hp.FloorMaterial=state=="air" and "Air" or "Grass";c.attrs.Knockout=state=="knockout"
- local before=casts;callback(1/60);assert(casts==before and hp.MoveDirection.X==1,state)
+function workspace:Raycast() return {Instance=part,Position=Vector3.new(0,rise,-.3),Normal=Vector3.yAxis} end
+"""
+cases=r"""
+local function reset()
+ root.CFrame=CFrame.new(0,1,0);root.Position=root.CFrame.Position
+ root.AssemblyLinearVelocity=Vector3.new(0,0,-2)
+ hp.MoveDirection=move;hp.Sit=false;hp.FloorMaterial="Ground";root.Anchored=false
+ casts=0;slid=nil;blocked=false;rise=.2
 end
-print("PASS: foot-level furniture barrier, shallow steps/slopes, wall sliding/gravity, distance and KO/bed/air guards")
-'''
+reset();callback(1/60)
+assert(root.CFrame.Position.Y>1.2 and not slid,"low road curb steps straight forward")
+reset();move=Vector3.new(1,0,0);hp.MoveDirection=move;callback(1/60)
+assert(root.CFrame.Position.Y>1.2,"curb step works sideways too")
+reset();rise=.5;callback(1/60)
+assert(root.CFrame.Position.Y==1 and slid,"high obstacles remain blocking")
+reset();blocked=true;callback(1/60)
+assert(root.CFrame.Position.Y==1 and slid,"ceiling or raised obstruction prevents step")
+reset();part.GetAttribute=function() return nil end;callback(1/60)
+assert(root.CFrame.Position.Y==1 and slid,"furniture is never climbed")
+part.GetAttribute=function(_,key) return key=="Road" and true or nil end
+reset();hp.Sit=true;callback(1/60);assert(casts==0,"seated players are untouched")
+reset();hp.FloorMaterial="Air";callback(1/60);assert(casts==0,"airborne players are untouched")
+print("PASS: straight/sideways curb steps, height limit, clearance, furniture exclusion, seated and airborne guards")
+"""
+source=(root/'tests/rig_math.fixture.luau').read_text()+'\n'+mock+'\n'
+# The fixture exposes Rotation through matrix subtraction, while Roblox has .Rotation.
+controller=(root/'src/client/GroundMovement.client.luau').read_text().replace('root.CFrame.Rotation','(root.CFrame-root.CFrame.Position)')
+source+='\n(function()\n'+controller+'\nend)()\n'+cases
 with tempfile.TemporaryDirectory() as d:
- p=Path(d)/'movement.luau';p.write_text((root/'tests/rig_math.fixture.luau').read_text()+mock+(root/'src/client/GroundMovement.client.luau').read_text()+cases)
- subprocess.run([sys.argv[1],str(p)],check=True)
+ p=Path(d)/'ground.luau';p.write_text(source);subprocess.run([sys.argv[1],str(p)],check=True)
