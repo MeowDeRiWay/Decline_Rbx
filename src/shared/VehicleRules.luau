@@ -30,36 +30,51 @@ function Rules.GearSpeed(gear,config)
 end
 function Rules.RPM(speed,throttle,gear,engineOn,config)
  if not engineOn then return 0 end
+ local moving=math.abs(speed)
+ if gear==0 then return config.IdleRPM+math.max(0,throttle)*(config.RedlineRPM-config.IdleRPM) end
  local top=math.abs(Rules.GearSpeed(gear,config))
- local fraction=top>0 and math.abs(speed)/top or math.abs(throttle)*.85
- return math.clamp(config.IdleRPM+fraction*(config.RedlineRPM-config.IdleRPM),config.IdleRPM,config.RedlineRPM)
+ if gear==-1 or gear==1 then
+  return config.IdleRPM+math.clamp(moving/top,0,1)*(config.GentleRPM-config.IdleRPM)
+ end
+ local low=config.GearMinimums[gear]
+ local rpm=config.GearIdleRPM+(moving-low)/(top-low)*(config.RedlineRPM-config.GearIdleRPM)
+ if speed<0 then rpm=0 end
+ return math.clamp(rpm,gear==2 and config.GearIdleRPM or 0,config.RedlineRPM)
 end
-function Rules.Shift(gear,delta,speed,config)
- local target=math.clamp(gear+delta,-1,#config.GearSpeeds)
- if target==gear then return gear end
- if (target==-1 or gear==-1) and math.abs(speed)>config.ExitMaximumSpeed then return gear end
- if target>0 and math.abs(speed)>Rules.GearSpeed(target,config)*1.08 then return gear end
- return target
+function Rules.SelectGear(value,config)
+ if typeof(value)~="number" or value~=value or value%1~=0 then return nil end
+ if value < -1 or value > #config.GearSpeeds then return nil end
+ return value
+end
+function Rules.Stalls(speed,gear,config)
+ return gear>=3 and Rules.RPM(speed,0,gear,true,config)<=config.StallRPM
+end
+function Rules.ReverseDamage(speed,config)
+ -- Only engaging reverse against forward travel damages the transmission/engine.
+ if speed<config.ReverseDamageStart then return 0 end
+ local fraction=math.clamp((speed-config.ReverseDamageStart)/(config.ReverseDamageFull-config.ReverseDamageStart),0,1)
+ return config.ReverseMinimumDamage+(1-config.ReverseMinimumDamage)*fraction
 end
 function Rules.WheelSteer(speed,steer,config)
  return steer/(1+(math.abs(speed)/config.SteeringSpeedScale)^2)
 end
 function Rules.Speed(speed,throttle,engineOn,power,wheelFactor,dt,config,gear,shifting)
+ gear=gear or 0
+ if throttle<0 then return approach(speed,0,config.BrakeDeceleration*dt) end
+ if not engineOn or shifting or gear==0 then return approach(speed,0,config.RollingDeceleration*dt) end
  local target=0
- if gear==nil then
-  if engineOn then target=throttle*(throttle>=0 and config.MaxSpeed or config.ReverseSpeed)*power*wheelFactor end
- elseif engineOn and not shifting and gear~=0 then
-  local direction=gear==-1 and -1 or 1
-  if throttle>0 then target=Rules.GearSpeed(gear,config)*throttle*power*wheelFactor end
-  if throttle<0 then return approach(speed,0,config.BrakeDeceleration*dt) end
-  if speed*direction<0 then target=0 end
+ if throttle>0 then
+  local top=math.min(math.abs(Rules.GearSpeed(gear,config)),config.MaxSpeed)
+  target=top*throttle*power*wheelFactor*(gear==-1 and -1 or 1)
+ elseif gear==2 then
+  target=config.GearMinimums[2]*power*wheelFactor
  end
- local rate=config.Acceleration
- if gear and gear>0 then rate*=math.max(.35,1-(gear-1)*.14) end
- if throttle==0 or not engineOn then rate=config.RollingDeceleration
- elseif speed*target<0 or math.abs(target)<math.abs(speed) then rate=config.BrakeDeceleration end
+ local rate=config.Acceleration*(gear>0 and math.max(.35,1-(gear-1)*.14) or .6)
+ if speed*target<0 then return approach(speed,0,config.BrakeDeceleration*dt) end
+ if math.abs(target)<math.abs(speed) then rate=config.RollingDeceleration end
  return approach(speed,target,rate*dt)
 end
+
 function Rules.Resources(state,dt,config)
  local fuel=state.Fuel
  local charge=state.Charge

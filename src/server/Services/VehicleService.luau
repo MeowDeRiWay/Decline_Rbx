@@ -322,6 +322,10 @@ local function drive(data,dt)
  local good,total=0,0
  for _,record in ipairs(data.Components) do if record.Kind=="Wheel" then total+=1;good+=Rules.Health(record.Model) end end
  local wheels=total>=4 and good/total or 0
+ if data.EngineOn and workspace:GetServerTimeNow()>=(data.ShiftUntil or 0) and Rules.Stalls(data.Speed,data.Gear,data.Config) then
+  stop(data)
+  if occupant then notice(occupant.Record.Player,"Engine stalled: select a lower gear and restart.") end
+ end
  data.Speed=Rules.Speed(data.Speed,data.Throttle,data.EngineOn,power,wheels,dt,data.Config,data.Gear,workspace:GetServerTimeNow()<(data.ShiftUntil or 0))
  data.RPM=Rules.RPM(data.Speed,data.Throttle,data.Gear,data.EngineOn,data.Config)
  local wheelTarget=Rules.WheelSteer(data.Speed,data.InputSteer,Config)
@@ -461,11 +465,19 @@ function Service.Start()
   elseif occupant.Record.Kind=="DriverSeat" then
    if command=="Engine" then startEngine(player,occupant.Data)
    elseif command=="Lights" then occupant.Data.LightsOn=not occupant.Data.LightsOn
-   elseif command=="GearUp" or command=="GearDown" then
+   elseif command=="Gear" then
     local data=occupant.Data
-    if now<(data.ShiftUntil or 0) then return end
-    local nextGear=Rules.Shift(data.Gear,command=="GearUp" and 1 or -1,data.Speed,data.Config)
-    if nextGear~=data.Gear then data.Gear=nextGear;data.ShiftUntil=now+Config.ShiftDuration;set(data.Model,"Gear",nextGear) end
+    local nextGear=Rules.SelectGear(target,data.Config)
+    if nextGear==nil or nextGear==data.Gear or (nextGear~=0 and now<(data.ShiftUntil or 0)) then return end
+    if nextGear==-1 then
+     local engine=component(data,"Engine")
+     local fraction=Rules.ReverseDamage(data.Speed,data.Config)
+     if engine and fraction>0 then
+      VehicleDamage.Apply(engine.Model,(engine.Model:GetAttribute("MaxHP") or 100)*fraction,"Mechanical",player)
+      notice(player,"Reverse engaged while moving: engine damaged.")
+     end
+    end
+    data.Gear=nextGear;data.ShiftUntil=now+Config.ShiftDuration;set(data.Model,"Gear",nextGear)
    end
   end
  end)

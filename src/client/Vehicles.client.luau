@@ -141,6 +141,12 @@ Cursor.Subscribe("Vehicles",3,function()
   or target:GetAttribute("Open") and "E · Close" or "E · Open"
  prompt.Text=Locale.Text(text);prompt.Visible=true
 end)
+local gearKeys={
+ [Enum.KeyCode.One]=1,[Enum.KeyCode.Two]=2,[Enum.KeyCode.Three]=3,
+ [Enum.KeyCode.Four]=4,[Enum.KeyCode.Five]=5,[Enum.KeyCode.Six]=6,
+ [Enum.KeyCode.Seven]=7,[Enum.KeyCode.Eight]=8,[Enum.KeyCode.Nine]=9,
+ [Enum.KeyCode.N]=0,[Enum.KeyCode.R]=-1,
+}
 Input.InputBegan:Connect(function(input,processed)
  if processed or blocked() then return end
  local vehicle=seatContext()
@@ -149,8 +155,7 @@ Input.InputBegan:Connect(function(input,processed)
   if input.KeyCode==Enum.KeyCode.X then action:FireServer("Exit")
   elseif input.KeyCode==Enum.KeyCode.V then action:FireServer("Engine")
   elseif input.KeyCode==Enum.KeyCode.L then action:FireServer("Lights")
-  elseif input.KeyCode==Enum.KeyCode.Q then action:FireServer("GearDown")
-  elseif input.KeyCode==Enum.KeyCode.E then action:FireServer("GearUp") end
+  elseif gearKeys[input.KeyCode]~=nil then action:FireServer("Gear",gearKeys[input.KeyCode]) end
  end
 end)
 Input.WindowFocusReleased:Connect(function() focused=false;controls:FireServer(0,0) end)
@@ -187,7 +192,7 @@ RunService.RenderStepped:Connect(function(dt)
  rpmBar.Size=UDim2.fromScale(math.clamp(rpm/Config.RedlineRPM,0,1),1)
  rpmBar.BackgroundColor3=rpm>Config.RedlineRPM*.85 and Color3.fromRGB(210,100,65) or Color3.fromRGB(150,180,90)
  resourceLabel.Text=string.format(Locale.Text("Fuel %.1f L · Battery %.2f V"),vehicle:GetAttribute("Fuel") or 0,vehicle:GetAttribute("Charge") or 0)
- keysLabel.Text=Locale.Text(seat:IsA("VehicleSeat") and "WASD · Drive   Q/E · Gear −/+   V · Engine   L · Lights   X · Exit" or "X · Exit")
+ keysLabel.Text=seat:IsA("VehicleSeat") and string.format(Locale.Text("WASD · Drive   1–%d · Gear   N · Neutral   R · Reverse   V · Engine   L · Lights   X · Exit"),#Config.GearSpeeds) or Locale.Text("X · Exit")
 end)
 RunService.PreSimulation:Connect(function(dt)
  local c=player.Character

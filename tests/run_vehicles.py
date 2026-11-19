@@ -53,16 +53,33 @@ missing.Name="Battery"
 local function componentModel(vehicle,kind)
  for _,model in ipairs(vehicle.Components:GetChildren()) do if model:GetAttribute("VehicleComponent")==kind then return model end end
 end
-assert(VehicleRules.Shift(1,-1,20,VehicleConfig)==0)
-assert(VehicleRules.Shift(0,-1,20,VehicleConfig)==0,"cannot engage reverse at speed")
-assert(VehicleRules.Shift(3,-1,25,VehicleConfig)==3,"unsafe downshift rejected")
-assert(VehicleRules.Shift(0,-1,0,VehicleConfig)==-1)
-assert(VehicleRules.RPM(0,1,0,true,VehicleConfig)>4000,"neutral can rev")
-assert(VehicleRules.RPM(0,0,1,true,VehicleConfig)==VehicleConfig.IdleRPM)
-assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11,"steering reduced at speed")
-assert(VehicleRules.Speed(0,1,true,1,1,1,VehicleConfig,0,false)==0,"neutral cannot drive")
-assert(VehicleRules.Speed(0,1,true,1,1,1,VehicleConfig,-1,false)<0,"reverse uses throttle and selected gear")
-assert(VehicleRules.Speed(-3,-1,true,1,1,.1,VehicleConfig,-1,false)>-3,"S brakes in reverse")
+assert(VehicleRules.SelectGear(5,VehicleConfig)==5 and VehicleRules.SelectGear(6,VehicleConfig)==nil)
+assert(VehicleRules.SelectGear(0/0,VehicleConfig)==nil and VehicleRules.SelectGear(1.5,VehicleConfig)==nil)
+for gear=2,5 do
+ local low=VehicleConfig.GearMinimums[gear]
+ local top=VehicleConfig.GearSpeeds[gear]
+ assert(math.abs(VehicleRules.RPM(low,1,gear,true,VehicleConfig)-1000)<.001)
+ assert(math.abs(VehicleRules.RPM(top,1,gear,true,VehicleConfig)-6000)<.001)
+ if gear>=3 then assert(VehicleRules.Stalls(0,gear,VehicleConfig) and not VehicleRules.Stalls(low,gear,VehicleConfig)) end
+end
+assert(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)>4800 and VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)<4900)
+assert(VehicleRules.RPM(10/3.6,1,-1,true,VehicleConfig)==VehicleConfig.GentleRPM)
+assert(VehicleRules.RPM(15/3.6,1,1,true,VehicleConfig)==VehicleConfig.GentleRPM)
+assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
+assert(math.abs(VehicleRules.ReverseDamage(5/3.6,VehicleConfig)-.05)<.001)
+assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1 and VehicleRules.ReverseDamage(50/3.6,VehicleConfig)==1)
+assert(VehicleRules.ReverseDamage(-20/3.6,VehicleConfig)==0)
+assert(VehicleRules.RPM(0,1,0,true,VehicleConfig)==6000)
+assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
+assert(VehicleRules.Speed(0,1,true,1,1,1,VehicleConfig,0,false)==0)
+assert(VehicleRules.Speed(0,1,true,1,1,1,VehicleConfig,-1,false)<0)
+assert(VehicleRules.Speed(-3,-1,true,1,1,.1,VehicleConfig,-1,false)>-3)
+local creep=0
+for _=1,100 do creep=VehicleRules.Speed(creep,0,true,1,1,.1,VehicleConfig,2,false) end
+assert(math.abs(creep-10/3.6)<.001,"second gear creeps at ten km/h without throttle")
+local fast=0
+for _=1,1000 do fast=VehicleRules.Speed(fast,1,true,1,1,.1,VehicleConfig,5,false) end
+assert(math.abs(fast-150/3.6)<.001,"fifth gear never exceeds vehicle speed cap")
 local starter=VehicleRules.Power
 assert(starter(1,.2)==1 and starter(.2,.2)==0 and starter(0,.2)==0)
 local function charged(attributes)
@@ -159,8 +176,15 @@ assert(engineAudio.EngineStart.IsPlaying and engineAudio.EngineStart.SoundId==Ve
 for _=1,22 do tick(.1) end
 assert(vehicle:GetAttribute("EngineOn"),"charged correctly sized battery starts engine")
 assert(vehicle:GetAttribute("Gear")==0,"starts in neutral")
-remote.Action.OnServerEvent:Fire(player,"GearUp");tick(.4)
+remote.Action.OnServerEvent:Fire(player,"Gear",1);tick(.4)
 assert(vehicle:GetAttribute("Gear")==1,"driver selects first gear")
+remote.Action.OnServerEvent:Fire(player,"Gear",5);tick(.4)
+assert(not vehicle:GetAttribute("EngineOn"),"selecting fifth from rest stalls the actual engine")
+remote.Action.OnServerEvent:Fire(player,"Gear",0);tick(.2)
+remote.Action.OnServerEvent:Fire(player,"Engine")
+for _=1,22 do tick(.1) end
+assert(vehicle:GetAttribute("EngineOn"),"stalled engine can restart in neutral")
+remote.Action.OnServerEvent:Fire(player,"Gear",1);tick(.4)
 assert(engineAudio.EngineLoop.IsPlaying and not engineAudio.EngineStart.IsPlaying,"starter transitions into the engine loop")
 assert(engineAudio.EngineLoop.PlaybackSpeed<1,"idle engine pitch reflects low RPM")
 local initialFuel=tankModel:GetAttribute("Fuel")
@@ -169,6 +193,16 @@ local initialPosition=vehicle.PrimaryPart.Position
 for _=1,12 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 assert(vehicle:GetAttribute("Speed")>3 and (vehicle.PrimaryPart.Position-initialPosition).Magnitude>1,"authorized throttle moves the assembled car")
 assert(tankModel:GetAttribute("Fuel")<initialFuel and batteryModel:GetAttribute("Charge")>initialCharge,"running engine consumes fuel and charges battery")
+local beforeReverse=engineModel:GetAttribute("HP")
+remote.Action.OnServerEvent:Fire(player,"Gear",-1)
+assert(engineModel:GetAttribute("HP")<beforeReverse,"reverse engagement at forward speed damages the actual engine")
+local afterReverse=engineModel:GetAttribute("HP");tick(.4)
+remote.Action.OnServerEvent:Fire(player,"Gear",-1);tick(.2)
+assert(engineModel:GetAttribute("HP")==afterReverse,"repeated reverse packets do not multiply damage")
+engineModel:SetAttribute("HP",100)
+remote.Action.OnServerEvent:Fire(player,"Gear",1);tick(.4)
+for _=1,12 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+
 remote.Input.OnServerEvent:Fire(player,0/0,math.huge);tick(.1)
 for _=1,10 do tick(.1) end
 assert(vehicle:GetAttribute("Steering")==vehicle:GetAttribute("Steering"),"invalid network input cannot poison simulation")
