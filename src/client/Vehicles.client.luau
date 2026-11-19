@@ -8,6 +8,7 @@ local Cursor=require(script.Parent.CursorQuery)
 local Locale=require(script.Parent.LocaleController)
 local Config=require(ReplicatedStorage.Shared.VehicleConfig)
 local Rules=require(ReplicatedStorage.Shared.VehicleRules)
+local Inspection=require(ReplicatedStorage.Shared.VehicleInspection)
 local Interaction=require(ReplicatedStorage.Shared.Interaction)
 local player=Players.LocalPlayer
 local remotes=ReplicatedStorage:WaitForChild("VehicleRemotes")
@@ -94,6 +95,20 @@ prompt.AnchorPoint=Vector2.new(.5,0);prompt.Position=UDim2.new(.5,0,0,65)
 prompt.Size=UDim2.fromOffset(340,30);prompt.BackgroundColor3=panel.BackgroundColor3
 prompt.BackgroundTransparency=.15;prompt.BorderSizePixel=0;prompt.TextColor3=stateLabel.TextColor3
 prompt.Font=Enum.Font.Code;prompt.TextSize=15;prompt.Visible=false;prompt.Parent=gui
+local healthHint=Instance.new("TextLabel")
+healthHint.AnchorPoint=Vector2.new(.5,0);healthHint.Position=UDim2.new(.5,0,0,30)
+healthHint.Size=UDim2.fromOffset(340,30);healthHint.BackgroundColor3=panel.BackgroundColor3
+healthHint.BackgroundTransparency=.15;healthHint.BorderSizePixel=0
+healthHint.Font=Enum.Font.Code;healthHint.TextSize=15;healthHint.TextColor3=stateLabel.TextColor3
+healthHint.Visible=false;healthHint.Parent=gui
+local function inspect(sample)
+ healthHint.Visible=false
+ local hit=sample and sample.Hit
+ local health=hit and Inspection.Read(hit.Instance)
+ if not health then return end
+ healthHint.Text=string.format(Locale.Text("%s · HP %g / %g"),Locale.Text(health.Name),math.floor(health.HP*10+.5)/10,health.MaxHP)
+ healthHint.Visible=true
+end
 local highlight=Instance.new("Highlight")
 highlight.Name="VehicleHover";highlight.DepthMode=Enum.HighlightDepthMode.Occluded
 highlight.FillTransparency=.75;highlight.FillColor=Color3.fromRGB(110,210,140)
@@ -109,12 +124,13 @@ local function interactable(model)
  return false
 end
 Cursor.Subscribe("Vehicles",3,function()
- hovered=nil;highlight.Enabled=false;prompt.Visible=false
+ hovered=nil;highlight.Enabled=false;prompt.Visible=false;healthHint.Visible=false
  local c=player.Character
  local root=c and c:FindFirstChild("HumanoidRootPart")
- if not root or blocked() or c:GetAttribute("VehicleSeated") or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then return end
+ if not root or blocked() or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then return end
  local sample=Cursor.Get()
- if not sample then return end
+ inspect(sample)
+ if not sample or c:GetAttribute("VehicleSeated") then return end
  local candidates={}
  for vehicle,data in pairs(vehicles) do
   if not vehicle:IsDescendantOf(workspace) then continue end

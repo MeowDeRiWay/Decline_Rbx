@@ -23,6 +23,7 @@ local library=loadGeometry(geometry)
 local template=library:FindFirstChild("Car_1")
 local details=library:FindFirstChild("Car_1 details")
 '''
+source += "\nlocal Inspection=" + module("src/shared/VehicleInspection.luau")
 source += "\nlocal Assembly=" + module("src/server/Services/VehicleAssembly.luau", "local Config=VehicleConfig\nlocal Rules=VehicleRules")
 source += r'''
 local built,message=Assembly.Build(template,details)
@@ -43,6 +44,17 @@ for _,record in ipairs(built.Components) do
 end
 assert(wheels==4 and steering==2 and seats==1,"one wheel template becomes four wheels, two steerable; passenger remains optional")
 assert(built.Wheelbase>3 and built.Wheelbase<3.1)
+local inspected=built.Components[1].Model
+local hpInfo=Inspection.Read(inspected.PrimaryPart)
+assert(hpInfo and hpInfo.Model==inspected and hpInfo.HP==hpInfo.MaxHP,"hovering child geometry resolves component health")
+inspected:SetAttribute("HP",0)
+assert(Inspection.Read(inspected.PrimaryPart).HP==0,"destroyed components still display zero HP")
+inspected:SetAttribute("HP",12.5)
+assert(Inspection.Read(inspected.PrimaryPart).HP==12.5,"hover reflects live fractional damage")
+assert(not Inspection.Read(template),"stored templates and non-vehicles do not show inspection")
+inspected:SetAttribute("MaxHP",0)
+assert(not Inspection.Read(inspected.PrimaryPart),"invalid maximum health is ignored")
+
 groundY=built.Root.Position.Y-built.GroundOffset
 local referenceRoot=built.Root.CFrame
 built.Model:Destroy()
