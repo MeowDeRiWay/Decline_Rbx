@@ -62,8 +62,8 @@ for gear=2,5 do
  assert(math.abs(VehicleRules.RPM(top,1,gear,true,VehicleConfig)-6000)<.001)
  if gear>=3 then assert(VehicleRules.Stalls(0,gear,VehicleConfig) and not VehicleRules.Stalls(low,gear,VehicleConfig)) end
 end
-assert(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)==4750)
-assert(VehicleRules.RPM(-15/3.6,1,-1,true,VehicleConfig)==6000)
+assert(math.abs(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)-(1000+5000*100/150))<.001)
+assert(VehicleRules.RPM(-15/3.6,1,-1,true,VehicleConfig)==4750)
 assert(VehicleRules.RPM(20/3.6,1,1,true,VehicleConfig)==6000)
 assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
 assert(math.abs(VehicleRules.ReverseDamage(5/3.6,VehicleConfig)-.05)<.001)
@@ -71,8 +71,10 @@ assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1 and VehicleRules.Reve
 assert(VehicleRules.ReverseDamage(-20/3.6,VehicleConfig)==0)
 assert(VehicleRules.RPM(0,1,0,true,VehicleConfig)==6000)
 assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
+local wanted={{3,2,3},{4,3,3},{4,3,3},{4,4,3},{4,5,3}}
 for gear=1,5 do
  local times=VehicleConfig.GearRPMTimes[gear]
+ for band=1,3 do assert(times[band]==wanted[gear][band],"authored RPM ramp duration") end
  for _,fps in ipairs({20,30,60,144}) do
   local rpm=1000
   for band=1,3 do
@@ -86,12 +88,15 @@ end
 for gear=1,5 do
  local speed,rpm=0,1000
  for _=1,200 do speed,rpm=VehicleRules.Drive(speed,rpm,1,gear,true,1,1,.1,VehicleConfig,false,false) end
- local expectedRPM=gear==5 and 4750 or 6000
+ local expectedRPM=gear==5 and (1000+5000*100/150) or 6000
  assert(math.abs(rpm-expectedRPM)<.001,"first reaches the redline; fifth respects the car speed limit")
  assert(math.abs(speed-math.min(VehicleConfig.GearSpeeds[gear],VehicleConfig.MaxSpeed))<.001)
 end
 assert(math.abs(VehicleRules.SpeedFromRPM(1000,3,VehicleConfig)-20/3.6)<.001)
 assert(math.abs(VehicleRules.SpeedFromRPM(6000,3,VehicleConfig)-70/3.6)<.001)
+local reverse,reverseRPM=0,1000
+for _=1,200 do reverse,reverseRPM=VehicleRules.Drive(reverse,reverseRPM,1,-1,true,1,1,.1,VehicleConfig,false,false) end
+assert(math.abs(reverse+15/3.6)<.001 and reverseRPM==4750,"reverse ratio spans twenty km/h but is limited to fifteen")
 local creep,rpm=0,1000
 for _=1,100 do creep,rpm=VehicleRules.Drive(creep,rpm,0,2,true,1,1,.1,VehicleConfig,false,false) end
 assert(math.abs(creep-10/3.6)<.001)

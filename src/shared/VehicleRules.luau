@@ -25,7 +25,7 @@ local function approach(value,target,amount)
  return math.max(target,value-amount)
 end
 function Rules.GearSpeed(gear,config)
- if gear==-1 then return -config.ReverseSpeed end
+ if gear==-1 then return -config.ReverseGearSpeed end
  return config.GearSpeeds[gear] or 0
 end
 function Rules.RPM(speed,throttle,gear,engineOn,config)
@@ -108,6 +108,7 @@ function Rules.Drive(speed,rpm,throttle,gear,engineOn,power,wheels,dt,config,shi
   if gear>0 and Rules.GearSpeed(gear,config)>config.MaxSpeed then
    rpm=math.min(rpm,Rules.RPM(config.MaxSpeed,0,gear,true,config))
   end
+  if gear==-1 then rpm=math.min(rpm,Rules.RPM(-config.ReverseSpeed,0,gear,true,config)) end
   local target=Rules.SpeedFromRPM(rpm,gear,config)*power*wheels
   target=math.clamp(target,-config.ReverseSpeed,config.MaxSpeed*power*wheels)
   if gear==2 and speed<config.GearMinimums[2] then speed=approach(speed,target,config.CreepAcceleration*dt)
