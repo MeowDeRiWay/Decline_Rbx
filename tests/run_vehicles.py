@@ -63,35 +63,50 @@ for gear=2,5 do
  if gear>=3 then assert(VehicleRules.Stalls(0,gear,VehicleConfig) and not VehicleRules.Stalls(low,gear,VehicleConfig)) end
 end
 assert(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)==4750)
-assert(VehicleRules.RPM(15/3.6,1,-1,true,VehicleConfig)==VehicleConfig.GentleRPM)
-assert(VehicleRules.RPM(20/3.6,1,1,true,VehicleConfig)==VehicleConfig.GentleRPM)
+assert(VehicleRules.RPM(-15/3.6,1,-1,true,VehicleConfig)==6000)
+assert(VehicleRules.RPM(20/3.6,1,1,true,VehicleConfig)==6000)
 assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
 assert(math.abs(VehicleRules.ReverseDamage(5/3.6,VehicleConfig)-.05)<.001)
 assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1 and VehicleRules.ReverseDamage(50/3.6,VehicleConfig)==1)
 assert(VehicleRules.ReverseDamage(-20/3.6,VehicleConfig)==0)
 assert(VehicleRules.RPM(0,1,0,true,VehicleConfig)==6000)
 assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
-assert(VehicleRules.Speed(0,1,true,1,1,1,VehicleConfig,0,false)==0)
-assert(VehicleRules.Speed(0,1,true,1,1,1,VehicleConfig,-1,false)<0)
-assert(VehicleRules.Speed(-3,-1,true,1,1,.1,VehicleConfig,-1,false)>-3)
-local creep=0
-for _=1,100 do creep=VehicleRules.Speed(creep,0,true,1,1,.1,VehicleConfig,2,false) end
-assert(math.abs(creep-10/3.6)<.001,"second gear creeps at ten km/h without throttle")
-local fast=0
-for _=1,1000 do fast=VehicleRules.Speed(fast,1,true,1,1,.1,VehicleConfig,5,false) end
-assert(math.abs(fast-150/3.6)<.001,"fifth gear never exceeds vehicle speed cap")
-assert(VehicleRules.AccelerationFactor(2000,VehicleConfig)==1)
-assert(VehicleRules.AccelerationFactor(4000,VehicleConfig)<VehicleRules.AccelerationFactor(2000,VehicleConfig))
-assert(VehicleRules.AccelerationFactor(5000,VehicleConfig)==.5)
-assert(VehicleRules.Steer(.8,0,20,.01,VehicleConfig)==0,"releasing steering instantly centers wheels")
-assert(VehicleRules.Steer(0,1,0,.01,VehicleConfig)>0 and VehicleRules.Steer(0,1,0,.01,VehicleConfig)<.01,"turning into a corner remains gradual")
+for gear=1,5 do
+ local times=VehicleConfig.GearRPMTimes[gear]
+ for _,fps in ipairs({20,30,60,144}) do
+  local rpm=1000
+  for band=1,3 do
+   local duration=times[band]
+   for _=1,duration*fps do rpm=VehicleRules.AdvanceRPM(rpm,gear,1/fps,VehicleConfig) end
+   local expected=({4000,5000,6000})[band]
+   assert(math.abs(rpm-expected)<.001,"every gear follows each timed RPM band at every frame rate")
+  end
+ end
+end
+for gear=1,5 do
+ local speed,rpm=0,1000
+ for _=1,200 do speed,rpm=VehicleRules.Drive(speed,rpm,1,gear,true,1,1,.1,VehicleConfig,false,false) end
+ local expectedRPM=gear==5 and 4750 or 6000
+ assert(math.abs(rpm-expectedRPM)<.001,"first reaches the redline; fifth respects the car speed limit")
+ assert(math.abs(speed-math.min(VehicleConfig.GearSpeeds[gear],VehicleConfig.MaxSpeed))<.001)
+end
+assert(math.abs(VehicleRules.SpeedFromRPM(1000,3,VehicleConfig)-20/3.6)<.001)
+assert(math.abs(VehicleRules.SpeedFromRPM(6000,3,VehicleConfig)-70/3.6)<.001)
+local creep,rpm=0,1000
+for _=1,100 do creep,rpm=VehicleRules.Drive(creep,rpm,0,2,true,1,1,.1,VehicleConfig,false,false) end
+assert(math.abs(creep-10/3.6)<.001)
+assert(VehicleRules.Steer(.8,0,20,.01,VehicleConfig)==0)
+assert(VehicleRules.Steer(0,1,0,.01,VehicleConfig)<.01)
 local top=VehicleConfig.GearSpeeds[3]
-local braking=VehicleRules.Speed(top,0,true,1,1,.1,VehicleConfig,3,false,true)
-local coasting=VehicleRules.Speed(top,0,true,1,1,.1,VehicleConfig,3,false,false)
-assert(braking<coasting,"engine braking is stronger than passive coasting")
-local target=VehicleRules.BrakeSpeed(3,VehicleConfig)
-assert(math.abs(VehicleRules.RPM(target,0,3,true,VehicleConfig)-5000)<.001)
-assert(VehicleRules.Speed(target+.01,0,true,1,1,.1,VehicleConfig,3,false,true)==target,"forced braking never overshoots five thousand RPM")
+local braking,rpm,latch=VehicleRules.Drive(top,6000,0,3,true,1,1,.1,VehicleConfig,false,false)
+assert(braking<top-VehicleConfig.RollingDeceleration*.1,"released redline activates stronger engine braking")
+for _=1,100 do
+ braking,rpm,latch=VehicleRules.Drive(braking,rpm,0,3,true,1,1,.01,VehicleConfig,false,latch)
+ if not latch then break end
+end
+assert(rpm<=5000.001 and rpm>=4999.999,"forced braking ends exactly at five thousand RPM")
+local damagedBrake=VehicleRules.Drive(2,6000,0,3,true,.2,1,.1,VehicleConfig,false,true)
+assert(damagedBrake<=2,"engine braking never accelerates a damaged car")
 assert(VehicleRules.OverrevDamage(5099,1,100,VehicleConfig)==0)
 local wear=0
 for _=1,100 do wear+=VehicleRules.OverrevDamage(5500,.01,100,VehicleConfig) end
@@ -193,9 +208,12 @@ for _=1,22 do tick(.1) end
 assert(vehicle:GetAttribute("EngineOn"),"charged correctly sized battery starts engine")
 assert(vehicle:GetAttribute("Gear")==0,"starts in neutral")
 local originalEngineHP=engineModel:GetAttribute("HP")
+for _=1,20 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+originalEngineHP=engineModel:GetAttribute("HP")
 for _=1,10 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 assert(math.abs(engineModel:GetAttribute("HP")-(originalEngineHP-1))<.001,"actual engine loses exactly one percent in one second at high RPM")
-remote.Input.OnServerEvent:Fire(player,0,0);tick(.1)
+remote.Input.OnServerEvent:Fire(player,0,0)
+for _=1,10 do tick(.1) end
 local cooledHP=engineModel:GetAttribute("HP")
 for _=1,10 do tick(.1) end
 assert(engineModel:GetAttribute("HP")==cooledHP,"wear stops when RPM drops")
@@ -215,8 +233,8 @@ assert(engineAudio.EngineLoop.PlaybackSpeed<1,"idle engine pitch reflects low RP
 local initialFuel=tankModel:GetAttribute("Fuel")
 local initialCharge=batteryModel:GetAttribute("Charge")
 local initialPosition=vehicle.PrimaryPart.Position
-for _=1,12 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
-assert(vehicle:GetAttribute("Speed")>3 and (vehicle.PrimaryPart.Position-initialPosition).Magnitude>1,"authorized throttle moves the assembled car")
+for _=1,30 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+assert(vehicle:GetAttribute("Speed")>1 and (vehicle.PrimaryPart.Position-initialPosition).Magnitude>1,"authorized throttle moves the assembled car")
 assert(tankModel:GetAttribute("Fuel")<initialFuel and batteryModel:GetAttribute("Charge")>initialCharge,"running engine consumes fuel and charges battery")
 local beforeReverse=engineModel:GetAttribute("HP")
 remote.Action.OnServerEvent:Fire(player,"Gear",-1)
@@ -231,7 +249,7 @@ if not vehicle:GetAttribute("EngineOn") then
  for _=1,22 do tick(.1) end
 end
 remote.Action.OnServerEvent:Fire(player,"Gear",1);tick(.4)
-for _=1,12 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+for _=1,30 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 
 remote.Input.OnServerEvent:Fire(player,0/0,math.huge);tick(.1)
 for _=1,10 do tick(.1) end

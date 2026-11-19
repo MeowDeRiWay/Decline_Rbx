@@ -317,6 +317,9 @@ local function drive(data,dt)
   if record.Kind=="DriverSeat" and record.Player then occupant=occupants[record.Player];break end
  end
  if not occupant or workspace:GetServerTimeNow()-data.LastInput>Config.InputTimeout then data.Throttle=0;data.InputSteer=0 end
+ if not occupant then
+  data.Speed=0;data.RPM=data.EngineOn and Config.IdleRPM or 0;data.Steering=0;return
+ end
  local engine=component(data,"Engine")
  local power=engine and Rules.Power(Rules.Health(engine.Model),Config.EngineStopRatio) or 0
  local good,total=0,0
@@ -327,12 +330,7 @@ local function drive(data,dt)
   if occupant then notice(occupant.Record.Player,"Engine stalled: select a lower gear and restart.") end
  end
  local shifting=workspace:GetServerTimeNow()<(data.ShiftUntil or 0)
- local beforeRPM=Rules.RPM(data.Speed,data.Throttle,data.Gear,data.EngineOn,data.Config)
- if not data.EngineOn or shifting or data.Gear<2 or data.Throttle~=0 then data.EngineBraking=false
- elseif beforeRPM>=Config.RedlineRPM then data.EngineBraking=true end
- data.Speed=Rules.Speed(data.Speed,data.Throttle,data.EngineOn,power,wheels,dt,data.Config,data.Gear,shifting,data.EngineBraking)
- data.RPM=Rules.RPM(data.Speed,data.Throttle,data.Gear,data.EngineOn,data.Config)
- if data.RPM<=Config.EngineBrakeRPM then data.EngineBraking=false end
+ data.Speed,data.RPM,data.EngineBraking=Rules.Drive(data.Speed,data.RPM,data.Throttle,data.Gear,data.EngineOn,power,wheels,dt,data.Config,shifting,data.EngineBraking)
  if engine and data.EngineOn and not shifting then
   local wear=Rules.OverrevDamage(data.RPM,dt,engine.Model:GetAttribute("MaxHP") or 100,data.Config)
   if wear>0 then VehicleDamage.Apply(engine.Model,wear,"Overrev") end
@@ -362,19 +360,19 @@ local function drive(data,dt)
   end
   local distance=math.max(0,hit.Distance-.03)
   travel=travel.Unit*math.min(distance,travel.Magnitude)
-  data.Speed=0
+  data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config)
  end
  local point=current.Position+travel
  local ground=workspace:Raycast(point+Vector3.new(0,Config.GroundProbeHeight,0),Vector3.new(0,-Config.GroundProbeDepth,0),params)
- if not ground or ground.Normal.Y<.65 then data.Speed=0;return end
+ if not ground or ground.Normal.Y<.65 then data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return end
  local y=ground.Position.Y+data.GroundOffset
- if math.abs(y-current.Position.Y)>Config.MaximumGroundStep then data.Speed=0;return end
+ if math.abs(y-current.Position.Y)>Config.MaximumGroundStep then data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return end
  local target=CFrame.new(point.X,y,point.Z)*(proposed-proposed.Position)
  -- Rotation needs its own overlap check: a long nose must not sweep through a wall.
  local overlap=OverlapParams.new();overlap.FilterType=Enum.RaycastFilterType.Exclude
  overlap.FilterDescendantsInstances=filters(data);overlap.RespectCanCollide=true
  if math.abs(turn)>.0001 and #workspace:GetPartBoundsInBox(target*data.CollisionOffset,data.CollisionSize,overlap)>0 then
-  data.Speed=0;return
+  data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return
  end
  data.Model:PivotTo(target)
 end
@@ -485,7 +483,9 @@ function Service.Start()
       notice(player,"Reverse engaged while moving: engine damaged.")
      end
     end
-    data.Gear=nextGear;data.ShiftUntil=now+Config.ShiftDuration;set(data.Model,"Gear",nextGear)
+    data.Gear=nextGear;data.ShiftUntil=now+Config.ShiftDuration
+    if nextGear~=0 then data.RPM=Rules.RPM(data.Speed,0,nextGear,data.EngineOn,data.Config) end
+    data.EngineBraking=false;set(data.Model,"Gear",nextGear)
    end
   end
  end)
