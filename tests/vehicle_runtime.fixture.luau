@@ -117,7 +117,7 @@ function methods:Clone()
  local mapping={}
  local function clone(source,parent)
   local target=create(source.ClassName,parent);mapping[source]=target
-  for _,key in ipairs({"Name","CFrame","Size","PivotOffset","Transparency","Anchored","CanCollide","CanQuery","CanTouch","Massless","Disabled","WorldPivot","ModelFrame"}) do
+  for _,key in ipairs({"Name","CFrame","Size","PivotOffset","Transparency","Anchored","CanCollide","CanQuery","CanTouch","Massless","Disabled","WorldPivot","ModelFrame","SoundId","Volume","IsPlaying","PlaybackSpeed","Looped"}) do
    if rawget(source,key)~=nil then target[key]=source[key] end
   end
   target.Attributes=table.clone(source.Attributes)

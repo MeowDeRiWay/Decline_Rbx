@@ -61,6 +61,12 @@ local road=wall(0,roadModel)
 local roadPart=wall(.1);roadPart.Attributes={Road=true}
 local nestedModel=object("Model",roadModel)
 local nestedRoad=wall(0,nestedModel)
+local car=object("Model",workspace);car.Attributes={Vehicle=true}
+local carPart=wall(0,car)
+local items=object("Folder",workspace);items.Name="Items"
+local itemPart=wall(0,object("Model",items))
+local dropped=object("Model",workspace);dropped.Attributes={Item_ID="Rifle223"}
+local droppedPart=wall(0,dropped)
 local collision,transparency=front.CanCollide,front.Transparency
 '''
 source += "\nlocal controller=(function()\n" + (root / "src/client/CameraOcclusion.client.luau").read_text() + "\nend)()\n"
@@ -70,11 +76,12 @@ local function frames(fps,seconds)
  for _=1,math.ceil(fps*seconds) do callback(1/fps) end
 end
 for _,fps in ipairs({30,60,144}) do
- sceneHits={front,rear,glass,npcPart,mannequinPart,road,roadPart,nestedRoad}
+ sceneHits={front,rear,glass,npcPart,mannequinPart,road,roadPart,nestedRoad,carPart,itemPart,droppedPart}
  local before=calls
  frames(fps,1)
  assert(front.LocalTransparencyModifier>.84 and rear.LocalTransparencyModifier>.84,"all blocking layers fade")
  assert(road.LocalTransparencyModifier==0 and roadPart.LocalTransparencyModifier==.1 and nestedRoad.LocalTransparencyModifier==0,"Road attributes on parts or ancestors exclude all road geometry")
+ assert(carPart.LocalTransparencyModifier==0 and itemPart.LocalTransparencyModifier==0 and droppedPart.LocalTransparencyModifier==0,"cars and Items never fade")
  assert(glass.LocalTransparencyModifier==0,"authored transparent geometry stays unchanged")
  assert(npcPart.LocalTransparencyModifier==1 and mannequinPart.LocalTransparencyModifier==1,"creature visibility retains ownership")
  assert(front.Transparency==transparency and front.CanCollide==collision,"occlusion changes presentation only")

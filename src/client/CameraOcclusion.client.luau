@@ -18,7 +18,8 @@ end
 local function excludedFromFade(part)
  local ancestor=part
  while ancestor and ancestor~=workspace do
-  if ancestor:GetAttribute("Road")==true then return true end
+  if ancestor:GetAttribute("Road")==true or ancestor:GetAttribute("Vehicle")==true
+   or ancestor:GetAttribute("Item_ID")~=nil or ancestor.Name=="Items" then return true end
   if ancestor:IsA("Model") and (ancestor.Name=="Mannikin" or ancestor:FindFirstChildOfClass("Humanoid")) then return true end
   ancestor=ancestor.Parent
  end

@@ -7,6 +7,7 @@ local Debris=game:GetService("Debris")
 local Cursor=require(script.Parent.CursorQuery)
 local Locale=require(script.Parent.LocaleController)
 local Config=require(ReplicatedStorage.Shared.VehicleConfig)
+local Rules=require(ReplicatedStorage.Shared.VehicleRules)
 local Interaction=require(ReplicatedStorage.Shared.Interaction)
 local player=Players.LocalPlayer
 local remotes=ReplicatedStorage:WaitForChild("VehicleRemotes")
@@ -62,7 +63,13 @@ local gui=Instance.new("ScreenGui")
 gui.Name="VehicleHUD";gui.ResetOnSpawn=false;gui:SetAttribute("LocalizationIgnore",true)
 gui.Parent=player:WaitForChild("PlayerGui")
 local panel=Instance.new("Frame")
-panel.Position=UDim2.fromOffset(20,65);panel.Size=UDim2.fromOffset(460,82)
+panel.AnchorPoint=Vector2.new(1,0);panel.Position=UDim2.new(1,-20,0,65);panel.Size=UDim2.fromOffset(420,170)
+local scale=Instance.new("UIScale");scale.Parent=panel
+local function resize()
+ local camera=workspace.CurrentCamera
+ if camera then scale.Scale=math.min(1,(camera.ViewportSize.X-30)/420) end
+end
+resize()
 panel.BackgroundColor3=Color3.fromRGB(31,32,24);panel.BackgroundTransparency=.12
 panel.BorderColor3=Color3.fromRGB(104,102,65);panel.Visible=false;panel.Parent=gui
 local function label(y,height)
@@ -72,9 +79,16 @@ local function label(y,height)
  text.Font=Enum.Font.Code;text.TextSize=14;text.Text="";text.Parent=panel
  return text
 end
-local stateLabel=label(5,24)
-local resourceLabel=label(29,22)
-local keysLabel=label(53,22)
+local stateLabel=label(5,22)
+local speedLabel=label(27,44);speedLabel.TextSize=32
+local revLabel=label(72,22)
+local resourceLabel=label(105,22)
+local keysLabel=label(133,30);keysLabel.TextSize=12;keysLabel.TextWrapped=true
+local rpmTrack=Instance.new("Frame");rpmTrack.Position=UDim2.new(0,10,0,97)
+rpmTrack.Size=UDim2.new(1,-20,0,5);rpmTrack.BackgroundColor3=Color3.fromRGB(55,56,40)
+rpmTrack.BorderSizePixel=0;rpmTrack.Parent=panel
+local rpmBar=Instance.new("Frame");rpmBar.BorderSizePixel=0;rpmBar.Size=UDim2.fromScale(0,1)
+rpmBar.BackgroundColor3=Color3.fromRGB(150,180,90);rpmBar.Parent=rpmTrack
 local prompt=Instance.new("TextLabel")
 prompt.AnchorPoint=Vector2.new(.5,0);prompt.Position=UDim2.new(.5,0,0,65)
 prompt.Size=UDim2.fromOffset(340,30);prompt.BackgroundColor3=panel.BackgroundColor3
@@ -117,7 +131,7 @@ Cursor.Subscribe("Vehicles",3,function()
  local target=hit.Instance
  while target and target~=workspace and not target:GetAttribute("VehicleComponent") do target=target.Parent end
  if not target or target==workspace then return end
- -- An open car can be selected through its own faded roof, never through a building.
+ -- Seats can be selected inside their own car, never through a building.
  local first=sample.Hit
  if first and (first.Position-sample.Ray.Origin).Magnitude+ .03<hit.Distance
   and vehicleOf(first.Instance)~=vehicleOf(target) then return end
@@ -130,11 +144,13 @@ end)
 Input.InputBegan:Connect(function(input,processed)
  if processed or blocked() then return end
  local vehicle=seatContext()
- if input.KeyCode==Enum.KeyCode.E and hovered then action:FireServer("Interact",hovered)
+ if not vehicle and input.KeyCode==Enum.KeyCode.E and hovered then action:FireServer("Interact",hovered)
  elseif vehicle then
   if input.KeyCode==Enum.KeyCode.X then action:FireServer("Exit")
   elseif input.KeyCode==Enum.KeyCode.V then action:FireServer("Engine")
-  elseif input.KeyCode==Enum.KeyCode.L then action:FireServer("Lights") end
+  elseif input.KeyCode==Enum.KeyCode.L then action:FireServer("Lights")
+  elseif input.KeyCode==Enum.KeyCode.Q then action:FireServer("GearDown")
+  elseif input.KeyCode==Enum.KeyCode.E then action:FireServer("GearUp") end
  end
 end)
 Input.WindowFocusReleased:Connect(function() focused=false;controls:FireServer(0,0) end)
@@ -160,9 +176,18 @@ RunService.RenderStepped:Connect(function(dt)
  hudElapsed=0
  local state=vehicle:GetAttribute("EngineStarting") and "Starting" or vehicle:GetAttribute("EngineOn") and "Running" or "Stopped"
  stateLabel.Text=Locale.Text(vehicle:GetAttribute("DisplayName") or "Interceptor").." · "..Locale.Text(state)
- resourceLabel.Text=string.format(Locale.Text("%d km/h · Fuel %.1f L · Battery %.2f V"),
-  math.floor(math.abs(vehicle:GetAttribute("Speed") or 0)*3.6+.5),vehicle:GetAttribute("Fuel") or 0,vehicle:GetAttribute("Charge") or 0)
- keysLabel.Text=Locale.Text(seat:IsA("VehicleSeat") and "WASD · Drive   V · Engine   L · Lights   X · Exit" or "X · Exit")
+ resize()
+ local ukrainian=Locale.Language()=="uk"
+ local speed=math.abs(vehicle:GetAttribute("Speed") or 0)*(ukrainian and 3.6 or 2.236936)
+ local gear=vehicle:GetAttribute("Gear") or 0
+ local gearText=gear==-1 and "R" or gear==0 and "N" or tostring(gear)
+ speedLabel.Text=string.format("%03d %s     [%s]",math.floor(speed+.5),ukrainian and "км/год" or "mph",gearText)
+ local rpm=vehicle:GetAttribute("RPM") or 0
+ revLabel.Text=string.format(Locale.Text("Engine %d RPM · Gear %s"),rpm,gearText)
+ rpmBar.Size=UDim2.fromScale(math.clamp(rpm/Config.RedlineRPM,0,1),1)
+ rpmBar.BackgroundColor3=rpm>Config.RedlineRPM*.85 and Color3.fromRGB(210,100,65) or Color3.fromRGB(150,180,90)
+ resourceLabel.Text=string.format(Locale.Text("Fuel %.1f L · Battery %.2f V"),vehicle:GetAttribute("Fuel") or 0,vehicle:GetAttribute("Charge") or 0)
+ keysLabel.Text=Locale.Text(seat:IsA("VehicleSeat") and "WASD · Drive   Q/E · Gear −/+   V · Engine   L · Lights   X · Exit" or "X · Exit")
 end)
 RunService.PreSimulation:Connect(function(dt)
  local c=player.Character

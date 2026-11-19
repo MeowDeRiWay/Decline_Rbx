@@ -545,7 +545,11 @@ close.Activated:Connect(function() setOpen(false) end)
 UserInputService.InputBegan:Connect(function(input, processed)
  if processed or UserInputService:GetFocusedTextBox() or player:GetAttribute("TownMenuOpen") then return end
  if player.Character and player.Character:GetAttribute("Knockout") then return end
- if input.KeyCode == Enum.KeyCode.Q then setOpen(not gui.Enabled) end
+ if input.KeyCode == Enum.KeyCode.Q then
+  local c=player.Character
+  if c and (c:GetAttribute("VehicleDriver") or c:GetAttribute("VehicleEntering") or c:GetAttribute("VehicleExiting")) then return end
+  setOpen(not gui.Enabled)
+ end
 end)
 player.CharacterAdded:Connect(function() setOpen(false) end)
 stateRemote.OnClientEvent:Connect(function(value)
@@ -578,3 +582,4 @@ RunService.RenderStepped:Connect(function()
   UI.Set(craftStatus,"Text",message)
  end
 end)
+

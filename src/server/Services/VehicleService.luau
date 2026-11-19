@@ -49,11 +49,11 @@ local function findExit(occupant)
  local excluded=filters(data,occupant.Character)
  local ray=rayParams(excluded)
  local overlap=OverlapParams.new();overlap.FilterType=Enum.RaycastFilterType.Exclude
- overlap.FilterDescendantsInstances=excluded;overlap.RespectCanCollide=true
+ overlap.FilterDescendantsInstances={occupant.Character};overlap.RespectCanCollide=true
  local height=root.Size.Y+hp.HipHeight+.3
  for _,side in ipairs({sign,-sign}) do
   for _,offset in ipairs({0,-.8,.8}) do
-   local point=data.Root.CFrame:PointToWorldSpace(Vector3.new(side*(data.CollisionSize.X/2+.65),localPoint.Y,localPoint.Z+offset))
+   local point=data.Root.CFrame:PointToWorldSpace(Vector3.new(data.CollisionOffset.Position.X+side*(data.CollisionSize.X/2+math.max(.9,root.Size.X+.4)),localPoint.Y,localPoint.Z+offset))
    local ground=workspace:Raycast(point+Vector3.new(0,3,0),Vector3.new(0,-8,0),ray)
    if ground then
     local center=Vector3.new(point.X,ground.Position.Y+height/2+.08,point.Z)
@@ -78,7 +78,8 @@ local function release(player,moveOutside,forced)
  for _,link in ipairs(occupant.Links) do link:Disconnect() end
  local seat=occupant.Record.Seat
  local weld=seat and seat:FindFirstChild("SeatWeld")
- if weld and weld.Part1==occupant.Root then weld:Destroy() end
+ if weld and ((weld.Part1 and weld.Part1:IsDescendantOf(occupant.Character))
+  or (weld.Part0 and weld.Part0:IsDescendantOf(occupant.Character))) then weld:Destroy() end
  local c=occupant.Character
  c:SetAttribute("VehicleSeated",nil);c:SetAttribute("VehicleEntering",nil)
  c:SetAttribute("VehicleDriver",nil)
@@ -89,6 +90,23 @@ local function release(player,moveOutside,forced)
   if exit then c:PivotTo(exit*c:GetPivot():ToObjectSpace(occupant.Root.CFrame):Inverse()) end
  end
  if occupant.HP.Parent then occupant.HP.Sit=false end
+ if exit and occupant.Root.Parent then
+  local root=occupant.Root
+  local anchored=root.Anchored
+  root.Anchored=true
+  c:SetAttribute("VehicleExiting",true)
+  task.delay(.15,function()
+   if not root.Parent then return end
+   -- Clear a late native SeatWeld before returning ownership to character movement.
+   local late=seat and seat:FindFirstChild("SeatWeld")
+   if late and late.Part1 and late.Part1:IsDescendantOf(c) then late:Destroy() end
+   occupant.HP.Sit=false
+   c:PivotTo(exit*c:GetPivot():ToObjectSpace(root.CFrame):Inverse())
+   root.AssemblyLinearVelocity=Vector3.zero;root.AssemblyAngularVelocity=Vector3.zero
+   root.Anchored=anchored;c:SetAttribute("VehicleExiting",nil)
+   if occupant.HP.ChangeState and occupant.HP.Health>0 and not c:GetAttribute("Knockout") then occupant.HP:ChangeState(Enum.HumanoidStateType.GettingUp) end
+  end)
+ end
  if occupant.Record.Kind=="DriverSeat" then
   data.Throttle=0;data.InputSteer=0;data.LastInput=0;data.Speed=0
   set(data.Model,"DriverUserId",0)
@@ -109,7 +127,7 @@ local function claim(player,data,record)
  local occupant={Data=data,Record=record,Character=c,HP=hp,Root=root,Collidable=root.CanCollide,Links={}}
  occupants[player]=occupant;record.Player=player;record.Reserved=nil
  weld.C0=CFrame.new(0,record.Seat.Size.Y/2+root.Size.Y*.45,record.Seat.Size.Z*.08)
- weld.C1=CFrame.identity
+ weld.C1=weld.Part1 and root.CFrame:ToObjectSpace(weld.Part1.CFrame):Inverse() or CFrame.identity
  root.CanCollide=false;root.AssemblyLinearVelocity=Vector3.zero
  c:SetAttribute("VehicleEntering",nil);c:SetAttribute("VehicleSeated",true)
  c:SetAttribute("VehicleDriver",record.Kind=="DriverSeat");c:SetAttribute("Running",false)
@@ -175,6 +193,7 @@ local function startEngine(player,data)
  battery.Model:SetAttribute("Charge",math.max(0,battery.Model:GetAttribute("Charge")-Config.StartChargeCost))
  data.Starting={At=workspace:GetServerTimeNow()+Config.StartDuration,Player=player}
  set(data.Model,"EngineStarting",true)
+ if data.StartSound then data.StartSound:Play() end
 end
 local function explodeTank(data,attacker)
  if data.Model:GetAttribute("Exploded") then return end
@@ -269,18 +288,10 @@ local function resourceStep(data,dt)
   data.Fire.Heat=2;data.Fire.Size=2;data.Fire.Parent=tank.Mount
  end
  data.Fire.Enabled=burning and Rules.Health(tank.Model)>0 and not data.Model:GetAttribute("Exploded")
- if not data.EngineSound then
-  local sound=engine.Model:FindFirstChild("EngineSound",true)
-  local id=engine.Model:GetAttribute("EngineSoundId")
-  if not sound and typeof(id)=="string" and id~="" then
-   sound=Instance.new("Sound");sound.Name="EngineSound";sound.SoundId=id;sound.Parent=engine.Mount
-  end
-  if sound and sound:IsA("Sound") then
-   sound.Looped=true;sound.RollOffMinDistance=3;sound.RollOffMaxDistance=60;data.EngineSound=sound
-  end
- end
+ if data.StartSound and not data.Starting and data.StartSound.IsPlaying then data.StartSound:Stop() end
  if data.EngineSound then
-  data.EngineSound.PlaybackSpeed=.8+math.abs(data.Speed)/Config.MaxSpeed
+  data.EngineSound.PlaybackSpeed=.65+((data.RPM or 0)/Config.RedlineRPM)*1.25
+  data.EngineSound.Volume=.35+math.max(0,data.Throttle)*.3
   if data.EngineOn and not data.EngineSound.IsPlaying then data.EngineSound:Play()
   elseif not data.EngineOn and data.EngineSound.IsPlaying then data.EngineSound:Stop() end
  end
@@ -311,8 +322,10 @@ local function drive(data,dt)
  local good,total=0,0
  for _,record in ipairs(data.Components) do if record.Kind=="Wheel" then total+=1;good+=Rules.Health(record.Model) end end
  local wheels=total>=4 and good/total or 0
- data.Speed=Rules.Speed(data.Speed,data.Throttle,data.EngineOn,power,wheels,dt,data.Config)
- data.Steering+=(data.InputSteer-data.Steering)*(1-math.exp(-Config.SteeringResponse*dt))
+ data.Speed=Rules.Speed(data.Speed,data.Throttle,data.EngineOn,power,wheels,dt,data.Config,data.Gear,workspace:GetServerTimeNow()<(data.ShiftUntil or 0))
+ data.RPM=Rules.RPM(data.Speed,data.Throttle,data.Gear,data.EngineOn,data.Config)
+ local wheelTarget=Rules.WheelSteer(data.Speed,data.InputSteer,Config)
+ data.Steering+=math.clamp((wheelTarget-data.Steering)*(1-math.exp(-Config.SteeringResponse*dt)),-Config.SteeringRate*dt,Config.SteeringRate*dt)
  local current=data.Root.CFrame
  local turn=Rules.Steering(data.Speed,data.Steering,data.Wheelbase,dt,Config)
  local proposed=current*CFrame.Angles(0,turn,0)
@@ -364,6 +377,25 @@ function Service.Spawn(id,frame)
  local folder=workspace:FindFirstChild("Vehicles")
  if not folder then folder=Instance.new("Folder");folder.Name="Vehicles";folder.Parent=workspace end
  data.Speed=0;data.Steering=0;data.Throttle=0;data.InputSteer=0;data.LastInput=0;data.ResourceTime=0
+ data.Gear=0;data.RPM=0
+ set(data.Model,"Gear",0);set(data.Model,"RPM",0)
+ local sounds=data.Model:FindFirstChild("Sounds")
+ if not sounds then sounds=Instance.new("Folder");sounds.Name="Sounds";sounds.Parent=data.Model end
+ local engine=component(data,"Engine")
+ if engine then
+  local emitter=Instance.new("Attachment");emitter.Name="EngineAudio";emitter.Parent=engine.Mount
+  local function audio(name,id,loop)
+   local sound=sounds:FindFirstChild(name)
+   if not sound or not sound:IsA("Sound") then
+    sound=Instance.new("Sound");sound.Name=name;sound.SoundId=id;sound.Volume=.6;sound.Parent=sounds
+   end
+   local live=sound:Clone();live.Name=name;live.Looped=loop
+   live.RollOffMinDistance=4;live.RollOffMaxDistance=80;live.Parent=emitter
+   return live
+  end
+  data.EngineSound=audio("EngineLoop",Config.EngineLoopId,true)
+  data.StartSound=audio("EngineStart",Config.EngineStartId,false)
+ end
  data.EngineOn=false;data.LightsOn=false;data.Config=table.clone(Config);data.Links={}
  for _,key in ipairs({"MaxSpeed","ReverseSpeed","Acceleration","BrakeDeceleration"}) do
   data.Config[key]=Rules.Number(template:GetAttribute(key),Config[key],.01,100)
@@ -428,7 +460,13 @@ function Service.Start()
    if release(player,true,false) and occupant.Record.Door then openPart(occupant.Record.Door,true) end
   elseif occupant.Record.Kind=="DriverSeat" then
    if command=="Engine" then startEngine(player,occupant.Data)
-   elseif command=="Lights" then occupant.Data.LightsOn=not occupant.Data.LightsOn end
+   elseif command=="Lights" then occupant.Data.LightsOn=not occupant.Data.LightsOn
+   elseif command=="GearUp" or command=="GearDown" then
+    local data=occupant.Data
+    if now<(data.ShiftUntil or 0) then return end
+    local nextGear=Rules.Shift(data.Gear,command=="GearUp" and 1 or -1,data.Speed,data.Config)
+    if nextGear~=data.Gear then data.Gear=nextGear;data.ShiftUntil=now+Config.ShiftDuration;set(data.Model,"Gear",nextGear) end
+   end
   end
  end)
  remotes.Input.OnServerEvent:Connect(function(player,throttle,steer)
@@ -456,6 +494,7 @@ function Service.Start()
    animateDoors(data,math.min(dt,.2))
    data.ResourceTime+=dt
    if data.ResourceTime>=.1 then resourceStep(data,data.ResourceTime);data.ResourceTime=0 end
+   set(data.Model,"RPM",math.floor((data.RPM or 0)/10)*10)
    set(data.Model,"Speed",math.floor(data.Speed*100)/100)
    set(data.Model,"Steering",math.floor(data.Steering*1000)/1000)
   end
