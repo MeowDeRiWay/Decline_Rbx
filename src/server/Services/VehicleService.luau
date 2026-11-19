@@ -26,7 +26,12 @@ end
 local function set(object,key,value)
  if object:GetAttribute(key)~=value then object:SetAttribute(key,value) end
 end
+local function clearCruise(data)
+ data.CruiseSpeed=nil
+ set(data.Model,"CruiseOn",false);set(data.Model,"CruiseSpeed",0)
+end
 local function stop(data)
+ clearCruise(data)
  data.EngineOn=false;data.Starting=nil
  set(data.Model,"EngineOn",false);set(data.Model,"EngineStarting",false)
 end
@@ -108,6 +113,7 @@ local function release(player,moveOutside,forced)
   end)
  end
  if occupant.Record.Kind=="DriverSeat" then
+  clearCruise(data)
   data.Throttle=0;data.InputSteer=0;data.LastInput=0;data.Speed=0
   set(data.Model,"DriverUserId",0)
  end
@@ -319,7 +325,7 @@ local function drive(data,dt)
  for _,record in ipairs(data.Components) do
   if record.Kind=="DriverSeat" and record.Player then occupant=occupants[record.Player];break end
  end
- if not occupant or workspace:GetServerTimeNow()-data.LastInput>Config.InputTimeout then data.Throttle=0;data.InputSteer=0 end
+ if not occupant or workspace:GetServerTimeNow()-data.LastInput>Config.InputTimeout then data.Throttle=0;data.InputSteer=0;clearCruise(data) end
  if not occupant then
   data.Speed=0;data.RPM=data.EngineOn and Config.IdleRPM or 0;data.Steering=0;return
  end
@@ -333,7 +339,13 @@ local function drive(data,dt)
   if occupant then notice(occupant.Record.Player,"Engine stalled: select a lower gear and restart.") end
  end
  local shifting=workspace:GetServerTimeNow()<(data.ShiftUntil or 0)
- data.Speed,data.RPM,data.EngineBraking=Rules.Drive(data.Speed,data.RPM,data.Throttle,data.Gear,data.EngineOn,power,wheels,dt,data.Config,shifting,data.EngineBraking)
+ if data.Throttle<0 or not data.EngineOn or shifting or data.Gear<=0 then clearCruise(data) end
+ if data.CruiseSpeed then
+  data.Speed,data.RPM=Rules.Cruise(data.CruiseSpeed,data.Gear,power,wheels,data.Config)
+  data.EngineBraking=false
+ else
+  data.Speed,data.RPM,data.EngineBraking=Rules.Drive(data.Speed,data.RPM,data.Throttle,data.Gear,data.EngineOn,power,wheels,dt,data.Config,shifting,data.EngineBraking)
+ end
  if engine and data.EngineOn and not shifting then
   local wear=Rules.OverrevDamage(data.RPM,dt,Rules.MaxHealth(engine.Model) or 0,data.Config)
   if wear>0 then VehicleDamage.Apply(engine.Model,wear,"Overrev") end
@@ -363,19 +375,19 @@ local function drive(data,dt)
   end
   local distance=math.max(0,hit.Distance-.03)
   travel=travel.Unit*math.min(distance,travel.Magnitude)
-  data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config)
+  clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config)
  end
  local point=current.Position+travel
  local ground=workspace:Raycast(point+Vector3.new(0,Config.GroundProbeHeight,0),Vector3.new(0,-Config.GroundProbeDepth,0),params)
- if not ground or ground.Normal.Y<.65 then data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return end
+ if not ground or ground.Normal.Y<.65 then clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return end
  local y=ground.Position.Y+data.GroundOffset
- if math.abs(y-current.Position.Y)>Config.MaximumGroundStep then data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return end
+ if math.abs(y-current.Position.Y)>Config.MaximumGroundStep then clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return end
  local target=CFrame.new(point.X,y,point.Z)*(proposed-proposed.Position)
  -- Rotation needs its own overlap check: a long nose must not sweep through a wall.
  local overlap=OverlapParams.new();overlap.FilterType=Enum.RaycastFilterType.Exclude
  overlap.FilterDescendantsInstances=filters(data);overlap.RespectCanCollide=true
  if math.abs(turn)>.0001 and #workspace:GetPartBoundsInBox(target*data.CollisionOffset,data.CollisionSize,overlap)>0 then
-  data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return
+  clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return
  end
  data.Model:PivotTo(target)
 end
@@ -474,6 +486,12 @@ function Service.Start()
   elseif occupant.Record.Kind=="DriverSeat" then
    if command=="Engine" then startEngine(player,occupant.Data)
    elseif command=="Lights" then occupant.Data.LightsOn=not occupant.Data.LightsOn
+   elseif command=="Cruise" then
+    local data=occupant.Data
+    if data.CruiseSpeed then clearCruise(data)
+    elseif data.EngineOn and data.Gear>0 and data.Speed>Config.ExitMaximumSpeed and now>=(data.ShiftUntil or 0) then
+     data.CruiseSpeed=data.Speed;set(data.Model,"CruiseOn",true);set(data.Model,"CruiseSpeed",data.Speed)
+    end
    elseif command=="Gear" then
     local data=occupant.Data
     local nextGear=Rules.SelectGear(target,data.Config)
@@ -486,6 +504,7 @@ function Service.Start()
       notice(player,"Reverse engaged while moving: engine damaged.")
      end
     end
+    clearCruise(data)
     data.Gear=nextGear;data.ShiftUntil=now+Config.ShiftDuration
     if nextGear~=0 then data.RPM=Rules.RPM(data.Speed,0,nextGear,data.EngineOn,data.Config) end
     data.EngineBraking=false;set(data.Model,"Gear",nextGear)
@@ -498,7 +517,9 @@ function Service.Start()
   local data=occupant.Data;local now=workspace:GetServerTimeNow()
   if now-(data.LastPacket or 0)<1/30 then return end
   data.LastPacket=now
-  data.Throttle=Rules.Number(throttle,0,-1,1);data.InputSteer=Rules.Number(steer,0,-1,1);data.LastInput=now
+  data.Throttle=Rules.Number(throttle,0,-1,1)
+  if data.Throttle<0 then clearCruise(data) end
+  data.InputSteer=Rules.Number(steer,0,-1,1);data.LastInput=now
  end)
  local function watchPlayer(player)
   player.CharacterRemoving:Connect(function() release(player,false,true) end)

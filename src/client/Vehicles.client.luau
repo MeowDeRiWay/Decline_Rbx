@@ -64,7 +64,7 @@ local gui=Instance.new("ScreenGui")
 gui.Name="VehicleHUD";gui.ResetOnSpawn=false;gui:SetAttribute("LocalizationIgnore",true)
 gui.Parent=player:WaitForChild("PlayerGui")
 local panel=Instance.new("Frame")
-panel.AnchorPoint=Vector2.new(1,0);panel.Position=UDim2.new(1,-20,0,65);panel.Size=UDim2.fromOffset(420,170)
+panel.AnchorPoint=Vector2.new(1,0);panel.Position=UDim2.new(1,-20,0,65);panel.Size=UDim2.fromOffset(420,190)
 local scale=Instance.new("UIScale");scale.Parent=panel
 local function resize()
  local camera=workspace.CurrentCamera
@@ -84,11 +84,12 @@ local stateLabel=label(5,22)
 local speedLabel=label(27,44);speedLabel.TextSize=32
 local revLabel=label(72,22)
 local resourceLabel=label(105,22)
-local keysLabel=label(133,30);keysLabel.TextSize=12;keysLabel.TextWrapped=true
+local keysLabel=label(133,50);keysLabel.TextSize=12;keysLabel.TextWrapped=true
 local rpmTrack=Instance.new("Frame");rpmTrack.Position=UDim2.new(0,10,0,97)
 rpmTrack.Size=UDim2.new(1,-20,0,5);rpmTrack.BackgroundColor3=Color3.fromRGB(55,56,40)
 rpmTrack.BorderSizePixel=0;rpmTrack.Parent=panel
-local rpmBar=Instance.new("Frame");rpmBar.BorderSizePixel=0;rpmBar.Size=UDim2.fromScale(0,1)
+local rpmBar=Instance.new("Frame");rpmBar.BorderSizePixel=0;if vehicle:GetAttribute("CruiseOn") then revLabel.Text..=" · "..Locale.Text("Cruise ON") end
+ rpmBar.Size=UDim2.fromScale(0,1)
 rpmBar.BackgroundColor3=Color3.fromRGB(150,180,90);rpmBar.Parent=rpmTrack
 local prompt=Instance.new("TextLabel")
 prompt.AnchorPoint=Vector2.new(.5,0);prompt.Position=UDim2.new(.5,0,0,65)
@@ -171,6 +172,7 @@ Input.InputBegan:Connect(function(input,processed)
   if input.KeyCode==Enum.KeyCode.X then action:FireServer("Exit")
   elseif input.KeyCode==Enum.KeyCode.V then action:FireServer("Engine")
   elseif input.KeyCode==Enum.KeyCode.L then action:FireServer("Lights")
+  elseif input.KeyCode==Enum.KeyCode.E then action:FireServer("Cruise")
   elseif gearKeys[input.KeyCode]~=nil then action:FireServer("Gear",gearKeys[input.KeyCode]) end
  end
 end)
@@ -205,10 +207,11 @@ RunService.RenderStepped:Connect(function(dt)
  speedLabel.Text=string.format("%03d %s     [%s]",math.floor(speed+.5),ukrainian and "км/год" or "mph",gearText)
  local rpm=vehicle:GetAttribute("RPM") or 0
  revLabel.Text=string.format(Locale.Text("Engine %d RPM · Gear %s"),rpm,gearText)
+ if vehicle:GetAttribute("CruiseOn") then revLabel.Text..=" · "..Locale.Text("Cruise ON") end
  rpmBar.Size=UDim2.fromScale(math.clamp(rpm/Config.RedlineRPM,0,1),1)
  rpmBar.BackgroundColor3=rpm>Config.RedlineRPM*.85 and Color3.fromRGB(210,100,65) or Color3.fromRGB(150,180,90)
  resourceLabel.Text=string.format(Locale.Text("Fuel %.1f L · Battery %.2f V"),vehicle:GetAttribute("Fuel") or 0,vehicle:GetAttribute("Charge") or 0)
- keysLabel.Text=seat:IsA("VehicleSeat") and string.format(Locale.Text("WASD · Drive   1–%d · Gear   N · Neutral   R · Reverse   V · Engine   L · Lights   X · Exit"),#Config.GearSpeeds) or Locale.Text("X · Exit")
+ keysLabel.Text=seat:IsA("VehicleSeat") and string.format(Locale.Text("WASD · Drive   1–%d · Gear   N · Neutral   R · Reverse   E · Cruise   V · Engine   L · Lights   X · Exit"),#Config.GearSpeeds) or Locale.Text("X · Exit")
 end)
 RunService.PreSimulation:Connect(function(dt)
  local c=player.Character

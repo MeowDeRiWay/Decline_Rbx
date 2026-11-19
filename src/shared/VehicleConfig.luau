@@ -2,7 +2,7 @@
 return {
  AutoSpawn=true,
  InteractionDistance=2,
- MaxSpeed=150/3.6,
+ MaxSpeed=200/3.6,
  ReverseSpeed=15/3.6,
  ReverseGearSpeed=20/3.6,
  Acceleration=5,
@@ -15,13 +15,13 @@ return {
  IdleRPM=800,
  RedlineRPM=6000,
  ShiftDuration=.35,
- GearSpeeds={20/3.6,30/3.6,60/3.6,100/3.6,170/3.6},
- GearMinimums={0,10/3.6,20/3.6,40/3.6,80/3.6},
+ GearSpeeds={20/3.6,50/3.6,80/3.6,150/3.6,240/3.6},
+ GearMinimums={0,10/3.6,20/3.6,40/3.6,100/3.6},
  GearIdleRPM=1000,
  StallRPM=800,
- -- Shared by every gear. The unlisted 2000–3000 band uses two seconds.
- RPMBands={800,1000,2000,3000,4000,5000,6000},
- RPMBandTimes={1,2,2,1,4,10},
+ -- First band preserves the gentle 800–1000 launch; subsequent bands are gear-specific.
+ RPMBands={800,1000,4000,5000,6000},
+ GearRPMTimes={{1,2,4,4},{1,3,4,4},{1,5,4,4},{1,8,4,4},{1,12,4,4}},
  NeutralRPMFall=2500,
  CreepAcceleration=1.5,
  EngineBrakeRPM=5000,

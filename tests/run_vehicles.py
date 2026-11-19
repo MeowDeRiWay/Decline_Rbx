@@ -83,7 +83,7 @@ for gear=2,5 do
  assert(math.abs(VehicleRules.RPM(top,1,gear,true,VehicleConfig)-6000)<.001)
  if gear>=3 then assert(VehicleRules.Stalls(0,gear,VehicleConfig) and not VehicleRules.Stalls(low,gear,VehicleConfig)) end
 end
-assert(math.abs(VehicleRules.RPM(150/3.6,1,5,true,VehicleConfig)-(1000+5000*70/90))<.001)
+assert(math.abs(VehicleRules.RPM(200/3.6,1,5,true,VehicleConfig)-(1000+5000*100/140))<.001)
 assert(VehicleRules.RPM(-15/3.6,1,-1,true,VehicleConfig)==4750)
 assert(VehicleRules.RPM(20/3.6,1,1,true,VehicleConfig)==6000)
 assert(VehicleRules.ReverseDamage(4.99/3.6,VehicleConfig)==0)
@@ -92,28 +92,31 @@ assert(VehicleRules.ReverseDamage(20/3.6,VehicleConfig)==1 and VehicleRules.Reve
 assert(VehicleRules.ReverseDamage(-20/3.6,VehicleConfig)==0)
 assert(VehicleRules.RPM(0,1,0,true,VehicleConfig)==6000)
 assert(VehicleRules.WheelSteer(30,1,VehicleConfig)<.11)
-local wanted={1,2,2,1,4,10}
+local wanted={{1,2,4,4},{1,3,4,4},{1,5,4,4},{1,8,4,4},{1,12,4,4}}
 for gear=-1,5 do
- local times=VehicleConfig.RPMBandTimes
- for band=1,#wanted do assert(times[band]==wanted[band],"authored RPM ramp duration") end
+ local times=VehicleConfig.GearRPMTimes[math.max(1,gear)]
  for _,fps in ipairs({20,30,60,144}) do
   local rpm=800
   for band=1,#times do
-   local duration=times[band]
-   for _=1,duration*fps do rpm=VehicleRules.AdvanceRPM(rpm,gear,1/fps,VehicleConfig) end
-   assert(math.abs(rpm-VehicleConfig.RPMBands[band+1])<.001,"all gear RPM bands follow the same clock at every frame rate")
+   assert(times[band]==wanted[math.max(1,gear)][band])
+   for _=1,times[band]*fps do rpm=VehicleRules.AdvanceRPM(rpm,gear,1/fps,VehicleConfig) end
+   assert(math.abs(rpm-VehicleConfig.RPMBands[band+1])<.001,"gear-specific RPM ramp matches every band at every frame rate")
   end
  end
 end
+local held,heldRPM=VehicleRules.Cruise(30/3.6,2,1,1,VehicleConfig)
+assert(math.abs(held-30/3.6)<.001 and heldRPM>1000 and heldRPM<6000)
+local damaged=VehicleRules.Cruise(200/3.6,5,.3,1,VehicleConfig)
+assert(damaged<=VehicleConfig.MaxSpeed*.3,"cruise respects damage and top speed")
 for gear=1,5 do
  local speed,rpm=0,1000
- for _=1,200 do speed,rpm=VehicleRules.Drive(speed,rpm,1,gear,true,1,1,.1,VehicleConfig,false,false) end
- local expectedRPM=gear==5 and (1000+5000*70/90) or 6000
+ for _=1,250 do speed,rpm=VehicleRules.Drive(speed,rpm,1,gear,true,1,1,.1,VehicleConfig,false,false) end
+ local expectedRPM=gear==5 and (1000+5000*100/140) or 6000
  assert(math.abs(rpm-expectedRPM)<.001,"first reaches the redline; fifth respects the car speed limit")
  assert(math.abs(speed-math.min(VehicleConfig.GearSpeeds[gear],VehicleConfig.MaxSpeed))<.001)
 end
 assert(math.abs(VehicleRules.SpeedFromRPM(1000,3,VehicleConfig)-20/3.6)<.001)
-assert(math.abs(VehicleRules.SpeedFromRPM(6000,3,VehicleConfig)-60/3.6)<.001)
+assert(math.abs(VehicleRules.SpeedFromRPM(6000,3,VehicleConfig)-80/3.6)<.001)
 local reverse,reverseRPM=0,1000
 for _=1,200 do reverse,reverseRPM=VehicleRules.Drive(reverse,reverseRPM,1,-1,true,1,1,.1,VehicleConfig,false,false) end
 assert(math.abs(reverse+15/3.6)<.001 and reverseRPM==4750,"reverse ratio spans twenty km/h but is limited to fifteen")
@@ -313,6 +316,18 @@ local initialPosition=vehicle.PrimaryPart.Position
 for _=1,60 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
 assert(vehicle:GetAttribute("Speed")>1 and (vehicle.PrimaryPart.Position-initialPosition).Magnitude>1,"authorized throttle moves the assembled car")
 assert(tankModel:GetAttribute("Fuel")<initialFuel and batteryModel:GetAttribute("Charge")>initialCharge,"running engine consumes fuel and charges battery")
+remote.Action.OnServerEvent:Fire(player,"Cruise");tick(.2)
+assert(vehicle:GetAttribute("CruiseOn"),"driver enables cruise at current speed")
+local cruiseSpeed=vehicle:GetAttribute("Speed")
+for _=1,10 do remote.Input.OnServerEvent:Fire(player,0,0);tick(.1) end
+assert(math.abs(vehicle:GetAttribute("Speed")-cruiseSpeed)<.02,"cruise holds speed without gas")
+remote.Action.OnServerEvent:Fire(player,"Cruise");tick(.2)
+assert(not vehicle:GetAttribute("CruiseOn"),"second press cancels cruise")
+remote.Action.OnServerEvent:Fire(player,"Cruise");tick(.2)
+remote.Input.OnServerEvent:Fire(player,-1,0);tick(.1)
+assert(not vehicle:GetAttribute("CruiseOn") and vehicle:GetAttribute("Speed")<cruiseSpeed,"S cancels cruise and brakes")
+for _=1,20 do remote.Input.OnServerEvent:Fire(player,1,0);tick(.1) end
+
 local beforeReverse=engineModel:GetAttribute("HP")
 remote.Action.OnServerEvent:Fire(player,"Gear",-1)
 assert(engineModel:GetAttribute("HP")<beforeReverse,"reverse engagement at forward speed damages the actual engine")

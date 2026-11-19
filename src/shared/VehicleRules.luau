@@ -54,7 +54,7 @@ function Rules.SpeedFromRPM(rpm,gear,config)
  return (low+(top-low)*fraction)*(gear==-1 and -1 or 1)
 end
 function Rules.AdvanceRPM(rpm,gear,dt,config)
- local times=config.RPMBandTimes
+ local times=config.GearRPMTimes[math.max(1,gear)] or config.GearRPMTimes[1]
  local edges=config.RPMBands
  rpm=math.clamp(rpm,edges[1],config.RedlineRPM)
  for band=1,#times do
@@ -94,6 +94,12 @@ function Rules.BrakeSpeed(gear,config)
 end
 function Rules.OverrevDamage(rpm,dt,maximum,config)
  return rpm>=config.OverrevRPM and maximum*config.OverrevDamagePerSecond*dt or 0
+end
+function Rules.Cruise(target,gear,power,wheels,config)
+ local factor=math.clamp(power*wheels,0,1)
+ if gear<=0 or factor<=0 then return 0,0 end
+ local speed=math.min(target,Rules.GearSpeed(gear,config)*factor,config.MaxSpeed*factor)
+ return speed,Rules.RPM(speed/factor,0,gear,true,config)
 end
 -- RPM is integrated first; the selected ratio converts it into road speed.
 function Rules.Drive(speed,rpm,throttle,gear,engineOn,power,wheels,dt,config,shifting,engineBraking)
