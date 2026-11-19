@@ -132,7 +132,7 @@ local function claim(player,data,record)
  if not weld then return false end
  local occupant={Data=data,Record=record,Character=c,HP=hp,Root=root,Collidable=root.CanCollide,Links={}}
  occupants[player]=occupant;record.Player=player;record.Reserved=nil
- weld.C0=CFrame.new(0,record.Seat.Size.Y/2+root.Size.Y*.45,record.Seat.Size.Z*.08)
+ weld.C0=CFrame.new(0,record.Seat.Size.Y/2+root.Size.Y*.12,record.Seat.Size.Z*.08+root.Size.Z*.2)
  weld.C1=weld.Part1 and root.CFrame:ToObjectSpace(weld.Part1.CFrame):Inverse() or CFrame.identity
  root.CanCollide=false;root.AssemblyLinearVelocity=Vector3.zero
  c:SetAttribute("VehicleEntering",nil);c:SetAttribute("VehicleSeated",true)

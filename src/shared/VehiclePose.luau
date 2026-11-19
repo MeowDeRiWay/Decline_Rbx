@@ -8,11 +8,11 @@ function Pose.Apply(character,root,motors,humanoid)
  if not vehicle or vehicle==workspace then return false end
  local rootMotor=motors.RootJoint
  rootMotor.Transform=CFrame.identity
- motors.Waist.Transform=CFrame.Angles(math.rad(-5),0,0)
- motors.Neck.Transform=CFrame.Angles(math.rad(5),0,0)
+ motors.Waist.Transform=CFrame.Angles(math.rad(12),0,0)
+ motors.Neck.Transform=CFrame.Angles(math.rad(-8),0,0)
  for _,side in ipairs({"Left","Right"}) do
-  motors[side.."Hip"].Transform=CFrame.Angles(math.rad(78),0,0)
-  motors[side.."Knee"].Transform=CFrame.Angles(math.rad(-88),0,0)
+  motors[side.."Hip"].Transform=CFrame.Angles(math.rad(95),0,0)
+  motors[side.."Knee"].Transform=CFrame.Angles(math.rad(-55),0,0)
  end
  local lower=root.CFrame*rootMotor.C0*rootMotor.Transform*rootMotor.C1:Inverse()
  local waist=motors.Waist
@@ -41,7 +41,7 @@ function Pose.Apply(character,root,motors,humanoid)
    end
   end
   target=target or root.CFrame:PointToWorldSpace(Vector3.new((side=="Left" and -1 or 1)*root.Size.X*.4,-root.Size.Y*.25,-.3))
-  local a,b=IK.Arm(upper,forearm,root.CFrame:VectorToObjectSpace(target-anchor),Vector3.new(side=="Left" and -1 or 1,-1,.15),1)
+  local a,b=IK.Arm(upper,forearm,chest:VectorToObjectSpace(target-anchor),Vector3.new(side=="Left" and -1 or 1,-1,.15),1)
   shoulder.Transform=standing:Inverse()*a;elbow.Transform=b
  end
  return true

@@ -256,7 +256,7 @@ assert(character:GetAttribute("VehicleSeated") and hp.SeatPart==seat and hp.Sit,
 assert(player:GetAttribute("MedicalMode")==nil,"driver entry clears existing doctor selection")
 assert(player.ClearedHands and character:GetAttribute("HandsBusy"),"driver hands are free for the steering wheel")
 assert(door:GetAttribute("Open")==false,"entry automatically closes the associated door")
-assert(seat.SeatWeld.C0.Position.Y<.6,"SeatWeld fits the small custom rig rather than the default two-stud offset")
+assert(seat.SeatWeld.C0.Position.Y<seat.Size.Y/2+root.Size.Y*.2,"lowered seat offset keeps the small rig below the roof")
 local engineModel=componentModel(vehicle,"Engine")
 local batteryModel=componentModel(vehicle,"Battery")
 local tankModel=componentModel(vehicle,"FuelTank")

@@ -235,6 +235,26 @@ RunService.PreSimulation:Fire(1/30)
 local thigh=c:FindFirstChild("LeftHip",true)
 assert(thigh.Transform:VectorToWorldSpace(thigh:GetAttribute("UpperVector")).Z<-.3,"vehicle seat raises the thighs into a seated pose")
 assert(wrist("Left").Z<-.3 and wrist("Right").Z<-.3,"both driver hands reach toward the steering wheel")
+local knee=c:FindFirstChild("LeftKnee",true)
+local shin=(thigh.Transform*knee.Transform):VectorToWorldSpace(thigh:GetAttribute("LowerVector"))
+assert(shin.Z<-.15,"lower legs extend toward the pedals rather than dropping vertically into the floor")
+assert(c:FindFirstChild("Waist",true).Transform.UpVector.Z>.15,"car posture reclines into the backrest")
+for _,target in ipairs(wheel:GetDescendants()) do
+ if target:GetAttribute("HandTarget") then
+  local side=target:GetAttribute("HandTarget")
+  local r=c:FindFirstChild("RootJoint",true)
+  local w=c:FindFirstChild("Waist",true)
+  local chest=root.CFrame*r.C0*r.Transform*r.C1:Inverse()*w.C0*w.Transform*w.C1:Inverse()
+  local shoulder=c:FindFirstChild(side.."Shoulder",true)
+  local elbow=c:FindFirstChild(side.."Elbow",true)
+  local rotation=shoulder:GetAttribute("StandingRotation")*shoulder.Transform
+  local anchor=(chest*shoulder:GetAttribute("AuthoredC0")*CFrame.new(shoulder:GetAttribute("StandingOffset"))).Position
+  local reach=rotation:VectorToWorldSpace(shoulder:GetAttribute("UpperVector"))+(rotation*elbow.Transform):VectorToWorldSpace(shoulder:GetAttribute("LowerVector"))
+  local hand=anchor+chest:VectorToWorldSpace(reach)
+  assert((hand-target.Position).Magnitude<.1,"reclining keeps the hands on their steering targets")
+ end
+end
+
 hp.SeatPart=nil;hp.Sit=false;c:SetAttribute("VehicleSeated",nil)
 RunService.PreSimulation:Fire(1/30)
 assert(thigh.Transform:VectorToWorldSpace(thigh:GetAttribute("UpperVector")).Z>-.3,"leaving the car restores normal leg animation")
