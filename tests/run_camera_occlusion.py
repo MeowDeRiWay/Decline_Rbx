@@ -69,7 +69,9 @@ local dropped=object("Model",workspace);dropped.Attributes={Item_ID="Rifle223"}
 local droppedPart=wall(0,dropped)
 local collision,transparency=front.CanCollide,front.Transparency
 '''
-source += "\nlocal controller=(function()\n" + (root / "src/client/CameraOcclusion.client.luau").read_text() + "\nend)()\n"
+source += "\nlocal Stations=(function()\n" + (root / "src/shared/CraftStations.luau").read_text() + "\nend)()\n"
+source += "\nlocal Occlusion=(function()\n" + (root / "src/client/CameraOcclusionState.luau").read_text().replace('local Stations=require(game:GetService("ReplicatedStorage").Shared.CraftStations)', '') + "\nend)()\n"
+source += "\nlocal controller=(function()\n" + (root / "src/client/CameraOcclusion.client.luau").read_text().replace("local Occlusion=require(script.Parent.CameraOcclusionState)", "") + "\nend)()\n"
 source += r'''
 assert(priority>200,"obstruction checks run after the scripted camera")
 local function frames(fps,seconds)
@@ -80,6 +82,11 @@ for _,fps in ipairs({30,60,144}) do
  local before=calls
  frames(fps,1)
  assert(front.LocalTransparencyModifier>.84 and rear.LocalTransparencyModifier>.84,"all blocking layers fade")
+ assert(Occlusion.CursorPasses(front) and Occlusion.CursorPasses(rear),"only camera-faded blockers pass the cursor")
+ assert(not Occlusion.CursorPasses(npcPart) and not Occlusion.CursorPasses(road),"other visibility systems and roads stay untouched")
+ front.Attributes={Door=true};assert(not Occlusion.CursorPasses(front),"faded doors remain targets");front.Attributes=nil
+ local bench=object("Model",workspace);bench.Attributes={Workstation=true}
+ front.Parent=bench;assert(not Occlusion.CursorPasses(front),"faded workbench remains selectable");front.Parent=workspace
  assert(road.LocalTransparencyModifier==0 and roadPart.LocalTransparencyModifier==.1 and nestedRoad.LocalTransparencyModifier==0,"Road attributes on parts or ancestors exclude all road geometry")
  assert(carPart.LocalTransparencyModifier==0 and itemPart.LocalTransparencyModifier==0 and droppedPart.LocalTransparencyModifier==0,"cars and Items never fade")
  assert(glass.LocalTransparencyModifier==0,"authored transparent geometry stays unchanged")
@@ -88,6 +95,7 @@ for _,fps in ipairs({30,60,144}) do
  assert(calls-before<=32,"geometry queries stay within the 30Hz budget")
  sceneHits={rear}
  frames(fps,1)
+ assert(not Occlusion.CursorPasses(front),"restored walls block the cursor again")
  assert(front.LocalTransparencyModifier==.2 and rear.LocalTransparencyModifier>.84,"only geometry still blocking stays faded")
  sceneHits={}
  frames(fps,1)
@@ -102,7 +110,7 @@ front.Parent=workspace
 frames(60,.4)
 assert(front.LocalTransparencyModifier>.84)
 player.CharacterRemoving:Fire()
-assert(front.LocalTransparencyModifier==.2,"respawn restores all affected walls")
+assert(front.LocalTransparencyModifier==.2 and not Occlusion.CursorPasses(front),"respawn restores walls and cursor tracking")
 frames(60,.4)
 workspace.CurrentCamera=nil
 frames(60,.1)

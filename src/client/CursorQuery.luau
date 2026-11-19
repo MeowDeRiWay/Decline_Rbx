@@ -3,6 +3,7 @@ local Players=game:GetService("Players")
 local Run=game:GetService("RunService")
 local Input=game:GetService("UserInputService")
 local View=require(script.Parent.EventVisibility)
+local Occlusion=require(script.Parent.CameraOcclusionState)
 local player=Players.LocalPlayer
 local Query={}
 local listeners={}
@@ -33,8 +34,15 @@ function Query.Get()
  local id=character and character:GetAttribute("CarryingUserId")
  local patient=id and Players:GetPlayerByUserId(id)
  if patient and patient.Character then table.insert(excluded,patient.Character) end
- params.FilterDescendantsInstances=excluded
- cached={Mouse=mouse,Ray=ray,Hit=workspace:Raycast(ray.Origin,ray.Direction*1000,params)}
+ local hit
+ for _=1,32 do
+  params.FilterDescendantsInstances=excluded
+  hit=workspace:Raycast(ray.Origin,ray.Direction*1000,params)
+  if not hit or not Occlusion.CursorPasses(hit.Instance) then break end
+  table.insert(excluded,hit.Instance)
+  hit=nil -- Exhausting the safety budget must not select a hidden wall.
+ end
+ cached={Mouse=mouse,Ray=ray,Hit=hit}
  return cached
 end
 function Query.CreatureHit()
@@ -61,3 +69,4 @@ Run:BindToRenderStep("DeclineCursorQueries",Enum.RenderPriority.Last.Value+3,fun
  debug.profileend()
 end)
 return Query
+

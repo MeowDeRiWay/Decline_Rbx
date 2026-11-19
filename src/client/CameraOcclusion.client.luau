@@ -1,6 +1,7 @@
 -- Fade geometry between this viewer's camera and their own character.
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
+local Occlusion=require(script.Parent.CameraOcclusionState)
 local player=Players.LocalPlayer
 local faded={}
 local elapsed=0
@@ -10,6 +11,7 @@ local sampleNames={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperAr
 local function restore()
  for part,record in pairs(faded) do
   part.LocalTransparencyModifier=record.Original
+  Occlusion.Forget(part)
  end
  table.clear(faded)
  elapsed=interval
@@ -43,6 +45,7 @@ local function findObstructions(character,root,camera)
    if not record then
     record={Original=part.LocalTransparencyModifier,Value=part.LocalTransparencyModifier}
     faded[part]=record
+    Occlusion.Track(part,record.Original)
    end
    record.Blocking=true
   end
@@ -64,13 +67,14 @@ RunService:BindToRenderStep("DeclineCameraOcclusion",Enum.RenderPriority.Camera.
   if not part:IsDescendantOf(workspace) then
    part.LocalTransparencyModifier=record.Original
    faded[part]=nil
+   Occlusion.Forget(part)
   else
    local target=record.Blocking and math.max(.85,record.Original) or record.Original
    local rate=record.Blocking and 24 or 12
    record.Value+=(target-record.Value)*(1-math.exp(-rate*dt))
    if math.abs(record.Value-target)<.001 then record.Value=target end
    part.LocalTransparencyModifier=record.Value
-   if not record.Blocking and record.Value==record.Original then faded[part]=nil end
+   if not record.Blocking and record.Value==record.Original then faded[part]=nil;Occlusion.Forget(part) end
   end
  end
 end)

@@ -2,7 +2,7 @@
 from pathlib import Path
 import subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
-s=(root/'src/client/CursorQuery.luau').read_text().replace('local View=require(script.Parent.EventVisibility)','')
+s=(root/'src/client/CursorQuery.luau').read_text().replace('local View=require(script.Parent.EventVisibility)','').replace('local Occlusion=require(script.Parent.CameraOcclusionState)','')
 mock='''
 function vm.__mul(a,b) return Vector3.new(a.X*b,a.Y*b,a.Z*b) end
 local render
@@ -16,12 +16,14 @@ local patient={Character={}}
 local visible={Parent=true,GetAttribute=function() return true end}
 local hidden={Parent=true,GetAttribute=function() return false end}
 local View={Targets={[visible]=true,[hidden]=true,[player.Character]=true}}
+local Occlusion={CursorPasses=function(part) return part.Faded==true end}
+local layers={}
 local worldHit,creatureHit={Instance={}},{Instance={}}
 local worldCalls,creatureCalls=0,0
 local excluded
 workspace={CurrentCamera=camera,Raycast=function(_,_,_,params)
  if params.FilterType==1 then
-  worldCalls+=1;excluded=params.FilterDescendantsInstances;return worldHit
+  worldCalls+=1;excluded=params.FilterDescendantsInstances;for _,hit in ipairs(layers) do if not table.find(excluded,hit.Instance) then return hit end end;return worldHit
  end
  creatureCalls+=1
  assert(#params.FilterDescendantsInstances==1 and params.FilterDescendantsInstances[1]==visible,"hidden and own models excluded")
@@ -54,6 +56,20 @@ workspace.CurrentCamera=camera;remove()
 local creatures=creatureCalls;render(1/30);assert(creatureCalls==creatures,"unsubscribed consumer does not cast")
 Query.Subscribe("Broken",0,function() error("expected test error") end)
 render(1/30);assert(warnings==1 and worldCalls==before+2,"consumer failure cannot block other hovers")
+-- Multiple camera-faded layers are skipped, without excluding their building.
+local observed
+Query.Subscribe("Observed",5,function() observed=Query.Get().Hit end)
+local beforeLayers=worldCalls
+local wallA,wallB={Faded=true},{Faded=true}
+layers={{Instance=wallA},{Instance=wallB}}
+render(1/30)
+assert(observed==worldHit and worldCalls==beforeLayers+3 and excluded[2]==wallA and excluded[3]==wallB,"layered click-through and shared result cache")
+wallA.Faded=false
+-- Temporarily remove the subscriber that asserts the workbench is always hit.
+Query.Subscribe("Items",1,function() assert(Query.Get().Hit==layers[1],"opaque wall blocks again") end)
+beforeLayers=worldCalls;render(1/30)
+assert(observed==layers[1] and worldCalls==beforeLayers+1,"opaque geometry is not skipped")
+layers={}
 local writes=0;local values={Text="Ready"}
 local object=setmetatable({},{__index=values,__newindex=function(_,k,v) writes+=1;values[k]=v end})
 for _=1,100 do UI.Set(object,"Text","Ready") end
@@ -64,3 +80,4 @@ print("PASS: shared30Hz world ray, separate visible-creature ray, ordering, resp
 code=(root/'tests/city_geometry.fixture.luau').read_text()+'\n'+mock+'\nlocal Query=(function()\n'+s+'\nend)()\nlocal UI=(function()\n'+(root/'src/client/UIUpdates.luau').read_text().replace('local Locale=require(script.Parent.LocaleController)', 'local Locale={Set=function(o,k,v) if o[k]~=v then o[k]=v end end}')+'\nend)()\n'+cases
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'cursor.luau';p.write_text(code);subprocess.run([sys.argv[1],str(p)],check=True)
+
