@@ -56,6 +56,7 @@ function Assembly.Build(template,library)
  body:SetAttribute("VehicleComponent","Body");setupHealth(body,"Body")
  for _,part in ipairs(parts(body)) do
   part.Anchored=part==root;part.Massless=part~=root
+  if part.Transparency<.95 then part.CanQuery=true end
   if part~=root then weld(root,part) end
  end
  root.RootPriority=127;root.Anchored=true

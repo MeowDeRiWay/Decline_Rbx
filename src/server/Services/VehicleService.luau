@@ -381,15 +381,13 @@ local function drive(data,dt)
  local suspensionBefore=data.Suspension and table.clone(data.Suspension)
  local target,supports=Suspension.Update(data,CFrame.new(point)*(proposed-proposed.Position),dt,filters(data))
  -- Rotation needs its own overlap check: a long nose must not sweep through a wall.
- local overlap=OverlapParams.new();overlap.FilterType=Enum.RaycastFilterType.Exclude
  local ignored=filters(data)
- for part in pairs(supports) do table.insert(ignored,part) end
- overlap.FilterDescendantsInstances=ignored;overlap.RespectCanCollide=true
- if (math.abs(turn)>.0001 or math.abs(target.Position.Y-current.Position.Y)>.001 or target.UpVector:Dot(current.UpVector)<.99999) and #workspace:GetPartBoundsInBox(target*data.CollisionOffset,data.CollisionSize,overlap)>0 then
+ -- Test every proposed pose: shapecasts do not report initial overlaps.
+ -- Do not exclude wheel supports wholesale; a support may be part of a wall.
+ if Ground.Overlap(target*data.CollisionOffset,data.CollisionSize,ignored,current.Position.Y-data.GroundOffset,Config.MaximumGroundStep) then
   clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config)
   data.Suspension=suspensionBefore
-  local rest=Suspension.Update(data,Suspension.Yaw(current),dt,filters(data))
-  data.Model:PivotTo(rest);return
+  data.Model:PivotTo(current);return
  end
  data.Model:PivotTo(target)
 end

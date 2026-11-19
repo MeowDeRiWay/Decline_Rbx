@@ -535,6 +535,34 @@ end
 local sweep=Ground.Sweep(base,Vector3.new(2,1,5),Vector3.new(0,0,-1),{},groundY,.5)
 assert(sweep and sweep.Instance==wall,"thin road edges are skipped without skipping the solid wall behind them")
 workspace.Blockcast=oldSweep
+local savedBounds=workspace.GetPartBoundsInBox
+local obstacle=create("Part",workspace)
+obstacle.CFrame=base;obstacle.Size=Vector3.new(2,3,1)
+obstacle.CanCollide=false;obstacle.CanQuery=true
+for _,name in ipairs({"Wall","Gate","OtherCarBody"}) do
+ obstacle.Name=name
+ function workspace:Blockcast(frame,size,direction,params)
+  assert(not params.RespectCanCollide,"sweep includes nonphysical scenery and cars")
+  return {Instance=obstacle,Position=base.Position,Normal=Vector3.zAxis,Distance=.2}
+ end
+ assert(Ground.Sweep(base,Vector3.new(2,1,5),Vector3.new(0,0,-10),{},groundY,.5).Instance==obstacle,"fast movement stops at "..name)
+ function workspace:GetPartBoundsInBox(frame,size,params)
+  assert(not params.RespectCanCollide,"overlap includes nonphysical scenery and cars")
+  return {obstacle}
+ end
+ assert(Ground.Overlap(base,Vector3.new(2,1,5),{},groundY,.5)==obstacle,"initial overlap blocks "..name)
+end
+obstacle.Transparency=1
+assert(not Ground.Overlap(base,Vector3.new(2,1,5),{},groundY,.5),"invisible nonphysical markers do not block movement")
+obstacle.Transparency=0
+obstacle.CFrame=CFrame.new(base.Position.X,groundY+.05,base.Position.Z)
+obstacle.Size=Vector3.new(20,.1,20);obstacle:SetAttribute("Road",true)
+assert(not Ground.Overlap(base,Vector3.new(2,1,5),{},groundY,.5),"road contact does not trigger body collision")
+obstacle:SetAttribute("Road",nil)
+obstacle.CanCollide=true;obstacle.Size=Vector3.new(1,4,1)
+assert(Ground.Overlap(base,Vector3.new(2,1,5),{},groundY,.5)==obstacle,"tall support is still a wall")
+workspace.Blockcast=oldSweep;workspace.GetPartBoundsInBox=savedBounds
+obstacle:Destroy()
 sample.Model:Destroy();road:Destroy()
 print("PASS: nonphysical road contact, four wheel springs, independent travel, body pitch/roll, damping, rest recovery and loss of support")
 '''

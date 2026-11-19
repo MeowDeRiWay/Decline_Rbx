@@ -39,13 +39,28 @@ local function top(part)
  if not part:IsA("BasePart") then return math.huge end
  return part.Position.Y+(math.abs(part.CFrame.RightVector.Y)*part.Size.X+math.abs(part.CFrame.UpVector.Y)*part.Size.Y+math.abs(part.CFrame.LookVector.Y)*part.Size.Z)/2
 end
+-- Scripted vehicles also collide with queryable scenery and other scripted cars,
+-- even when those objects disable native Roblox physics.
+function Ground.Blocks(part,groundY,maxStep)
+ if part:IsA("Terrain") then return false end
+ if not part:IsA("BasePart") then return false end
+ if Ground.Supports(part) and top(part)<=groundY+maxStep then return false end
+ return part.CanCollide or part.Transparency<.95
+end
+function Ground.Overlap(frame,size,excluded,groundY,maxStep)
+ local query=OverlapParams.new();query.FilterType=Enum.RaycastFilterType.Exclude
+ query.FilterDescendantsInstances=excluded;query.RespectCanCollide=false
+ for _,part in ipairs(workspace:GetPartBoundsInBox(frame,size,query)) do
+  if Ground.Blocks(part,groundY,maxStep) then return part end
+ end
+end
 function Ground.Sweep(frame,size,direction,excluded,groundY,maxStep)
  local ignored=table.clone(excluded)
  for _=1,12 do
-  local hit=workspace:Blockcast(frame,size,direction,params(ignored,true))
+  local hit=workspace:Blockcast(frame,size,direction,params(ignored,false))
   if not hit then return end
   local surface=Ground.Supports(hit.Instance)
-  if surface and (hit.Normal.Y>.55 and hit.Position.Y<=groundY+maxStep or Ground.Marked(hit.Instance) and top(hit.Instance)<=groundY+maxStep) then
+  if not Ground.Blocks(hit.Instance,groundY,maxStep) or surface and hit.Normal.Y>.55 and hit.Position.Y<=groundY+maxStep then
    table.insert(ignored,hit.Instance)
   else return hit end
  end
