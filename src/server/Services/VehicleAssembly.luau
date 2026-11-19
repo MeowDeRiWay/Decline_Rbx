@@ -81,6 +81,12 @@ function Assembly.Build(template,library)
   model:SetAttribute("Steerable",kind=="Wheel" and marker:GetAttribute("Steerable")==true)
   model:SetAttribute("Open",false)
   local partList=parts(model)
+  if kind=="Wheel" and root.CFrame:PointToObjectSpace(marker.Position).X<0 then
+   -- Keep Mount aligned to Detail; turn the geometry so the outer face points left.
+   local flip=CFrame.new(mount.Position)*CFrame.fromAxisAngle(root.CFrame.UpVector,math.pi)*CFrame.new(-mount.Position)
+   for _,part in ipairs(partList) do if part~=mount then part.CFrame=flip*part.CFrame end end
+   model:SetAttribute("WheelFlipped",true)
+  end
   local seat
   local minY,maxY=math.huge,-math.huge
   for _,part in ipairs(partList) do

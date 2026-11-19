@@ -14,6 +14,7 @@ def module(path,imports=""):
 source = (root / "tests/rig_math.fixture.luau").read_text()
 source += "\n" + (root / "tests/vehicle_runtime.fixture.luau").read_text()
 source += "\nlocal VehicleConfig=" + module("src/shared/VehicleConfig.luau")
+source += "\nlocal Appearance=" + module("src/shared/VehicleAppearance.luau")
 source += "\nlocal VehicleRules=" + module("src/shared/VehicleRules.luau")
 source += "\nlocal ExplosionRules=" + module("src/shared/ExplosionRules.luau")
 source += "\nlocal Interaction=" + module("src/shared/Interaction.luau")
@@ -39,6 +40,13 @@ for _,record in ipairs(built.Components) do
  end
  assert(original,"component Mount aligns with its real Detail point")
  near(record.Mount.CFrame.LookVector,original.CFrame.LookVector,"PivotOffset does not double-rotate mounted components")
+ if record.Kind=="Wheel" then
+  local side=built.Root.CFrame:PointToObjectSpace(record.Mount.Position).X
+  local face
+  for _,part in ipairs(record.Parts) do if part~=record.Mount then face=part;break end end
+  local outward=built.Root.CFrame:VectorToObjectSpace(face.Position-record.Mount.Position).X
+  assert(side*outward>0,"wheel outer faces point away from the chassis on both sides")
+ end
  if record.Kind=="Wheel" then wheels+=1;if record.Model:GetAttribute("Steerable") then steering+=1 end end
  if record.Seat then seats+=1;assert(record.Door and record.Door.Model:GetAttribute("Detail")=="Door (left)") end
 end
@@ -243,6 +251,27 @@ local vehicle=workspace.Vehicles:FindFirstChild("Car_1")
 assert(vehicle and vehicle.PrimaryPart.Name=="Chassis","startup assembles Car_1 from ServerStorage at the authored position")
 near(vehicle.PrimaryPart.Position,referenceRoot.Position)
 local remote=ReplicatedStorage.VehicleRemotes
+local glass=vehicle.Body:FindFirstChild("Window"):FindFirstChildWhichIsA("BasePart",true)
+local glassColor=glass.Color
+local paint=Color3.fromRGB(30,100,160)
+vehicle:SetAttribute("PaintColor",paint)
+assert(vehicle.Body.Chassis.Color==paint and glass.Color==glassColor,"runtime paint affects body panels and preserves windows")
+for _,model in ipairs(vehicle.Components:GetChildren()) do
+ local kind=model:GetAttribute("VehicleComponent")
+ if kind=="Hood" or kind=="Trunk" or kind=="Door" then
+  for _,part in ipairs(model:GetDescendants()) do
+   if part:IsA("BasePart") and part.Name~="Mount" and part.Transparency<.95 and not (part.Parent.Name=="Window") then assert(part.Color==paint) end
+  end
+ end
+end
+local front=componentModel(vehicle,"Headlight");local tail=componentModel(vehicle,"Taillight")
+local lens
+for _,part in ipairs(tail:GetDescendants()) do if part:IsA("BasePart") and part.Name~="Mount" then lens=part;break end end
+assert(lens.Color.R>lens.Color.G*3,"tail lens is red even when switched off")
+local tailColor=lens.Color
+vehicle:SetAttribute("PaintColor",Color3.fromRGB(200,180,20))
+assert(lens.Color==tailColor,"body painting cannot recolor lights")
+
 assert(VehicleDamage.Apply(vehicle.Body,1000,"Bullet",player)==0 and vehicle.Body:GetAttribute("HP")==nil,"direct damage cannot create HP on the body")
 local seatModel=componentModel(vehicle,"DriverSeat")
 local seat=seatModel:FindFirstChildOfClass("VehicleSeat")
@@ -376,6 +405,18 @@ chargeBefore=batteryModel:GetAttribute("Charge")
 remote.Action.OnServerEvent:Fire(player,"Lights");tick(.2)
 for _=1,10 do tick(.1) end
 assert(batteryModel:GetAttribute("Charge")<chargeBefore,"lights drain battery with engine stopped")
+local frontLens
+for _,part in ipairs(front:GetDescendants()) do if part:IsA("BasePart") and part.Name~="Mount" then frontLens=part;break end end
+assert(frontLens.Material==Enum.Material.Neon and frontLens.VehicleLight.Enabled,"headlight lens and beam illuminate together")
+assert(lens.Material==Enum.Material.Neon and lens.VehicleLight.Brightness==.6,"tail running light uses a dim red glow")
+remote.Action.OnServerEvent:Fire(player,"Lights");tick(.2)
+remote.Input.OnServerEvent:Fire(player,-1,0);tick(.1)
+assert(lens.VehicleLight.Enabled and lens.VehicleLight.Brightness==3 and not frontLens.VehicleLight.Enabled,"S activates bright red brake lights even with headlights off")
+remote.Input.OnServerEvent:Fire(player,0,0);tick(.2)
+assert(not lens.VehicleLight.Enabled and lens.Material~=Enum.Material.Neon,"releasing S stops the brake glow instead of treating coasting as braking")
+vehicle:SetAttribute("PaintColor",nil)
+assert(vehicle.Body.Chassis.Color~=paint and glass.Color==glassColor,"clearing paint restores original panel colors without changing glass")
+
 local enginePart=engineModel:FindFirstChildWhichIsA("BasePart",true)
 VehicleDamage.Hit(enginePart,81,"Bullet",player,{})
 assert(engineModel:GetAttribute("HP")<=20 and not vehicle:GetAttribute("EngineOn"),"bullet damage reaches components and disables badly damaged engine")

@@ -28,6 +28,7 @@ local function create(kind,parent)
   OnServerEvent=signal(),OnClientEvent=signal()}
  if baseparts[kind] then
   object.CFrame=CFrame.identity;object.Size=Vector3.new(1,1,1);object.PivotOffset=CFrame.identity
+  object.Color={R=1,G=1,B=1,IsColor=true};object.Material="Plastic"
   object.Transparency=0;object.CanCollide=true;object.CanTouch=true;object.CanQuery=true
   object.AssemblyLinearVelocity=Vector3.zero;object.AssemblyAngularVelocity=Vector3.zero
  elseif kind=="Motor6D" or kind=="Weld" then object.C0=CFrame.identity;object.C1=CFrame.identity;object.Transform=CFrame.identity end
@@ -44,6 +45,7 @@ Instance={new=create}
 local originalTypeof=typeof
 typeof=function(value)
  if type(value)=="table" and rawget(value,"ClassName") then return "Instance" end
+ if type(value)=="table" and value.IsColor then return "Color3" end
  return originalTypeof(value)
 end
 function methods:IsA(kind)
@@ -161,8 +163,8 @@ function CFrame.lookAt(position,target,up)
  local vertical=right:Cross(forward).Unit
  return cf(position,{right.X,vertical.X,-forward.X,right.Y,vertical.Y,-forward.Y,right.Z,vertical.Z,-forward.Z})
 end
-Color3={fromRGB=function(r,g,b) return {R=r/255,G=g/255,B=b/255} end}
-Enum={RaycastFilterType={Exclude="Exclude",Include="Include"},NormalId={Right="Right",Left="Left",Top="Top",Bottom="Bottom",Front="Front",Back="Back"}}
+Color3={fromRGB=function(r,g,b) return {R=r/255,G=g/255,B=b/255,IsColor=true} end}
+Enum={Material={Glass="Glass",Plastic="Plastic",Neon="Neon"},RaycastFilterType={Exclude="Exclude",Include="Include"},NormalId={Right="Right",Left="Left",Top="Top",Bottom="Bottom",Front="Front",Back="Back"}}
 RaycastParams={new=function() return {} end}
 OverlapParams={new=function() return {} end}
 task={

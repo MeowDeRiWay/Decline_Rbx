@@ -5,6 +5,7 @@ local RunService=game:GetService("RunService")
 local Shared=ReplicatedStorage.Shared
 local Config=require(Shared.VehicleConfig)
 local Rules=require(Shared.VehicleRules)
+local Appearance=require(Shared.VehicleAppearance)
 local Interaction=require(Shared.Interaction)
 local BulletCast=require(Shared.BulletCast)
 local Assembly=require(script.Parent.VehicleAssembly)
@@ -227,6 +228,7 @@ local function damaged(data,model,old,hp,kind,attacker)
  end
 end
 local function light(record,on,braking)
+ Appearance.Lights(record,on,braking)
  if not record.Light then
   local part
   for _,candidate in ipairs(record.Parts) do if candidate~=record.Mount and candidate.Transparency<.95 then part=candidate;break end end
@@ -280,7 +282,7 @@ local function resourceStep(data,dt)
  set(data.Model,"LightsOn",data.LightsOn)
  for _,record in ipairs(data.Components) do
   if record.Kind=="Headlight" or record.Kind=="Taillight" then
-   local braking=math.abs(data.Speed)>1 and data.Throttle*data.Speed<=0
+   local braking=data.Throttle<0
    light(record,power and (data.LightsOn or record.Kind=="Taillight" and braking),braking)
   end
  end
@@ -434,6 +436,8 @@ function Service.Spawn(id,frame)
    end))
   end
  end
+ Appearance.Paint(data.Model)
+ table.insert(data.Links,data.Model:GetAttributeChangedSignal("PaintColor"):Connect(function() Appearance.Paint(data.Model) end))
  VehicleDamage.Register(data.Model,damageable,function(...) damaged(data,...) end)
  vehicles[data.Model]=data
  table.insert(data.Links,data.Model.Destroying:Connect(function()
