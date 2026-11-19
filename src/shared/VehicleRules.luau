@@ -107,11 +107,11 @@ local function driveStep(speed,rpm,throttle,gear,engineOn,power,wheels,dt,config
  local direction=gear==-1 and -1 or 1
  local ratio=Rules.Ratio(gear,config)
  local wheelRPM=Rules.WheelRPM(speed,gear,config)
- local linked=engineOn and not shifting and gear~=0 and speed*direction>=0
+ local linked=engineOn and not shifting and gear~=0 and speed*direction>=0 and wheels>0
  local slipping=linked and gear<=2 and wheelRPM<config.ClutchLockRPM
  local gas=math.max(0,throttle)
  local factor=math.clamp(power*wheels,0,1)
- local load=Rules.RoadLoad(speed,config)
+ local load=wheels>0 and Rules.RoadLoad(speed,config) or .5*config.AirDensity*config.DragArea*speed*speed
  if not engineOn then rpm=0
  elseif not linked then rpm=freeRPM(rpm,shifting and 0 or gas,dt,config)
  elseif slipping then

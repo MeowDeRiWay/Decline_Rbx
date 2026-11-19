@@ -14,6 +14,8 @@ def module(path,imports=""):
 source = (root / "tests/rig_math.fixture.luau").read_text()
 source += "\n" + (root / "tests/vehicle_runtime.fixture.luau").read_text()
 source += "\nlocal VehicleConfig=" + module("src/shared/VehicleConfig.luau")
+source += "\nlocal Ground=" + module("src/server/Services/VehicleGround.luau")
+source += "\nlocal Suspension=" + module("src/server/Services/VehicleSuspension.luau")
 source += "\nlocal Appearance=" + module("src/shared/VehicleAppearance.luau")
 source += "\nlocal VehicleRules=" + module("src/shared/VehicleRules.luau")
 source += "\nlocal ExplosionRules=" + module("src/shared/ExplosionRules.luau")
@@ -474,6 +476,67 @@ assert(made:GetAttribute("OwnerID")==player.UserId and made:GetAttribute("TownID
 marker:Destroy()
 assert(not Garage.CanCraft(carStation,"Car_1"),"missing spawn marker prevents crafting")
 print("PASS: garage marker, real assembly/spawn, clearance checks, orientation, floor offset and ownership")
+'''
+source += r'''
+local road=create("Part",workspace);road.Name="Road";road:SetAttribute("Road",true)
+road.CanCollide=false;road.CanQuery=false
+workspace.DescendantAdded:Fire(road);tick(.01)
+assert(road.CanQuery and not road.CanCollide,"road support enables vehicle queries without changing character collision")
+local sample=assert(Assembly.Build(template,details));sample.Config=table.clone(VehicleConfig)
+local base=sample.Root.CFrame
+local oldRay=workspace.Raycast
+local rise=0;local absent=false
+function workspace:Raycast(origin,direction,params)
+ assert(params.RespectCanCollide==false,"road probes include noncollidable road tiles")
+ if absent then return nil end
+ local localPoint=base:PointToObjectSpace(origin)
+ local height=groundY+((localPoint.X>0 and localPoint.Z<0) and rise or 0)
+ local distance=(height-origin.Y)/direction.Y
+ if distance<0 or distance>1 then return nil end
+ return {Instance=road,Position=origin+direction*distance,Normal=Vector3.yAxis,Distance=math.abs(direction.Y*distance)}
+end
+local function suspensionFrames(count)
+ local last,contacts
+ for _=1,count do
+  last,_,contacts=Suspension.Update(sample,Suspension.Yaw(sample.Root.CFrame),1/60,{sample.Model})
+  sample.Model:PivotTo(last)
+ end
+ return last,contacts
+end
+local flat,contacts=suspensionFrames(120)
+assert(contacts==4 and math.abs(flat.Position.Y-base.Position.Y)<.001,"all four wheels rest on the road surface rather than the grass beneath")
+rise=.2
+local bump=suspensionFrames(1)
+local offsets={}
+for _,record in ipairs(sample.Components) do if record.Kind=="Wheel" then table.insert(offsets,(record.Joint.C0.Position-record.Rest.Position).Magnitude) end end
+table.sort(offsets)
+assert(offsets[4]-offsets[1]>.1,"individual wheels compress independently at a raised road corner")
+local tilted=suspensionFrames(120)
+assert(math.abs(sample.Suspension.Pitch)>.005 and math.abs(sample.Suspension.Roll)>.005,"spring-supported body pitches and rolls over a single raised wheel")
+assert(math.abs(sample.Suspension.Velocity)<.01,"damper settles without perpetual bouncing")
+rise=0
+local returned=suspensionFrames(180)
+assert(math.abs(returned.Position.Y-flat.Position.Y)<.002 and returned.UpVector.Y>.9999,"suspension smoothly returns to its neutral stance")
+absent=true
+local fallingY=sample.Root.Position.Y
+local falling,noContacts=suspensionFrames(10)
+assert(noContacts==0 and falling.Position.Y<fallingY-.05,"car falls under gravity when every wheel loses ground")
+local airSpeed=VehicleRules.Drive(10,1000,1,1,true,1,0,.1,VehicleConfig,false,false)
+assert(airSpeed<=10,"airborne wheels cannot accelerate the vehicle horizontally")
+workspace.Raycast=oldRay
+local oldSweep=workspace.Blockcast
+road.CFrame=CFrame.new(base.Position.X,groundY+.05,base.Position.Z);road.Size=Vector3.new(20,.1,20);road.CanCollide=true
+function workspace:Blockcast(frame,size,direction,params)
+ if not table.find(params.FilterDescendantsInstances,road) then
+  return {Instance=road,Position=Vector3.new(base.Position.X,groundY+.1,base.Position.Z),Normal=Vector3.zAxis,Distance=.01}
+ end
+ return {Instance=wall,Position=base.Position,Normal=Vector3.zAxis,Distance=.2}
+end
+local sweep=Ground.Sweep(base,Vector3.new(2,1,5),Vector3.new(0,0,-1),{},groundY,.5)
+assert(sweep and sweep.Instance==wall,"thin road edges are skipped without skipping the solid wall behind them")
+workspace.Blockcast=oldSweep
+sample.Model:Destroy();road:Destroy()
+print("PASS: nonphysical road contact, four wheel springs, independent travel, body pitch/roll, damping, rest recovery and loss of support")
 '''
 with tempfile.TemporaryDirectory() as directory:
     path = Path(directory) / "vehicles.luau"

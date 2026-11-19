@@ -112,6 +112,7 @@ function methods:PivotTo(target)
  if self:IsA("BasePart") then self.CFrame=delta*self.CFrame
  else
   for _,part in ipairs(self:GetDescendants()) do if part:IsA("BasePart") then part.CFrame=delta*part.CFrame end end
+  if self.PrimaryPart then self.PrimaryPart.CFrame=target*self.PrimaryPart.PivotOffset:Inverse() end
   self.WorldPivot=target
  end
 end

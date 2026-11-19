@@ -6,6 +6,8 @@ local Shared=ReplicatedStorage.Shared
 local Config=require(Shared.VehicleConfig)
 local Rules=require(Shared.VehicleRules)
 local Appearance=require(Shared.VehicleAppearance)
+local Ground=require(script.Parent.VehicleGround)
+local Suspension=require(script.Parent.VehicleSuspension)
 local Interaction=require(Shared.Interaction)
 local BulletCast=require(Shared.BulletCast)
 local Assembly=require(script.Parent.VehicleAssembly)
@@ -42,25 +44,19 @@ local function filters(data,character)
  for _,occupant in pairs(occupants) do if occupant.Data==data then table.insert(excluded,occupant.Character) end end
  return excluded
 end
-local function rayParams(excluded)
- local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
- params.FilterDescendantsInstances=excluded;params.RespectCanCollide=true;params.IgnoreWater=true
- return params
-end
 local function findExit(occupant)
  local data,root,hp=occupant.Data,occupant.Root,occupant.HP
  local door=occupant.Record.Door
  local localPoint=door and door.Rest.Position or data.Root.CFrame:PointToObjectSpace(occupant.Record.Seat.Position)
  local sign=localPoint.X<0 and -1 or 1
  local excluded=filters(data,occupant.Character)
- local ray=rayParams(excluded)
  local overlap=OverlapParams.new();overlap.FilterType=Enum.RaycastFilterType.Exclude
  overlap.FilterDescendantsInstances={occupant.Character};overlap.RespectCanCollide=true
  local height=root.Size.Y+hp.HipHeight+.3
  for _,side in ipairs({sign,-sign}) do
   for _,offset in ipairs({0,-.8,.8}) do
    local point=data.Root.CFrame:PointToWorldSpace(Vector3.new(data.CollisionOffset.Position.X+side*(data.CollisionSize.X/2+math.max(.9,root.Size.X+.4)),localPoint.Y,localPoint.Z+offset))
-   local ground=workspace:Raycast(point+Vector3.new(0,3,0),Vector3.new(0,-8,0),ray)
+   local ground=Ground.Cast(point+Vector3.new(0,3,0),Vector3.new(0,-8,0),excluded)
    if ground then
     local center=Vector3.new(point.X,ground.Position.Y+height/2+.08,point.Z)
     local blocked=workspace:GetPartBoundsInBox(CFrame.new(center),Vector3.new(root.Size.X+.15,height,root.Size.Z+.15),overlap)
@@ -329,17 +325,24 @@ local function drive(data,dt)
  end
  if not occupant or workspace:GetServerTimeNow()-data.LastInput>Config.InputTimeout then data.Throttle=0;data.InputSteer=0;clearCruise(data) end
  if not occupant then
-  data.Speed=0;data.RPM=data.EngineOn and Config.IdleRPM or 0;data.Steering=0;return
+  data.Speed=0;data.RPM=data.EngineOn and Config.IdleRPM or 0;data.Steering=0
+  data.LongitudinalAcceleration=0;data.LateralAcceleration=0
+  local target=Suspension.Update(data,Suspension.Yaw(data.Root.CFrame),dt,filters(data))
+  if (target.Position-data.Root.Position).Magnitude>.0001 or target.UpVector:Dot(data.Root.CFrame.UpVector)<.999999 then data.Model:PivotTo(target) end
+  return
  end
  local engine=component(data,"Engine")
  local power=engine and Rules.Power(Rules.Health(engine.Model),Config.EngineStopRatio) or 0
  local good,total=0,0
  for _,record in ipairs(data.Components) do if record.Kind=="Wheel" then total+=1;good+=Rules.Health(record.Model) end end
  local wheels=total>=4 and good/total or 0
+ if data.SuspensionContacts then wheels*=data.SuspensionContacts/math.max(1,total) end
+ if data.SuspensionContacts==0 then clearCruise(data) end
  if data.EngineOn and workspace:GetServerTimeNow()>=(data.ShiftUntil or 0) and Rules.Stalls(data.Speed,data.Gear,data.Config) then
   stop(data)
   if occupant then notice(occupant.Record.Player,"Engine stalled: select a lower gear and restart.") end
  end
+ local previousSpeed=data.Speed
  local shifting=workspace:GetServerTimeNow()<(data.ShiftUntil or 0)
  if data.Throttle<0 or not data.EngineOn or shifting or data.Gear<=0 then clearCruise(data) end
  data.Speed,data.RPM,data.EngineBraking=Rules.Drive(data.Speed,data.RPM,data.Throttle,data.Gear,data.EngineOn,power,wheels,dt,data.Config,shifting,data.EngineBraking,data.CruiseSpeed)
@@ -350,11 +353,9 @@ local function drive(data,dt)
  data.Steering=Rules.Steer(data.Steering,data.InputSteer,data.Speed,dt,Config)
  local current=data.Root.CFrame
  local turn=Rules.Steering(data.Speed,data.Steering,data.Wheelbase,dt,Config)
- local proposed=current*CFrame.Angles(0,turn,0)
+ local proposed=Suspension.Yaw(current)*CFrame.Angles(0,turn,0)
  local travel=proposed.LookVector*data.Speed*dt
- if travel.Magnitude<.00001 then return end
- local params=rayParams(filters(data))
- local hit=workspace:Blockcast(current*data.CollisionOffset,data.CollisionSize,travel,params)
+ local hit=travel.Magnitude>.00001 and Ground.Sweep(current*data.CollisionOffset,data.CollisionSize,travel,filters(data),current.Position.Y-data.GroundOffset,Config.MaximumGroundStep) or nil
  if hit then
   local impact=math.abs(data.Speed)
   if impact>=Config.MinimumCrashSpeed and workspace:GetServerTimeNow()>=(data.NextCrash or 0) then
@@ -375,16 +376,20 @@ local function drive(data,dt)
   clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config)
  end
  local point=current.Position+travel
- local ground=workspace:Raycast(point+Vector3.new(0,Config.GroundProbeHeight,0),Vector3.new(0,-Config.GroundProbeDepth,0),params)
- if not ground or ground.Normal.Y<.65 then clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return end
- local y=ground.Position.Y+data.GroundOffset
- if math.abs(y-current.Position.Y)>Config.MaximumGroundStep then clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return end
- local target=CFrame.new(point.X,y,point.Z)*(proposed-proposed.Position)
+ data.LongitudinalAcceleration=math.clamp((data.Speed-previousSpeed)/math.max(.001,dt),-15,15)
+ data.LateralAcceleration=math.clamp(-data.Speed*turn/math.max(.001,dt),-20,20)
+ local suspensionBefore=data.Suspension and table.clone(data.Suspension)
+ local target,supports=Suspension.Update(data,CFrame.new(point)*(proposed-proposed.Position),dt,filters(data))
  -- Rotation needs its own overlap check: a long nose must not sweep through a wall.
  local overlap=OverlapParams.new();overlap.FilterType=Enum.RaycastFilterType.Exclude
- overlap.FilterDescendantsInstances=filters(data);overlap.RespectCanCollide=true
- if math.abs(turn)>.0001 and #workspace:GetPartBoundsInBox(target*data.CollisionOffset,data.CollisionSize,overlap)>0 then
-  clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config);return
+ local ignored=filters(data)
+ for part in pairs(supports) do table.insert(ignored,part) end
+ overlap.FilterDescendantsInstances=ignored;overlap.RespectCanCollide=true
+ if (math.abs(turn)>.0001 or math.abs(target.Position.Y-current.Position.Y)>.001 or target.UpVector:Dot(current.UpVector)<.99999) and #workspace:GetPartBoundsInBox(target*data.CollisionOffset,data.CollisionSize,overlap)>0 then
+  clearCruise(data);data.Speed=0;data.RPM=Rules.RPM(0,0,data.Gear,data.EngineOn,data.Config)
+  data.Suspension=suspensionBefore
+  local rest=Suspension.Update(data,Suspension.Yaw(current),dt,filters(data))
+  data.Model:PivotTo(rest);return
  end
  data.Model:PivotTo(target)
 end
@@ -474,6 +479,7 @@ end
 function Service.Start()
  if Service.Started then return end
  Service.Started=true
+ Ground.Start()
  remotes=Instance.new("Folder");remotes.Name="VehicleRemotes";remotes.Parent=ReplicatedStorage
  for _,name in ipairs({"Action","Input","Effects"}) do
   local remote=Instance.new("RemoteEvent");remote.Name=name;remote.Parent=remotes
