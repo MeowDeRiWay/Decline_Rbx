@@ -4,6 +4,7 @@ local Shared=game:GetService("ReplicatedStorage").Shared
 local Rules=require(Shared.ExplosionRules)
 local BulletCast=require(Shared.BulletCast)
 local Damage=require(script.Parent.DamageService)
+local VehicleDamage=require(script.Parent.VehicleDamageService)
 local Service={}
 local function victimOf(part)
  local model=part
@@ -20,6 +21,7 @@ function Service.Detonate(point,settings,attacker,character,itemID,baseDamage,op
  options=options or {}
  task.spawn(function()
   WorldActivity.Ensure(point,settings.BlastRadius+2)
+  VehicleDamage.Explosion(point,settings,attacker,baseDamage)
   local victims={}
   for _,part in ipairs(workspace:GetPartBoundsInRadius(point,settings.BlastRadius+3)) do
    local hp=victimOf(part)

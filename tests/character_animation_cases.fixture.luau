@@ -221,3 +221,22 @@ local leftElbow=c:FindFirstChild("LeftElbow",true)
 assert(right.Transform~=CFrame.identity,"utility tool engages right-hand IK without a Weapon definition")
 assert(leftElbow.Transform.LookVector:Dot(CFrame.Angles(0,-.14,0).LookVector)>.999,"tool free hand hangs with a soft elbow bend")
 print("PASS: utility tool grip IK and free left hand in the shared viewer/server driver")
+local car=Instance.new("Model",workspace);car:SetAttribute("Vehicle",true)
+local components=Instance.new("Folder",car);components.Name="Components"
+local wheel=Instance.new("Model",components);wheel.Name="SteeringWheel_1"
+for _,side in ipairs({"Left","Right"}) do
+ local target=Instance.new("Part",wheel)
+ target.Name="HandTarget";target:SetAttribute("HandTarget",side)
+ target.CFrame=root.CFrame*CFrame.new(side=="Left" and -.25 or .25,.1,-.6)
+end
+local seat=Instance.new("VehicleSeat",components)
+hp.SeatPart=seat;hp.Sit=true;c:SetAttribute("VehicleSeated",true);root.Anchored=false
+RunService.PreSimulation:Fire(1/30)
+local thigh=c:FindFirstChild("LeftHip",true)
+assert(thigh.Transform:VectorToWorldSpace(thigh:GetAttribute("UpperVector")).Z<-.3,"vehicle seat raises the thighs into a seated pose")
+assert(wrist("Left").Z<-.3 and wrist("Right").Z<-.3,"both driver hands reach toward the steering wheel")
+hp.SeatPart=nil;hp.Sit=false;c:SetAttribute("VehicleSeated",nil)
+RunService.PreSimulation:Fire(1/30)
+assert(thigh.Transform:VectorToWorldSpace(thigh:GetAttribute("UpperVector")).Z>-.3,"leaving the car restores normal leg animation")
+car:Destroy()
+print("PASS: shared viewer driver uses a seated leg pose and both steering hand targets, then resumes locomotion")

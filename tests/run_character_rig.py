@@ -152,9 +152,10 @@ print("PASS: actual model, 11 joints, authored orientations/gap, height, repeate
 '''
 source+='\n'+(root/'tests/character_animation.fixture.luau').read_text()
 source+='\nlocal Presentation='+module('src/shared/WeaponPresentation.luau')+'\nlocal ReloadPose='+module('src/shared/ReloadPose.luau')
+source+='\nlocal VehiclePose='+module('src/shared/VehiclePose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')
 controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
 import re
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose|Presentation|ReloadPose)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose|Presentation|ReloadPose|VehiclePose)\s*=.*\n','',controller)
 controller=controller.replace('return Driver','Driver.Start(Players.LocalPlayer,false)')
 source+='\nlocal CarryPose='+module('src/shared/CarryPose.luau')+'\nlocal HandPose={Apply=function() end}\nlocal Motion='+module('src/shared/WeaponMotion.luau')+'\nlocal Interact='+module('src/shared/InteractionPose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose').replace('local Carry=require(script.Parent.CarryPose)','local Carry=CarryPose')+'\n'+controller+'\n'+(root/'tests/character_animation_cases.fixture.luau').read_text()
 source+='\n'+(root/'tests/equipment_pose_cases.fixture.luau').read_text()

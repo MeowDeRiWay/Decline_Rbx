@@ -6,6 +6,7 @@ local RunService=game:GetService("RunService")
 local Shared=game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Pose=require(Shared:WaitForChild("CharacterPose"))
 local Foot=require(Shared:WaitForChild("FootPlant"))
+local VehiclePose=require(Shared:WaitForChild("VehiclePose"))
 local Punch=require(Shared:WaitForChild("UnarmedPose"))
 local Items=require(Shared.ItemConfig).Items
 local Interact=require(Shared:WaitForChild("InteractionPose"))
@@ -137,6 +138,11 @@ RunService.PreSimulation:Connect(function(dt)
    replay(r);continue
   end
   local elapsed=r.Elapsed;r.Elapsed=0
+  if VehiclePose.Apply(c,root,m,hp) then
+   r.Last=root.Position;r.Feet=nil;r.Amount=0
+   if player~=localPlayer then capture(r) end
+   continue
+  end
   if Interact.Apply(c,root,m,workspace:GetServerTimeNow()) then r.Last=root.Position;r.Feet=nil;r.Interacting=true;if player~=localPlayer then capture(r) end;continue end
   if r.Interacting then
    r.Interacting=nil

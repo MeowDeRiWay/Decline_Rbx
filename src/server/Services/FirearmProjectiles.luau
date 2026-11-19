@@ -5,6 +5,7 @@ local Players=game:GetService("Players")
 local Rules=require(ReplicatedStorage.Shared.FirearmRules)
 local BulletCast=require(ReplicatedStorage.Shared.BulletCast)
 local Damage=require(script.Parent.DamageService)
+local VehicleDamage=require(script.Parent.VehicleDamageService)
 local Accuracy=require(ReplicatedStorage.Shared.AccuracyRules)
 local Audio=require(script.Parent.FirearmAudio)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
@@ -179,6 +180,8 @@ RunService.Heartbeat:Connect(function(dt)
     explode(bullet,hit.Position-bullet.Direction*.05)
     stopped=true;break
    end
+   bullet.VehicleHits=bullet.VehicleHits or {}
+   VehicleDamage.Hit(hit.Instance,bullet.Damage*math.max(.1,bullet.Remaining/bullet.Initial),"Bullet",bullet.Player,bullet.VehicleHits)
    local victim=victimOf(hit.Instance)
    if victim and victim.Health>0 then
     if dormant then

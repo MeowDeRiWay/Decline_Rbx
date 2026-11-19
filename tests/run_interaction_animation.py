@@ -2,7 +2,7 @@
 from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
-def module(path): return '(function()\n'+(root/path).read_text()+'\nend)()'
+def module(path): return '(function()\n'+(root/path).read_text().replace('local Presentation=require(game:GetService("ReplicatedStorage").Shared.WeaponPresentation)\n','')+'\nend)()'
 helpers=(root/'tests/run_character_rig.py').read_text().split("source+=r'''")[1].split('local function test(frame)')[0]
 s=(root/'tests/rig_math.fixture.luau').read_text()+helpers
 for alias,path in [('Pose','src/shared/CharacterPose.luau'),('Rig','src/shared/CharacterRig.luau'),('Foot','src/shared/FootPlant.luau'),('Punch','src/shared/UnarmedPose.luau'),('geometry','tests/character_geometry.fixture.luau')]: s+='\nlocal '+alias+'='+module(path)
@@ -86,12 +86,14 @@ local function wrist(side)
  return f:PointToWorldSpace(d)
 end
 '''
+s=s.replace('local Motion={Cancel=function() end,StepChop=function() end}', 'local Motion='+module('src/shared/WeaponMotion.luau'))
 service=(root/'src/server/Services/InteractionAnimationService.luau').read_text()
 service=re.sub(r'local (Shared|Pose|Interaction|Motion)=.*\n','',service)
 s+='\nlocal Animation=(function()\nlocal Pose=Interact\n'+service+'\nend)()'
 s+='\nlocal Presentation='+module('src/shared/WeaponPresentation.luau')+'\nlocal ReloadPose='+module('src/shared/ReloadPose.luau')
+s+='\nlocal VehiclePose='+module('src/shared/VehiclePose.luau').replace('local IK=require(script.Parent.CharacterPose)','local IK=Pose')
 controller=(root/'src/shared/CharacterAnimationDriver.luau').read_text()
-controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose|Presentation|ReloadPose)\s*=.*\n','',controller)
+controller=re.sub(r'local (Players|RunService|Shared|Pose|Foot|Punch|Items|Interact|Motion|HandPose|CarryPose|Presentation|ReloadPose|VehiclePose)\s*=.*\n','',controller)
 s+='\nlocal Driver=(function()\n'+controller+'\nend)()\nDriver.Start(owner,false)'
 s+=r'''
 local object=target();local contacts=0
@@ -108,7 +110,7 @@ assert(c:GetAttribute("InteractionHand")=="Left")
 assert((wrist("Left")-object.Position).Magnitude<(wrist("Right")-object.Position).Magnitude,"armed interaction uses left hand")
 assert((motor.C0*motor.Transform).Position.Y<-.2,"weapon lowers with right hand")
 assert(held.Parent==c,"held weapon is never placed in WorldItems")
-advance(.35);near(motor.Transform.Position,Vector3.zero)
+advance(.35);assert(not c:GetAttribute("InteractionLocked") and (motor.C0*motor.Transform).Position.Y>-.2,"weapon returns from the lowered interaction pose")
 object=target();assert(Animation.Reach(owner,object,1,function() contacts+=10 end))
 Animation.Cancel(c);c:SetAttribute("Knockout",true);advance(1)
 assert(contacts==2,"knockout cancels pending activation")
@@ -278,7 +280,7 @@ local torso=c:FindFirstChild("UpperTorso")
 local stored=HandPose.StorageFrame(c,root,"PrimaryWeapon")
 local localStored=torso.CFrame:ToObjectSpace(stored)
 assert(localStored.Position.X>0 and localStored.Position.Z>torso.Size.Z/2,"long weapons belong on right back")
-assert(torso.CFrame:VectorToObjectSpace(stored:VectorToWorldSpace(Vector3.new(0,-1,0))).Z>.9,"magazine side faces away from back")
+assert(torso.CFrame:VectorToObjectSpace(stored:VectorToWorldSpace(Vector3.new(0,-1,0))).X>.9,"bare-back magazine side faces the character's right")
 local heldFrame=root.CFrame*CFrame.new(.24,.28,-.2575)
 for id,item in pairs(UploadedWeapons) do
  local primary=not id:find("Pistol")

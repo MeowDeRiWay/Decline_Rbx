@@ -3,8 +3,9 @@ from pathlib import Path
 import re,subprocess,sys,tempfile
 root=Path(__file__).resolve().parents[1]
 service=(root/'src/server/Services/FirearmProjectiles.luau').read_text().replace('local WorldActivity=require(script.Parent.WorldActivityService)', 'local WorldActivity={Register=function() end,IsDormant=function() return false end,Ensure=function() end,DormantNPCs=function() return {} end,Raycast=function() return nil end}')
-service=re.sub(r'local (Rules|Damage|Accuracy|BulletCast|Audio|Items|ExplosionRules|Explosions|Visuals)=require[^\n]+\n','',service)
+service=re.sub(r'local (Rules|Damage|Accuracy|BulletCast|Audio|Items|ExplosionRules|Explosions|Visuals|VehicleDamage)=require[^\n]+\n','',service)
 mock='''
+local VehicleDamage={Hit=function() return 0 end,Explosion=function() end}
 local Visuals={Template=function() return nil end}
 local Audio={Describe=function(_,name) return {SoundId="rbxassetid://"..name,Volume=.7,PlaybackSpeed=1,MinDistance=3,MaxDistance=100} end}
 local Accuracy={Chance=function() return 90 end,NightMultiplier=function() return 1 end,SightBonus=function() return 0 end,ForWeapon=function() return 25 end}
@@ -293,7 +294,7 @@ print("PASS: real swept projectile loop hits moving targets, thin two-layer wall
 '''
 explosion=(root/'src/server/Services/ExplosionService.luau').read_text()
 explosion=explosion.replace('local WorldActivity=require(script.Parent.WorldActivityService)','local WorldActivity={Ensure=function() end}')
-explosion=re.sub(r'local (Shared|Rules|BulletCast|Damage)=.*\n','',explosion)
+explosion=re.sub(r'local (Shared|Rules|BulletCast|Damage|VehicleDamage)=.*\n','',explosion)
 explosion='local Rules=ExplosionRules\n'+explosion
 with tempfile.TemporaryDirectory() as directory:
  path=Path(directory)/'projectiles.luau'
