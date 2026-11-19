@@ -4,6 +4,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Input=game:GetService("UserInputService")
 local Run=game:GetService("RunService")
 local GuiService=game:GetService("GuiService")
+local VehicleInput=require(ReplicatedStorage.Shared.VehicleInputRules)
 local player=Players.LocalPlayer
 local remote=ReplicatedStorage:WaitForChild("MedicalAction")
 local inventory=ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("Action")
@@ -21,6 +22,7 @@ local hint=Instance.new("TextLabel");hint.Size=UDim2.fromOffset(310,154);hint.Ba
 local function bandage(id) return id=="Bandage" or id=="GreatBandage" or id=="SterileBandage" or id=="Antiseptic" end
 local selected
 local function blocked()
+ if VehicleInput.IsDriver(player.Character) then return true end
  if (player:GetAttribute("PlayerContextOpen") or player:GetAttribute("ExchangeOpen")) then return true end
  return (player:GetAttribute("MapOpen") or player:GetAttribute("HelpOpen")) or GuiService.MenuIsOpen or Input:GetFocusedTextBox() or (player:GetAttribute("AdminOpen") or player:GetAttribute("InventoryOpen")) or player:GetAttribute("TownMenuOpen") or player:GetAttribute("ProgressionOpen") or player:GetAttribute("GroupOpen")
 end
@@ -89,3 +91,4 @@ Run.RenderStepped:Connect(function()
  hint.Text=text;hint.Position=UDim2.fromOffset(math.clamp(mouse.X+18,0,math.max(0,camera.ViewportSize.X-310)),math.clamp(mouse.Y+18,0,math.max(0,camera.ViewportSize.Y-154)));hint.Visible=true
 end)
 player.CharacterRemoving:Connect(cancel)
+

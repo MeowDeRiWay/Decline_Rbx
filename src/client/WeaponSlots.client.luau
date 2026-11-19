@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Input=game:GetService("UserInputService")
 local Gui=game:GetService("GuiService")
+local VehicleInput=require(ReplicatedStorage.Shared.VehicleInputRules)
 local player=Players.LocalPlayer
 local action=ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("Action")
 Input.InputBegan:Connect(function(input,processed)
@@ -12,7 +13,8 @@ Input.InputBegan:Connect(function(input,processed)
  if not slot then return end
  for _,key in ipairs({"ExchangeOpen","TradeOpen","InventoryOpen","TownMenuOpen","ProgressionOpen","GroupOpen","AdminOpen","MapOpen","HelpOpen","PlayerContextOpen","OutcastEnd"}) do if player:GetAttribute(key) then return end end
  local c=player.Character
- if not c or c:GetAttribute("HandsBusy") or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then return end
+ if VehicleInput.IsDriver(c) or not c or c:GetAttribute("HandsBusy") or c:GetAttribute("Knockout") or c:GetAttribute("IsDead") then return end
  player:SetAttribute("MedicalMode",nil)
  action:FireServer("WeaponSlot",slot)
 end)
+

@@ -161,6 +161,55 @@ character.PrimaryPart=root
 local hp=create("Humanoid",character);hp.Health=100;hp.HipHeight=.9;hp.Sit=false;hp.PlatformStand=false;hp.WalkSpeed=1
 local head=create("Part",character);head.Name="Head";head.Size=Vector3.new(.2,.2,.3)
 '''
+source += "\nlocal VehicleInput=" + module("src/shared/VehicleInputRules.luau")
+source += r'''
+local inputSignal=signal()
+local Input={InputBegan=inputSignal,GetFocusedTextBox=function() return nil end}
+local GuiService={MenuIsOpen=false}
+Enum.KeyCode={One="One",Two="Two",Four="Four",KeypadOne="KeypadOne",KeypadTwo="KeypadTwo",KeypadFour="KeypadFour",H="H",Escape="Escape"}
+Enum.UserInputType={MouseButton1="MouseButton1"}
+local selected,highlight,hint=nil,{Enabled=false},{Visible=false}
+local function cancel() player:SetAttribute("MedicalMode",nil) end
+local remote={FireServer=function() end}
+local inventory={FireServer=function() end}
+'''
+source += r'''
+local Gui=GuiService
+local slotCalls={}
+local action={FireServer=function(_,command,slot) table.insert(slotCalls,{command,slot}) end}
+'''
+slots=(root / "src/client/WeaponSlots.client.luau").read_text()
+source += "\n" + slots[slots.index("Input.InputBegan:Connect"):]
+source += r'''
+character:SetAttribute("VehicleDriver",true)
+Input.InputBegan:Fire({KeyCode=Enum.KeyCode.One},false)
+assert(#slotCalls==0,"driver's first gear never draws a weapon")
+character:SetAttribute("VehicleDriver",false);character:SetAttribute("VehicleSeated",true)
+Input.InputBegan:Fire({KeyCode=Enum.KeyCode.One},false)
+assert(#slotCalls==1 and slotCalls[1][2]=="PrimaryWeapon","passenger keeps primary weapon selection")
+character:SetAttribute("VehicleSeated",nil)
+'''
+medicine=(root / "src/client/Medicine.client.luau").read_text()
+source += "\n" + medicine[medicine.index("local function blocked()"):medicine.index("local function cancel()")]
+source += "\n" + medicine[medicine.index("Input.InputBegan:Connect"):medicine.index("Run.RenderStepped:Connect")]
+source += r'''
+character:SetAttribute("VehicleDriver",true)
+Input.InputBegan:Fire({KeyCode=Enum.KeyCode.Four},false)
+assert(player:GetAttribute("MedicalMode")==nil,"driver's fourth gear cannot enter doctor mode")
+character:SetAttribute("VehicleDriver",false);character:SetAttribute("VehicleSeated",true)
+Input.InputBegan:Fire({KeyCode=Enum.KeyCode.Four},false)
+assert(player:GetAttribute("MedicalMode")=="Doctor","passenger keeps the doctor hotkey")
+player:SetAttribute("MedicalMode",nil)
+character:SetAttribute("VehicleSeated",nil)
+local pending=create("VehicleSeat",template)
+hp.SeatPart=pending;template:SetAttribute("Vehicle",true)
+assert(VehicleInput.IsDriver(character),"native driver seat blocks actions before driver attribute replication")
+hp.SeatPart=nil;pending:Destroy();template:SetAttribute("Vehicle",nil)
+character:SetAttribute("VehicleEntering","Driver")
+assert(VehicleInput.IsDriver(character),"driver entry reserves digit actions")
+character:SetAttribute("VehicleEntering",nil)
+assert(not VehicleInput.IsDriver(character),"leaving restores digit actions")
+'''
 source += "\nlocal Service=" + module("src/server/Services/VehicleService.luau", "local Config=VehicleConfig\nlocal Rules=VehicleRules")
 source += r'''
 Service.Start()
@@ -182,9 +231,11 @@ assert(not hp.Sit,"closed door prevents entry")
 remote.Action.OnServerEvent:Fire(player,"Interact",door)
 for _=1,8 do tick(.1) end
 assert(door:GetAttribute("Open")==true,"door interaction opens the mounted door")
+player:SetAttribute("MedicalMode","Doctor")
 remote.Action.OnServerEvent:Fire(player,"Interact",seatModel)
 for _=1,5 do tick(.1) end
 assert(character:GetAttribute("VehicleSeated") and hp.SeatPart==seat and hp.Sit,"open door allows reserved seat entry")
+assert(player:GetAttribute("MedicalMode")==nil,"driver entry clears existing doctor selection")
 assert(player.ClearedHands and character:GetAttribute("HandsBusy"),"driver hands are free for the steering wheel")
 assert(door:GetAttribute("Open")==false,"entry automatically closes the associated door")
 assert(seat.SeatWeld.C0.Position.Y<.6,"SeatWeld fits the small custom rig rather than the default two-stud offset")

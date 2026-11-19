@@ -131,7 +131,7 @@ local function claim(player,data,record)
  root.CanCollide=false;root.AssemblyLinearVelocity=Vector3.zero
  c:SetAttribute("VehicleEntering",nil);c:SetAttribute("VehicleSeated",true)
  c:SetAttribute("VehicleDriver",record.Kind=="DriverSeat");c:SetAttribute("Running",false)
- c:SetAttribute("HandsBusy",true)
+ c:SetAttribute("HandsBusy",record.Kind=="DriverSeat" and true or nil)
  if record.Kind=="DriverSeat" then set(data.Model,"DriverUserId",player.UserId) end
  if record.Door then openPart(record.Door,false) end
  local function invalid()
@@ -166,7 +166,10 @@ local function enter(player,data,record)
    or c:GetAttribute("Knockout") or record.Seat.Occupant or math.abs(data.Speed)>Config.ExitMaximumSpeed then return end
   Interact.Cancel(c)
   Inventory.ClearHands(player)
-  c:SetAttribute("VehicleEntering",true)
+  c:SetAttribute("VehicleEntering",record.Kind=="DriverSeat" and "Driver" or true)
+  if record.Kind=="DriverSeat" then
+   player:SetAttribute("MedicalMode",nil);c:SetAttribute("HandsBusy",true)
+  end
   record.Seat:Sit(hp)
   task.spawn(function()
    for _=1,10 do
@@ -174,7 +177,7 @@ local function enter(player,data,record)
     if claim(player,data,record) then return end
     RunService.Heartbeat:Wait()
    end
-   c:SetAttribute("VehicleEntering",nil);record.Reserved=nil;hp.Sit=false
+   c:SetAttribute("VehicleEntering",nil);c:SetAttribute("HandsBusy",nil);record.Reserved=nil;hp.Sit=false
   end)
  end)
  if not accepted then record.Reserved=nil end
