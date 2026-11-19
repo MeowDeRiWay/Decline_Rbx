@@ -88,8 +88,7 @@ local keysLabel=label(133,50);keysLabel.TextSize=12;keysLabel.TextWrapped=true
 local rpmTrack=Instance.new("Frame");rpmTrack.Position=UDim2.new(0,10,0,97)
 rpmTrack.Size=UDim2.new(1,-20,0,5);rpmTrack.BackgroundColor3=Color3.fromRGB(55,56,40)
 rpmTrack.BorderSizePixel=0;rpmTrack.Parent=panel
-local rpmBar=Instance.new("Frame");rpmBar.BorderSizePixel=0;if vehicle:GetAttribute("CruiseOn") then revLabel.Text..=" · "..Locale.Text("Cruise ON") end
- rpmBar.Size=UDim2.fromScale(0,1)
+local rpmBar=Instance.new("Frame");rpmBar.BorderSizePixel=0;rpmBar.Size=UDim2.fromScale(0,1)
 rpmBar.BackgroundColor3=Color3.fromRGB(150,180,90);rpmBar.Parent=rpmTrack
 local prompt=Instance.new("TextLabel")
 prompt.AnchorPoint=Vector2.new(.5,0);prompt.Position=UDim2.new(.5,0,0,65)
