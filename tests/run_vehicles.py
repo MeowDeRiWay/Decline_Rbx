@@ -14,6 +14,7 @@ def module(path,imports=""):
 source = (root / "tests/rig_math.fixture.luau").read_text()
 source += "\n" + (root / "tests/vehicle_runtime.fixture.luau").read_text()
 source += "\nlocal VehicleConfig=" + module("src/shared/VehicleConfig.luau")
+source += "\nlocal Doors={Honk=function(player,model,frame,range) DoorsCalled={Player=player,Model=model,Frame=frame,Range=range} end}\n"
 source += "\nlocal Ground=" + module("src/server/Services/VehicleGround.luau")
 source += "\nlocal Suspension=" + module("src/server/Services/VehicleSuspension.luau")
 source += "\nlocal Appearance=" + module("src/shared/VehicleAppearance.luau")
@@ -318,6 +319,13 @@ assert(player:GetAttribute("MedicalMode")==nil,"driver entry clears existing doc
 assert(player.ClearedHands and character:GetAttribute("HandsBusy"),"driver hands are free for the steering wheel")
 assert(door:GetAttribute("Open")==false,"entry automatically closes the associated door")
 assert(seat.SeatWeld.C0.Position.Y<seat.Size.Y/2+root.Size.Y*.2,"lowered seat offset keeps the small rig below the roof")
+remote.Action.OnServerEvent:Fire(player,"Honk");tick(.2)
+assert(DoorsCalled and DoorsCalled.Player==player and DoorsCalled.Model==vehicle and DoorsCalled.Range==15,"owner driver horn calls server gate detection")
+local horn=vehicle.Sounds:FindFirstChild("Horn")
+assert(horn and horn.SoundId==VehicleConfig.HornId,"horn template lives in Car/Sounds")
+DoorsCalled=nil
+remote.Action.OnServerEvent:Fire(player,"Honk");tick(.2)
+assert(not DoorsCalled,"horn cooldown prevents spam")
 local engineModel=componentModel(vehicle,"Engine")
 local batteryModel=componentModel(vehicle,"Battery")
 local tankModel=componentModel(vehicle,"FuelTank")

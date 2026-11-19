@@ -170,6 +170,7 @@ Input.InputBegan:Connect(function(input,processed)
  elseif vehicle then
   if input.KeyCode==Enum.KeyCode.X then action:FireServer("Exit")
   elseif input.KeyCode==Enum.KeyCode.V then action:FireServer("Engine")
+  elseif input.KeyCode==Enum.KeyCode.H then action:FireServer("Honk")
   elseif input.KeyCode==Enum.KeyCode.L then action:FireServer("Lights")
   elseif input.KeyCode==Enum.KeyCode.E then action:FireServer("Cruise")
   elseif gearKeys[input.KeyCode]~=nil then action:FireServer("Gear",gearKeys[input.KeyCode]) end
@@ -210,7 +211,7 @@ RunService.RenderStepped:Connect(function(dt)
  rpmBar.Size=UDim2.fromScale(math.clamp(rpm/Config.RedlineRPM,0,1),1)
  rpmBar.BackgroundColor3=rpm>Config.RedlineRPM*.85 and Color3.fromRGB(210,100,65) or Color3.fromRGB(150,180,90)
  resourceLabel.Text=string.format(Locale.Text("Fuel %.1f L · Battery %.2f V"),vehicle:GetAttribute("Fuel") or 0,vehicle:GetAttribute("Charge") or 0)
- keysLabel.Text=seat:IsA("VehicleSeat") and string.format(Locale.Text("WASD · Drive   1–%d · Gear   N · Neutral   R · Reverse   E · Cruise   V · Engine   L · Lights   X · Exit"),vehicle:GetAttribute("GearCount") or #Config.GearRatios) or Locale.Text("X · Exit")
+ keysLabel.Text=seat:IsA("VehicleSeat") and string.format(Locale.Text("WASD · Drive   1–%d · Gear   N · Neutral   R · Reverse   E · Cruise   V · Engine   L · Lights   H · Horn   X · Exit"),vehicle:GetAttribute("GearCount") or #Config.GearRatios) or Locale.Text("X · Exit")
 end)
 RunService.PreSimulation:Connect(function(dt)
  local c=player.Character

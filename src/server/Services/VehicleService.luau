@@ -7,6 +7,7 @@ local Config=require(Shared.VehicleConfig)
 local Rules=require(Shared.VehicleRules)
 local Appearance=require(Shared.VehicleAppearance)
 local Ground=require(script.Parent.VehicleGround)
+local Doors=require(script.Parent.TownDoors)
 local Suspension=require(script.Parent.VehicleSuspension)
 local Interaction=require(Shared.Interaction)
 local BulletCast=require(Shared.BulletCast)
@@ -428,6 +429,7 @@ function Service.Spawn(id,frame)
   end
   data.EngineSound=audio("EngineLoop",Config.EngineLoopId,true)
   data.StartSound=audio("EngineStart",Config.EngineStartId,false)
+  data.HornSound=audio("Horn",Config.HornId,false)
  end
  data.EngineOn=false;data.LightsOn=false;data.Config=table.clone(Config);data.Links={}
  for _,key in ipairs({"MaxSpeed","ReverseSpeed","BrakeDeceleration","MassKg","MaxTorqueNm","FinalDrive","DragArea"}) do
@@ -508,7 +510,14 @@ function Service.Start()
   if command=="Exit" then
    if release(player,true,false) and occupant.Record.Door then openPart(occupant.Record.Door,true) end
   elseif occupant.Record.Kind=="DriverSeat" and owns(player,occupant.Data) then
-   if command=="Engine" then startEngine(player,occupant.Data)
+   if command=="Honk" then
+    local data=occupant.Data
+    local battery=component(data,"Battery")
+    if now<(data.NextHonk or 0) or not battery or Rules.Health(battery.Model)<=0 or (battery.Model:GetAttribute("Charge") or 0)<=0 then return end
+    data.NextHonk=now+Config.HornCooldown
+    if data.HornSound then data.HornSound:Play() end
+    Doors.Honk(player,data.Model,data.Root.CFrame,Config.HornRange)
+   elseif command=="Engine" then startEngine(player,occupant.Data)
    elseif command=="Lights" then occupant.Data.LightsOn=not occupant.Data.LightsOn
    elseif command=="Cruise" then
     local data=occupant.Data

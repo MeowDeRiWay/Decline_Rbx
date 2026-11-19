@@ -106,6 +106,26 @@ function Service.Admit(player, door, townID)
   setOpen(door,record,true)
  end)
 end
+-- The vehicle server supplies its own frame; clients never choose a gate.
+function Service.Honk(player,vehicle,frame,range)
+ local opened=0
+ for door,record in pairs(doors) do
+  if not door:IsDescendantOf(workspace) or ancestorAttribute(door,"Honk")~=true or not Service.Allowed(player,door) then continue end
+  local point=Interaction.NearestPoint(door,frame.Position)
+  local offset=point-frame.Position
+  local horizontal=Vector3.new(offset.X,0,offset.Z)
+  local forward=Vector3.new(frame.LookVector.X,0,frame.LookVector.Z)
+  if offset.Magnitude>range or horizontal.Magnitude<.01 or forward:Dot(horizontal.Unit)<.5 then continue end
+  local query=RaycastParams.new();query.FilterType=Enum.RaycastFilterType.Exclude
+  query.FilterDescendantsInstances={vehicle,player.Character};query.RespectCanCollide=true
+  local hit=workspace:Raycast(frame.Position,offset,query)
+  if hit and hit.Instance~=door and not hit.Instance:IsDescendantOf(door) then continue end
+  record.untilTime=math.max(record.untilTime or 0,workspace:GetServerTimeNow()+20)
+  setOpen(door,record,true)
+  opened+=1
+ end
+ return opened
+end
 local function register(door)
  if doors[door] or door:GetAttribute("Door") ~= true or not (door:IsA("Model") or door:IsA("BasePart")) then return end
  -- One Door attribute on the outer moving assembly; child parts move together.
@@ -160,7 +180,7 @@ function Service.Start(requestPassage, tell)
   if Service.Allowed(player,door) then
    Animation.Reach(player,door,Config.InteractionDistance,function()
     if doors[door]~=record or not near(player,door) or not Service.Allowed(player,door) then return end
-    record.untilTime=workspace:GetServerTimeNow()+5
+    record.untilTime=math.max(record.untilTime or 0,workspace:GetServerTimeNow()+5)
     setOpen(door,record,true)
    end)
   elseif player:GetAttribute("TownID")==nil and ancestorAttribute(door,"TownGate")==true and not door:GetAttribute("DoorOpen") then
@@ -184,3 +204,4 @@ function Service.Start(requestPassage, tell)
  end)
 end
 return Service
+

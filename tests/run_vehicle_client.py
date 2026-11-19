@@ -28,7 +28,7 @@ end
 Vector2={new=function(x,y) return {X=x,Y=y} end}
 UDim2={new=function(...) return {...} end,fromOffset=function(...) return {...} end,fromScale=function(...) return {...} end}
 Enum.Font={Code="Code"};Enum.TextXAlignment={Left="Left"};Enum.HighlightDepthMode={Occluded="Occluded"}
-Enum.KeyCode={};for _,key in ipairs({"One","Two","Three","Four","Five","Six","Seven","Eight","Nine","N","R","E","X","V","L","W","A","S","D"}) do Enum.KeyCode[key]=key end
+Enum.KeyCode={};for _,key in ipairs({"One","Two","Three","Four","Five","Six","Seven","Eight","Nine","N","R","E","X","V","L","H","W","A","S","D"}) do Enum.KeyCode[key]=key end
 workspace.CurrentCamera={ViewportSize=Vector2.new(1280,720)}
 local cursorCallback
 local Cursor={Subscribe=function(_,_,callback) cursorCallback=callback end,Get=function() return nil end}

@@ -69,7 +69,7 @@ assert(Service.Admit(player,gate,1));player:SetAttribute("TownID",1);time+=1
 fire(player,gate)
 assert(gate:GetAttribute("DoorOpen"),"authorized activation opens door")
 time+=4;assert(coroutine.resume(ticker));assert(gate:GetAttribute("DoorOpen"))
-time+=1;assert(coroutine.resume(ticker))
+time+=15;assert(coroutine.resume(ticker))
 assert(not gate:GetAttribute("DoorOpen") and part.Transparency==.25 and part.CanCollide and part.CanQuery and not part.CanTouch and part:GetAttribute("BlocksVision"),"authorized opening auto closes and restores authored properties")
 local carried=object("Model","CarriedPatient");carried.Parent=workspace
 players.GetPlayerByUserId=function(_,id) if id==99 then return {Character=carried} end end
@@ -95,8 +95,31 @@ builtWall:SetAttribute("WallLevel",2);time+=1.1
 assert(Service.MaximumWallLevel(1)==2,"higher wall level updates cached cap")
 assert(Service.MaximumWallLevel(2)==0,"other town walls cannot raise cap")
 builtWall.Parent=nil;time+=1.1;assert(Service.MaximumWallLevel(1)==0,"removing wall lowers cap")
+player.UserId=30;player:SetAttribute("TownID",1)
+gate:SetAttribute("Honk",true)
+local car=object("Model","Car")
+local frame=CFrame.new()
+local point=Vector3.new(0,0,-8)
+TEST_Interaction.NearestPoint=function() return point end
+function workspace:Raycast() return nil end
+assert(Service.Honk(player,car,frame,15)==1 and gate:GetAttribute("DoorOpen"),"authorized marked gate opens ahead")
+time+=10
+assert(Service.Honk(player,car,frame,15)==1,"repeat horn refreshes deadline")
+time+=19;assert(coroutine.resume(ticker));assert(gate:GetAttribute("DoorOpen"))
+time+=1;assert(coroutine.resume(ticker));assert(not gate:GetAttribute("DoorOpen"),"horn closes 20 seconds after last signal")
+point=Vector3.new(0,0,8);assert(Service.Honk(player,car,frame,15)==0,"gate behind is ignored")
+point=Vector3.new(16,0,-1);assert(Service.Honk(player,car,frame,15)==0,"distant side gate ignored")
+point=Vector3.new(0,0,-8)
+local wall=object("BasePart","Wall")
+function workspace:Raycast() return {Instance=wall} end
+assert(Service.Honk(player,car,frame,15)==0,"wall blocks horn gate detection")
+function workspace:Raycast() return nil end
+gate:SetAttribute("Honk",false);assert(Service.Honk(player,car,frame,15)==0,"unmarked gates ignored")
+gate:SetAttribute("Honk",true);player:SetAttribute("TownID",2)
+assert(Service.Honk(player,car,frame,15)==0,"horn respects gate access")
 print("PASS: guest requests, exact gate/town approval, hidden collision/query/vision, property restoration, owner/co-owner/mayor and faction access")
 '''
 with tempfile.TemporaryDirectory() as directory:
- p=Path(directory)/'doors.luau';p.write_text(mock+'\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
+ p=Path(directory)/'doors.luau';p.write_text((root/'tests/rig_math.fixture.luau').read_text()+'\n'+mock+'\nlocal Service=(function()\n'+service+'\nend)()\n'+cases)
  subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(p)],check=True)
+
