@@ -158,8 +158,9 @@ task.spawn(function()
    resize()
    if pages.Diagnostics.Visible then
     local stats=Diagnostics.Snapshot()
-    metrics.Text=string.format("FPS %.1f | Max frame %.1f ms | P95 %.1f ms\nFrames >=50 ms: %d | >=100 ms: %d | Test %.1f s\nZombies: %d total / %d active",
-     stats.FPS,stats.MaxMS,stats.P95MS,stats.Slow50,stats.Slow100,stats.Seconds,
+    metrics.Text=string.format("FPS 1s %.1f | Average %.1f | Test %.1f s\nFrame 10s max %.1f ms / P95 %.1f ms | All-time max %.1f ms\nFrames >=50 ms: %d / >=100 ms: %d | Last spike %.1f ms, %.1f s ago\nInstances 1s: +%d / -%d | Zombies: %d total / %d active",
+     stats.FPS,stats.AverageFPS,stats.Seconds,stats.RecentMaxMS,stats.P95MS,stats.MaxMS,
+     stats.Slow50,stats.Slow100,stats.LastSpikeMS,stats.LastSpikeAge,stats.Added,stats.Removed,
      workspace:GetAttribute("DiagnosticsZombieTotal") or 0,workspace:GetAttribute("DiagnosticsZombieActive") or 0)
     zombieToggle.Text=workspace:GetAttribute("DiagnosticsZombiesDisabled")==true and "SERVER: zombies OFF - restore" or "SERVER: zombies ON - disable"
     decorToggle.Text=Diagnostics.Hidden and "LOCAL: decor hidden - show" or "LOCAL: decor visible - hide"

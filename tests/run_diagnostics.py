@@ -49,6 +49,20 @@ RunService.RenderStepped:Fire(.12)
 stats=Client.Snapshot()
 assert(stats.MaxMS==120 and stats.Slow50==1 and stats.Slow100==1,"long frames counted independently of F6 visibility")
 Client.Reset();assert(Client.Snapshot().MaxMS==0 and Client.Snapshot().Seconds==0)
+for _=1,600 do Client.Frame(1/80) end
+for _=1,20 do Client.Frame(1/20) end
+stats=Client.Snapshot()
+assert(math.abs(stats.FPS-20)<.001 and stats.AverageFPS>60,"recent FPS exposes drops instead of hiding them in session average")
+Client.Frame(2)
+assert(math.abs(Client.Snapshot().FPS-.5)<.001 and Client.Snapshot().LastSpikeMS==2000,"multi-second stalls are represented correctly")
+for _=1,720 do Client.Frame(1/60) end
+stats=Client.Snapshot()
+assert(math.abs(stats.FPS-60)<.001 and stats.RecentMaxMS<17 and stats.MaxMS==2000,"recent window recovers while lifetime worst frame remains visible")
+Client.Reset()
+workspace.DescendantAdded:Fire(create("Part",workspace))
+workspace.DescendantRemoving:Fire(create("Part",workspace))
+Client.Frame(1/60);stats=Client.Snapshot()
+assert(stats.Added==1 and stats.Removed==1,"streaming churn is counted without full-world scans")
 local furniture=create("Model",workspace);furniture:SetAttribute("Furniture",true)
 local part=create("Part",furniture);part.LocalTransparencyModifier=.15
 local lamp=create("Light",furniture);lamp.Enabled=true

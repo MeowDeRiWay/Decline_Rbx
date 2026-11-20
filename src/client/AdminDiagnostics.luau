@@ -2,21 +2,43 @@ local Run=game:GetService("RunService")
 local Service={Hidden=false}
 local saved=setmetatable({},{__mode="k"})
 local samples={}
+local capacity=4096
 local count,total,maximum,slow50,slow100=0,0,0,0,0
+local added,removed=0,0
+local lastSpike
 function Service.Reset()
  table.clear(samples);count,total,maximum,slow50,slow100=0,0,0,0,0
+ added,removed=0,0;lastSpike=nil
 end
 function Service.Frame(dt)
  if dt<=0 or dt~=dt or dt==math.huge then return end
  count+=1;total+=dt;maximum=math.max(maximum,dt)
- if dt>=.05 then slow50+=1 end
+ if dt>=.05 then slow50+=1;lastSpike={MS=dt*1000,At=total,Added=added,Removed=removed} end
  if dt>=.1 then slow100+=1 end
- samples[(count-1)%600+1]=dt
+ samples[(count-1)%capacity+1]={At=total,DT=dt,Added=added,Removed=removed}
+ added,removed=0,0
 end
 function Service.Snapshot()
- local sorted=table.clone(samples);table.sort(sorted)
- return {FPS=total>0 and count/total or 0,MaxMS=maximum*1000,
+ local sorted={}
+ local recentFrames,recentSeconds,recentAdded,recentRemoved=0,0,0,0
+ local recentMax=0
+ for _,sample in ipairs(samples) do
+  if sample.At>total-10 then
+   table.insert(sorted,sample.DT);recentMax=math.max(recentMax,sample.DT)
+  end
+  -- Weight a frame spanning the window boundary, including multi-second stalls.
+  local overlap=math.min(sample.DT,math.max(0,sample.At-(total-1)))
+  if overlap>0 then
+   recentFrames+=overlap/sample.DT;recentSeconds+=overlap
+   recentAdded+=sample.Added;recentRemoved+=sample.Removed
+  end
+ end
+ table.sort(sorted)
+ return {FPS=recentSeconds>0 and recentFrames/recentSeconds or 0,
+  AverageFPS=total>0 and count/total or 0,MaxMS=maximum*1000,RecentMaxMS=recentMax*1000,
   P95MS=(sorted[math.max(1,math.ceil(#sorted*.95))] or 0)*1000,
+  Added=recentAdded,Removed=recentRemoved,LastSpikeMS=lastSpike and lastSpike.MS or 0,
+  LastSpikeAge=lastSpike and total-lastSpike.At or 0,
   Slow50=slow50,Slow100=slow100,Seconds=total}
 end
 local function decor(object)
@@ -58,7 +80,7 @@ function Service.Start()
  if Service.Started then return end
  Service.Started=true
  Run.RenderStepped:Connect(Service.Frame)
- workspace.DescendantAdded:Connect(function(object) if Service.Hidden then apply(object) end end)
- workspace.DescendantRemoving:Connect(restore)
+ workspace.DescendantAdded:Connect(function(object) added+=1;if Service.Hidden then apply(object) end end)
+ workspace.DescendantRemoving:Connect(function(object) removed+=1;restore(object) end)
 end
 return Service
