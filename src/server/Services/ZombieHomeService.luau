@@ -18,7 +18,7 @@ if not creatures then
  creatures.Name,creatures.Parent = "Creatures",workspace
 end
 local function enabled(home)
- return home:IsA("Model") and home:IsDescendantOf(workspace) and home:GetAttribute("Zombie_home") == true and not OfflineHouses.Blocked(home)
+ return workspace:GetAttribute("DiagnosticsZombiesDisabled")~=true and home:IsA("Model") and home:IsDescendantOf(workspace) and home:GetAttribute("Zombie_home") == true and not OfflineHouses.Blocked(home)
 end
 local function template()
  local folder = ServerStorage:FindFirstChild("Creatures")
@@ -205,6 +205,7 @@ local function wake(players,now)
  active=awake;lastWake=now
 end
 function Service.Step(now)
+ if workspace:GetAttribute("DiagnosticsZombiesDisabled")==true then return 0,0 end
  synchronize()
  local players=subjects()
  if now-lastWake>=1 then wake(players,now) end
@@ -241,3 +242,4 @@ function Service.Start()
  task.spawn(function() while true do Service.Step(os.clock());task.wait(.25) end end)
 end
 return Service
+

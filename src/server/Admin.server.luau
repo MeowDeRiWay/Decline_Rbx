@@ -9,6 +9,8 @@ local Inventory=require(Services.InventoryService)
 local Life=require(Services.PlayerLifeService)
 local Items=require(ReplicatedStorage.Shared.ItemConfig).Items
 local Journal=require(Services.JournalService)
+local Diagnostics=require(Services.DiagnosticsService)
+Diagnostics.Start()
 Clock.Start()
 local remote=Instance.new("RemoteFunction");remote.Name="AdminAction";remote.Parent=ReplicatedStorage
 local last={}
@@ -21,7 +23,10 @@ end
 local function handle(player,command,data)
  if command=="Request" then return true,"Ready." end
  if typeof(data)~="table" then return false,"Invalid request." end
- if command=="InstantCraft" and typeof(data.Value)=="boolean" then
+ if command=="DiagnosticsZombies" and typeof(data.Value)=="boolean" then
+  if not Diagnostics.SetZombiesDisabled(player,data.Value) then return false,"Access denied." end
+  return true,data.Value and "Zombies disabled for this server." or "Zombies restored for this server."
+ elseif command=="InstantCraft" and typeof(data.Value)=="boolean" then
   player:SetAttribute("AdminInstantCraft",data.Value)
   return true,data.Value and "Instant crafting enabled." or "Instant crafting disabled."
  elseif command=="SetHour" and Rules.Number(data.Value,0,23.999,false) then Clock.SetHour(data.Value)

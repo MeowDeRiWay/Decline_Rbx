@@ -106,8 +106,23 @@ local function change(record,mode)
  record.Model:SetAttribute("ActivityMode",mode)
  if record.OnMode then record.OnMode(mode) end
 end
+function Service.SuspendDiagnostics()
+ for _,record in pairs(records) do change(record,"AFK") end
+end
+function Service.DiagnosticStats()
+ local total,awake=0,0
+ for model,record in pairs(records) do
+  local hp=model:FindFirstChildOfClass("Humanoid")
+  if model.Parent and hp and hp.Health>0 then
+   total+=1
+   if record.Mode=="Active" then awake+=1 end
+  end
+ end
+ return total,awake
+end
 -- Only actual emitted noise wakes sleepers; no extra idle AI polling.
 function Service.Alert(position,radius)
+ if workspace:GetAttribute("DiagnosticsZombiesDisabled")==true then return end
  for model,record in pairs(records) do
   local hp=model:FindFirstChildOfClass("Humanoid")
   if not WorldActivity.IsDormant(model) and hp and hp.Health>0 and (record.Root.Position-position).Magnitude<=radius*math.clamp(model:GetAttribute("Attention") or 5,1,10)/5 then
@@ -117,6 +132,7 @@ function Service.Alert(position,radius)
  end
 end
 RunService.Heartbeat:Connect(function(dt)
+ if workspace:GetAttribute("DiagnosticsZombiesDisabled")==true then return end
  for model,record in pairs(active) do
   if WorldActivity.IsDormant(model) then change(record,"AFK")
   elseif not model:IsDescendantOf(workspace) then records[model]=nil;active[model]=nil
@@ -125,9 +141,11 @@ RunService.Heartbeat:Connect(function(dt)
 end)
 task.spawn(function()
  while true do
+  if workspace:GetAttribute("DiagnosticsZombiesDisabled")==true then task.wait(.5);continue end
   footprints=playerFootprints()
   local budget=0
   for model,record in pairs(records) do
+   if workspace:GetAttribute("DiagnosticsZombiesDisabled")==true then break end
    if WorldActivity.IsDormant(model) then change(record,"AFK");continue end
    local hp=model:FindFirstChildOfClass("Humanoid")
    if not model:IsDescendantOf(workspace) or not hp or hp.Health<=0 then records[model]=nil;active[model]=nil;continue end
@@ -149,3 +167,4 @@ task.spawn(function()
  end
 end)
 return Service
+

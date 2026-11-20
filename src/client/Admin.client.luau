@@ -7,6 +7,8 @@ if player:GetAttribute("AdminAccess")~=true then return end
 local remote=Storage:WaitForChild("AdminAction")
 local Theme=require(Storage.Shared.UITheme)
 local Items=require(Storage.Shared.ItemConfig).Items
+local Diagnostics=require(script.Parent.AdminDiagnostics)
+Diagnostics.Start()
 local gui=Instance.new("ScreenGui")
 gui.Name="AdminMenu";gui.ResetOnSpawn=false;gui.DisplayOrder=80;gui.Parent=player:WaitForChild("PlayerGui")
 local function make(class,parent,props)
@@ -58,10 +60,22 @@ end
 label(panel,"DECLINE / ADMINISTRATION",16,8,660,32)
 button(panel,"X",704,8,40,function() setOpen(false) end)
 local pages={}
-for _,name in ipairs({"Time","Characters","Items","Crafting"}) do pages[name]=make("Frame",panel,{Position=UDim2.fromOffset(16,92),Size=UDim2.fromOffset(728,380),BackgroundTransparency=1,Visible=name=="Time"}) end
-for index,name in ipairs({"Time","Characters","Items","Crafting"}) do
- button(panel,name,16+(index-1)*183,50,175,function() for id,page in pairs(pages) do page.Visible=id==name end end)
+for _,name in ipairs({"Time","Characters","Items","Crafting","Diagnostics"}) do pages[name]=make("Frame",panel,{Position=UDim2.fromOffset(16,92),Size=UDim2.fromOffset(728,380),BackgroundTransparency=1,Visible=name=="Time"}) end
+for index,name in ipairs({"Time","Characters","Items","Crafting","Diagnostics"}) do
+ button(panel,name,16+(index-1)*146,50,138,function() for id,page in pairs(pages) do page.Visible=id==name end end)
 end
+local diagnostics=pages.Diagnostics
+local metrics=label(diagnostics,"",0,0,720,110)
+local zombieToggle=button(diagnostics,"",0,120,720,function()
+ request("DiagnosticsZombies",{Value=workspace:GetAttribute("DiagnosticsZombiesDisabled")~=true})
+end)
+label(diagnostics,"Zombies: affects everyone. Spawning, AI and live models are paused. Restores when the controlling admin leaves.",0,157,720,50)
+local decorToggle=button(diagnostics,"",0,215,720,function()
+ Diagnostics.HideDecor(not Diagnostics.Hidden)
+end)
+label(diagnostics,"Decor: visual test for you only. Furniture collisions and scripts remain active.",0,251,720,46)
+button(diagnostics,"Reset measurements",0,308,350, function() Diagnostics.Reset() end)
+label(diagnostics,"Reset, close F6, drive the same route, then reopen this tab.",0,346,720,32)
 local crafting=pages.Crafting
 label(crafting,"Instant crafting",0,0,700,38)
 label(crafting,"Only your new crafting jobs. Resources, tools and skill requirements still apply.",0,48,700,70)
@@ -142,6 +156,14 @@ task.spawn(function()
  while gui.Parent do
   if panel.Visible then
    resize()
+   if pages.Diagnostics.Visible then
+    local stats=Diagnostics.Snapshot()
+    metrics.Text=string.format("FPS %.1f | Max frame %.1f ms | P95 %.1f ms\nFrames >=50 ms: %d | >=100 ms: %d | Test %.1f s\nZombies: %d total / %d active",
+     stats.FPS,stats.MaxMS,stats.P95MS,stats.Slow50,stats.Slow100,stats.Seconds,
+     workspace:GetAttribute("DiagnosticsZombieTotal") or 0,workspace:GetAttribute("DiagnosticsZombieActive") or 0)
+    zombieToggle.Text=workspace:GetAttribute("DiagnosticsZombiesDisabled")==true and "SERVER: zombies OFF - restore" or "SERVER: zombies ON - disable"
+    decorToggle.Text=Diagnostics.Hidden and "LOCAL: decor hidden - show" or "LOCAL: decor visible - hide"
+   end
    local h=workspace:GetAttribute("DayClockHour") or 8
    local minutes=math.floor(h*60)%1440
    clockLabel.Text=string.format("Server time %02d:%02d / %gx / %s",math.floor(minutes/60),minutes%60,workspace:GetAttribute("DayClockSpeed") or 1,workspace:GetAttribute("DayClockPaused") and "PAUSED" or "RUNNING")

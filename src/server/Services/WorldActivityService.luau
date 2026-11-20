@@ -303,7 +303,7 @@ function Service.Step(now)
  local waking,distances={},{}
  for record in pairs(nearby) do
   checkpoint(false)
-  if record.State=="Active" or record.Busy then continue end
+  if record.State=="Active" or record.Busy or record.Kind=="NPC" and workspace:GetAttribute("DiagnosticsZombiesDisabled")==true then continue end
   local best=math.huge
   for _,point in ipairs(record.Kind=="NPC" and points or predicted) do best=math.min(best,Rules.DistanceSquared(record.Frame,record.Size,point)) end
   if best<=Config.ActiveRadius^2 then
@@ -320,6 +320,7 @@ function Service.Step(now)
  end
  local quiet=true
  for root,record in pairs(records) do
+  if record.Kind=="NPC" and workspace:GetAttribute("DiagnosticsZombiesDisabled")==true then continue end
   checkpoint(false)
   if not root.Parent then continue end
   if record.Kind=="NPC" then

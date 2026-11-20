@@ -86,6 +86,10 @@ assert((occupiedCalls[added] or 0)>0,"runtime-generated homes wake through event
 local removedCount=occupiedCalls[added];workspace.DescendantRemoving:Fire(added);added.Parent=nil;step(1287)
 assert(occupiedCalls[added]==removedCount)
 assert(scans==1,"no recurring full-world scans")
+workspace:SetAttribute("DiagnosticsZombiesDisabled",true)
+local processed,spawns=Service.Step(2000)
+assert(processed==0 and spawns==0,"diagnostics pauses occupancy and spawning")
+workspace:SetAttribute("DiagnosticsZombiesDisabled",false)
 print("PASS: 1000 distant homes asleep, one loop, cached geometry, proximity wake, randomized deadlines, 180s occupancy lock, disabled/generated/removed homes")
 '''
 parts=[(root/'tests/fixtures/town_mock.luau').read_text(),setup]
@@ -93,3 +97,4 @@ for name,file in [('HomeRules','ZombieHomeRules'),('Rules','ResourceRules')]:par
 parts+=['Service=(function()\n'+s+'\nend)()',cases]
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'homes.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)
+

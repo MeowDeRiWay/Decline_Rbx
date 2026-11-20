@@ -28,7 +28,8 @@ local waits=0
 task={spawn=function(fn) worker=coroutine.create(fn);assert(coroutine.resume(worker)) end,wait=function() waits+=1;coroutine.yield() end}
 local groundCalls,overlapCalls,pivots=0,0,0
 local blocked=false
-workspace={Raycast=function(_,origin) groundCalls+=1;return {Position=Vector3.new(origin.X,0,origin.Z),Normal=Vector3.new(0,1,0)} end,
+local diagnosticsDisabled=false
+workspace={GetAttribute=function(_,key) return key=="DiagnosticsZombiesDisabled" and diagnosticsDisabled end,Raycast=function(_,origin) groundCalls+=1;return {Position=Vector3.new(origin.X,0,origin.Z),Normal=Vector3.new(0,1,0)} end,
  GetPartBoundsInBox=function() overlapCalls+=1;return blocked and {true} or {} end}
 Enum={RaycastFilterType={Exclude=1,Include=2}}
 RaycastParams={new=function() return {} end};OverlapParams={new=function() return {} end}
@@ -76,6 +77,14 @@ Service.Alert(afk:GetPivot().Position+Vector3.new(7,0,0),12);assert(afk.attribut
 local heardSteps=steps[3];tick();heartbeat.fire(.016);assert(steps[3]==heardSteps+1,"noise wake survives sleep dispatcher")
 time+=61;tick();assert(afk.attributes.ActivityMode=="AFK","noise interest expires")
 active.Parent=nil;tick()
+diagnosticsDisabled=true
+Service.SuspendDiagnostics()
+local beforePause=steps[1]+steps[2]+steps[3]
+for _=1,20 do time+=.1;heartbeat.fire(.1) end
+assert(steps[1]+steps[2]+steps[3]==beforePause,"diagnostic pause prevents AI dispatch")
+local total,awake=Service.DiagnosticStats()
+assert(awake==0,"paused diagnostics report no active zombies")
+diagnosticsDisabled=false
 print("PASS: 1000 dispatcher frames -> zero sleeping AI calls; randomized first deadline, 120-second interval, endpoint-only checks, occupied destination rejected, nearest-player wake, no-player AFK, removed model cleanup")
 '''
 parts=[(root/'tests/city_geometry.fixture.luau').read_text()]
@@ -85,3 +94,4 @@ parts += [mock,'local Service=(function()\n'+service+'\nend)()',cases]
 with tempfile.TemporaryDirectory() as directory:
  path=Path(directory)/'activity.luau';path.write_text('\n'.join(parts))
  subprocess.run([sys.argv[1] if len(sys.argv)>1 else 'luau',str(path)],check=True)
+

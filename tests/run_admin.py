@@ -3,12 +3,14 @@ from pathlib import Path
 import re, subprocess, sys, tempfile
 root=Path(__file__).resolve().parents[1]
 authority=(root/'src/server/Admin.server.luau').read_text().replace('local Literal=require(game:GetService("ReplicatedStorage").Shared.LocalizationRules)', 'local Literal={Protect=function(v) return v end}')
-authority=re.sub(r'local (Rules|Clock|Progression|Inventory|Life|Items|Journal)=require[^\n]+\n','',authority)
+authority=re.sub(r'local (Rules|Clock|Progression|Inventory|Life|Items|Journal|Diagnostics)=require[^\n]+\n','',authority)
 authority=authority.replace('local Services=script.Parent.Services\n','')
 setup='''
 local Rules=(function()\nADMIN_RULES\nend)()
 local InventoryRules=(function()\nINVENTORY_RULES\nend)()
 local Items=(function()\nITEMS\nend)().Items
+local diagnosticsCalls=0
+local Diagnostics={Start=function() end,SetZombiesDisabled=function(p,v) diagnosticsCalls+=1;workspace:SetAttribute("DiagnosticsZombiesDisabled",v);return true end}
 local clockCalls=0
 local Clock={Start=function() end,SetHour=function(v) clockCalls+=1;workspace:SetAttribute("DayClockHour",v) end,SetSpeed=function(v) clockCalls+=1 end,SetPaused=function(v) clockCalls+=1 end}
 local grants=0
@@ -72,9 +74,15 @@ assert(not call(admin,"GiveItem",{ID="Bandage",Count=1}).OK)
 local response=remote.OnServerInvoke(admin,"SetHour",{Value=6})
 assert(not response.OK,"rapid requests are limited")
 assert(not call(admin,"Unknown",{}).OK and not call(admin,"Heal","bad").OK)
+assert(call(admin,"DiagnosticsZombies",{Value=true}).OK and workspace:GetAttribute("DiagnosticsZombiesDisabled"),"authorized diagnostic control")
+local beforeDiagnostic=diagnosticsCalls
+assert(not call(b,"DiagnosticsZombies",{Value=false}).OK and diagnosticsCalls==beforeDiagnostic,"forged admin flag cannot control diagnostics")
+assert(not call(admin,"DiagnosticsZombies",{Value="true"}).OK,"malformed diagnostic flag rejected")
+assert(call(admin,"DiagnosticsZombies",{Value=false}).OK and not workspace:GetAttribute("DiagnosticsZombiesDisabled"))
 print("PASS: admin identity, forged access flags, both admins, malformed inputs, rate limit, self-only items, online player targets, healing, needs and KO revival")
 '''
 setup=setup.replace('ADMIN_RULES',(root/'src/server/Services/AdminRules.luau').read_text()).replace('INVENTORY_RULES',(root/'src/shared/InventoryRules.luau').read_text()).replace('ITEMS',(root/'src/shared/ItemConfig.luau').read_text())
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'admin.luau';p.write_text((root/'tests/fixtures/town_mock.luau').read_text()+'\n'+setup+'\n'+authority+'\n'+cases)
  subprocess.run([sys.argv[1],str(p)],check=True)
+

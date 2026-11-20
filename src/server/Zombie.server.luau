@@ -368,7 +368,7 @@ local function prepare(model)
     Audio.Play(model,"Attack")
     local victimRoot=nearest
     task.delay(ZombiePose.Contact(model:GetAttribute("ZombieAnimationType")),function()
-     if dead or humanoid.Health<=0 or model:GetAttribute("ActivityMode")~="Active" or not model.Parent or not victimRoot.Parent then return end
+     if workspace:GetAttribute("DiagnosticsZombiesDisabled")==true or dead or humanoid.Health<=0 or model:GetAttribute("ActivityMode")~="Active" or not model.Parent or not victimRoot.Parent then return end
      local victim=victimRoot.Parent:FindFirstChildOfClass("Humanoid")
      if not victim or victim.Health<=0 or victimRoot.Parent:GetAttribute("Knockout") then return end
      local offset=victimRoot.Position-root.Position
@@ -415,3 +415,4 @@ local function consider(object)
 end
 for _,object in ipairs(workspace:GetDescendants()) do consider(object) end
 workspace.DescendantAdded:Connect(function(object) task.defer(consider,object) end)
+
