@@ -15,6 +15,7 @@ source = (root / "tests/rig_math.fixture.luau").read_text()
 source += "\n" + (root / "tests/vehicle_runtime.fixture.luau").read_text()
 source += "\nlocal VehicleConfig=" + module("src/shared/VehicleConfig.luau")
 source += "\nlocal Doors={Honk=function(player,model,frame,range) DoorsCalled={Player=player,Model=model,Frame=frame,Range=range} end}\n"
+source += "\nlocal PocketRules=" + module("src/shared/InventoryRules.luau")
 source += "\nlocal Ground=" + module("src/server/Services/VehicleGround.luau")
 source += "\nlocal Suspension=" + module("src/server/Services/VehicleSuspension.luau")
 source += "\nlocal Appearance=" + module("src/shared/VehicleAppearance.luau")
@@ -174,7 +175,26 @@ local explosions={}
 local Explosions={Detonate=function(point,settings,attacker,character,item,amount)
  table.insert(explosions,{Point=point,Amount=amount})
 end}
+local keyDefinitions={VehicleKey={Unique=true,Weight=.05}}
+local keyStates={}
 local Inventory={ClearHands=function(player) player.ClearedHands=true end}
+function Inventory.Export(player) return keyStates[player] end
+function Inventory.Add(player,id,count,conditions,data)
+ keyStates[player]=keyStates[player] or PocketRules.New()
+ return PocketRules.Add(keyStates[player],keyDefinitions,id,count,conditions,data)
+end
+function Inventory.HasVehicleKey(token)
+ for _,state in pairs(keyStates) do if PocketRules.HasVehicleKey(state,token) then return true end end
+ return false
+end
+local Chests={HasVehicleKey=function() return false end}
+local WorldItems={HasVehicleKey=function() return false end}
+local guid=0
+local oldService=game.GetService
+game.GetService=function(self,name)
+ if name=="HttpService" then return {GenerateGUID=function() guid+=1;return "key-"..guid end} end
+ return oldService(self,name)
+end
 local Interact={
  Reach=function(player,target,range,activate)
   player.Character:SetAttribute("InteractionLocked",true)
@@ -247,6 +267,7 @@ assert(VehicleInput.IsDriver(character),"driver entry reserves digit actions")
 character:SetAttribute("VehicleEntering",nil)
 assert(not VehicleInput.IsDriver(character),"leaving restores digit actions")
 '''
+source += "\nlocal Keys=" + module("src/server/Services/VehicleKeyService.luau","local Rules=PocketRules")
 source += "\nlocal Service=" + module("src/server/Services/VehicleService.luau", "local Config=VehicleConfig\nlocal Rules=VehicleRules")
 source += r'''
 Service.Start()
@@ -284,24 +305,23 @@ local door=seatModel.EntryDoor.Value
 root.CFrame=door.PrimaryPart.CFrame*CFrame.new(-.5,0,0)
 head.CFrame=root.CFrame*CFrame.new(0,.5,0)
 physics()
-vehicle:SetAttribute("OwnerID",player.UserId+1)
+local other=create("Player",Players);other.UserId=999
+assert(Keys.Claim(other,vehicle),"first claimant gets the key")
 for _,kind in ipairs({"Door","Hood","Trunk"}) do
  local locked=componentModel(vehicle,kind)
  root.CFrame=locked.PrimaryPart.CFrame;head.CFrame=root.CFrame*CFrame.new(0,.5,0);physics()
  remote.Action.OnServerEvent:Fire(player,"Interact",locked);tick(.8)
- assert(not locked:GetAttribute("Open"),"nonowner cannot open "..kind)
+ assert(not locked:GetAttribute("Open"),"player without key cannot open "..kind)
 end
 door:SetAttribute("Open",true)
 root.CFrame=seatModel.PrimaryPart.CFrame;head.CFrame=root.CFrame*CFrame.new(0,.5,0);physics()
 remote.Action.OnServerEvent:Fire(player,"Interact",seatModel);tick(.8)
-assert(not character:GetAttribute("VehicleSeated") and not hp.Sit,"open door does not let nonowner drive")
+assert(not character:GetAttribute("VehicleSeated") and not hp.Sit,"open door does not bypass key requirement")
 seat:Sit(hp)
-assert(not hp.Sit and not seat:FindFirstChild("SeatWeld"),"native seat entry also rejects nonowner")
-vehicle:SetAttribute("OwnerID",nil)
-remote.Action.OnServerEvent:Fire(player,"Interact",seatModel);tick(.8)
-assert(not character:GetAttribute("VehicleSeated"),"unowned vehicles are not publicly driveable")
+assert(not hp.Sit and not seat:FindFirstChild("SeatWeld"),"native seat entry also rejects missing key")
+keyStates[player]=PocketRules.New()
+assert(PocketRules.Transfer(keyStates[other],keyStates[player],keyDefinitions,"VehicleKey",1),"key transfers to new driver")
 door:SetAttribute("Open",false)
-vehicle:SetAttribute("OwnerID",player.UserId)
 root.CFrame=door.PrimaryPart.CFrame*CFrame.new(-.5,0,0)
 head.CFrame=root.CFrame*CFrame.new(0,.5,0);physics()
 remote.Input.OnServerEvent:Fire(player,1,1)
@@ -509,29 +529,16 @@ print("PASS: garage marker, real assembly/spawn, clearance checks, orientation, 
 '''
 source += r'''
 local publicCar=assert(Service.Spawn("Car_1"))
-publicCar:SetAttribute("OwnerID",player.UserId);tick(.1)
-assert(not publicCar:GetAttribute("PublicAccess"),"online owner's car stays private")
-Players.PlayerRemoving:Fire(player);player.Parent=nil
-tick(599)
-assert(publicCar:GetAttribute("OwnerID")==player.UserId and not publicCar:GetAttribute("PublicAccess"),"599 seconds of absence preserves ownership")
-player.Parent=Players;Players.PlayerAdded:Fire(player);tick(.1)
-tick(2)
-assert(publicCar:GetAttribute("OwnerID")==player.UserId,"return cancels absence timer")
-Players.PlayerRemoving:Fire(player);player.Parent=nil
-tick(599);assert(not publicCar:GetAttribute("PublicAccess"),"new departure starts a fresh timer")
-tick(1)
-assert(publicCar:GetAttribute("PublicAccess") and publicCar:GetAttribute("OwnerID")==nil,"600 seconds makes car public and releases owner")
-player.Parent=Players;Players.PlayerAdded:Fire(player);tick(.1)
-assert(publicCar:GetAttribute("PublicAccess"),"old owner returning does not relock a public car")
-local publicDoor=componentModel(publicCar,"Door")
-root.CFrame=publicDoor.PrimaryPart.CFrame;head.CFrame=root.CFrame*CFrame.new(0,.5,0);physics()
-remote.Action.OnServerEvent:Fire(player,"Interact",publicDoor);tick(.8)
-assert(publicDoor:GetAttribute("Open"),"public vehicle permits door interaction")
+tick(.1)
+assert(publicCar:GetAttribute("PublicAccess"),"freshly spawned vehicle is available for first driver")
 local publicSeat=componentModel(publicCar,"DriverSeat")
-publicSeat.EntryDoor.Value:SetAttribute("Open",true)
+local publicDoor=publicSeat.EntryDoor.Value
+publicDoor:SetAttribute("Open",true)
 root.CFrame=publicSeat.PrimaryPart.CFrame;head.CFrame=root.CFrame*CFrame.new(0,.5,0);physics()
+local beforeKeys=keyStates[player].Items.VehicleKey
 remote.Action.OnServerEvent:Fire(player,"Interact",publicSeat);tick(.8)
-assert(character:GetAttribute("VehicleDriver") and character:GetAttribute("VehicleSeated"),"public vehicle allows a player without OwnerID to take the driver seat")
+assert(character:GetAttribute("VehicleDriver") and character:GetAttribute("VehicleSeated"),"first driver claims fresh car")
+assert(keyStates[player].Items.VehicleKey==beforeKeys+1 and not publicCar:GetAttribute("PublicAccess"),"successful seating grants one key and locks the car")
 publicCar:Destroy();tick(.2)
 local road=create("Part",workspace);road.Name="Road";road:SetAttribute("Road",true)
 road.CanCollide=false;road.CanQuery=false

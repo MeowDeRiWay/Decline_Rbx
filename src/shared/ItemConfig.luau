@@ -5,6 +5,7 @@ ItemConfig.PickupDistance = 2
 ItemConfig.RetiredItems={Rifle308=true,WoodenPlate=true,Money=true,Bill=true,bill=true,StoneAxe=true,StoneShovel=true,StoneShowel=true,Knife=true,Showel=true}
 ItemConfig.Slots = {"Body", "PrimaryWeapon", "SecondaryWeapon", "Hands", "Back", "Additional", "Medicine"}
 ItemConfig.Items = {
+ VehicleKey={Name="Vehicle key",Weight=.05,Unique=true,Description="Opens and starts one specific vehicle. Can be traded or dropped."},
  ZombieHand = {
   Name = "Zombie hand", Weight = 0, Slot = "Hands", Lootable = false,
   Description = "A zombie's right hand.",
@@ -234,4 +235,3 @@ for id,item in pairs(ItemConfig.Items) do
  end
 end
 return ItemConfig
-

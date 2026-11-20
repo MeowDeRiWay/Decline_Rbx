@@ -200,8 +200,9 @@ local function renderItems(frame, items, side)
   local ammo=definition.Firearm and ItemConfig.Items["Ammo"..definition.Firearm.Caliber..(stack.AmmoType or "FMJ")]
   if ammo then itemWeight+=(stack.Loaded or 0)*ammo.Weight*multiplier end
   local key=side..":"..stack.Key
-  local selection=(definition.Weapon or stack.EquipmentSlot) and {ID=id,Key=stack.Key} or id
+  local selection=(definition.Weapon or definition.Unique or stack.EquipmentSlot) and {ID=id,Key=stack.Key} or id
   local caption=string.format("%s ×%d",definition.Name or id,stack.Count)
+  if stack.VehicleID then caption=Locale.Text(definition.Name).." · "..Locale.Text(stack.VehicleName or "Vehicle").." ["..stack.VehicleID:sub(-6).."]" end
   if stack.LootLocked then caption..="\nEquipped armor · protected while unconscious"
   elseif stack.EquipmentSlot then caption..="\nEquipped" end
   local available=stack.Count

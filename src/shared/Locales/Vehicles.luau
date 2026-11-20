@@ -1,4 +1,7 @@
 return {
+ {"You need the key for this vehicle.","Потрібен ключ від цього авто.","Нужен ключ от этого авто."},
+ {"Vehicle key","Ключ від авто","Ключ от авто"},
+ {"Opens and starts one specific vehicle. Can be traded or dropped.","Відкриває та заводить конкретне авто. Можна передавати або викидати.","Открывает и заводит конкретное авто. Можно передавать или выбрасывать."},
  {"Only the vehicle owner can do this.","Це може зробити лише власник авто.","Это может сделать только владелец авто."},
  {"Cruise ON","Круїз УВІМК.","Круиз ВКЛ."},
  {"WASD · Drive   1–%d · Gear   N · Neutral   R · Reverse   E · Cruise   V · Engine   L · Lights   H · Horn   X · Exit","WASD · Рух   1–%d · Передача   N · Нейтраль   R · Задня   E · Круїз   V · Двигун   L · Фари   H · Гудок   X · Вихід","WASD · Езда   1–%d · Передача   N · Нейтраль   R · Задняя   E · Круиз   V · Двигатель   L · Фары   H · Гудок   X · Выход"},

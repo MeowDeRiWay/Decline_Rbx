@@ -95,6 +95,11 @@ function Service.RemovePlayer(player)
  disconnected[player.UserId]=states[player] or disconnected[player.UserId]
  states[player]=nil
 end
+function Service.HasVehicleKey(token)
+ for _,state in pairs(states) do if Rules.HasVehicleKey(state,token) then return true end end
+ for _,state in pairs(disconnected) do if Rules.HasVehicleKey(state,token) then return true end end
+ return false
+end
 function Service.Export(player) return states[player] or disconnected[player.UserId] end
 function Service.ForgetOffline(userID,state)
  if disconnected[userID]==state then disconnected[userID]=nil end

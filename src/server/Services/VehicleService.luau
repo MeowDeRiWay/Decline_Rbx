@@ -8,6 +8,7 @@ local Rules=require(Shared.VehicleRules)
 local Appearance=require(Shared.VehicleAppearance)
 local Ground=require(script.Parent.VehicleGround)
 local Doors=require(script.Parent.TownDoors)
+local Keys=require(script.Parent.VehicleKeyService)
 local Suspension=require(script.Parent.VehicleSuspension)
 local Interaction=require(Shared.Interaction)
 local BulletCast=require(Shared.BulletCast)
@@ -25,22 +26,7 @@ local requests={}
 local remotes
 local function notice(player,text) Journal.Send(player,text) end
 local function hasAccess(player,data)
- return player~=nil and (data.Model:GetAttribute("PublicAccess")==true or data.Model:GetAttribute("OwnerID")==player.UserId)
-end
-local function ownershipStep(data,present,now)
- local owner=data.Model:GetAttribute("OwnerID")
- if typeof(owner)~="number" or owner<=0 then data.AbsentOwner=nil;data.OwnerAbsentSince=nil;return end
- if data.LastOwner~=owner then
-  data.LastOwner=owner;data.AbsentOwner=nil;data.OwnerAbsentSince=nil
-  data.Model:SetAttribute("PublicAccess",false)
- end
- if present[owner] then data.AbsentOwner=nil;data.OwnerAbsentSince=nil;return end
- if data.AbsentOwner~=owner then data.AbsentOwner=owner;data.OwnerAbsentSince=now end
- if now-data.OwnerAbsentSince>=Config.OwnerAbsenceTimeout then
-  data.Model:SetAttribute("PublicAccess",true)
-  data.Model:SetAttribute("OwnerID",nil)
-  data.AbsentOwner=nil;data.OwnerAbsentSince=nil;data.LastOwner=nil
- end
+ return Keys.Allowed(player,data.Model)
 end
 local function seatAllowed(player,data,record)
  return record.Kind~="DriverSeat" or hasAccess(player,data)
@@ -150,6 +136,7 @@ local function claim(player,data,record)
  if not c or not root or not hp or hp.Health<=0 or c:GetAttribute("Knockout") or record.Seat.Occupant~=hp then return false end
  local weld=record.Seat:FindFirstChild("SeatWeld")
  if not weld then return false end
+ if record.Kind=="DriverSeat" and not Keys.Claim(player,data.Model) then return false end
  local occupant={Data=data,Record=record,Character=c,HP=hp,Root=root,Collidable=root.CanCollide,Links={}}
  occupants[player]=occupant;record.Player=player;record.Reserved=nil
  weld.C0=CFrame.new(0,record.Seat.Size.Y/2+root.Size.Y*.12,record.Seat.Size.Z*.08+root.Size.Z*.2)
@@ -182,7 +169,7 @@ local function eligible(player)
  return c,root,hp
 end
 local function enter(player,data,record)
- if not seatAllowed(player,data,record) then notice(player,"Only the vehicle owner can do this.");return end
+ if not seatAllowed(player,data,record) then notice(player,"You need the key for this vehicle.");return end
  local c,root,hp=eligible(player)
  if not c or occupants[player] or not record.Seat or record.Seat.Occupant or record.Reserved then return end
  if math.abs(data.Speed)>Config.ExitMaximumSpeed or Rules.Health(record.Model)<=0 then return end
@@ -478,8 +465,9 @@ function Service.Spawn(id,frame)
  table.insert(data.Links,data.Model.Destroying:Connect(function()
   for player,occupant in pairs(occupants) do if occupant.Data==data then release(player,false,true) end end
   for _,link in ipairs(data.Links) do link:Disconnect() end
-  VehicleDamage.Unregister(data.Model);vehicles[data.Model]=nil
+  Keys.Forget(data.Model);VehicleDamage.Unregister(data.Model);vehicles[data.Model]=nil
  end))
+ Keys.Register(data.Model)
  data.Model.Parent=folder
  resourceStep(data,0)
  return data.Model
@@ -499,7 +487,7 @@ local function interact(player,target)
  if BulletCast.Raycast(head and head.Position or root.Position,point-(head and head.Position or root.Position),{c,vehicle}) then return end
  if record.Seat then enter(player,data,record)
  elseif record.Kind=="Door" or record.Kind=="Hood" or record.Kind=="Trunk" then
-  if not hasAccess(player,data) then notice(player,"Only the vehicle owner can do this.");return end
+  if not hasAccess(player,data) then notice(player,"You need the key for this vehicle.");return end
   if math.abs(data.Speed)>Config.ExitMaximumSpeed then return end
   for _,seatRecord in ipairs(data.Components) do if seatRecord.Door==record and seatRecord.Reserved then return end end
   Interact.Reach(player,model,Config.InteractionDistance,function()
@@ -569,27 +557,18 @@ function Service.Start()
   data.InputSteer=Rules.Number(steer,0,-1,1);data.LastInput=now
  end)
  local function watchPlayer(player)
-  for _,data in pairs(vehicles) do
-   if data.Model:GetAttribute("OwnerID")==player.UserId then data.AbsentOwner=nil;data.OwnerAbsentSince=nil end
-  end
   player.CharacterRemoving:Connect(function() release(player,false,true) end)
  end
  Players.PlayerAdded:Connect(watchPlayer)
  for _,player in ipairs(Players:GetPlayers()) do watchPlayer(player) end
- Players.PlayerRemoving:Connect(function(player)
-  release(player,false,true);requests[player]=nil
-  for _,data in pairs(vehicles) do
-   if data.Model:GetAttribute("OwnerID")==player.UserId then
-    data.LastOwner=player.UserId;data.AbsentOwner=player.UserId
-    data.OwnerAbsentSince=workspace:GetServerTimeNow()
-   end
-  end
- end)
+ Players.PlayerRemoving:Connect(function(player) release(player,false,true);requests[player]=nil end)
+ local keyElapsed=0
  RunService.Heartbeat:Connect(function(dt)
-  local present={}
-  for _,player in ipairs(Players:GetPlayers()) do present[player.UserId]=true end
-  local now=workspace:GetServerTimeNow()
-  for _,data in pairs(vehicles) do ownershipStep(data,present,now) end
+  keyElapsed+=dt
+  if keyElapsed>=1 then
+   keyElapsed%=1
+   for _,data in pairs(vehicles) do Keys.Refresh(data.Model) end
+  end
   for player,occupant in pairs(occupants) do
    if not seatAllowed(player,occupant.Data,occupant.Record) or player.Character~=occupant.Character or not occupant.Character.Parent or not occupant.Data.Model:IsDescendantOf(workspace) then release(player,false,true) end
   end

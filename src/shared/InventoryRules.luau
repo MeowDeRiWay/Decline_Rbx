@@ -37,17 +37,18 @@ function Rules.DropAmount(available, requested)
 end
 function Rules.StackKey(id,condition,data)
  data=data or {}
+ if data.VehicleKey then return id.."|"..data.VehicleKey end
  return string.format("%s|%d|%d|%s",id,condition or 0,data.Loaded or 0,data.Type or "FMJ")
 end
 function Rules.Stacks(state,definitions)
  local result,groups={},{}
  for id,count in pairs(state.Items) do
-  if definitions[id].Weapon then
+  if definitions[id].Weapon or definitions[id].Unique then
    for index,condition in ipairs(state.Conditions[id] or {}) do
     local data=state.Weapons and state.Weapons[id] and state.Weapons[id][index] or {}
     local key=Rules.StackKey(id,condition,data)
     if not groups[key] then
-     groups[key]={ID=id,Key=key,Count=0,Condition=condition,Loaded=data.Loaded or 0,AmmoType=data.Type or "FMJ"}
+     groups[key]={ID=id,Key=key,Count=0,Condition=not definitions[id].Unique and condition or nil,Loaded=data.Loaded or 0,AmmoType=data.Type or "FMJ",VehicleID=data.VehicleID,VehicleName=data.VehicleName}
      table.insert(result,groups[key])
     end
     groups[key].Count+=1
@@ -70,6 +71,20 @@ end
 function Rules.Add(state, definitions, id, amount, conditions, weaponData)
  if typeof(id) ~= "string" or not definitions[id] or not quantity(amount) then return false end
  local weapon = definitions[id].Weapon
+ if definitions[id].Unique then
+  if typeof(weaponData)~="table" or #weaponData~=amount then return false end
+  for _,data in ipairs(weaponData) do
+   if typeof(data)~="table" or typeof(data.VehicleKey)~="string" or data.VehicleKey==""
+    or typeof(data.VehicleID)~="string" or data.VehicleID=="" then return false end
+  end
+  state.Weapons=state.Weapons or {};state.Weapons[id]=state.Weapons[id] or {}
+  state.Conditions[id]=state.Conditions[id] or {}
+  for _,entry in ipairs(weaponData) do
+   serial+=1
+   local data=table.clone(entry);data.UID=data.UID or serial
+   table.insert(state.Weapons[id],data);table.insert(state.Conditions[id],0)
+  end
+ end
  if weapon then
   if conditions then
    if typeof(conditions) ~= "table" or #conditions ~= amount then return false end
@@ -96,6 +111,13 @@ function Rules.Add(state, definitions, id, amount, conditions, weaponData)
  end
  state.Items[id] = (state.Items[id] or 0) + amount
  return true
+end
+function Rules.HasVehicleKey(state,token)
+ if not state or (state.Items.VehicleKey or 0)<=0 then return false end
+ for _,data in ipairs(state.Weapons and state.Weapons.VehicleKey or {}) do
+  if data.VehicleKey==token then return true end
+ end
+ return false
 end
 function Rules.Remove(state,id,amount,key,uid)
  if typeof(id)~="string" or not quantity(amount) or Rules.Available(state,id,key)<amount then return false end

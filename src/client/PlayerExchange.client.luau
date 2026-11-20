@@ -40,6 +40,7 @@ end
 local function quantity() local n=tonumber(amount.Text);return n and n>=1 and n<math.huge and n==math.floor(n) and n or 1 end
 local function caption(stack)
  local s=(Items[stack.ID] and Items[stack.ID].Name or stack.ID).." ×"..stack.Count
+ if stack.VehicleID then s=Locale.Text(Items[stack.ID].Name).." · "..Locale.Text(stack.VehicleName or "Vehicle").." ["..stack.VehicleID:sub(-6).."]" end
  if stack.Condition then s..=" · condition "..stack.Condition end
  if stack.Loaded and stack.Loaded>0 then s..=" · "..stack.Loaded.." "..(stack.AmmoType or "FMJ") end
  return s
@@ -105,3 +106,4 @@ Input.InputBegan:Connect(function(key,processed)
  if not processed and gui.Enabled and not Input:GetFocusedTextBox() and (key.KeyCode==Enum.KeyCode.Q or key.KeyCode==Enum.KeyCode.Escape) then cancel() end
 end)
 task.spawn(function() while true do task.wait(.2);if gui.Enabled then updateConfirm() end end end)
+

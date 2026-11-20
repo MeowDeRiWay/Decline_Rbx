@@ -10,7 +10,7 @@ local EquipmentVisuals = require(script.Parent.EquipmentVisuals)
 local AmmoRules=require(ReplicatedStorage.Shared.FirearmRules)
 local Stations=require(ReplicatedStorage.Shared.CraftStations)
 local Service = {}
-local fallbackItems = {Kevlar=true, TreeLog = true, Scrap = true, Rags = true, Stone = true, Ammo223FMJ=true, Ammo223AP=true}
+local fallbackItems = {VehicleKey=true,Kevlar=true, TreeLog = true, Scrap = true, Rags = true, Stone = true, Ammo223FMJ=true, Ammo223AP=true}
 local warned = {}
 local folder = workspace:FindFirstChild("WorldItems")
 if not folder then
@@ -96,6 +96,18 @@ local function furnitureAncestor(part)
   ancestor=ancestor.Parent
  end
  return furniture
+end
+function Service.HasVehicleKey(token)
+ for _,item in ipairs(folder:GetChildren()) do
+  if item:GetAttribute("Item_ID")=="VehicleKey" then
+   local encoded=item:GetAttribute("WeaponData")
+   local ok,data=pcall(function() return HttpService:JSONDecode(encoded or "") end)
+   if ok and typeof(data)=="table" then
+    for _,entry in ipairs(data) do if entry.VehicleKey==token then return true end end
+   end
+  end
+ end
+ return false
 end
 function Service.Pickup(player, item)
  if typeof(item) ~= "Instance" or item.Parent ~= folder then return false end
@@ -320,3 +332,4 @@ function Service.Drop(player, id, requested,key)
  return true
 end
 return Service
+

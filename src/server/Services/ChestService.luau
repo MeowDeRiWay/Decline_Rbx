@@ -35,6 +35,12 @@ end
 local function notify(chest)
  for player, current in pairs(sessions) do if current == chest then changed:Fire(player) end end
 end
+function Service.HasVehicleKey(token)
+ for model,state in pairs(contents) do
+  if model:IsDescendantOf(workspace) and Rules.HasVehicleKey(state,token) then return true end
+ end
+ return false
+end
 function Service.CreatePlayerCorpse(model,storage)
  if contents[model] then return end
  contents[model]=storage
