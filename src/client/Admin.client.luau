@@ -58,10 +58,21 @@ end
 label(panel,"DECLINE / ADMINISTRATION",16,8,660,32)
 button(panel,"X",704,8,40,function() setOpen(false) end)
 local pages={}
-for _,name in ipairs({"Time","Characters","Items"}) do pages[name]=make("Frame",panel,{Position=UDim2.fromOffset(16,92),Size=UDim2.fromOffset(728,380),BackgroundTransparency=1,Visible=name=="Time"}) end
-for index,name in ipairs({"Time","Characters","Items"}) do
- button(panel,name,16+(index-1)*244,50,236,function() for id,page in pairs(pages) do page.Visible=id==name end end)
+for _,name in ipairs({"Time","Characters","Items","Crafting"}) do pages[name]=make("Frame",panel,{Position=UDim2.fromOffset(16,92),Size=UDim2.fromOffset(728,380),BackgroundTransparency=1,Visible=name=="Time"}) end
+for index,name in ipairs({"Time","Characters","Items","Crafting"}) do
+ button(panel,name,16+(index-1)*183,50,175,function() for id,page in pairs(pages) do page.Visible=id==name end end)
 end
+local crafting=pages.Crafting
+label(crafting,"Instant crafting",0,0,700,38)
+label(crafting,"Only your new crafting jobs. Resources, tools and skill requirements still apply.",0,48,700,70)
+local instantButton=button(crafting,"",0,134,360,function()
+ request("InstantCraft",{Value=player:GetAttribute("AdminInstantCraft")~=true})
+end)
+local function refreshInstant()
+ instantButton.Text=player:GetAttribute("AdminInstantCraft")==true and "Instant crafting: ON" or "Instant crafting: OFF"
+end
+player:GetAttributeChangedSignal("AdminInstantCraft"):Connect(refreshInstant)
+refreshInstant()
 local time=pages.Time
 local clockLabel=label(time,"",0,0,720,38)
 label(time,"Hour (0-23.999)",0,54,220,30)
@@ -141,3 +152,4 @@ task.spawn(function()
   task.wait(.5)
  end
 end)
+

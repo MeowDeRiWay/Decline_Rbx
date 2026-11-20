@@ -135,10 +135,11 @@ function Service.Cook(player,id,requested)
  if not speed or speed<=0 then return false end
  local cycles=Rules.QueuePlan(items,recipe,requested,Stations.Kind(stove)=="Garage" and 1 or Stations.Kind(stove)=="Stove" and 2 or Rules.MaxQueue)
  if not cycles then return false end
+ local instant=player:GetAttribute("AdminAccess")==true and player:GetAttribute("AdminInstantCraft")==true
  local duration=0
  for _,cycle in ipairs(cycles) do
   cycle.Effects=Progression.CraftEffects(player,recipe)
-  cycle.Duration=recipe.Duration/speed*cycle.Effects.DurationMultiplier
+  cycle.Duration=instant and 0 or recipe.Duration/speed*cycle.Effects.DurationMultiplier
   duration+=cycle.Duration
  end
  local character=player.Character

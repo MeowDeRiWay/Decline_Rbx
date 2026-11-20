@@ -171,6 +171,25 @@ assert(Service.Cook(a,"MakeCar1",1) and not own[a].Items.Scrap,"future ingredien
 bayBlocked=true;callbacks[#callbacks]()
 assert(garageMade==1 and own[a].Items.Scrap==3 and not a.Character.HumanoidRootPart.Anchored,"blocked completion refunds the exact future resource price")
 bayBlocked=false;Recipes.MakeCar1.Ingredients={}
+a:SetAttribute("AdminInstantCraft",true);a:SetAttribute("AdminAccess",false)
+assert(Service.Cook(a,"MakeCar1",1) and durations[#durations]>0,"instant flag alone cannot bypass admin restriction")
+callbacks[#callbacks]()
+a:SetAttribute("AdminAccess",true)
+assert(Service.Cook(a,"MakeCar1",1) and durations[#durations]==0,"admin instant craft schedules no recipe delay")
+local once=callbacks[#callbacks];local cars=garageMade
+once();once();assert(garageMade==cars+1,"instant completion remains idempotent")
+Recipes.MakeCar1.Ingredients={Scrap=3}
+own[a].Items.Scrap=nil
+assert(not Service.Cook(a,"MakeCar1",1),"instant crafting still requires materials")
+Amounts.Add(own[a],Items.Items,"Scrap",3)
+denyRequirements=true
+assert(not Service.Cook(a,"MakeCar1",1) and own[a].Items.Scrap==3,"instant crafting still requires skills")
+denyRequirements=false
+assert(Service.Cook(a,"MakeCar1",1) and durations[#durations]==0 and not own[a].Items.Scrap,"instant crafting consumes resources normally")
+callbacks[#callbacks]()
+a:SetAttribute("AdminInstantCraft",false);Recipes.MakeCar1.Ingredients={}
+assert(Service.Cook(a,"MakeCar1",1) and durations[#durations]>0,"disabling restores normal durations")
+callbacks[#callbacks]()
 print("PASS: sequential queues, bounded requests, atomic pooled chest reservation, per-cycle auto delivery/XP/fuel, shared stock, reused tools, exact refunds, station/source destruction, disconnect and stale timers")
 '''
 with tempfile.TemporaryDirectory() as d:

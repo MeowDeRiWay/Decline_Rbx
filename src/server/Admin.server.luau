@@ -21,7 +21,10 @@ end
 local function handle(player,command,data)
  if command=="Request" then return true,"Ready." end
  if typeof(data)~="table" then return false,"Invalid request." end
- if command=="SetHour" and Rules.Number(data.Value,0,23.999,false) then Clock.SetHour(data.Value)
+ if command=="InstantCraft" and typeof(data.Value)=="boolean" then
+  player:SetAttribute("AdminInstantCraft",data.Value)
+  return true,data.Value and "Instant crafting enabled." or "Instant crafting disabled."
+ elseif command=="SetHour" and Rules.Number(data.Value,0,23.999,false) then Clock.SetHour(data.Value)
  elseif command=="SetSpeed" and Rules.Number(data.Value,0.01,100,false) then Clock.SetSpeed(data.Value)
  elseif command=="Pause" and typeof(data.Value)=="boolean" then Clock.SetPaused(data.Value)
  elseif command=="GiveItem" then
@@ -71,7 +74,8 @@ remote.OnServerInvoke=function(player,command,data)
  if ok and command~="Request" then print(string.format("[Admin] %s (%d): %s",player.Name,player.UserId,command)) end
  return {OK=ok,Message=message}
 end
-local function added(player) player:SetAttribute("AdminAccess",Rules.Allowed(player.UserId)) end
+local function added(player) player:SetAttribute("AdminAccess",Rules.Allowed(player.UserId));player:SetAttribute("AdminInstantCraft",false) end
 Players.PlayerAdded:Connect(added)
 Players.PlayerRemoving:Connect(function(player) last[player]=nil end)
 for _,player in ipairs(Players:GetPlayers()) do added(player) end
+
