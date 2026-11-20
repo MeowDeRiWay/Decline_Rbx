@@ -129,6 +129,12 @@ assert(not Service.Contains(moving),"moving geometry is not enrolled as a road")
 local roadModel=make("Model","GroupedRoad",workspace,{Road=true});roadModel.CFrame=CFrame.new(Vector3.new(3000,0,0));roadModel.Size=Vector3.new(20,1,20)
 local pavement=make("Part","Pavement",roadModel,{Road=true});pavement.Anchored=true;pavement.CFrame=roadModel.CFrame
 Service.RegisterRoad(roadModel);Service.RegisterRoad(pavement)
+local oldDescendants=roadModel.GetDescendants
+local roadScans=0
+roadModel.GetDescendants=function(self) roadScans+=1;return oldDescendants(self) end
+for _=1,100 do Service.RegisterRoad(roadModel) end
+assert(roadScans==0,"child arrival events cannot rescan an already registered road")
+roadModel.GetDescendants=oldDescendants
 assert(Service.Contains(roadModel) and not Service.Contains(pavement),"nested road geometry has one owner")
 clock+=11;run(function() Service.Step(clock) end)
 assert(slab.Parent==ServerStorage.DormantWorld and Service.IsRoad(slab),"folder road retains identity outside original folder")
@@ -209,3 +215,4 @@ for var,module in [('Prefetch','WorldPrefetchRules'),('Config','WorldActivityCon
 parts+=['local Service=(function()\n'+source+'\nend)()',cases]
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'world.luau';p.write_text('\n'.join(parts));subprocess.run([sys.argv[1],str(p)],check=True)
+

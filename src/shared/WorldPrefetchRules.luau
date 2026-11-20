@@ -1,6 +1,22 @@
 -- Bounded horizontal look-ahead shared by generation and geometry wake-up.
 local Rules={}
 function Rules.Velocity(root,humanoid)
+ -- Scripted cars move anchored roots with PivotTo: physics reports zero velocity.
+ local seat=humanoid.SeatPart
+ local vehicle=seat and seat.Parent
+ while vehicle and vehicle~=workspace do
+  if vehicle:GetAttribute("Vehicle")==true then
+   local speed=vehicle:GetAttribute("Speed")
+   local chassis=vehicle.PrimaryPart
+   if chassis and typeof(speed)=="number" and speed==speed and math.abs(speed)<1000 then
+    local forward=chassis.CFrame.LookVector
+    local horizontal=Vector3.new(forward.X,0,forward.Z)
+    return horizontal.Magnitude>.001 and horizontal.Unit*speed or Vector3.zero
+   end
+   break
+  end
+  vehicle=vehicle.Parent
+ end
  local velocity=root.AssemblyLinearVelocity or Vector3.zero
  velocity=Vector3.new(velocity.X,0,velocity.Z)
  if velocity.Magnitude<.1 and humanoid.MoveDirection then
@@ -25,3 +41,4 @@ function Rules.Due(now,scheduled,gap,speed,config)
  return math.min(scheduled,now+remaining)
 end
 return Rules
+

@@ -164,6 +164,7 @@ function Service.Roads()
  return result
 end
 function Service.RegisterRoad(root)
+ if records[root] then return end -- DescendantAdded also reports every child of a road.
  if not Service.IsRoad(root) or not root:IsDescendantOf(workspace) then return end
  local ancestor=root.Parent
  while ancestor and ancestor~=workspace do
@@ -315,7 +316,7 @@ function Service.Step(now)
  for _,record in ipairs(waking) do
   if transitions>=Config.TransitionsPerStep then break end
   if records[record.Root]~=record or record.Busy then continue end
-  if wake(record) then transitions+=1;task.wait() end
+  if wake(record) then transitions+=1;task.wait(record.Kind=="Building" and (Config.PublishInterval or .08) or nil) end
  end
  local quiet=true
  for root,record in pairs(records) do
@@ -453,3 +454,4 @@ function Service.Start()
  end)
 end
 return Service
+

@@ -1,4 +1,5 @@
 return {
+ PublishInterval=.08,
  PrefetchSeconds=8,
  MaxPrefetchDistance=160,
  ActiveRadius=140,
@@ -12,3 +13,4 @@ return {
  WorkSliceSeconds=.002,
  BucketSize=128,
 }
+

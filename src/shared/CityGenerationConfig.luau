@@ -1,4 +1,5 @@
 return {
+ PublishInterval=.08,
  UrgentRadius=60,
  ArrivalSafetySeconds=2,
  PrefetchSeconds=8,
@@ -18,3 +19,4 @@ return {
  -- Failed/missing-template plots and standalone markers retry at this interval.
  RetryInterval = 5,
 }
+

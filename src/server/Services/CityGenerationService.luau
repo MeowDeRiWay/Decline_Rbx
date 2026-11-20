@@ -325,7 +325,7 @@ local function generate(incremental)
  for _,plot in ipairs(plots) do if plotDue[plot]<=now then table.insert(ready,plot) end end
  local jobsDone=0
  local function betweenJobs()
-  if jobsDone>0 and Config.ZoneLoadSeconds>0 then task.wait();deadline=os.clock()+.002 end
+  if jobsDone>0 and Config.ZoneLoadSeconds>0 then task.wait(Config.PublishInterval or .08);deadline=os.clock()+.002 end
   jobsDone+=1
  end
  -- Template and road work only runs when a scheduled plot is actually due.
@@ -403,3 +403,4 @@ function Service.Start()
  end)
 end
 return Service
+
